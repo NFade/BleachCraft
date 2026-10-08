@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "reiatsu_test",
+	"version": "${version}",
+	"name": "Reiatsu Test",
+	"description": "Zanpakuto prototype (spike 2b: OBJ item rendering).",
+	"authors": ["MineBleach"],
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["dev.minebleach.reiatsutest.ReiatsuTest"],
+		"client": ["dev.minebleach.reiatsutest.client.ReiatsuTestClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

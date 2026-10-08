@@ -1,0 +1,44 @@
+{
+  "format": 1,
+  "units": "m",
+  "space": "blender_zup",
+  "empties": {
+    "grip_hand": [
+      0.0,
+      0.0,
+      0.19
+    ],
+    "tip": [
+      0.0,
+      0.0,
+      0.8
+    ],
+    "ribbon_root": [
+      0.0,
+      0.0,
+      -0.01
+    ]
+  },
+  "objects": {
+    "spike_cube": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "spike_cube_alt": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "spike_strip_01": [
+      0.0,
+      0.0,
+      -0.01
+    ],
+    "spike_strip_02": [
+      0.0,
+      0.0,
+      -0.13
+    ]
+  }
+}
