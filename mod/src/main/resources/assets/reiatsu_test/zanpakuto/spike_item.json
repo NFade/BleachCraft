@@ -1,0 +1,16 @@
+{
+  "model": "spike",
+  "display_model": "reiatsu_test:item/spike_item_display",
+  "emissive_tint": "FFFFAA33",
+  "objects": {
+    "spike_cube":     { "diffuse": "spike_diffuse", "emissive": "spike_emissive" },
+    "spike_cube_alt": { "diffuse": "spike_alt_diffuse" },
+    "spike_strip_01": { "diffuse": "spike_diffuse" },
+    "spike_strip_02": { "diffuse": "spike_diffuse" }
+  },
+  "states": {
+    "sealed": { "hand": ["spike_cube"], "other": ["spike_cube"], "dynamic": ["spike_strip_01", "spike_strip_02"], "icon": "spike_item_sealed_icon" },
+    "shikai": { "hand": ["spike_cube_alt"], "other": ["spike_cube_alt"], "dynamic": [], "icon": "spike_item_shikai_icon" },
+    "bankai": { "hand": [], "other": ["spike_cube"], "dynamic": [], "icon": "spike_item_sealed_icon" }
+  }
+}

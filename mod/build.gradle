@@ -29,8 +29,14 @@ loom {
 			client()
 			name = "Spike Harness"
 			ideConfigGenerated(false)
-			vmArgs "-Dreiatsu.spike=true"
-			runDir "run"
+			vmArg "-Dreiatsu.spike=true"
+			programArgs "--width", "1280", "--height", "720"
+			if (project.hasProperty("glow")) {
+				vmArg "-Dreiatsu.glowNormal=${project.property('glow')}"
+			}
+			if (project.hasProperty("tune")) {
+				vmArg "-Dreiatsu.spike.tune=${project.property('tune')}"
+			}
 		}
 	}
 }
@@ -67,4 +73,19 @@ java {
 	withSourcesJar()
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
+}
+
+// Spike harness: make sure the first run does not stop at the accessibility onboarding screen and is silent.
+afterEvaluate {
+	tasks.named("runSpike") {
+		doFirst {
+			def opts = file("run/options.txt")
+			if (!opts.exists()) {
+				opts.parentFile.mkdirs()
+				opts.text = ["onboardAccessibility:false", "skipMultiplayerWarning:true", "skipRealms32bitWarning:true",
+					"tutorialStep:none", "joinedFirstServer:true", "soundCategory_master:0.0", "lang:en_us",
+					"pauseOnLostFocus:false", "enableVsync:false", "maxFps:260", "renderDistance:6"].join(System.lineSeparator()) + System.lineSeparator()
+			}
+		}
+	}
 }

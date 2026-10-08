@@ -56,3 +56,89 @@ Notes:
 - Note for agents: shells started before the install keep old env; set `JAVA_HOME` and `GRADLE_USER_HOME` explicitly in Gradle commands.
 - VOICE_PHRASES.md (sonnet): 14 commands, 160 predicted ASR rows, 89 neutral phrases; prototype JW matcher 0 FP, 72% fuzzy recall (rest via aliases). Open: "bank eye" listed as neutral by orchestrator but is a likely ASR form of "bankai": resolve in phase 5.
 - ADR (opus call 2/6): `design/ADR.md`. B1 = own OBJ parser + Fabric model-loading/renderer API, item per character + `release_state` component, emissive second pass; B2 fallback = dynamic item renderer; A (GeckoLib) last. Versions: Yarn 1.21.1+build.3, Loader 0.19.5, Fabric API 0.116.17+1.21.1. Unverified items go to the spike.
+
+## 2026-10-09: Phase 2b spike (path B, OBJ item rendering)
+
+**Result: B1 PASSES (12/12). Path B1 approved; B2 and A not needed.** Everything below was run with `gradlew runSpike` (dev harness). Screenshots: `blender/renders/spike/` (originals in `mod/run/screenshots/`, git-ignored).
+
+### Versions actually used
+Minecraft 1.21.1, Yarn `1.21.1+build.3`, Fabric Loader 0.19.5, Fabric API 0.116.17+1.21.1, Indigo (bundled), **Loom `net.fabricmc.fabric-loom-remap` 1.17.21** (not 1.18.3, see deviations), Gradle 9.7.1, Temurin 21.0.12, JUnit 5.14.4, Blender 5.2.2 LTS. Test machine: GTX 1650 SUPER, Ryzen 5 2600, 1280x720 window, render distance 6, vsync off, uncapped fps.
+
+### Checklist (ADR section 7)
+| # | Result | Evidence |
+|---|---|---|
+| 1 | PASS | `gradlew build` ok; client starts with `runClient` (no harness lines in its log) and `runSpike`. Section 6 versions and Yarn, except Loom 1.17.21 (fallback). |
+| 2 | PASS | `blender/scripts/spike_build.py`, `spike_export.py`, `spike_emissive_convert.py`. All 21 `obj_export` params exist on 5.2.2. Re-import bbox error 1.5e-8 for all 4 objects. Meta JSON written. Emissive PNG converted to RGBA (RGB white, A=max(R,G,B), 112 glow texels). |
+| 3 | PASS | `gradlew test`: 19 tests (ObjParserTest 8, AxisMapperTest 7, CorePurityTest 1, EmissiveMaskTest 3). `spike_cube.obj`: v16 vt24 vn6 f12 (10 quads, 2 tris); bounds after mapping (0.4,0.31,0.4)-(0.6,1.11,0.6). Blender tip (0,0,1) -> OBJ (0,1,0); `grip_hand` -> model (0.5,0.5,0.5). |
+| 4 | PASS | Log: `resolver sees id reiatsu_test:item/spike_item` (+ `..._display`), `baked ... quads=82 sprites=[spike_diffuse, spike_emissive, spike_item_sealed_icon, spike_alt_diffuse, spike_item_shikai_icon] missing=[]`. No checkerboard anywhere. |
+| 5 | PASS | `01`,`02` first person right/left; `03`,`04` player third person back/front; `03b-d` armor-stand profiles (right, left, front); `05` dropped; `06` item frames; `07a/07b` GUI hotbar + inventory (flat icons, state specific). |
+| 6 | PASS | Face-by-face check (frame view, enlarged): E, R, B, L read upright and unmirrored; bar points along the blade; red edge face underneath (edge forward/down). V flip correct. |
+| 7 | PASS (with note) | `09a-09f`. Dark room (light 0, midnight, gamma 0): bar tip full colour (252,168,50 vs tint 255,170,51), rest near black (background ~5/255); the vanilla diamond sword reference is fully black. Fancy and Fabulous identical. R1.1 measured: with real face normals one glow face was 99%, the face turned away 50%. Mitigation implemented (glow quads get the model +Y normal): all glow faces 92%. R1.2: no z-fighting visible with the 0.0005 offset. |
+| 8 | PASS | `item replace ... with reiatsu_test:spike_item[reiatsu_test:release_state="shikai"]` and `/give @s reiatsu_test:spike_item[reiatsu_test:release_state="shikai"]` both work (log: "Gave 1 [Spike Item (reiatsu_test)]"); shows `spike_cube_alt` (inverted colours, no strips): `08a`, `08b`, `05`, `06`. In `summon`: `{Item:{id:"reiatsu_test:spike_item",count:1,components:{"reiatsu_test:release_state":"shikai"}}}`. |
+| 9 | PASS | Two hinged segments sway every frame (`04`/`04b`/`04c`, `01`/`01b`, `06`/`06b`: 880 to 6400 changed pixels between captures with a static camera). Code: `pushTransform` + `Mesh#outputTo` inside `emitItemQuads`. |
+| 10 | PASS | `10a` after reload ok; `_display.json` edited in the build output (fp scale 0.9 -> 1.8) -> reload -> `10b` shows the change; restored -> `10c`. Reload log: parse 16-55 ms, bake 1-2.7 ms, no errors. |
+| 11 | PASS | Numbers below. Holding the item costs 0.00 ms mean (within noise, +/-0.1 ms); own `emitItemQuads` time 0.015 ms/frame (3.7 us/call). |
+| 12 | PASS | `jdk.httpserver present=true`, `java.desktop present=true` in the dev runtime (Temurin 21.0.12). Production launcher runtime still UNVERIFIED (R4.3 stays; keep the ServerSocket fallback). |
+
+### Performance (final run, mean frame time over 400 frames after 90 warm-up frames)
+| Scenario | mean ms | fps | p95 ms | emit us/call |
+|---|---|---|---|---|
+| P0 empty hand, no frames (3 hotbar icons drawn) | 1.334 | 749 | 2.35 | 1.8 |
+| P1 spike item in hand | 1.323 | 756 | 2.22 | 3.7 |
+| P1s shikai in hand | 1.322 | 757 | 2.14 | 2.6 |
+| P3 empty hand, 64 item frames (spike) | 2.549 | 392 | 3.80 | 5.8 (0.39 ms/frame total) |
+| P2 item in hand + 64 item frames | 2.279 | 439 | 3.43 | 5.3 (0.36 ms/frame) |
+| P4 control: 64 vanilla diamond-sword frames | 2.905 | 344 | 4.19 | |
+| PF Fabulous, item in hand | 1.710 | 585 | 2.73 | 3.7 |
+
+Earlier runs agreed (P1 minus P0 between -0.05 and +0.12 ms). 64 spike frames are cheaper than 64 vanilla sword frames. Parse (cold JVM) 209-298 ms, warm 15-55 ms; bake 16 ms cold, 1-3 ms warm.
+
+### Chosen in-hand transforms (`assets/reiatsu_test/models/item/spike_item_display.json`)
+Tuned by sweeps with the tune harness (`gradlew runSpike -Ptune=<json>`, generator `tools/spike_tune_gen.py`, contact sheets `tools/spike_sheet.py`).
+
+| Mode | rotation | translation | scale |
+|---|---|---|---|
+| firstperson_right/left | [-45, **180**, 0] | [-3, 5, -2] | 0.90 |
+| thirdperson_right/left | [25, 0, 0] | [0, -3, 1.75] | 0.85 |
+| ground | [0, 0, 0] | [0, 2, 0] | 0.65 |
+| fixed | [0, 0, -45] | [-2.2, -2.2, 0] | 0.90 |
+| gui | flat icon, [0,0,0] | 0 | 1.0 |
+
+Rules learned:
+- (a) FIRST person needs ry=180 and THIRD person ry=0 (the two hand frames differ by a flip about Y) to get spine up and edge down in both. The ADR starting angles were right in kind but not in value: fp [20,0,0] / scale 0.70 put the item below the screen edge, tp rx=-10 pointed the blade slightly down (positive rx raises the blade).
+- (b) Left-hand JSON entries must EQUAL the right-hand ones: `Transformation#apply(leftHanded)` already mirrors rotation y/z and translation x (verified in source and screenshots 02, 03c).
+- (c) Fixed: the object centre is 0.21 m above the grip, so the translation recentres it in the frame.
+
+### Decision
+**B1** (Fabric `ModelLoadingPlugin` + own OBJ loader + `Mesh` baked model + `emitItemQuads` + two-pass emissive). No B2 needed: R1.1 and R1.2 are solved inside B1. Path A not needed.
+
+### UNVERIFIED items resolved (ADR section 8)
+1. Yarn `1.21.1+build.3` + Loom: works with `net.fabricmc.fabric-loom-remap` **1.17.21** + Gradle 9.7.1 (`mappings "net.fabricmc:yarn:1.21.1+build.3:v2"`). 1.18.3 is refused: its module metadata requires a Java 25 build JVM ("Dependency requires at least JVM runtime version 25"); 1.14.x-1.17.x declare JVM 21. `genSourcesWithVineflower` works (4 min); decompiled sources are in `mod/.gradle/loom-cache/minecraftMaven/.../*-sources.jar`; Yarn-named Fabric API sources are in `mod/build/loom-cache/remapped_working/*-sources.jar` (the plain sources jars in the Gradle cache are intermediary-named). A Loom run config named `spike` is run with `gradlew runSpike`.
+2. Resolver id: **`reiatsu_test:item/spike_item`** (vanilla `ModelLoader#loadInventoryVariantItemModel` uses `id.withPrefixedPath("item/")`; the dependency `reiatsu_test:item/spike_item_display` also goes through the resolver, returning null lets vanilla load the JSON). `ItemRenderer#renderItem` applies the display `Transformation#apply` (translate, rotate XYZ, scale) and THEN `translate(-0.5,-0.5,-0.5)`: confirmed. Display values: table above.
+3. Emissive: see step 7. Unmodified Indigo: lit face 99%, turned-away face 50% (minimum light factor 0.4). Fix: glow-pass vertex normal = model +Y (`-Dreiatsu.glowNormal=none` disables). Offset 0.0005 along the face normal removes z-fighting.
+4. Blender 5.2.2 `obj_export`: all names in ADR section 1 are valid (`forward_axis` enum X/Y/Z/NEGATIVE_X/NEGATIVE_Y/NEGATIVE_Z, `export_eval_mode` DAG_EVAL_RENDER/DAG_EVAL_VIEWPORT, `path_mode` AUTO/ABSOLUTE/RELATIVE/MATCH/STRIP/COPY). Triangulate modifier: `min_vertices`, `quad_method`, `ngon_method`, `keep_custom_normals`. With `export_materials=False` the OBJ has no `usemtl`/`mtllib`; `s 0` and `o <name>` are written.
+5. `/give` and `item replace` syntax: `reiatsu_test:spike_item[reiatsu_test:release_state="shikai"]` (string value, quotes needed).
+6. `jdk.httpserver` present in the dev runtime. `ClientLifecycleEvents.CLIENT_STARTED` / `CLIENT_STOPPING` exist (read in the `fabric-lifecycle-events-v1` sources).
+
+Other facts verified from source or run:
+- `PreparableModelLoadingPlugin.register(DataLoader, plugin)` + `ctx.resolveModel().register(ModelResolver)` + `UnbakedModel` (`getModelDependencies`, `setParents(Function)`, `bake(Baker, Function<SpriteIdentifier,Sprite>, ModelBakeSettings)`); `JsonUnbakedModel#getTransformations()` works for the dependency model.
+- Vanilla `atlases/blocks.json` has `directory source item prefix item/`, so `textures/item/*.png` become sprites `reiatsu_test:item/<name>`. Use `PlayerScreenHandler.BLOCK_ATLAS_TEXTURE` (`SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE` is `@Deprecated`).
+- `RenderContext#itemTransformationMode()` returns GUI / GROUND / FIXED / hand modes correctly; `emitItemQuads` is called every render; `Mesh#outputTo` and `pushTransform(QuadTransform)` with `MutableQuadView#copyPos/pos` work for dynamic segments.
+- `ItemStack#getOrDefault(component, default)` reads `release_state`; `ComponentType.builder().codec().packetCodec().build()` with `StringIdentifiable.createCodec` + `PacketCodecs.indexed` works.
+- Harness facts for later phases: a flat creative world is created with `IntegratedServerLoader#createAndStart(name, LevelInfo, GeneratorOptions, registries -> WORLD_PRESET FLAT .createDimensionsRegistryHolder(), screen)`. After `getGraphicsMode().setValue(FABULOUS)` you must call `worldRenderer.reload()` (the vanilla cycling callback does it), otherwise an NPE in `RenderPhase` (entity framebuffer null) crashes the client. After `reloadResources()` wait for `getOverlay() == null` before screenshots. Commands run through `server.getCommandManager().executeWithPrefix(server.getCommandSource().withEntity(player)...)` on the server thread; feedback goes to the log.
+
+### Deviations from ADR (reason)
+1. Loom 1.17.21 instead of 1.18.3: 1.18.x needs a Java 25 build JVM and only JDK 21 is installed (nearest working release, one variable changed). Gradle stays 9.7.1.
+2. Display transforms differ from the ADR starting values (that was the purpose of the spike).
+3. Added the glow-pass normal override (+Y) to fix R1.1 inside B1; the ADR expected B2 might be needed.
+4. `PlayerScreenHandler.BLOCK_ATLAS_TEXTURE` instead of `SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE` (deprecated).
+5. `gradle.properties`: `org.gradle.configuration-cache=false` (the example had true; not tested with Loom 1.17, left off for safety).
+6. The manifest gained `display_model`, `dynamic` (animated segments, chained in listed order) and a per-state `icon`; hand/other lists as in the ADR table. Left-hand display entries equal the right-hand ones.
+7. Spike GUI icons are hand-drawn stand-ins (`blender/scripts/spike_icon.py`), not Blender renders; the real models must render them from Blender.
+
+### Open issues / notes for phase 3-4
+- Player third person view is small; the armor-stand profile views are the reliable check for the third-person transform (the real player arm pose differs a little; recheck with real models).
+- The shader log warning `rendertype_entity_translucent_emissive could not find sampler named Sampler2` appears on every start (vanilla, before our model is used).
+- `mod/spike_run*.log`, `mod/spike_tune*.log`, `mod/gensrc.log`, `mod/runclient.log` are local logs (not committed).
+- Phase 4 should keep `SpikeHarness` (gated by `-Dreiatsu.spike=true`, task `runSpike`) as the visual test bed; the tune workflow gives the real in-hand transforms for the final models.
+- The Fabric API testmod classes (OctagonalColumn..., PillarBakedModel) are not in the sources jars; the model classes were written from the Yarn sources instead.

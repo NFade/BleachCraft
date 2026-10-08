@@ -1,9 +1,25 @@
 package dev.minebleach.reiatsutest;
 
+import dev.minebleach.reiatsutest.registry.ModComponents;
+import dev.minebleach.reiatsutest.registry.ModItems;
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.util.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReiatsuTest implements ModInitializer {
+	public static final String MOD_ID = "reiatsu_test";
+	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+	public static Identifier id(String path) {
+		return Identifier.of(MOD_ID, path);
+	}
+
 	@Override
 	public void onInitialize() {
+		ModComponents.init();
+		ModItems.init();
+		LOGGER.info("[spike] registered item {} with component {}", ModItems.SPIKE_ITEM,
+				ModComponents.RELEASE_STATE);
 	}
 }
