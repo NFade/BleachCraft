@@ -40,3 +40,12 @@ Notes:
 - Orchestrator re-check: Blender python 3.13.13, numpy yes, PIL **no** inside Blender (use system `python` 3.10 + Pillow 12.3 for contact sheets). Render engines: CYCLES, HydraRenderEngine (+ built-in EEVEE/Workbench).
 - Fabric 1.21.1 launcher profile is NOT needed for development: `gradlew runClient` (Loom) downloads MC 1.21.1 itself. Only JDK 21 is required. Blockbench is only needed for fallback path A.
 - Checkpoint 1 shown to user: JDK 21 missing (blocks phase 2b/4), Blockbench optional.
+
+## 2026-10-08: Phase 1 (research, sheets, art bible, Gate A)
+- 1a: 4 research files in `research/` (Fandom via `tools/fandom.py`: wiki HTML 403 to scripts, API OK, image CDN needs Referer).
+- Refs (private, gitignored): rukia sealed 9 / shikai 11 / bankai 10; byakuya sealed 12 / shikai 12 / bankai 12. Index `refs/INDEX.md`.
+- 1b: contact sheets `refs/sheets/*.png` (`tools/contact_sheet.py`, system Python + Pillow).
+- 1c: `design/ART_BIBLE.md` v1 (sonnet).
+- Gate A (opus call 1/5): APPROVED WITH EDITS, 27 edits, 15 open questions settled (`design/GATE_A.md`). v2 applied by sonnet, plus 8 consistency fixes.
+- Ref gaps after Gate A: byakuya sealed tsuba/hilt close-ups and shikai hilt-after-scatter filled (manga ch. 116/301/302/379). Still missing: rukia bankai back view and head ornament (not on Fandom); byakuya saya in daylight.
+- Opus budget used: 1 of 5 (Gate A). Remaining: ADR, Gate B, bankai VFX design, Gate D (Gate C would be a 6th: to be decided).
