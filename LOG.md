@@ -55,3 +55,4 @@ Notes:
 - Installed Temurin JDK 21.0.12 via winget (JAVA_HOME machine-wide, PATH before Oracle javapath 1.8). `GRADLE_USER_HOME=D:\gradle-home` (user env). Blockbench not installed (only for fallback A; install if the spike fails).
 - Note for agents: shells started before the install keep old env; set `JAVA_HOME` and `GRADLE_USER_HOME` explicitly in Gradle commands.
 - VOICE_PHRASES.md (sonnet): 14 commands, 160 predicted ASR rows, 89 neutral phrases; prototype JW matcher 0 FP, 72% fuzzy recall (rest via aliases). Open: "bank eye" listed as neutral by orchestrator but is a likely ASR form of "bankai": resolve in phase 5.
+- ADR (opus call 2/6): `design/ADR.md`. B1 = own OBJ parser + Fabric model-loading/renderer API, item per character + `release_state` component, emissive second pass; B2 fallback = dynamic item renderer; A (GeckoLib) last. Versions: Yarn 1.21.1+build.3, Loader 0.19.5, Fabric API 0.116.17+1.21.1. Unverified items go to the spike.
