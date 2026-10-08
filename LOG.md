@@ -142,3 +142,7 @@ Other facts verified from source or run:
 - `mod/spike_run*.log`, `mod/spike_tune*.log`, `mod/gensrc.log`, `mod/runclient.log` are local logs (not committed).
 - Phase 4 should keep `SpikeHarness` (gated by `-Dreiatsu.spike=true`, task `runSpike`) as the visual test bed; the tune workflow gives the real in-hand transforms for the final models.
 - The Fabric API testmod classes (OctagonalColumn..., PillarBakedModel) are not in the sources jars; the model classes were written from the Yarn sources instead.
+
+## 2026-10-09: Orchestrator check of spike 2b
+- Re-ran `gradlew test`: 19/19 pass. Reviewed screenshots (`blender/renders/spike/_sheet.png`): mesh visible in hands, armor stand, item frames; tip glows in dark room (Fancy + Fabulous); letters unmirrored.
+- Checkpoint 3 shown to user. Opus used: 2 of 6 (Gate A, ADR).
