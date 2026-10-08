@@ -276,3 +276,5 @@ C:\bleach-mod\
   - основная работа идёт через `execute_blender_code` (bpy-скрипты; копии скриптов сохраняй в `blender/scripts/`);
   - API ищи через `search_api_docs`, `get_python_api_docs`, `search_manual_docs`;
   - `generate_3d` в этом сервере нет, правило 3 неактуально.
+- **Opus-лимит: 6 вызовов** (решение 2026-10-08; Gate C остаётся отдельным вызовом).
+- **Окружение:** Temurin JDK 21.0.12 установлен (`JAVA_HOME` = `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot\`), `GRADLE_USER_HOME` = `D:\gradle-home` (user env). Уже запущенные процессы видят старое окружение: в командах Gradle задавай обе переменные явно.

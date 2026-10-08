@@ -49,3 +49,8 @@ Notes:
 - Gate A (opus call 1/5): APPROVED WITH EDITS, 27 edits, 15 open questions settled (`design/GATE_A.md`). v2 applied by sonnet, plus 8 consistency fixes.
 - Ref gaps after Gate A: byakuya sealed tsuba/hilt close-ups and shikai hilt-after-scatter filled (manga ch. 116/301/302/379). Still missing: rukia bankai back view and head ornament (not on Fandom); byakuya saya in daylight.
 - Opus budget used: 1 of 5 (Gate A). Remaining: ADR, Gate B, bankai VFX design, Gate D (Gate C would be a 6th: to be decided).
+
+## 2026-10-08: Checkpoint 2 decisions
+- User: install everything needed; opus limit raised to 6.
+- Installed Temurin JDK 21.0.12 via winget (JAVA_HOME machine-wide, PATH before Oracle javapath 1.8). `GRADLE_USER_HOME=D:\gradle-home` (user env). Blockbench not installed (only for fallback A; install if the spike fails).
+- Note for agents: shells started before the install keep old env; set `JAVA_HOME` and `GRADLE_USER_HOME` explicitly in Gradle commands.
