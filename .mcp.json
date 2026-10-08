@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "blender": {
+      "type": "stdio",
+      "command": "C:\\Users\\efeki\\AppData\\Roaming\\Claude\\Claude Extensions\\ant.dir.gh.blender.blender-mcp\\.venv\\Scripts\\blender-mcp.exe",
+      "args": []
+    }
+  }
+}
