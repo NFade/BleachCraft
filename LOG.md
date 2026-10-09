@@ -146,3 +146,4 @@ Other facts verified from source or run:
 ## 2026-10-09: Orchestrator check of spike 2b
 - Re-ran `gradlew test`: 19/19 pass. Reviewed screenshots (`blender/renders/spike/_sheet.png`): mesh visible in hands, armor stand, item frames; tip glows in dark room (Fancy + Fabulous); letters unmirrored.
 - Checkpoint 3 shown to user. Opus used: 2 of 6 (Gate A, ADR).
+- Dev runs (`runClient`, `runSpike`) open the window on the monitor containing `dev_monitor` (mod/gradle.properties, default 1260,-540 = second monitor). Verified: window at (825,-811).
