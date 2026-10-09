@@ -2,7 +2,8 @@
 # the model (the model is never rotated, no transforms are changed) and writes the frames to TMP;
 # compose_turntable.py (system python + Pillow) then builds blender/renders/<model>_turntable.png.
 #   import turntable as tt; tt.run("rukia_sealed", rows)
-#   rows: [dict(label, objs=[names], z0, z1, w, h, cx=0.0, cy=0.0)]  (z0..z1 = visible height in metres, w x h = frame px)
+#   rows: [dict(label, objs=[names], z0, z1, w, h, cx=0.0, cy=0.0, elev=0.0)]  (z0..z1 = visible height in metres, w x h = frame px,
+#   elev = camera elevation above the horizon in degrees)
 import bpy, math, os, json
 from mathutils import Vector, Matrix
 import bb_common as bb
@@ -82,7 +83,7 @@ def run(model, rows, frames=8, engine='BLENDER_EEVEE'):
         sc.render.resolution_x, sc.render.resolution_y = row["w"], row["h"]
         files = []
         for i in range(frames):
-            piv.rotation_euler = (0, 0, math.radians(360.0 * i / frames))
+            piv.rotation_euler = (-math.radians(row.get("elev", 0.0)), 0, math.radians(360.0 * i / frames))
             bpy.context.view_layer.update()
             path = os.path.join(TMP, "tt_%s_r%d_%d.png" % (model, ri, i))
             sc.render.filepath = path

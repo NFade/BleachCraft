@@ -1,0 +1,409 @@
+{
+ "rukia_shikai_blade": {
+  "src_verts": 953,
+  "src_faces": 1152,
+  "src_quads": 682,
+  "imp_verts": 953,
+  "imp_faces": 1152,
+  "obj_lines": {
+   "v": 953,
+   "vt": 1227,
+   "vn": 579,
+   "f": 1152,
+   "tris": 470,
+   "quads": 682,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.384185791015625e-07,
+  "src_bbox": [
+   [
+    -0.044,
+    -0.044,
+    -0.01
+   ],
+   [
+    0.044,
+    0.044,
+    1.0355
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_01": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.02,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.02,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -0.01
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_02": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0194,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0194,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -0.26
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_03": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0188,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0188,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -0.51
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_04": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0182,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0182,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -0.76
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_05": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0176,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0176,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -1.01
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_06": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.017,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.017,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -1.26
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_07": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0164,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0164,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -1.51
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_08": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0158,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0158,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -1.76
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_09": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0152,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0152,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -2.01
+  ],
+  "match": true
+ },
+ "rukia_shikai_ribbon_10": {
+  "src_verts": 8,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 8,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 8,
+   "vt": 6,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.885928213596344e-08,
+  "src_bbox": [
+   [
+    -0.0146,
+    -0.001,
+    -0.25
+   ],
+   [
+    0.0146,
+    0.001,
+    0.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -2.26
+  ],
+  "match": true
+ }
+}
