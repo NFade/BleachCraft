@@ -610,3 +610,18 @@ def finish(model, exp_objs, groups, empties, notes, deviations, questions, extra
     with open(os.path.join(TMP, model + "_stats.json"), "w") as f:
         json.dump({"stats": stats, "empties": [(n, list(v)) for n, v in empties]}, f, indent=1)
     return stats
+
+
+def cyl_x(name, r, x0, x1, y, z, n=8):
+    """Cylinder along X (used as a boolean cutter); returns an object with the first material."""
+    rings = [[Vector((x, y + r * math.cos(2 * math.pi * k / n), z + r * math.sin(2 * math.pi * k / n)) ) for k in range(n)]
+             for x in (x0, x1)]
+    return loft(name, rings, bpy.data.materials[0].name)
+
+
+def prism_y(name, pts_xz, y0, y1, mat_name):
+    """Extrude an outline given in (x, z) along Y (thin sheets that lie in the XZ plane)."""
+    n = len(pts_xz)
+    verts = [Vector((x, y0, z)) for x, z in pts_xz] + [Vector((x, y1, z)) for x, z in pts_xz]
+    faces = [tuple(range(n)), tuple(range(n, 2 * n))] + [(k, (k + 1) % n, n + (k + 1) % n, n + k) for k in range(n)]
+    return mesh_obj(name, verts, faces, [mat_name], None, False)
