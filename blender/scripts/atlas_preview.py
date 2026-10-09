@@ -12,7 +12,7 @@ bg = Image.new("RGBA", d.size, (40, 40, 44, 255))
 bg.alpha_composite(d)
 ee = Image.new("RGBA", e.size, (0, 0, 0, 255))
 a = e.split()[3]
-TINT = (249, 200, 246, 255) if model == "byakuya_shikai" else (207, 239, 255, 255) if model == "rukia_bankai" else (191, 228, 255, 255)
+TINT = (249, 200, 246, 255) if model == "byakuya_shikai" else (242, 233, 255, 255) if model == "byakuya_bankai" else (207, 239, 255, 255) if model == "rukia_bankai" else (191, 228, 255, 255)
 ee.paste(Image.new("RGBA", e.size, TINT), (0, 0), a)
 sheet = Image.new("RGB", (d.width * S * 2 + 30, d.height * S + 24), (20, 20, 22))
 dd = ImageDraw.Draw(sheet)

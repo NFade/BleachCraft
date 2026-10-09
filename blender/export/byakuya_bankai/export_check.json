@@ -1,0 +1,335 @@
+{
+ "byakuya_bankai_blade": {
+  "src_verts": 89,
+  "src_faces": 96,
+  "src_quads": 78,
+  "imp_verts": 89,
+  "imp_faces": 96,
+  "obj_lines": {
+   "v": 89,
+   "vt": 149,
+   "vn": 89,
+   "f": 96,
+   "tris": 18,
+   "quads": 78,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 9.5367431640625e-07,
+  "src_bbox": [
+   [
+    -0.07,
+    -0.275,
+    0.0
+   ],
+   [
+    0.07,
+    0.8558,
+    8.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "byakuya_bankai_blade_lod": {
+  "src_verts": 13,
+  "src_faces": 13,
+  "src_quads": 9,
+  "imp_verts": 13,
+  "imp_faces": 13,
+  "obj_lines": {
+   "v": 13,
+   "vt": 29,
+   "vn": 13,
+   "f": 13,
+   "tris": 4,
+   "quads": 9,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.07,
+    -0.275,
+    0.0
+   ],
+   [
+    0.07,
+    0.826,
+    8.0
+   ]
+  ],
+  "meta_origin": [
+   1.5,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "byakuya_bankai_hilt_ground": {
+  "src_verts": 548,
+  "src_faces": 580,
+  "src_quads": 446,
+  "imp_verts": 548,
+  "imp_faces": 580,
+  "obj_lines": {
+   "v": 548,
+   "vt": 685,
+   "vn": 304,
+   "f": 580,
+   "tris": 134,
+   "quads": 446,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.2351741790771484e-08,
+  "src_bbox": [
+   [
+    -0.028,
+    -0.046,
+    0.0
+   ],
+   [
+    0.028,
+    0.046,
+    0.52
+   ]
+  ],
+  "meta_origin": [
+   3.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "byakuya_bankai_ripple": {
+  "src_verts": 32,
+  "src_faces": 16,
+  "src_quads": 16,
+  "imp_verts": 32,
+  "imp_faces": 16,
+  "obj_lines": {
+   "v": 32,
+   "vt": 34,
+   "vn": 1,
+   "f": 16,
+   "tris": 0,
+   "quads": 16,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 7.636845111846924e-08,
+  "src_bbox": [
+   [
+    -1.0,
+    -1.0,
+    0.02
+   ],
+   [
+    1.0,
+    1.0,
+    0.02
+   ]
+  ],
+  "meta_origin": [
+   5.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "hakuteiken_blade_body": {
+  "src_verts": 12,
+  "src_faces": 14,
+  "src_quads": 6,
+  "imp_verts": 12,
+  "imp_faces": 14,
+  "obj_lines": {
+   "v": 12,
+   "vt": 15,
+   "vn": 8,
+   "f": 14,
+   "tris": 8,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 7.450580596923828e-08,
+  "src_bbox": [
+   [
+    -0.015,
+    -0.05,
+    0.0
+   ],
+   [
+    0.015,
+    0.05,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   8.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "hakuteiken_blade_tip": {
+  "src_verts": 19,
+  "src_faces": 18,
+  "src_quads": 12,
+  "imp_verts": 19,
+  "imp_faces": 18,
+  "obj_lines": {
+   "v": 19,
+   "vt": 27,
+   "vn": 18,
+   "f": 18,
+   "tris": 6,
+   "quads": 12,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.774895063202166e-09,
+  "src_bbox": [
+   [
+    -0.015,
+    -0.05,
+    0.0
+   ],
+   [
+    0.015,
+    0.05,
+    0.2
+   ]
+  ],
+  "meta_origin": [
+   8.0,
+   0.0,
+   1.0
+  ],
+  "match": true
+ },
+ "hakuteiken_wing_l": {
+  "src_verts": 45,
+  "src_faces": 64,
+  "src_quads": 0,
+  "imp_verts": 45,
+  "imp_faces": 64,
+  "obj_lines": {
+   "v": 45,
+   "vt": 45,
+   "vn": 64,
+   "f": 64,
+   "tris": 64,
+   "quads": 0,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    0.0,
+    -0.8,
+    -0.6562
+   ],
+   [
+    4.2772,
+    0.0,
+    4.4589
+   ]
+  ],
+  "meta_origin": [
+   14.0,
+   0.0,
+   1.0
+  ],
+  "match": true
+ },
+ "hakuteiken_wing_r": {
+  "src_verts": 45,
+  "src_faces": 64,
+  "src_quads": 0,
+  "imp_verts": 45,
+  "imp_faces": 64,
+  "obj_lines": {
+   "v": 45,
+   "vt": 45,
+   "vn": 64,
+   "f": 64,
+   "tris": 64,
+   "quads": 0,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -4.2772,
+    -0.8,
+    -0.6562
+   ],
+   [
+    0.0,
+    0.0,
+    4.4589
+   ]
+  ],
+  "meta_origin": [
+   14.0,
+   0.0,
+   1.0
+  ],
+  "match": true
+ },
+ "hakuteiken_halo": {
+  "src_verts": 48,
+  "src_faces": 24,
+  "src_quads": 24,
+  "imp_verts": 48,
+  "imp_faces": 24,
+  "obj_lines": {
+   "v": 48,
+   "vt": 50,
+   "vn": 1,
+   "f": 24,
+   "tris": 0,
+   "quads": 24,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 8.304769494316133e-08,
+  "src_bbox": [
+   [
+    -1.1,
+    0.0,
+    -1.1
+   ],
+   [
+    1.1,
+    0.0,
+    1.1
+   ]
+  ],
+  "meta_origin": [
+   14.0,
+   0.3,
+   4.2
+  ],
+  "match": true
+ }
+}

@@ -34,9 +34,11 @@ class MB:
             self.hide.append(f)
         return f
 
-    def finish(self, name, mat, collection=None):
+    def finish(self, name, mat, collection=None, recalc=True):
+        """recalc=False keeps the winding given at construction (single-sided open sheets: wings, halo, ripple)."""
         bm = self.bm
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        if recalc:
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
         hid = [f for f in self.hide if f.is_valid]
         if hid:
             bmesh.ops.delete(bm, geom=hid, context='FACES')
@@ -159,7 +161,7 @@ def inset_poly(pts, d):
     return out
 
 
-def cprism(mb, hx, hy, c, z_hidden, z_free, bev, isl_side, isl_cap, cap_px_per_m, k0=0, hide_cap=True):
+def cprism(mb, hx, hy, c, z_hidden, z_free, bev, isl_side, isl_cap, cap_px_per_m, k0=0, hide_cap=True, hide_top=False):
     """Octagonal prism from z_hidden (cap deleted) to z_free (visible cap; with bev > 0 an inset bevel ring first).
     u along the perimeter, v along the height."""
     pl = octagon(hx, hy, c)
@@ -174,7 +176,7 @@ def cprism(mb, hx, hy, c, z_hidden, z_free, bev, isl_side, isl_cap, cap_px_per_m
     else:
         rings.append([Vector((x, y, z_free)) for x, y in pl])
     fy.append(1.0)
-    tube(mb, rings, k0, isl_side, fy, False, cap0=(isl_cap, 1e-9, hide_cap), cap1=(isl_cap, cap_px_per_m, False))
+    tube(mb, rings, k0, isl_side, fy, False, cap0=(isl_cap, 1e-9, hide_cap), cap1=(isl_cap, cap_px_per_m, hide_top))
 
 
 # ------------------------------------------------------------------ blade

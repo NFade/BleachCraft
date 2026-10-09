@@ -210,9 +210,18 @@ def verify(model, spec):
         if spec.get("material") and r["materials"] != [spec["material"]]:
             out["problems"].append("%s materials %s" % (name, r["materials"]))
         r["modifiers"] = [m.type for m in o.modifiers]
-        r["normals"] = normals_check(o)
-        if r["normals"]["flipped"] or (r["normals"]["min_volume_mm3"] is not None and r["normals"]["min_volume_mm3"] <= 0):
-            out["problems"].append("%s normals: %s" % (name, r["normals"]))
+        if ex.get("sheet_normal"):
+            # single-sided open sheet (wings, halo, ripple): every face normal must point to the stated side (dot >= min_dot), no volume test
+            sn = Vector(ex["sheet_normal"]).normalized()
+            dots = [p.normal.dot(sn) for p in o.data.polygons]
+            r["normals"] = {"sheet_normal": list(ex["sheet_normal"]), "faces": len(dots), "min_dot": round(min(dots), 4),
+                            "wrong_side": sum(1 for d in dots if d <= 0.0)}
+            if r["normals"]["wrong_side"]:
+                out["problems"].append("%s normals on the wrong side: %s" % (name, r["normals"]))
+        else:
+            r["normals"] = normals_check(o)
+            if r["normals"]["flipped"] or (r["normals"]["min_volume_mm3"] is not None and r["normals"]["min_volume_mm3"] <= 0):
+                out["problems"].append("%s normals: %s" % (name, r["normals"]))
         r["uv"] = uv_check(o, layout)
         if r["uv"].get("out_of_range_faces"):
             out["problems"].append("%s UV outside 0..1 on %d faces" % (name, r["uv"]["out_of_range_faces"]))

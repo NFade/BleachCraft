@@ -406,3 +406,215 @@ def bankai_tsuba_shapes():
         h = [(x, y + sy * 0.031) for x, y in stadium(0.007, 0.013, 8)]
         holes.append(h[::-1])
     return outline, holes
+
+
+# ---- byakuya_bankai (512 x 512, ART_BIBLE 1.6 + Gate B B12..B15). Left column = giant blade (32 px/m, 252 px tall for ~8.1 m of arc);
+# top right = hilt (copy of the byakuya_shikai hilt islands) + stub; middle right 192 x 192 = wing alpha sheet (shared by both wings,
+# wing_r mirrors in X); bottom right = halo strip + Hakuteiken blade strips; ripple strip below the blade column. The 64 x 64 area at
+# (2, 446) is reserved for the deferred Senkei sword (not built).
+BB_ATLAS = 512
+BYAKUYA_BANKAI = _mk({
+    "blade_a":      (2, 2, 20, 252),       # +X side: edge strip (u 0..0.10), bevel (..0.55), flat (..1), v = arc length fraction (0 base, 1 tip)
+    "blade_b":      (24, 2, 20, 252),      # -X side
+    "blade_s":      (46, 2, 6, 252),       # spine
+    "blade_e":      (54, 2, 2, 252),       # edge flat (4 mm)
+    "ripple":       (2, 262, 128, 16),     # u = around (16 segments x 8 px), v = across (inner -> outer edge)
+    "wrap":         (164, 2, 60, 138),
+    "tsuba_front":  (228, 2, 44, 72),
+    "tsuba_back":   (276, 2, 44, 72),
+    "tsuba_rim":    (228, 78, 120, 8),
+    "tsuba_win":    (228, 88, 12, 4),
+    "kashira_side": (228, 96, 42, 8),
+    "kashira_cap":  (274, 96, 12, 16),
+    "fuchi_side":   (228, 108, 48, 8),
+    "habaki_side":  (228, 120, 34, 12),
+    "habaki_top":   (266, 120, 6, 14),
+    "stub_a":       (292, 96, 8, 48),      # blade stub of the ground hilt, 200 px/m
+    "stub_b":       (302, 96, 8, 48),
+    "stub_s":       (312, 96, 4, 48),
+    "stub_e":       (318, 96, 2, 48),
+    "stub_cap":     (322, 96, 4, 8),
+    "wing":         (164, 148, 192, 192),  # planar (|x|, z) at WING_PX_PER_M, root at the left edge
+    "halo":         (164, 352, 96, 8),
+    "hk_body":      (164, 364, 48, 8),
+    "hk_tip":       (164, 376, 48, 16),
+}, BB_ATLAS)
+LAYOUTS["byakuya_bankai"] = BYAKUYA_BANKAI
+
+# giant blade geometry (pure python; the Blender builder and the painter share it)
+GB_H, GB_W, GB_T0, GB_T1, GB_KISSAKI = 8.0, 0.55, 0.14, 0.06, 0.9
+GB_CP = [(0.5, 0.0), (4.0, 0.10), (6.0, 0.35), (8.0, 0.75)]      # sori control points (deviation from the straight base axis)
+GB_SLOPES = [0.0, 0.07, 0.17, 0.33]                                # Gate B B13: fixed slopes dy/dz at the control points
+GB_S_EDGE = 0.10                                                   # u of the edge-bevel split vertex (2 of 20 px)
+# ring stations: (z, width, local y shift of the section, vertices per ring); 8 vertices = with the edge bevel strip (z >= 6.85)
+GB_STATIONS = [(0.0, GB_W, 0.0, 6), (0.5, GB_W, 0.0, 6), (2.0, GB_W, 0.0, 6), (3.5, GB_W, 0.0, 6), (4.5, GB_W, 0.0, 6),
+               (5.3, GB_W, 0.0, 6), (6.0, GB_W, 0.0, 6), (6.5, GB_W, 0.0, 6), (6.85, GB_W, 0.0, 8), (7.1, GB_W, 0.0, 8),
+               (7.55, 0.40, 0.04, 8), (7.7, 0.29, 0.05, 8), (7.85, 0.18, 0.06, 8)]
+GB_LOD_Z = [0.0, 4.5, 7.1]
+GB_GLOW_Z0 = 6.8
+
+
+def gb_dev(z):
+    """Cubic Hermite through GB_CP with the fixed slopes GB_SLOPES; 0 for z <= 0.5 (vertical buried section)."""
+    if z <= GB_CP[0][0]:
+        return 0.0
+    for i in range(len(GB_CP) - 1):
+        z0, d0 = GB_CP[i]
+        z1, d1 = GB_CP[i + 1]
+        if z <= z1 + 1e-12:
+            h = z1 - z0
+            t = (z - z0) / h
+            h00, h10, h01, h11 = 2 * t**3 - 3 * t**2 + 1, t**3 - 2 * t**2 + t, -2 * t**3 + 3 * t**2, t**3 - t**2
+            return h00 * d0 + h10 * h * GB_SLOPES[i] + h01 * d1 + h11 * h * GB_SLOPES[i + 1]
+    return GB_CP[-1][1]
+
+
+def gb_dphi(z, eps=0.01):
+    z0, z1 = max(z - eps, 0.0), min(z + eps, GB_H)
+    return math.atan((gb_dev(z1) - gb_dev(z0)) / (z1 - z0))
+
+
+def gb_thick(z):
+    return GB_T0 + (GB_T1 - GB_T0) * max(0.0, z - 0.5) / (GB_H - 0.5)
+
+
+def gb_arc(z, n=800):
+    """Normalised arc length (0 at z = 0, 1 at z = 8) of the centreline (dev(z), z)."""
+    pts = [(gb_dev(GB_H * i / n), GB_H * i / n) for i in range(n + 1)]
+    cum = [0.0]
+    for a, b in zip(pts, pts[1:]):
+        cum.append(cum[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
+    k = min(n, max(0, int(z / GB_H * n)))
+    f = z / GB_H * n - k
+    c = cum[k] + (cum[min(n, k + 1)] - cum[k]) * f
+    return c / cum[-1]
+
+
+def gb_station_v():
+    """[(v, z)] of the ring stations plus the apex (v = arc fraction = UV v inside the blade islands)."""
+    return [(gb_arc(s[0]), s[0]) for s in GB_STATIONS] + [(1.0, GB_H)]
+
+
+def gb_z_of_v(v):
+    st = gb_station_v()
+    for (v0, z0), (v1, z1) in zip(st, st[1:]):
+        if v <= v1:
+            return z0 + (z1 - z0) * (v - v0) / max(v1 - v0, 1e-9)
+    return GB_H
+
+
+# 8-vertex profile roles in ring order: P0 edge(+X), S+ split, P1 ridge, P2 spine(+X), P3 spine(-X), P4 ridge, S- split, P5 edge(-X)
+GB_ROLES6 = ["P0", "P1", "P2", "P3", "P4", "P5"]
+GB_ROLES8 = ["P0", "S+", "P1", "P2", "P3", "P4", "S-", "P5"]
+GB_FR = {"P0": 0.0, "S+": GB_S_EDGE, "P1": 0.55, "P2": 1.0, "P3": 1.0, "P4": 0.55, "S-": GB_S_EDGE, "P5": 0.0}
+
+
+def gb_profile(w, t, nv, edge=0.002):
+    """Cross-section (x, y) in ring order (nv = 6 or 8); edge faces -Y, ridge at 55 percent of the width, split vertex at u = GB_S_EDGE
+    (2-face edge bevel strip: flatter than the straight line P0-P1, i.e. an acute edge)."""
+    ry = -w / 2 + 0.55 * w
+    pts = {"P0": (edge, -w / 2), "P1": (t / 2, ry), "P2": (t / 2, w / 2), "P3": (-t / 2, w / 2), "P4": (-t / 2, ry), "P5": (-edge, -w / 2)}
+    sy = -w / 2 + GB_S_EDGE * w
+    sx = edge + (t / 2 - edge) * (GB_S_EDGE / 0.55) * 0.55
+    pts["S+"] = (sx, sy)
+    pts["S-"] = (-sx, sy)
+    return [pts[r] for r in (GB_ROLES6 if nv == 6 else GB_ROLES8)]
+
+
+# ---- Hakuteiken wings (Gate B B12 + one barb per lobe): one continuous fan sheet per wing
+WING_PX_PER_M = 34.0
+WING_ZMIN = -0.80
+WING_BARB = 0.25
+
+
+def wing_geometry(sx=1):
+    """Returns (verts, faces, info). verts: (x, y, z) tuples (root at the origin, +Y = behind, forward curve toward -Y); faces: index tuples
+    (tris), all with a +Y normal. 9 feathers at 48 - 7.5 i degrees, length 6.0 (1 - 0.075 i); root fan 8 + band quads 8 (16 tris) + 3 tris per
+    gap (24) = 48 tris, plus the barb vertex on each feather edge Q_i-T_i (pushed up to 0.25 m sideways in the plane, alternating, limited to half the distance to the lobe outline so no faces overlap): +2 tris per
+    interior lobe, +1 per outer lobe."""
+    def curve(p):
+        r = math.hypot(p[0], p[2])
+        return (p[0], p[1] - 0.8 * (r / 6.0) ** 2, p[2])
+
+    ang = [48.0 - 7.5 * i for i in range(9)]
+    Ln = [6.0 * (1 - 0.075 * i) for i in range(9)]
+    dirs = [(sx * math.cos(math.radians(a)), 0.0, math.sin(math.radians(a))) for a in ang]
+    sc = lambda d, r: (d[0] * r, 0.0, d[2] * r)
+    V = []
+    idx = {}
+
+    def add(key, p):
+        idx[key] = len(V)
+        V.append(curve(p))
+
+    add("R", (0.0, 0.0, 0.0))
+    for i in range(9):
+        add(("M", i), sc(dirs[i], 0.30 * Ln[i]))
+        add(("Q", i), sc(dirs[i], 0.65 * Ln[i]))
+        add(("T", i), sc(dirs[i], Ln[i]))
+    for i in range(8):
+        am = math.radians((ang[i] + ang[i + 1]) / 2.0)
+        add(("N", i), sc((sx * math.cos(am), 0.0, math.sin(am)), 0.80 * Ln[i + 1]))
+    tris = []
+    for i in range(8):
+        tris.append((idx["R"], idx[("M", i)], idx[("M", i + 1)]))
+    for i in range(8):
+        for a, b, c in ((("M", i), ("Q", i), ("Q", i + 1)), (("M", i), ("Q", i + 1), ("M", i + 1))):
+            tris.append((idx[a], idx[b], idx[c]))
+    for i in range(8):
+        tris.append((idx[("Q", i)], idx[("T", i)], idx[("N", i)]))
+        tris.append((idx[("Q", i)], idx[("N", i)], idx[("Q", i + 1)]))
+        tris.append((idx[("Q", i + 1)], idx[("N", i)], idx[("T", i + 1)]))
+    # barbs: B_i halfway on Q_i-T_i, pushed 0.25 m sideways in the plane (+perp = toward the higher feather); split the adjacent gap tris
+    barbs = {}
+    for i in range(9):
+        q, t = V[idx[("Q", i)]], V[idx[("T", i)]]
+        a = math.radians(ang[i])
+        perp = (-sx * math.sin(a), 0.0, math.cos(a))            # in-plane normal to the feather, toward +angle
+        side = 1.0 if i % 2 == 0 else -1.0
+        if i == 0:
+            side = 1.0            # outer boundary of the top feather: real silhouette barb
+        if i == 8:
+            side = -1.0
+        mx, mz = (q[0] + t[0]) / 2, (q[2] + t[2]) / 2
+        push = WING_BARB
+        if 0 < i < 8:                       # interior lobe: keep the barb inside its own gap triangles (no overlap), at most 0.25 m
+            nb = V[idx[("N", i - 1)]] if side > 0 else V[idx[("N", i)]]
+            dx, dz = perp[0] * side, perp[2] * side
+            lim = 1e9
+            for e0, e1 in ((q, nb), (t, nb)):
+                ex, ez = e1[0] - e0[0], e1[2] - e0[2]
+                den = dx * ez - dz * ex
+                if abs(den) > 1e-12:
+                    tt = ((e0[0] - mx) * ez - (e0[2] - mz) * ex) / den
+                    uu = ((e0[0] - mx) * dz - (e0[2] - mz) * dx) / den
+                    if tt > 0 and -1e-9 <= uu <= 1 + 1e-9:
+                        lim = min(lim, tt)
+            push = min(WING_BARB, 0.5 * lim)
+        barbs[i] = len(V)
+        V.append((mx + perp[0] * push * side, (q[1] + t[1]) / 2, mz + perp[2] * push * side))
+    out = []
+    for tri in tris:
+        done = False
+        for i in range(9):
+            q, t, b = idx[("Q", i)], idx[("T", i)], barbs[i]
+            if q in tri and t in tri:
+                out.append(tuple(b if v == t else v for v in tri))
+                out.append(tuple(b if v == q else v for v in tri))
+                done = True
+                break
+        if not done:
+            out.append(tri)
+    fin = []                                                     # wind every face to +Y
+    for tri in out:
+        p = [V[k] for k in tri]
+        u = (p[1][0] - p[0][0], p[1][2] - p[0][2])
+        v = (p[2][0] - p[0][0], p[2][2] - p[0][2])
+        ny = u[1] * v[0] - u[0] * v[1]
+        fin.append(tri if ny > 0 else (tri[0], tri[2], tri[1]))
+    return V, fin, {"idx": idx, "barbs": barbs, "ang": ang, "len": Ln}
+
+
+def wing_uv(isl, x, z):
+    """Planar UV of a wing vertex: u from |x|, v from z (shared by wing_l and wing_r; the right wing is the mirror image)."""
+    return isl.uv((2.0 + abs(x) * WING_PX_PER_M) / isl.w, (2.0 + (z - WING_ZMIN) * WING_PX_PER_M) / isl.h)
