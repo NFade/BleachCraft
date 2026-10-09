@@ -72,3 +72,32 @@ Open questions for Gate B:
 - Ribbon width is along X and thickness along Y (flat in the XZ plane). Should it face the viewer in first person instead (flat in YZ)?
 - Is the 16-tri tail on segment 10 acceptable at blockout level?
 
+## byakuya_sealed
+
+Scene: `blender/scenes/byakuya_sealed.blend`. Render: `blender/renders/byakuya_sealed_blockout.png`.
+
+| object | tris (evaluated, triangulated) | bbox min (m) | bbox max (m) | size (m) | origin (m) |
+|---|---|---|---|---|---|
+| `byakuya_sealed_drawn` | 630 | (-0.028, -0.046, 0.0) | (0.028, 0.046, 0.9796) | (0.056, 0.092, 0.9796) | (0.0, 0.0, 0.0) |
+| `byakuya_sealed_sheathed` | 860 | (-0.028, -0.046, 0.0) | (0.028, 0.046, 1.0006) | (0.056, 0.092, 1.0006) | (0.0, 0.0, 0.0) |
+
+Empties: `grip_hand` (0, 0, 0.19); `tip` (0, 0.0266, 0.9796)
+
+Notes:
+- Tsuba: 56 (X) x 92 (Y) x 7 mm window frame, corner radius 5 mm, frame bar 8 mm, centre bar (along Y) 10 mm, transverse bar 8 mm, hub plate 40 (Y) x 18 (X) mm; four stepped L-shaped windows (boolean cut). Because the tsuba is 7 mm thick it occupies z 0.250 to 0.257, so habaki starts at 0.257, the blade at 0.285 and the saya at 0.257 (everything above the guard is shifted +1 mm against the BASE table; total drawn length 0.980 m).
+- Kashira: cream cylinder (oval 30 x 22 mm, 14 mm high, small chamfer ring). Fuchi, tsuba, habaki and the saya fittings share the bronze colour; saya is dark violet-black `#2E2840`, no white variant.
+- Both objects are at the origin and overlap by design; `byakuya_sealed_sheathed` is hidden in the viewport in the .blend.
+- `byakuya_sealed_drawn` and `_sheathed` hilts are separate (unlinked) mesh data, so `byakuya_shikai_hilt` and `byakuya_bankai_hilt_ground` reuse the same builder `bb.bk_hilt()`.
+
+Deviations from the art bible:
+- Sori: tip deflection from the base axis, 20 mm (see rukia_sealed note, `bb.SORI_K`).
+- Saya cross-section 26 (X) x 40 (Y) mm instead of 40 x 26 (cannot contain the 32 mm wide blade otherwise).
+- Tsuka runs z 0.014 to 0.236 between kashira and fuchi (no overlapping solids). Wrap diamonds and cream windows `#E8DDB5` are texture-only and not modelled.
+- Tsuba is 7 mm thick (bible 1.3) vs 6 mm in the BASE table; the parts above it start 1 mm higher (see notes), so the drawn blade is 1 mm shorter in nagasa to keep the tip at z 0.980.
+- Blade hole not cut in the tsuba (would be an enclosed pocket).
+
+Open questions for Gate B:
+- Tsuba thickness 7 mm (section 1.3) vs BASE 6 mm: keep the 1 mm upward shift of habaki, blade and saya, or move the tsuba to z 0.249 to 0.256 so the blade geometry matches the BASE table?
+- Sori reading (20 mm tip offset vs 80 mm chord deviation), same as rukia_sealed.
+- Tsuba windows are modelled as hard-edged L shapes; is the 4 mm hub step readable enough or should the frame get a bevel in the detail pass?
+

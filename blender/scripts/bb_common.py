@@ -625,3 +625,20 @@ def prism_y(name, pts_xz, y0, y1, mat_name):
     verts = [Vector((x, y0, z)) for x, z in pts_xz] + [Vector((x, y1, z)) for x, z in pts_xz]
     faces = [tuple(range(n)), tuple(range(n, 2 * n))] + [(k, (k + 1) % n, n + (k + 1) % n, n + k) for k in range(n)]
     return mesh_obj(name, verts, faces, [mat_name], None, False)
+
+
+# ------------------------------------------------------------------ Byakuya shared hilt (sealed, shikai hilt, bankai ground hilt)
+def bk_materials():
+    mat("bk_bronze", "#A58D5F", rough=0.45, metallic=0.8)
+    mat("bk_lavender", "#BCB2D3", rough=0.7)
+    mat("bk_kashira", "#E9E2C0", rough=0.5)
+    mat("bk_saya", "#2E2840", rough=0.3)
+    mat("bk_steel", "#C9CED6", rough=0.3, metallic=0.9)
+    mat("bk_tang", "#8E96A3", rough=0.4, metallic=0.9)
+
+
+def bk_hilt(prefix):
+    """Kashira (cream cylinder), lavender tsuka, bronze fuchi and the window-frame tsuba at z 0.250 to 0.257."""
+    parts = hilt_parts(prefix, "bk_lavender", "bk_kashira", "bk_bronze", kashira_dims=(0.015, 0.011, 0.014), kashira_cyl=True)
+    parts.append(tsuba_byakuya_sealed(prefix, 0.250, "bk_bronze"))
+    return parts
