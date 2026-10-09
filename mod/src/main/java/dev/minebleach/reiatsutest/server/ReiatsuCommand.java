@@ -38,6 +38,7 @@ public final class ReiatsuCommand {
 		d.register(CommandManager.literal("reiatsu")
 				.requires(src -> src.hasPermissionLevel(2))
 				.then(CommandManager.literal("info").executes(c -> info(c.getSource())))
+				.then(CommandManager.literal("voice").executes(c -> voice(c.getSource())))
 				.then(CommandManager.literal("full").executes(c -> setPoints(c.getSource(), 100.0)))
 				.then(CommandManager.literal("set")
 						.then(CommandManager.argument("points", DoubleArgumentType.doubleArg(0.0, 100.0))
@@ -57,6 +58,20 @@ public final class ReiatsuCommand {
 							c.getSource().sendFeedback(() -> Text.literal("abilities affect players: " + Tuning.affectPlayers), true);
 							return 1;
 						}))));
+	}
+
+	private static int voice(ServerCommandSource src) {
+		VoiceControl v = VoiceControl.get();
+		String url = v.url();
+		if (url == null) {
+			src.sendFeedback(() -> Text.translatable("message.reiatsu_test.voice.off"), false);
+			return 0;
+		}
+		ServerPlayerEntity p = src.getPlayer();
+		StateMachine sm = p == null ? null : ZanpakutoManager.machine(p);
+		src.sendFeedback(() -> Text.translatable("message.reiatsu_test.voice.status", url, v.transport(),
+				sm == null ? "-" : sm.state().name()), false);
+		return 1;
 	}
 
 	private static StateMachine machine(ServerCommandSource src) throws CommandSyntaxException {

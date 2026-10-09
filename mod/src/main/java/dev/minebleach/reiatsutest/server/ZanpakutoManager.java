@@ -176,31 +176,47 @@ public final class ZanpakutoManager {
 	// ------------------------------------------------------------------ requests
 
 	private static void onTransition(ServerPlayerEntity p, RequestTransitionC2S pl) {
-		Session s = session(p);
 		if (pl.targetState() < 0 || pl.targetState() >= ZanpakutoState.values().length) {
 			reply(p, pl.clientSeq(), ResultCode.DENIED_STATE);
 			return;
 		}
-		ZanpakutoState target = ZanpakutoState.fromCode(pl.targetState());
-		CharacterId held = ModItems.characterOf(p.getMainHandStack());
-		TransitionResult r = s.sm.request(new TransitionRequest(target, RequestSource.fromCode(pl.source()), pl.clientSeq(), held));
-		ReiatsuTest.LOGGER.info("[reiatsu] {} request {} (held {}): {} {}", p.getName().getString(), target, held, r.code(),
-				r.ok() ? r.from() + "->" + r.to() : r.reason());
-		apply(p, s, r.events(), null);
-		reply(p, pl.clientSeq(), r.code());
+		// a client may not use the server-side sequence marker to skip the stale check
+		performTransition(p, ZanpakutoState.fromCode(pl.targetState()), RequestSource.fromCode(pl.source()),
+				Math.max(0, pl.clientSeq()));
 	}
 
 	private static void onCast(ServerPlayerEntity p, CastAbilityC2S pl) {
-		Session s = session(p);
 		AbilityId ability = AbilityId.fromCode(pl.abilityId());
 		if (ability == null) {
 			reply(p, pl.clientSeq(), ResultCode.DENIED_STATE);
 			return;
 		}
+		performCast(p, ability, RequestSource.fromCode(pl.source()), Math.max(0, pl.clientSeq()));
+	}
+
+	/**
+	 * The one server path of a state transition request: used by the {@code request_transition} receiver (keys) and by
+	 * the voice bridge ({@link StateMachine#SERVER_SEQ}). Same machine, same checks, same events and the same
+	 * {@code action_result} answer to the player; voice never bypasses cooldown, reiatsu or state rules.
+	 */
+	public static TransitionResult performTransition(ServerPlayerEntity p, ZanpakutoState target, RequestSource source, int seq) {
+		Session s = session(p);
 		CharacterId held = ModItems.characterOf(p.getMainHandStack());
-		TransitionResult r = s.sm.cast(new AbilityRequest(ability, RequestSource.fromCode(pl.source()), pl.clientSeq(), held));
-		ReiatsuTest.LOGGER.info("[reiatsu] {} cast {} (held {}): {} {}", p.getName().getString(), ability, held, r.code(),
-				r.ok() ? "ok" : r.reason());
+		TransitionResult r = s.sm.request(new TransitionRequest(target, source, seq, held));
+		ReiatsuTest.LOGGER.info("[reiatsu] {} request {} (held {}, {}): {} {}", p.getName().getString(), target, held, source,
+				r.code(), r.ok() ? r.from() + "->" + r.to() : r.reason());
+		apply(p, s, r.events(), null);
+		reply(p, seq, r.code());
+		return r;
+	}
+
+	/** The one server path of an ability cast; see {@link #performTransition}. */
+	public static TransitionResult performCast(ServerPlayerEntity p, AbilityId ability, RequestSource source, int seq) {
+		Session s = session(p);
+		CharacterId held = ModItems.characterOf(p.getMainHandStack());
+		TransitionResult r = s.sm.cast(new AbilityRequest(ability, source, seq, held));
+		ReiatsuTest.LOGGER.info("[reiatsu] {} cast {} (held {}, {}): {} {}", p.getName().getString(), ability, held, source,
+				r.code(), r.ok() ? "ok" : r.reason());
 		CastContext ctx = null;
 		if (r.ok()) {
 			int seed = 0;
@@ -212,7 +228,8 @@ public final class ZanpakutoManager {
 			ctx = CastContext.capture(p, ability, seed);
 		}
 		apply(p, s, r.events(), ctx);
-		reply(p, pl.clientSeq(), r.code());
+		reply(p, seq, r.code());
+		return r;
 	}
 
 	private static void reply(ServerPlayerEntity p, int clientSeq, ResultCode code) {

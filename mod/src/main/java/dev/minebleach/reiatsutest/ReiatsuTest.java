@@ -5,6 +5,7 @@ import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ModItems;
 import dev.minebleach.reiatsutest.server.ReiatsuCommand;
+import dev.minebleach.reiatsutest.server.VoiceControl;
 import dev.minebleach.reiatsutest.server.ZanpakutoManager;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
@@ -27,6 +28,7 @@ public class ReiatsuTest implements ModInitializer {
 		ModNetworking.registerPayloads();
 		ZanpakutoManager.init();
 		ReiatsuCommand.register();
+		VoiceControl.init();
 		LOGGER.info("registered items {}, {}, {} (component {}), attachments and payloads",
 				ModItems.SODE_NO_SHIRAYUKI, ModItems.SENBONZAKURA, ModItems.SPIKE_ITEM, ModComponents.RELEASE_STATE);
 	}

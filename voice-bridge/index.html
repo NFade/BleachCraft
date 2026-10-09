@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src http://127.0.0.1:* http://localhost:*; base-uri 'none'; form-action 'none'">
+<title>Reiatsu Voice Bridge</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0d1117;
+    --panel: #151b24;
+    --panel-2: #1b2330;
+    --line: #263041;
+    --text: #e6edf6;
+    --muted: #8b98ab;
+    --accent: #7cc4ff;
+    --accent-2: #b794f6;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans JP", sans-serif;
+    min-height: 100vh;
+    background: radial-gradient(1200px 500px at 50% -10%, #16233a 0%, transparent 60%), var(--bg);
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 20px; letter-spacing: .02em; font-weight: 650; }
+  h1 small { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 8px; }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 999px;
+    background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-size: 13px; white-space: nowrap;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .badge.ok .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .badge.bad .dot { background: var(--bad); }
+  .badge.ok { color: var(--text); }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+
+  .mic {
+    position: relative; width: 64px; height: 64px; flex: none; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--panel-2); color: var(--muted); display: grid; place-items: center;
+    transition: background .2s, color .2s, transform .1s;
+  }
+  .mic:active { transform: scale(.96); }
+  .mic svg { width: 26px; height: 26px; fill: currentColor; }
+  .mic::after {
+    content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid transparent; transition: border-color .2s;
+  }
+  .mic.on { background: #123a2a; color: var(--ok); }
+  .mic.on::after { border-color: rgba(74, 222, 128, .45); animation: pulse 1.8s ease-out infinite; }
+  .mic.hearing { background: #17304f; color: var(--accent); }
+  .mic.hearing::after { border-color: rgba(124, 196, 255, .8); animation: pulse .9s ease-out infinite; }
+  .mic.error { background: #3a1818; color: var(--bad); }
+  @keyframes pulse { 0% { transform: scale(.92); opacity: 1; } 100% { transform: scale(1.28); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .mic::after { animation: none !important; } }
+
+  .start {
+    appearance: none; border: 0; cursor: pointer; font: inherit; font-weight: 650; color: #07131f;
+    background: linear-gradient(135deg, var(--accent), #5aa9ff); padding: 11px 24px; border-radius: 12px;
+  }
+  .start.stop { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+  .start:focus-visible, .seg button:focus-visible, .mic:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+  .seg button {
+    appearance: none; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer;
+    padding: 7px 14px; border-radius: 9px;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #07131f; font-weight: 650; }
+  .spacer { flex: 1; }
+
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+  .heard { min-height: 3.2em; font-size: 22px; line-height: 1.35; word-break: break-word; }
+  .heard .interim { color: var(--muted); font-style: italic; }
+  .heard .final { color: var(--text); }
+  .heard .empty { color: #556072; font-size: 16px; }
+
+  .reply { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+  .kv b { display: block; font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+  .kv span { font-size: 16px; font-variant-numeric: tabular-nums; word-break: break-word; }
+  .res-ok { color: var(--ok); } .res-warn { color: var(--warn); } .res-bad { color: var(--bad); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 5px 11px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); font-size: 14px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+
+  ul.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow: auto; }
+  ul.log li { display: flex; gap: 10px; align-items: baseline; font-size: 14px; color: var(--muted); }
+  ul.log li .t { flex: 1; color: var(--text); word-break: break-word; }
+  ul.log li .r { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  form.manual { display: flex; gap: 8px; }
+  form.manual input {
+    flex: 1; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px;
+    padding: 9px 12px; font: inherit;
+  }
+  form.manual button {
+    appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); border-radius: 10px;
+    padding: 9px 16px; font: inherit; cursor: pointer;
+  }
+  .banner { border: 1px solid #5b4514; background: #2a2210; color: #f3d98a; border-radius: var(--radius); padding: 12px 16px; display: none; }
+  .banner.show { display: block; }
+  footer { color: #5f6b7d; font-size: 12px; }
+  details summary { cursor: pointer; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Reiatsu Voice Bridge <small>zanpakuto by voice</small></h1>
+    <div class="badges">
+      <span class="badge" id="gameBadge"><span class="dot"></span><span id="gameText">game: checking</span></span>
+      <span class="badge" id="stateBadge" hidden><span class="dot"></span><span id="stateText"></span></span>
+    </div>
+  </header>
+
+  <div class="banner" id="unsupported">
+    This browser has no speech recognition. Open this page in Chrome or Edge (Firefox does not support it).
+  </div>
+  <div class="banner" id="micError"></div>
+
+  <section class="card controls" aria-label="Controls">
+    <button class="mic" id="mic" type="button" aria-label="Microphone state" tabindex="-1">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+    </button>
+    <button class="start" id="toggle" type="button">Start</button>
+    <div class="spacer"></div>
+    <div class="seg" role="group" aria-label="Language" id="langs"></div>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <div class="label">Heard</div>
+    <div class="heard" id="heard"><span class="empty">Press Start and say a phrase</span></div>
+  </section>
+
+  <section class="card">
+    <div class="label">Game reply</div>
+    <div class="reply" id="reply">
+      <div class="kv"><b>Command</b><span id="rCmd">-</span></div>
+      <div class="kv"><b>Confidence</b><span id="rConf">-</span></div>
+      <div class="kv"><b>Result</b><span id="rRes">-</span></div>
+      <div class="kv"><b>State</b><span id="rState">-</span></div>
+      <div class="kv"><b>Game latency</b><span id="rLat">-</span></div>
+      <div class="kv"><b>Round trip</b><span id="rRtt">-</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="label">You can say now</div>
+    <div class="chips" id="say"><span class="chip">connect to the game to see phrases</span></div>
+    <p class="hint">Phrases depend on your state and the sword in your main hand. Japanese, English and Russian spellings all work.</p>
+  </section>
+
+  <section class="card">
+    <div class="label">Recent</div>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <section class="card">
+    <div class="label">Type a phrase (no microphone needed)</div>
+    <form class="manual" id="manual" autocomplete="off">
+      <input id="manualText" type="text" placeholder="e.g. Chire Senbonzakura" aria-label="Phrase to send">
+      <button type="submit">Send</button>
+    </form>
+  </section>
+
+  <footer>
+    Speech recognition runs inside your browser vendor's cloud service (Chrome and Edge send the audio to it), so it needs
+    internet access. This page talks only to the game on this computer (<span id="target"></span>).
+  </footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var LANGS = ["ja-JP", "en-US", "ru-RU"];
+  var LANG_LABEL = { "ja-JP": "日本語", "en-US": "English", "ru-RU": "Русский" };
+  var params = new URLSearchParams(location.search);
+
+  // Port: ?port=NNNN, else the port this page was served from (the mod serves it), else the mod default.
+  var port = parseInt(params.get("port"), 10);
+  if (!(port >= 1024 && port <= 65535)) {
+    port = (location.protocol === "http:" && location.port) ? parseInt(location.port, 10) : 47821;
+  }
+  // Served by the mod (http://127.0.0.1:PORT/): same origin. Opened as a file: talk to 127.0.0.1:PORT.
+  var servedByMod = location.protocol === "http:" && !params.get("port");
+  var base = servedByMod ? location.origin : "http://127.0.0.1:" + port;
+  document.getElementById("target").textContent = base;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  var lang = "en-US";
+  try {
+    var saved = localStorage.getItem("reiatsu.lang");
+    if (saved && LANGS.indexOf(saved) >= 0) lang = saved;
+  } catch (e) { /* storage may be blocked */ }
+  var qlang = params.get("lang");
+  if (qlang && LANGS.indexOf(qlang) >= 0) lang = qlang;
+
+  var wantOn = false;          // the user pressed Start and has not pressed Stop
+  var rec = null;
+  var utt = 0;                 // utterance counter: bumped after every final result
+  var restartTimer = null;
+  var failStreak = 0;
+  var interimInFlight = false;
+  var lastInterimSent = 0;
+
+  // ------------------------------------------------------------ UI helpers
+  function setMic(cls) {
+    var m = $("mic");
+    m.className = "mic" + (cls ? " " + cls : "");
+  }
+  function showHeard(finalText, interimText) {
+    var h = $("heard");
+    h.textContent = "";
+    if (!finalText && !interimText) {
+      var e = document.createElement("span"); e.className = "empty";
+      e.textContent = wantOn ? "Listening..." : "Press Start and say a phrase";
+      h.appendChild(e); return;
+    }
+    if (finalText) { var f = document.createElement("span"); f.className = "final"; f.textContent = finalText; h.appendChild(f); }
+    if (interimText) {
+      if (finalText) h.appendChild(document.createTextNode(" "));
+      var i = document.createElement("span"); i.className = "interim"; i.textContent = interimText; h.appendChild(i);
+    }
+  }
+  function showError(msg) {
+    var b = $("micError");
+    b.textContent = msg || "";
+    b.classList.toggle("show", !!msg);
+  }
+  function buildLangs() {
+    var box = $("langs");
+    box.textContent = "";
+    LANGS.forEach(function (l) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = LANG_LABEL[l]; b.setAttribute("aria-pressed", String(l === lang));
+      b.addEventListener("click", function () { setLang(l); });
+      box.appendChild(b);
+    });
+  }
+  function setLang(l) {
+    lang = l;
+    try { localStorage.setItem("reiatsu.lang", l); } catch (e) { /* ignore */ }
+    buildLangs();
+    if (wantOn && rec) { try { rec.abort(); } catch (e) { /* restarts from onend */ } }
+  }
+  function addLog(text, reply, rtt) {
+    var li = document.createElement("li");
+    var t = document.createElement("span"); t.className = "t"; t.textContent = text;
+    var r = document.createElement("span"); r.className = "r";
+    var cls = "";
+    if (reply && reply.matched) { cls = reply.accepted ? "res-ok" : "res-warn"; r.textContent = reply.command + " " + (reply.result || ""); }
+    else if (reply) { r.textContent = reply.reason || "-"; }
+    else { cls = "res-bad"; r.textContent = "no reply"; }
+    r.className += " " + cls;
+    li.appendChild(t); li.appendChild(r);
+    var log = $("log");
+    log.insertBefore(li, log.firstChild);
+    while (log.children.length > 12) log.removeChild(log.lastChild);
+  }
+  function showReply(reply, rtt) {
+    if (!reply) {
+      $("rCmd").textContent = "-"; $("rConf").textContent = "-"; $("rRes").textContent = "no reply"; $("rRes").className = "res-bad";
+      return;
+    }
+    $("rCmd").textContent = reply.command || (reply.reason || "-");
+    $("rConf").textContent = reply.confidence ? Number(reply.confidence).toFixed(2) : "-";
+    var res = reply.matched ? (reply.result || "?") : (reply.reason || "no match");
+    var el = $("rRes"); el.textContent = res;
+    el.className = reply.matched ? (reply.accepted ? "res-ok" : "res-warn") : "";
+    $("rState").textContent = reply.state || "-";
+    $("rLat").textContent = reply.latencyMs != null ? reply.latencyMs.toFixed(1) + " ms" : "-";
+    $("rRtt").textContent = rtt != null ? Math.round(rtt) + " ms" : "-";
+  }
+
+  // ------------------------------------------------------------ talking to the game
+  function post(text, isFinal, then) {
+    var started = performance.now();
+    var ctl = ("AbortController" in window) ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 2500) : null;
+    // text/plain keeps this a "simple" request: no CORS preflight, so no extra round trip
+    fetch(base + "/voice", {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ text: text, final: isFinal, lang: lang, utt: utt, t: Date.now() }),
+      signal: ctl ? ctl.signal : undefined,
+      cache: "no-store"
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (timer) clearTimeout(timer);
+        then(res.ok ? res.body : { matched: false, reason: (res.body && res.body.error) || "rejected" }, performance.now() - started);
+      })
+      .catch(function () { if (timer) clearTimeout(timer); then(null, null); });
+  }
+
+  function sendFinal(text) {
+    var myUtt = utt;
+    post(text, true, function (reply, rtt) {
+      showReply(reply, rtt);
+      addLog(text, reply, rtt);
+      refreshStatus();
+    });
+    utt = myUtt + 1;
+  }
+  function sendInterim(text) {
+    var now = performance.now();
+    if (interimInFlight || now - lastInterimSent < 120) return;   // interims are best effort; never queue them up
+    interimInFlight = true; lastInterimSent = now;
+    post(text, false, function (reply, rtt) {
+      interimInFlight = false;
+      if (reply && reply.matched) { showReply(reply, rtt); addLog(text + " (interim)", reply, rtt); }
+    });
+  }
+
+  // ------------------------------------------------------------ status polling
+  function refreshStatus() {
+    fetch(base + "/status", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (s) {
+      var gb = $("gameBadge");
+      if (s.world === false) {
+        gb.className = "badge bad"; $("gameText").textContent = "game: open a world";
+        $("stateBadge").hidden = true;
+        return;
+      }
+      gb.className = "badge ok"; $("gameText").textContent = "game: connected" + (s.player ? " (" + s.player + ")" : "");
+      var sb = $("stateBadge");
+      if (s.state) {
+        sb.hidden = false; sb.className = "badge ok";
+        $("stateText").textContent = s.state.toLowerCase() + (s.held && s.held !== "none" ? " / " + s.held : "");
+      } else { sb.hidden = true; }
+      var say = $("say"); say.textContent = "";
+      (s.say || []).forEach(function (c) {
+        var ch = document.createElement("span"); ch.className = "chip"; ch.textContent = c.say; say.appendChild(ch);
+      });
+      if (!say.children.length) {
+        var none = document.createElement("span"); none.className = "chip";
+        none.textContent = s.held === "none" ? "hold a zanpakuto in your main hand" : "nothing available";
+        say.appendChild(none);
+      }
+    }).catch(function () {
+      $("gameBadge").className = "badge bad"; $("gameText").textContent = "game: not reachable (port " + port + ")";
+      $("stateBadge").hidden = true;
+    });
+  }
+
+  // ------------------------------------------------------------ speech recognition
+  function startRecognition() {
+    if (!SR) return;
+    rec = new SR();
+    rec.lang = lang;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    var finalShown = "";
+
+    rec.onstart = function () { failStreak = 0; setMic("on"); showError(""); if (!finalShown) showHeard("", ""); };
+    rec.onspeechstart = function () { setMic("hearing"); };
+    rec.onspeechend = function () { setMic("on"); };
+    rec.onresult = function (ev) {
+      var interim = "";
+      for (var i = ev.resultIndex; i < ev.results.length; i++) {
+        var res = ev.results[i];
+        var text = (res[0] && res[0].transcript || "").trim();
+        if (!text) continue;
+        if (res.isFinal) {
+          finalShown = text; interim = "";
+          showHeard(finalShown, "");
+          sendFinal(text);
+        } else {
+          interim += (interim ? " " : "") + text;
+        }
+      }
+      if (interim) { setMic("hearing"); showHeard(finalShown, interim); sendInterim(interim); }
+    };
+    rec.onerror = function (ev) {
+      var e = ev.error;
+      if (e === "not-allowed" || e === "service-not-allowed") {
+        wantOn = false; setMic("error");
+        showError("The microphone is blocked. Allow it in the address bar (lock icon), then press Start again.");
+      } else if (e === "audio-capture") {
+        setMic("error"); showError("No microphone found.");
+      } else if (e === "network") {
+        setMic("error"); showError("Speech service unreachable (needs internet). Retrying...");
+      } else if (e === "language-not-supported") {
+        setMic("error"); showError("This browser has no recogniser for " + lang + ".");
+      }
+      failStreak++;
+    };
+    rec.onend = function () {
+      rec = null;
+      if (!wantOn) { setMic(""); return; }
+      // auto-restart: Chrome ends a session after silence or a few minutes; back off if it keeps failing
+      var delay = Math.min(250 * Math.pow(2, Math.max(0, failStreak - 1)), 4000);
+      restartTimer = setTimeout(function () { restartTimer = null; if (wantOn) startRecognition(); }, delay);
+    };
+    try { rec.start(); } catch (e) { showError("Could not start: " + e.message); }
+  }
+
+  function setOn(on) {
+    wantOn = on;
+    var b = $("toggle");
+    b.textContent = on ? "Stop" : "Start";
+    b.classList.toggle("stop", on);
+    if (on) {
+      showError("");
+      if (!rec && !restartTimer) startRecognition();
+    } else {
+      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
+      if (rec) { try { rec.stop(); } catch (e) { /* ignore */ } }
+      setMic("");
+      showHeard("", "");
+    }
+  }
+
+  // ------------------------------------------------------------ wiring
+  buildLangs();
+  $("toggle").addEventListener("click", function () { setOn(!wantOn); });
+  $("manual").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var v = $("manualText").value.trim();
+    if (!v) return;
+    showHeard(v, "");
+    sendFinal(v);
+    $("manualText").value = "";
+  });
+  if (!SR) {
+    $("unsupported").classList.add("show");
+    $("toggle").disabled = true;
+  }
+  refreshStatus();
+  setInterval(refreshStatus, 2500);
+  if (params.get("autostart") === "1" && SR) setOn(true);
+})();
+</script>
+</body>
+</html>
