@@ -1,0 +1,14 @@
+{
+  "model": "spike",
+  "display_model": "reiatsu_test:item/senbonzakura_display",
+  "emissive_tint": "FFFF9EC4",
+  "objects": {
+    "spike_cube":     { "diffuse": "spike_diffuse", "emissive": "spike_emissive" },
+    "spike_cube_alt": { "diffuse": "spike_alt_diffuse" }
+  },
+  "states": {
+    "sealed": { "hand": ["spike_cube"],     "other": ["spike_cube"],     "dynamic": [], "icon": "senbonzakura_sealed_icon" },
+    "shikai": { "hand": ["spike_cube_alt"], "other": ["spike_cube_alt"], "dynamic": [], "icon": "senbonzakura_shikai_icon" },
+    "bankai": { "hand": [],                 "other": ["spike_cube"],     "dynamic": [], "icon": "senbonzakura_bankai_icon" }
+  }
+}

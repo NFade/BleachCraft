@@ -43,6 +43,15 @@ loom {
 				vmArg "-Dreiatsu.spike.tune=${project.property('tune')}"
 			}
 		}
+		// Dev-only automated verification of phase 4 (state machine, server abilities, HUD, sync): gradlew runPhase4
+		phase4 {
+			client()
+			name = "Phase 4 Harness"
+			ideConfigGenerated(false)
+			vmArg "-Dreiatsu.phase4=true"
+			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
+			programArgs "--width", "1280", "--height", "720"
+		}
 	}
 }
 
@@ -80,16 +89,18 @@ java {
 	targetCompatibility = JavaVersion.VERSION_21
 }
 
-// Spike harness: make sure the first run does not stop at the accessibility onboarding screen and is silent.
+// Dev harnesses: make sure the first run does not stop at the accessibility onboarding screen and is silent.
 afterEvaluate {
-	tasks.named("runSpike") {
-		doFirst {
-			def opts = file("run/options.txt")
-			if (!opts.exists()) {
-				opts.parentFile.mkdirs()
-				opts.text = ["onboardAccessibility:false", "skipMultiplayerWarning:true", "skipRealms32bitWarning:true",
-					"tutorialStep:none", "joinedFirstServer:true", "soundCategory_master:0.0", "lang:en_us",
-					"pauseOnLostFocus:false", "enableVsync:false", "maxFps:260", "renderDistance:6"].join(System.lineSeparator()) + System.lineSeparator()
+	["runSpike", "runPhase4"].each { taskName ->
+		tasks.named(taskName) {
+			doFirst {
+				def opts = file("run/options.txt")
+				if (!opts.exists()) {
+					opts.parentFile.mkdirs()
+					opts.text = ["onboardAccessibility:false", "skipMultiplayerWarning:true", "skipRealms32bitWarning:true",
+						"tutorialStep:none", "joinedFirstServer:true", "soundCategory_master:0.0", "lang:en_us",
+						"pauseOnLostFocus:false", "enableVsync:false", "maxFps:260", "renderDistance:6"].join(System.lineSeparator()) + System.lineSeparator()
+				}
 			}
 		}
 	}
