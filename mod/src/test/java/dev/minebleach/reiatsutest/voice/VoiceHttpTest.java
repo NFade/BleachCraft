@@ -21,8 +21,9 @@ class VoiceHttpTest {
 	static final int PORT = 47999;
 
 	static final class FakeBackend implements VoiceBackend {
-		final List<VoiceMessage> messages = new ArrayList<>();
-		final List<Long> receivedAt = new ArrayList<>();
+		// handlers run on several server threads: the recording lists must be thread safe
+		final List<VoiceMessage> messages = new java.util.concurrent.CopyOnWriteArrayList<>();
+		final List<Long> receivedAt = new java.util.concurrent.CopyOnWriteArrayList<>();
 		boolean explode;
 
 		@Override
