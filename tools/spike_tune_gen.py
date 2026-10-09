@@ -155,8 +155,8 @@ sets["r4"] = c
 
 # r5: candidate final values for the real Rukia item (all views, both states, dark room), see LOG.md step B
 RUKIA_FINAL = {
-    "thirdperson_righthand": ([45, 0, 0], [0, -2, 1.75], 1.5),
-    "thirdperson_lefthand": ([45, 0, 0], [0, -2, 1.75], 1.5),
+    "thirdperson_righthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
+    "thirdperson_lefthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
     "firstperson_righthand": ([-30, 220, -6], [-3, 3, -3], 1.15),
     "firstperson_lefthand": ([-30, 220, -6], [-3, 3, -3], 1.15),
     "ground": ([90, 0, 0], [0, 3, -4.5], 0.9),
@@ -170,6 +170,16 @@ alt = dict(RUKIA_FINAL)
 alt["fixed"] = ([0, 0, -45], [-5.6, -5.6, 0], 1.6)
 c.append({"name": "r5_sealed_frame_alt", "view": "frame", "state": "sealed", "display": disp(**alt)})
 sets["r5"] = c
+
+# r6: third person roll of 180 about the blade axis (ry applies before rx), so the sori bends toward the body
+R6 = dict(RUKIA_FINAL)
+R6["thirdperson_righthand"] = ([45, 180, 0], [0, -2, 1.75], 1.5)
+R6["thirdperson_lefthand"] = ([45, 180, 0], [0, -2, 1.75], 1.5)
+c = []
+for st in ("sealed", "shikai"):
+    for v in ("side_r", "side_l", "front"):
+        c.append({"name": "r6_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**R6)})
+sets["r6"] = c
 
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]
