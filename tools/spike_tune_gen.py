@@ -218,6 +218,32 @@ for t in (1, 2, 4, 5):
     c.append({"name": "r10_swing_%d" % t, "view": "fp_swing", "state": "sealed", "swing_ticks": t, "display": disp(**RUKIA_FINAL)})
 sets["r10"] = c
 
+# b2: step B2 (Gate C scales: first person 1.20, third person 1.00); runs for either item, all three states
+B2 = {
+    "thirdperson_righthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
+    "thirdperson_lefthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
+    "firstperson_righthand": ([-30, 220, -6], [-3, 3, -3], 1.2),
+    "firstperson_lefthand": ([-30, 220, -6], [-3, 3, -3], 1.2),
+    "ground": ([90, 0, 0], [0, 3, -4.5], 0.9),
+    "fixed": ([0, 0, 45], [5.6, -5.6, 0], 1.6),
+}
+c = []
+for st in ("sealed", "shikai", "bankai"):
+    for v in ("fp", "fp_left", "side_r", "side_l", "front", "ground", "frame", "dark"):
+        c.append({"name": "b2_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**B2)})
+sets["b2"] = c
+
+# b3: dark third person (ribbon and tsuba glow), per state, plus Byakuya shikai fp with the per-state arm
+c = []
+for st in ("sealed", "shikai", "bankai"):
+    c.append({"name": "b3_%s_dark_tp" % st, "view": "dark_tp", "state": st, "display": disp(**B2)})
+for st in ("shikai",):
+    for v in ("fp", "fp_left"):
+        c.append({"name": "b3_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**B2)})
+sets["b3"] = c
+
+sets["b4"] = sets["b2"] + sets["b3"]
+
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]
     json.dump({"candidates": sets[name]}, open(out, "w"), indent=1)

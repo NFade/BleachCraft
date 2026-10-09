@@ -36,10 +36,10 @@ public final class FirstPersonHand {
 		}
 		MinecraftClient mc = MinecraftClient.getInstance();
 		BakedModel model = mc.getItemRenderer().getModel(stack, player.getWorld(), player, 0);
-		if (!(model instanceof ObjItemBakedModel obj) || obj.armPose() == null || !obj.drawsInHand(stack)) {
+		if (!(model instanceof ObjItemBakedModel obj) || obj.armPose(stack) == null || !obj.drawsInHand(stack)) {
 			return;
 		}
-		ArmPose pose = obj.armPose();
+		ArmPose pose = obj.armPose(stack);
 		Transformation tr = model.getTransformation().getTransformation(mode);
 		boolean left = mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND;
 		float mx = left ? -1f : 1f; // the left hand mirrors x and the roll of the right-hand values

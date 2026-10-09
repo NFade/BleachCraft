@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "units": "m",
+  "space": "blender_zup",
+  "empties": {
+    "grip_hand": [
+      0.0,
+      0.0,
+      0.19
+    ],
+    "tip": [
+      0.0,
+      0.086432,
+      0.978519
+    ]
+  },
+  "objects": {
+    "byakuya_sealed_sheathed": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "byakuya_sealed_drawn": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
+}

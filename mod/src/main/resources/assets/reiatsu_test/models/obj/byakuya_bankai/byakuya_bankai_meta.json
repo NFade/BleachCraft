@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "units": "m",
+  "space": "blender_zup",
+  "empties": {
+    "tip": [
+      0.0,
+      0.825996,
+      8.0
+    ]
+  },
+  "objects": {
+    "byakuya_bankai_blade": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "byakuya_bankai_blade_lod": [
+      1.5,
+      0.0,
+      0.0
+    ],
+    "byakuya_bankai_hilt_ground": [
+      3.0,
+      0.0,
+      0.0
+    ],
+    "byakuya_bankai_ripple": [
+      5.0,
+      0.0,
+      0.0
+    ],
+    "hakuteiken_blade_body": [
+      8.0,
+      0.0,
+      0.0
+    ],
+    "hakuteiken_blade_tip": [
+      8.0,
+      0.0,
+      1.0
+    ],
+    "hakuteiken_wing_l": [
+      14.0,
+      0.0,
+      1.0
+    ],
+    "hakuteiken_wing_r": [
+      14.0,
+      0.0,
+      1.0
+    ],
+    "hakuteiken_halo": [
+      14.0,
+      0.3,
+      4.2
+    ]
+  }
+}

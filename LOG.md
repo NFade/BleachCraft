@@ -377,3 +377,46 @@ First person showed only a floating blade. Now the player arm grips the hilt.
 - Screenshots (`blender/renders/rukia_inhand/`): 20 fp right sealed, 21 fp left sealed, 22 fp right shikai, 23 fp left shikai, 24 swing sealed (tick 2), 25 swing shikai.
 - Tests 92 (new: `firstPersonArmPoseParses`), runPhase4 64/64, runSpike runs to the end (the spike item has no arm pose).
 - UNVERIFIED: (1) production (non-dev) mixin remapping: the built jar contains the mixin class and json but NO refmap file (Loom generated none with the split source sets), so the Yarn names in the `@Inject` target may not resolve in a production launcher; check or add `"refmap"`/Loom `mixin` config before shipping. (2) `show_first_person_hand=false` and a slim-model skin were not screenshotted (code paths reviewed only); the harness player had one default skin. (3) Off-hand use (item in the off hand) goes through the same hook with the opposite arm, not run. (4) Mods that also replace `HeldItemRenderer#renderItem` could conflict.
+
+## 2026-10-09: Step B2 (Rukia refresh, Byakuya item, Rukia bankai, six icons)
+
+Merged `main` (Gate C re-exports) first; no conflicts. All assets re-placed with `tools/place_model_assets.py rukia_sealed rukia_shikai byakuya_sealed byakuya_shikai rukia_bankai byakuya_bankai`.
+
+### Loader and manifest additions (back compatible)
+- Object flag `"translucent": true`: the object bakes with `BlendMode.TRANSLUCENT` instead of CUTOUT (the ice blade, diffuse alpha 200; CUTOUT would draw it opaque). Emissive overlay unchanged.
+- `"chains"` + `"@name"` in `dynamic`: `{"segment", "count", "tip", "root" (Blender coords of the first hinge), "pitch"}` builds a hinged chain from ONE repeated OBJ object (`ItemManifest#dynamicSegments`, quads shifted to each hinge in `ObjItemUnbakedModel`). Rukia bankai: 7 x `rukia_bankai_ribbon_seg` + `rukia_bankai_ribbon_tip`, root (0, 0, -0.012) at the kashira, pitch 0.35 m (2.8 m total, same wave animation as shikai; 4 segments in first person/ground, none in frames).
+- Per-state arm pose: a state may carry `"arm": {...}` overriding `first_person_arm` (used for the Byakuya shikai hilt: grip lower, arm scale 0.8, so the guard and lavender wrap stay visible above the fist).
+- `ObjMeta#gripObj` returns the origin when a model has no `grip_hand` (byakuya_bankai is effect-only).
+- `ObjModelRegistry` (client): after loading, every manifest's parsed data stays addressable by `ObjModelRegistry.get("<item>")` and `localQuads("<item>", "<object>")` (quads in the object's local frame, origin = hinge/base/centre as in the meta). Objects declared in `objects` but used by no state are loaded and only kept there. Declared this way: Rukia `rukia_bankai_crystal_a..d`, `shard_a/b`, `ice_shell`; Byakuya `byakuya_shikai_petal`, `byakuya_shikai_shard`, all `byakuya_bankai_*` (blade, blade_lod, hilt_ground, ripple) and `hakuteiken_*`. A future renderer binds the atlas through the sprite id `reiatsu_test:item/<model>_diffuse` or the texture file directly.
+
+### Items
+| item / state | hand (1st, 3rd person) | ground, frame, head | arm (fp) |
+|---|---|---|---|
+| sode_no_shirayuki sealed | rukia_sealed_drawn | rukia_sealed_sheathed | yes |
+| sode_no_shirayuki shikai | rukia_shikai_blade + 10 ribbons (60 to 44 mm) | blade, ribbon 4 on ground, 0 in frame | yes |
+| sode_no_shirayuki bankai | rukia_bankai_sword (translucent) + ribbon chain | same | yes |
+| senbonzakura sealed | byakuya_sealed_drawn | byakuya_sealed_sheathed | yes |
+| senbonzakura shikai | byakuya_shikai_hilt only (no blade) | hilt | yes (per-state pose) |
+| senbonzakura bankai | nothing (empty hand, no arm) | byakuya_sealed_sheathed | no |
+Drawn vs sheathed follows the ADR table (hand = drawn, ground/fixed/head = sheathed); the Byakuya bankai ground hilt is an effect entity later (`byakuya_bankai_hilt_ground` is loadable, see above).
+
+### Display transforms (both items share them: same grip 0.19, same arm axis)
+fp [-30, 220, -6] t [-3, 3, -3] **scale 1.20** (was 1.15); tp [45, 180, 0] t [0, -2, 1.75] **scale 1.50 kept** (Gate C section 3 says 0.85 -> 1.00, but the repo already had 1.5 from the user feedback round; 1.0 looked thin on the stand, see below); ground [90, 0, 0] t [0, 3, -4.5] 0.9; fixed [0, 0, 45] t [5.6, -5.6, 0] 1.6; gui icon. Translation unchanged at the new fp scale: tsuba sits at about 0.31 of the screen height from the bottom (target 0.30 to 0.35). Arm: Rukia and Byakuya sealed pose axis [0.5, 0.4, 0.8], grip [0, -0.065, 0], scale 1.0 (the 1.2 scaled tsuka is 0.27 m, a full size fist is 0.25 m); Byakuya shikai override grip [0, -0.12, 0], scale 0.8.
+The tp 1.0 render (b2 first run) showed the blade as a 2 to 3 px line next to the 1.9 m stand; that is why 1.5 stays. Decision for the user: set 1.0 in both `_display.json` thirdperson entries if the Gate C number is wanted.
+
+### Measurements
+- Bake: sode_no_shirayuki quads 7037 (all states plus effect meshes counted once; hand/other meshes only for the states), no missing sprites, parse 320 ms cold, bake 19 ms cold, 1 to 2 ms warm.
+- Dark room (light 0, midnight): rukia_shikai fp: background 5/255, 5077 px above 25 and 1420 above 60, peak (118, 139, 156) (C1 emissive numbers 0.60 edge / 0.55 spokes / 0.45 ribbon edges, before: peak (73, 86, 95), 546 px above 60); the blade edge line is clearly visible, the tsuba ring and ribbon show in `b3_shikai_dark_tp` (419 px above 60 in third person). Rukia bankai: 2612 px above 60, peak (117, 139, 156). Rukia sealed, Byakuya sealed/shikai/bankai: no glow anywhere (checked fp and tp in the dark room), as designed (byakuya_shikai emissive only covers the unused petal).
+- 97 tests green (91 + RukiaManifestTest chain/effects tests, SenbonzakuraManifestTest 4), `runPhase4` 64/64, `runSpike` runs to the end, 0 errors.
+
+### Icons (all 6 Pillow)
+`tools/rukia_icons.py` (Rukia sealed, shikai) and the new `tools/byakuya_icons.py` (Byakuya sealed: saya + window guard; shikai: blade-less hilt with petals; bankai: planted hilt with a ring of 8 petals; Rukia bankai: ice blade with slotted bar guard, ribbon, sparkles). Colours are the palette values recorded for the atlases (LOG phase 3); the Rukia ones are sampled from the atlas PNGs. Preview `blender/renders/inhand_all/gui_icons_all6.png`. Blender renders remain a follow-up.
+
+### Screenshots
+`blender/renders/inhand_all/`: `<item>_<state>_sheet.png` (fp right and left with arm, stand side right and left, stand front, ground, frame, dark room fp and tp) and `<item>_<state>_fp_right_arm.png` for rukia and byakuya x sealed, shikai, bankai; `gui_icons_all6.png`. Harness: `-Pitem=senbonzakura|sode_no_shirayuki`, set `b4` in `tools/spike_tune_gen.py` (views `dark_tp` added, bankai copies of stands/ground/frame at +8).
+
+### Open issues / UNVERIFIED
+- The Byakuya hilt (28 cm) is small in third person and on the ground at any shared scale; a per-state display scale is not supported by the display json. The Byakuya shikai fist and Byakuya bankai pose were tuned from the Rukia values with one sweep, not on the real player.
+- Rukia bankai ribbon chain root and length (7 + tip, 2.8 m) are my choice (the bible describes 3 back chains of 10 for the player); the ribbon_root empty (0, 0.12, 0.90) is the back-ribbon anchor, not used here.
+- Translucent ice blade: sorting against the arm and other translucent layers only seen in the harness scenes; Fabulous graphics not re-checked.
+- The tp scale 1.5 versus Gate C 1.00 (above). Production refmap for the mixin still UNVERIFIED (step B).
