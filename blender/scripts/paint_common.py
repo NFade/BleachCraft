@@ -105,7 +105,7 @@ def save_emissive_rgb(arr_rgba_white_alpha, path):
 
 # ---- wrap (hishimaki) shared by sealed and shikai
 def paint_wrap(a, lace, lace_hi, lace_lo, window, window_hi, window_lo, rings=al.WRAP_RINGS, gap_px=al.WRAP_PX_PER_GAP,
-               diamond_w=al.WRAP_DIAMOND_W, crease=None):
+               diamond_w=al.WRAP_DIAMOND_W, crease=None, win=0.80, rimw=0.95):
     """a: island view (h x w x 4). Rows run top = fuchi end (ring rings-1) to bottom = kashira end (ring 0). Raised diamonds
     (windows) are centred on the odd rings 1, 3 .. 17; lacing crosses diagonally between them."""
     h, w = a.shape[:2]
@@ -120,10 +120,10 @@ def paint_wrap(a, lace, lace_hi, lace_lo, window, window_hi, window_lo, rings=al
             cx = diamond_w * (round((c + 0.5 - diamond_w / 2.0) / diamond_w)) + diamond_w / 2.0
             dx = (c + 0.5) - cx
             d = abs(dx) / (diamond_w / 2.0) + abs(dy) / gap_px
-            if d < 0.80:
+            if d < win:
                 s = dx / (diamond_w / 2.0) - dy / gap_px      # + = lower right (dy up is +)
                 col = window_hi if s < -0.25 else (window_lo if s > 0.35 else window)
-            elif d < 0.95:
+            elif d < rimw:
                 s = dx / (diamond_w / 2.0) - dy / gap_px
                 col = lace_hi if s < 0 else lace_lo
             else:

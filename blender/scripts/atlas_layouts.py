@@ -91,7 +91,35 @@ def ribbon_cell(n):
     return Isl("ribbon_%02d" % n, RIBBON_X0 + RIBBON_CELL_W * (n - 1), RIBBON_Y0, RIBBON_CELL_W, RIBBON_CELL_H)
 
 
-LAYOUTS = {"rukia_sealed": RUKIA_SEALED, "rukia_shikai": RUKIA_SHIKAI}
+# ---- byakuya_sealed (256 x 256): same structure as rukia_sealed; 11-diamond wrap (24 rings x 6 px), window-frame tsuba
+BYAKUYA_SEALED = _mk({
+    "wrap":        (2, 2, 60, 138),     # 23 gaps * 6 px, 5 diamonds around (12 px each)
+    "blade_a":     (66, 2, 8, 140),
+    "blade_b":     (76, 2, 8, 140),
+    "blade_s":     (86, 2, 4, 140),
+    "blade_e":     (92, 2, 2, 140),
+    "saya":        (98, 2, 32, 214),
+    "tsuba_front": (134, 2, 44, 72),
+    "tsuba_back":  (182, 2, 44, 72),
+    "tsuba_rim":   (134, 78, 120, 8),   # three bands: bottom chamfer / wall / top chamfer
+    "tsuba_win":   (134, 88, 12, 4),    # window inner walls (flat shade)
+    "kashira_side": (134, 96, 42, 8),
+    "kashira_cap": (180, 96, 12, 16),
+    "fuchi_side":  (134, 108, 48, 8),
+    "habaki_side": (134, 120, 34, 12),
+    "habaki_top":  (172, 120, 14, 6),
+    "koiguchi":    (134, 136, 32, 5),
+    "kojiri":      (134, 144, 32, 6),
+    "kojiri_cap":  (172, 136, 8, 10),
+})
+BYAKUYA_WRAP_RINGS = 24
+BYAKUYA_WRAP_PX_PER_GAP = 6
+BYAKUYA_WRAP_DIAMOND_W = 12
+BYAKUYA_BLADE_PX_PER_M = 200.0
+BYAKUYA_TSUBA_PX_PER_M = 740.0
+
+
+LAYOUTS = {"rukia_sealed": RUKIA_SEALED, "rukia_shikai": RUKIA_SHIKAI, "byakuya_sealed": BYAKUYA_SEALED}
 
 
 # ---- shared pure-python shapes (used by the Blender builders and the painters)
@@ -130,6 +158,30 @@ def sealed_tsuba_shapes():
         if abs(dd[0][0] - dd[-1][0]) < 1e-9 and abs(dd[0][1] - dd[-1][1]) < 1e-9:
             dd.pop()
         holes.append(dd)
+    return outline, holes
+
+
+def rounded_rect(hx, hy, r, n=4):
+    pts = []
+    for cx, cy, a0 in ((hx - r, hy - r, 0), (-hx + r, hy - r, 90), (-hx + r, -hy + r, 180), (hx - r, -hy + r, 270)):
+        for k in range(n + 1):
+            t = math.radians(a0 + 90.0 * k / n)
+            pts.append((cx + r * math.cos(t), cy + r * math.sin(t)))
+    return pts
+
+
+def byakuya_tsuba_shapes():
+    """ART_BIBLE 1.3: 56 (X) x 92 (Y) mm window frame, corner radius 5 mm (n = 4 per corner); frame bar 8, centre bar (along Y) 10,
+    transverse bar 8, hub plate 18 (X) x 40 (Y). Four stepped L windows (4 mm step at the hub); windows are clockwise holes."""
+    outline = rounded_rect(0.028, 0.046, 0.005, 4)
+    holes = []
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            pts = [(9, 4), (20, 4), (20, 38), (5, 38), (5, 20), (9, 20)]
+            pts = [(sx * x * 0.001, sy * y * 0.001) for x, y in pts]
+            if sx * sy > 0:
+                pts = pts[::-1]
+            holes.append(pts)
     return outline, holes
 
 
