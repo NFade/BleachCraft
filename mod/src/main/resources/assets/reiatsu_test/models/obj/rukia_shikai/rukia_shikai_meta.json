@@ -1,0 +1,79 @@
+{
+  "format": 1,
+  "units": "m",
+  "space": "blender_zup",
+  "empties": {
+    "grip_hand": [
+      0.0,
+      0.0,
+      0.19
+    ],
+    "ribbon_root": [
+      0.0,
+      0.0,
+      -0.01
+    ],
+    "tip": [
+      0.0,
+      0.037978,
+      1.035491
+    ]
+  },
+  "objects": {
+    "rukia_shikai_blade": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rukia_shikai_ribbon_01": [
+      0.0,
+      0.0,
+      -0.01
+    ],
+    "rukia_shikai_ribbon_02": [
+      0.0,
+      0.0,
+      -0.26
+    ],
+    "rukia_shikai_ribbon_03": [
+      0.0,
+      0.0,
+      -0.51
+    ],
+    "rukia_shikai_ribbon_04": [
+      0.0,
+      0.0,
+      -0.76
+    ],
+    "rukia_shikai_ribbon_05": [
+      0.0,
+      0.0,
+      -1.01
+    ],
+    "rukia_shikai_ribbon_06": [
+      0.0,
+      0.0,
+      -1.26
+    ],
+    "rukia_shikai_ribbon_07": [
+      0.0,
+      0.0,
+      -1.51
+    ],
+    "rukia_shikai_ribbon_08": [
+      0.0,
+      0.0,
+      -1.76
+    ],
+    "rukia_shikai_ribbon_09": [
+      0.0,
+      0.0,
+      -2.01
+    ],
+    "rukia_shikai_ribbon_10": [
+      0.0,
+      0.0,
+      -2.26
+    ]
+  }
+}

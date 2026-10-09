@@ -80,16 +80,29 @@ public final class ObjItemBakedModel implements BakedModel {
 		}
 	}
 
-	/** Chain of hinged segments waving every frame (spike step 9: proves per-frame quads in emitItemQuads). */
+	/** First person, ground and head draw only this many chain segments (ADR section 1: the full ribbon would fill the screen); fixed draws none, third person all. */
+	private static final int SHORT_CHAIN_SEGMENTS = 4;
+
+	/**
+	 * Chain of hinged segments waving every frame (spike step 9: proves per-frame quads in emitItemQuads). Each hinge
+	 * swings a small angle about the model X axis with a travelling phase lag, so a 10 segment ribbon undulates like
+	 * cloth instead of whipping (angles accumulate up the chain).
+	 */
 	private static void emitDynamic(ObjItemUnbakedModel.StateMeshes sm, RenderContext context) {
 		if (sm.dynamic.isEmpty()) {
 			return;
 		}
 		double t = System.nanoTime() / 1.0e9;
 		int n = sm.dynamic.size();
+		ModelTransformationMode mode = context.itemTransformationMode();
+		if (mode == ModelTransformationMode.FIXED) {
+			n = 0; // item frame: the 2.5 m ribbon would leave the frame
+		} else if (mode.isFirstPerson() || mode == ModelTransformationMode.GROUND || mode == ModelTransformationMode.HEAD) {
+			n = Math.min(n, SHORT_CHAIN_SEGMENTS);
+		}
 		float[] angles = new float[n];
 		for (int i = 0; i < n; i++) {
-			angles[i] = (float) (0.55 * (1 + i * 0.6) * Math.sin(2 * Math.PI * 0.7 * t - i * 0.9));
+			angles[i] = (float) ((0.10 + 0.012 * i) * Math.sin(2 * Math.PI * 0.8 * t - i * 0.75));
 		}
 		for (int i = 0; i < n; i++) {
 			final int seg = i;
@@ -106,6 +119,10 @@ public final class ObjItemBakedModel implements BakedModel {
 				return true;
 			});
 			sm.dynamic.get(i).outputTo(context.getEmitter());
+			Mesh glow = sm.dynamicGlow.get(i);
+			if (glow != null) {
+				glow.outputTo(context.getEmitter());
+			}
 			context.popTransform();
 		}
 	}

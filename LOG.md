@@ -231,3 +231,46 @@ Differences from the references and why: (1) the frames show a white wheel guard
 - Monitors: primary 2560x1440, second 1920x1080 at X 2560. `dev_monitor=3500,500`; harness log "dev window moved to monitor at 2560,0" (runPhase4 and runSpike).
 - `gradlew build test`: 87/87 tests. `runPhase4`: 64/64 CHECK PASS, RESULT ALL PASS. `runSpike`: runs to the end, BUILD SUCCESSFUL.
 - Refs re-downloaded to `refs/` (gitignored) with `tools/fetch_refs.py`: byakuya sealed 9, byakuya shikai 8, rukia bankai 12, byakuya bankai 12; sheets in `refs/sheets/`. Rukia sealed/shikai refs not fetched (models done).
+
+## 2026-10-09: Step B: rukia models in game (branch `step-b-rukia-models`, worktree `.claude/worktrees/stepb`)
+
+Placeholders of `reiatsu_test:sode_no_shirayuki` replaced by the exported models. Bankai still shows the spike cube plus strips (no model yet). Byakuya and `blender/scripts` untouched; no Blender used.
+
+### What changed
+- Assets placed with `tools/place_model_assets.py rukia_sealed rukia_shikai` (copies `blender/export/<model>/*.obj` + `_meta.json` to `assets/reiatsu_test/models/obj/<model>/`, the atlases to `textures/item/rukia_*_{diffuse,emissive}.png`). The sealed and shikai Blender models stay in their own folders, so the files are bit-identical to the export.
+- Manifest format extension (back compatible): an object may carry `"model": "<folder>"`; default is the manifest's `model`. `ItemManifest#modelOf`, `ObjModelData#metaOf`, loader reads one meta per used model. Hinges and the grip come from the object's own meta (both models have `grip_hand` 0.19).
+- `zanpakuto/sode_no_shirayuki.json`: SEALED hand = `rukia_sealed_drawn`, other (ground, frame, head) = `rukia_sealed_sheathed` (ADR table; swap `hand` to the sheathed object to hold the sheathed sword, one line). SHIKAI = `rukia_shikai_blade` + dynamic chain `rukia_shikai_ribbon_01..10` (hinges from the meta: z -0.010 - 0.25 (n-1)). BANKAI unchanged (spike). Emissive tint `FFBFE4FF`. Display json particle = `rukia_sealed_diffuse`.
+- Ribbon animation rewritten for a 10 segment cloth chain: per hinge angle `(0.10 + 0.012 i) sin(2 pi 0.8 t - 0.75 i)` rad about model X, accumulating up the chain (the spike formula whipped by up to 3.5 rad at segment 10). Visible segments: third person hand 10, first person / ground / head 4, fixed (item frame) 0. Dynamic segments now also get the emissive overlay (ribbon edge rows).
+- Tune harness: `gradlew runSpike -Pitem=sode_no_shirayuki -Ptune=<json>` (property `reiatsu.spike.item`, default `spike_item` keeps the old behaviour). Candidate fields: `view` fp, fp_left, side_r, side_l, front, ground, frame, gui, dark (sealed stone room at x 96..105, midnight) and `state` sealed | shikai. For real items the state is set with `/reiatsu state` (the server invariant would revert a hand-edited component), shikai copies of the stands, ground item and frame stand 4 blocks to the +x side, the mod HUD is hidden (`ReiatsuHud.devHidden`), non-hand views use an empty hand. `tools/spike_tune_gen.py` sets r1..r5 (r5 = final values).
+- GUI icons: `tools/rukia_icons.py` (Pillow, no Blender): sword pictogram drawn upright at 8x from colours sampled from the exported atlases, outline, rotated 45 degrees, premultiplied box filter to 32x32 with binary alpha. `tools/phase4_icons.py` now skips these two files. **Blender-rendered icons (orthographic render of the finished model, ADR section 1) are a follow-up.** Bankai icon is still the phase 4 placeholder.
+- New test `RukiaManifestTest` (4): per-object model resolution, every state object exists and parses, chain of 10 with descending hinges (segment 01 hinge 0.20 m below the grip), atlases/icons present.
+
+### Final display transforms (`models/item/sode_no_shirayuki_display.json`)
+| Mode | rotation | translation | scale |
+|---|---|---|---|
+| firstperson_right/left | [-30, 220, -6] | [-3, 3, -3] | 1.15 |
+| thirdperson_right/left | [45, 0, 0] | [0, -2, 1.75] | 1.5 |
+| ground | [90, 0, 0] (lies flat, spins about the vertical) | [0, 3, -4.5] | 0.9 |
+| fixed | [0, 0, 45] | [5.6, -5.6, 0] | 1.6 |
+| head | [0, 0, 0] | 0 | 0.6 (not tuned) |
+| gui | flat icon | 0 | 1.0 |
+
+### Relative to the spike rules (a) to (c)
+- (a) changed. The spike used a symmetric cube, so only "spine up, edge down" could be tuned. A 32 x 9 mm blade needs the FLAT toward the camera: first person ry 180 -> 220 shows the flat and the sori curve (ry 180 looks along the edge: a 3 px sliver), rx -45 -> -30 (blade up and slightly forward), small lean rz -6, scale 0.9 -> 1.15. Third person keeps ry 0 (flat visible from the side, tip up, spine up, edge down: confirmed from the armor stand side and front) but rx 25 -> 45 (blade rises up-forward instead of nearly horizontal) and scale 0.85 -> 1.5, because the 1 m katana at 0.85 looked tiny next to the 1.9 m stand. User feedback on the first r3 sheet (first person slanted off to the side, stand sword a thin sliver) is what drove these values.
+- (b) still holds: left entries equal right entries; fp left and the left stand are mirrored by the engine (checked in `02_fp_left_sealed`, `07_stand_side_left_shikai`).
+- (c) replaced: the object centre is 0.31 m above the grip for these models and the item frame draws at half size, so fixed uses scale 1.6 with translation (5.6, -5.6) and rz +45 (tip upper right like vanilla swords; rz -45 put it upper left, `r5_sealed_frame_alt`).
+- New: ground lies flat (rx 90) instead of standing; the standing 0.65 version looked like a floating stick.
+
+### Measurements
+- Bake: `sode_no_shirayuki` quads=4922 (both states, hand + other + chain), parse 86 ms warm (409 ms cold), bake 17 ms, no missing sprites.
+- Dark room (light 0, midnight, gamma 0), shikai in hand: background 5/255, glow pixels peak (73, 86, 95), about 37 percent of the tint BFE4FF (art bible 35 percent), 546 pixels above 60. Sealed: no glow, as designed. Glow is faint by design; raise the emissive map alpha in Blender if it should read stronger.
+- Frame time not re-measured (same Mesh path as the spike; 4922 quads per item stack).
+- `gradlew build test`: 91 tests (87 + 4), 0 failures. `gradlew runPhase4`: 64/64, RESULT ALL PASS. `gradlew runSpike` (default spike item, unchanged harness defaults): runs to the end, 0 errors.
+- Screenshots: `blender/renders/rukia_inhand/` (01 fp right, 02 fp left, 03 fp shikai, 04/05 stand side and front, 06 stand shikai with the 10 segment ribbon, 07 stand left hand, 08 ground, 09/10 frame, 11 dark room glow, 12 icon preview).
+
+### Open issues
+- Sealed state shows the DRAWN blade in hand (ADR table); if the intended look is the sheathed sword in hand, change `hand` in the manifest.
+- The ribbon hangs straight along the blade axis in the item frame of reference (no knowledge of gravity or motion), so in third person it reaches the ground; a player feature renderer (ADR stretch) would fix that. Ribbon thickness is 2 mm: edge-on it vanishes.
+- First person shows 4 ribbon segments only and the mod HUD overlaps the right part of the sword in default layout.
+- Icons are Pillow pictograms; bankai icon still a placeholder; Blender renders pending.
+- Third person on a real player (not only the armor stand) not screenshotted again; the stand with arm pose [-20, 0, 0] is the reference.

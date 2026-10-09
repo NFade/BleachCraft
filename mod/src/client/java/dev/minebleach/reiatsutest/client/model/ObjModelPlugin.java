@@ -73,21 +73,25 @@ public final class ObjModelPlugin {
 		try (InputStream in = manifestRes.getInputStream()) {
 			manifest = ItemManifest.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8));
 		}
-		String base = "models/obj/" + manifest.model + "/";
-		ObjMeta meta;
-		try (InputStream in = read(rm, base + manifest.model + "_meta.json")) {
-			meta = ObjMeta.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+		Map<String, ObjMeta> metas = new HashMap<>();
+		for (String object : manifest.objects.keySet()) {
+			String model = manifest.modelOf(object);
+			if (!metas.containsKey(model)) {
+				try (InputStream in = read(rm, "models/obj/" + model + "/" + model + "_meta.json")) {
+					metas.put(model, ObjMeta.parse(new String(in.readAllBytes(), StandardCharsets.UTF_8)));
+				}
+			}
 		}
 		Map<String, List<ObjGeometry.Quad>> quads = new HashMap<>();
 		int total = 0;
 		for (String object : manifest.objects.keySet()) {
-			String src = base + object + ".obj";
+			String src = "models/obj/" + manifest.modelOf(object) + "/" + object + ".obj";
 			try (InputStream in = read(rm, src)) {
 				ObjMesh mesh = ObjParser.parse(in, src);
 				for (String w : mesh.warnings) {
 					ReiatsuTest.LOGGER.warn("[spike] {}", w);
 				}
-				List<ObjGeometry.Quad> q = ObjGeometry.toModelSpace(mesh, meta, object);
+				List<ObjGeometry.Quad> q = ObjGeometry.toModelSpace(mesh, metas.get(manifest.modelOf(object)), object);
 				quads.put(object, q);
 				total += q.size();
 			}
@@ -101,7 +105,7 @@ public final class ObjModelPlugin {
 		double ms = (System.nanoTime() - t0) / 1.0e6;
 		ReiatsuTest.LOGGER.info("[spike] parsed '{}' : {} objects, {} quads, {} emissive masks in {} ms",
 				itemName, quads.size(), total, masks.size(), String.format("%.2f", ms));
-		return new ObjModelData(itemName, ReiatsuTest.id("item/" + itemName), manifest, meta, quads, masks, ms);
+		return new ObjModelData(itemName, ReiatsuTest.id("item/" + itemName), manifest, metas, quads, masks, ms);
 	}
 
 	private static InputStream read(ResourceManager rm, String path) throws IOException {

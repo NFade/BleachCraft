@@ -35,8 +35,13 @@ def icon(color, state):
     return img
 
 
+# Owned by tools/rukia_icons.py since step B (real Rukia models): do not overwrite.
+SKIP = {("sode_no_shirayuki", "sealed"), ("sode_no_shirayuki", "shikai")}
+
 for name, color in ITEMS.items():
     for state in ("sealed", "shikai", "bankai"):
+        if (name, state) in SKIP:
+            continue
         path = OUT / f"{name}_{state}_icon.png"
         icon(color, state).save(path)
         print("wrote", path)

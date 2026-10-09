@@ -39,6 +39,9 @@ loom {
 			if (project.hasProperty("glow")) {
 				vmArg "-Dreiatsu.glowNormal=${project.property('glow')}"
 			}
+			if (project.hasProperty("item")) {
+				vmArg "-Dreiatsu.spike.item=${project.property('item')}"
+			}
 			if (project.hasProperty("tune")) {
 				vmArg "-Dreiatsu.spike.tune=${project.property('tune')}"
 			}
