@@ -23,6 +23,8 @@ public final class ReiatsuHud {
 	private static final int BAR_W = 182;
 	private static final int BAR_H = 7;
 	private static final BalanceConfig CFG = BalanceConfig.defaults();
+	/** Dev only: the tune harness hides the mod HUD so in-hand screenshots are clean (vanilla F1 would hide the hand too). */
+	public static volatile boolean devHidden;
 	private static long flashUntil;
 	private static long shakeUntil;
 
@@ -43,7 +45,7 @@ public final class ReiatsuHud {
 
 	private static void render(DrawContext ctx, RenderTickCounter tick) {
 		MinecraftClient mc = MinecraftClient.getInstance();
-		if (mc.player == null || mc.options.hudHidden) {
+		if (mc.player == null || mc.options.hudHidden || devHidden) {
 			return;
 		}
 		ZanpakutoData z = ClientState.zanpakuto();

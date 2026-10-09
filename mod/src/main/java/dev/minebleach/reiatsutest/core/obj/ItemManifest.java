@@ -14,7 +14,11 @@ import java.util.Map;
  * Pure Java so it can be unit tested without Minecraft.
  */
 public final class ItemManifest {
-	public record ObjectDef(String diffuse, String emissive) {
+	/** {@code model} = the Blender model (folder under models/obj) the object comes from; null = the manifest's default. */
+	public record ObjectDef(String diffuse, String emissive, String model) {
+		public ObjectDef(String diffuse, String emissive) {
+			this(diffuse, emissive, null);
+		}
 	}
 
 	/** hand = first/third person, other = ground/fixed/head, dynamic = per-frame animated segments (hand + other). */
@@ -38,7 +42,8 @@ public final class ItemManifest {
 		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("objects").entrySet()) {
 			JsonObject o = e.getValue().getAsJsonObject();
 			m.objects.put(e.getKey(), new ObjectDef(o.get("diffuse").getAsString(),
-					o.has("emissive") ? o.get("emissive").getAsString() : null));
+					o.has("emissive") ? o.get("emissive").getAsString() : null,
+					o.has("model") ? o.get("model").getAsString() : null));
 		}
 		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("states").entrySet()) {
 			JsonObject o = e.getValue().getAsJsonObject();
@@ -46,6 +51,12 @@ public final class ItemManifest {
 					o.has("icon") ? o.get("icon").getAsString() : null));
 		}
 		return m;
+	}
+
+	/** Blender model folder of an object: its own {@code model} field, else the manifest default. */
+	public String modelOf(String object) {
+		ObjectDef d = objects.get(object);
+		return d != null && d.model() != null ? d.model() : model;
 	}
 
 	private static List<String> list(JsonObject o, String key) {

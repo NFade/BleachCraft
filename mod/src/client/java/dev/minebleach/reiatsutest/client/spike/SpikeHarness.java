@@ -45,7 +45,11 @@ import net.minecraft.world.level.LevelInfo;
  */
 public final class SpikeHarness {
 	private static final String WORLD = "reiatsu_spike";
-	private static final String SPIKE = "reiatsu_test:spike_item";
+	/** Item under test: {@code -Dreiatsu.spike.item=sode_no_shirayuki} (default: the spike item). */
+	private static final String ITEM = System.getProperty("reiatsu.spike.item", "spike_item");
+	private static final String SPIKE = "reiatsu_test:" + ITEM;
+	/** A real zanpakuto item: its release_state is owned by the server state machine (set with /reiatsu state). */
+	private static final boolean REAL = !ITEM.equals("spike_item");
 	private static final String SHIKAI = SPIKE + "[reiatsu_test:release_state=\"shikai\"]";
 	private static final String P = "[spike-harness] ";
 
@@ -401,7 +405,7 @@ public final class SpikeHarness {
 		step("edit _display.json (fp right: scale 0.9 -> 1.8, rot x -45 -> -15) and reload", 5, () -> {
 			try {
 				display[0] = FabricLoader.getInstance().getModContainer(ReiatsuTest.MOD_ID).orElseThrow()
-						.findPath("assets/reiatsu_test/models/item/spike_item_display.json").orElseThrow();
+						.findPath("assets/reiatsu_test/models/item/" + ITEM + "_display.json").orElseThrow();
 				original[0] = Files.readString(display[0]);
 				com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(original[0]).getAsJsonObject();
 				com.google.gson.JsonObject fp = root.getAsJsonObject("display").getAsJsonObject("firstperson_righthand");
@@ -531,6 +535,9 @@ public final class SpikeHarness {
 	 * {@code {"name":"..", "view":"fp|fp_left|side_r|side_l|front|ground|frame|gui", "display":{...}}}.
 	 */
 	private static void buildTuneSteps(Path file) {
+		if (REAL) {
+			dev.minebleach.reiatsutest.client.hud.ReiatsuHud.devHidden = true;
+		}
 		com.google.gson.JsonArray cands;
 		try {
 			cands = com.google.gson.JsonParser.parseString(Files.readString(file)).getAsJsonObject()
@@ -547,16 +554,19 @@ public final class SpikeHarness {
 			cmd("gamerule doDaylightCycle false", "gamerule doWeatherCycle false", "gamerule doMobSpawning false",
 					"time set noon", "weather clear", "gamemode creative @s",
 					"item replace entity @s hotbar.0 with " + SPIKE,
-					"item replace entity @s hotbar.1 with " + SHIKAI,
-					// right-profile stand (x=20), left-profile stand (x=30), front-facing stand (x=40)
-					stand(20.5, 90f), stand(30.5, 270f), stand(40.5, 180f),
+					REAL ? "gamemode creative @s" : "item replace entity @s hotbar.1 with " + SHIKAI,
+					// right-profile stand (x=20), left-profile stand (x=30), front-facing stand (x=40); +4 = shikai copies
+					stand(20.5, 90f, SPIKE), stand(30.5, 270f, SPIKE), stand(40.5, 180f, SPIKE),
+					stand(24.5, 90f, SHIKAI), stand(34.5, 270f, SHIKAI), stand(44.5, 180f, SHIKAI),
 					"summon minecraft:item 50.5 -59.2 2.6 {Item:{id:\"" + SPIKE + "\",count:1},NoGravity:1b,PickupDelay:32767s,Age:-32768s,Motion:[0.0,0.0,0.0]}",
-					"fill 58 -60 3 64 -57 3 minecraft:stone",
+					"summon minecraft:item 54.5 -59.2 2.6 {Item:{id:\"" + SPIKE + "\",count:1,components:{\"reiatsu_test:release_state\":\"shikai\"}},NoGravity:1b,PickupDelay:32767s,Age:-32768s,Motion:[0.0,0.0,0.0]}",
+					"fill 58 -60 3 68 -57 3 minecraft:stone",
 					"summon minecraft:item_frame 60 -59 2 {Facing:2b,Item:{id:\"" + SPIKE + "\",count:1}}",
+					"summon minecraft:item_frame 64 -59 2 {Facing:2b,Item:" + stackNbt(SHIKAI) + "}",
 					"tp @s 0.5 -60 0.5 0 0");
 			try {
 				display[0] = FabricLoader.getInstance().getModContainer(ReiatsuTest.MOD_ID).orElseThrow()
-						.findPath("assets/reiatsu_test/models/item/spike_item_display.json").orElseThrow();
+						.findPath("assets/reiatsu_test/models/item/" + ITEM + "_display.json").orElseThrow();
 				original[0] = Files.readString(display[0]);
 			} catch (Exception e) {
 				ReiatsuTest.LOGGER.error(P + "cannot locate display json", e);
@@ -566,13 +576,15 @@ public final class SpikeHarness {
 			com.google.gson.JsonObject c = el.getAsJsonObject();
 			String name = c.get("name").getAsString();
 			String view = c.get("view").getAsString();
+			boolean shikai = c.has("state") && c.get("state").getAsString().equals("shikai");
+			int dx = shikai ? 4 : 0;
 			step("tune " + name + ": write display + reload", 2, () -> {
+				if (view.equals("dark")) {
+					cmd("tp @s 100.5 -60 0.5 0 15"); // let the chunks around the dark room load during the reload
+				}
 				try {
-					com.google.gson.JsonObject root = new com.google.gson.JsonObject();
-					root.addProperty("gui_light", "front");
-					com.google.gson.JsonObject tex = new com.google.gson.JsonObject();
-					tex.addProperty("particle", "reiatsu_test:item/spike_diffuse");
-					root.add("textures", tex);
+					// keep everything of the original display json (textures, gui_light), replace only "display"
+					com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(original[0]).getAsJsonObject();
 					root.add("display", c.getAsJsonObject("display"));
 					Files.writeString(display[0], root.toString());
 				} catch (Exception e) {
@@ -581,17 +593,34 @@ public final class SpikeHarness {
 				reloadFuture = mc.reloadResources();
 			});
 			stepUntil("tune " + name + ": wait reload", 10, 20 * 60, () -> { }, SpikeHarness::reloadFinished);
-			step("tune " + name + ": view " + view, 25, () -> {
-				selectSlot(c.has("slot") ? c.get("slot").getAsInt() : 0);
+			boolean dark = view.equals("dark");
+			step("tune " + name + ": view " + view, dark ? 90 : 25, () -> {
+				cmd(dark ? "fill 96 -61 -4 105 -53 5 minecraft:stone hollow" : "time set noon", dark ? "time set midnight" : "time set noon");
+				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.equals("dark");
+				// stand/ground/frame views: empty hand (slot 8) and no HUD, so only the placed items show
+				selectSlot(!handView ? 8 : REAL ? 0 : shikai ? 1 : 0);
+				if (mc.currentScreen != null) {
+					mc.setScreen(null);
+				}
+				if (REAL && handView) {
+					cmd("reiatsu state " + (shikai ? "shikai" : "sealed") + " rukia");
+				}
+				mc.options.hudHidden = !handView; // F1 would also hide the hand
+				int wantScale = view.equals("gui") ? 4 : 0;
+				if (mc.options.getGuiScale().getValue() != wantScale) {
+					mc.options.getGuiScale().setValue(wantScale);
+					mc.onResolutionChanged();
+				}
 				mc.options.getMainArm().setValue(view.equals("fp_left") ? Arm.LEFT : Arm.RIGHT);
 				mc.options.setPerspective(Perspective.FIRST_PERSON);
 				switch (view) {
 					case "fp", "fp_left" -> view(0.5, -60, 0.5, 0, 20);
-					case "side_r" -> view(20.5, -60, 0.9, 0, 0);
-					case "side_l" -> view(30.5, -60, 0.9, 0, 0);
-					case "front" -> view(40.5, -60, 0.9, 0, 0);
-					case "ground" -> view(50.5, -60, 0.2, 0, 18);
-					case "frame" -> view(60.5, -60, 0.5, 0, 0);
+					case "dark" -> view(100.5, -60, 0.5, 0, 15);
+					case "side_r" -> view(20.5 + dx, -60, 0.9, 0, 0);
+					case "side_l" -> view(30.5 + dx, -60, 0.9, 0, 0);
+					case "front" -> view(40.5 + dx, -60, 0.9, 0, 0);
+					case "ground" -> view(50.5 + dx, -60, 0.2, 0, 18);
+					case "frame" -> view(60.5 + dx, -60, 0.5, 0, 0);
 					default -> view(0.5, -60, 0.5, 0, 20);
 				}
 			});
@@ -610,11 +639,28 @@ public final class SpikeHarness {
 	}
 
 	private static String stand(double x, float yaw) {
+		return stand(x, yaw, SPIKE);
+	}
+
+	private static String stand(double x, float yaw, String item) {
 		return String.format(java.util.Locale.ROOT,
 				"summon minecraft:armor_stand %.1f -60 3.5 {ShowArms:1b,NoGravity:1b,Rotation:[%.1ff,0.0f],"
 						+ "Pose:{RightArm:[-20.0f,0.0f,0.0f],LeftArm:[-20.0f,0.0f,0.0f]},"
-						+ "HandItems:[{id:\"" + SPIKE + "\",count:1},{id:\"" + SPIKE + "\",count:1}]}",
+						+ "HandItems:[" + stackNbt(item) + "," + stackNbt(item) + "]}",
 				x, yaw);
+	}
+
+	/** NBT of an item stack from a command item string such as {@code id[comp="v"]}. */
+	private static String stackNbt(String item) {
+		int b = item.indexOf('[');
+		if (b < 0) {
+			return "{id:\"" + item + "\",count:1}";
+		}
+		String id = item.substring(0, b);
+		String comps = item.substring(b + 1, item.length() - 1).replace("=", ":");
+		// "reiatsu_test:release_state:\"shikai\"" needs quoted keys in NBT
+		comps = comps.replace("reiatsu_test:release_state:", "\"reiatsu_test:release_state\":");
+		return "{id:\"" + id + "\",count:1,components:{" + comps + "}}";
 	}
 
 	private static void bootstrapWorld() {

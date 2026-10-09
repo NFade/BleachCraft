@@ -100,7 +100,8 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			sm.otherGlow = buildGlow(mb, def.other(), sprite, glow, quadCount);
 			for (String seg : def.dynamic()) {
 				sm.dynamic.add(buildBase(mb, List.of(seg), sprite, cutout, quadCount));
-				sm.dynamicHinges.add(data.meta().originModel(seg));
+				sm.dynamicGlow.add(buildGlow(mb, List.of(seg), sprite, glow, quadCount));
+				sm.dynamicHinges.add(data.metaOf(seg).originModel(seg));
 			}
 			if (def.icon() != null) {
 				sm.icon = buildIcon(mb, sprite.apply(def.icon()), cutout);
@@ -211,6 +212,8 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		Mesh otherGlow;
 		Mesh icon;
 		final List<Mesh> dynamic = new ArrayList<>();
+		/** Emissive overlay per dynamic segment (null entries where the segment does not glow). */
+		final List<Mesh> dynamicGlow = new ArrayList<>();
 		final List<float[]> dynamicHinges = new ArrayList<>();
 	}
 

@@ -12,8 +12,12 @@ public record ObjModelData(
 		String itemName,
 		Identifier modelId,
 		ItemManifest manifest,
-		ObjMeta meta,
+		Map<String, ObjMeta> metas,
 		Map<String, java.util.List<ObjGeometry.Quad>> quads,
 		Map<String, EmissiveMask> masks,
 		double loadMillis) {
+	/** Meta table of the Blender model the object was exported from. */
+	public ObjMeta metaOf(String object) {
+		return metas.get(manifest.modelOf(object));
+	}
 }
