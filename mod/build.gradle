@@ -24,12 +24,17 @@ loom {
 	}
 
 	runs {
+		// Dev-only: open the game window on the monitor containing this point (gradle.properties dev_monitor).
+		client {
+			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
+		}
 		// Dev-only visual verification harness (spike 2b). Not active in normal runs.
 		spike {
 			client()
 			name = "Spike Harness"
 			ideConfigGenerated(false)
 			vmArg "-Dreiatsu.spike=true"
+			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
 			programArgs "--width", "1280", "--height", "720"
 			if (project.hasProperty("glow")) {
 				vmArg "-Dreiatsu.glowNormal=${project.property('glow')}"
