@@ -181,6 +181,43 @@ for st in ("sealed", "shikai"):
         c.append({"name": "r6_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**R6)})
 sets["r6"] = c
 
+# r7: first person arm axis sweep (item model frame; blade +Y, flats +-X, edge +Z); needs the real item
+def arm(axis, roll=0, grip=(0, -0.065, 0), anchor=(0, 0, 0), scale=1.0):
+    return {"axis": list(axis), "roll": roll, "grip": list(grip), "anchor_px": list(anchor), "scale": scale}
+
+
+c = []
+for n, ax in (("xm", (-1, 0, 0)), ("xp", (1, 0, 0)), ("zm", (0, 0, -1)), ("zp", (0, 0, 1)),
+              ("a", (-0.7, 0, -0.7)), ("b", (0.7, 0, -0.7)), ("c", (-0.7, 0, 0.7)), ("d", (0.7, 0, 0.7))):
+    c.append({"name": "r7_" + n, "view": "fp", "state": "sealed", "display": disp(**RUKIA_FINAL), "arm": arm(ax)})
+sets["r7"] = c
+
+# r8: arm refinement after the axis sweep (d and zp looked right)
+c = []
+for n, kw in (("a", dict(axis=(0.7, 0.4, 0.7))), ("b", dict(axis=(0.7, 0.4, 0.7), scale=0.9)),
+              ("c", dict(axis=(0.6, 0.5, 0.6), scale=0.9, grip=(0, -0.08, 0))),
+              ("d", dict(axis=(0.5, 0.3, 0.8), scale=0.9)),
+              ("e", dict(axis=(0.7, 0.4, 0.7), scale=0.9, roll=30)), ("f", dict(axis=(0.7, 0.4, 0.7), scale=0.9, roll=-30)),
+              ("g", dict(axis=(0.7, 0.4, 0.7), scale=0.9, grip=(0, -0.03, 0))),
+              ("h", dict(axis=(0.7, 0.2, 0.7), scale=0.8, grip=(0, -0.05, 0)))):
+    ax = kw.pop("axis")
+    c.append({"name": "r8_" + n, "view": "fp", "state": "sealed", "display": disp(**RUKIA_FINAL), "arm": arm(ax, **kw)})
+sets["r8"] = c
+
+# r9: final check of the arm pose in the manifest: both hands, both states, a swing, and the third person unchanged
+c = []
+for st in ("sealed", "shikai"):
+    for v in ("fp", "fp_left"):
+        c.append({"name": "r9_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**RUKIA_FINAL)})
+c.append({"name": "r9_sealed_swing", "view": "fp_swing", "state": "sealed", "display": disp(**RUKIA_FINAL)})
+c.append({"name": "r9_shikai_swing", "view": "fp_swing", "state": "shikai", "display": disp(**RUKIA_FINAL)})
+sets["r9"] = c
+
+c = []
+for t in (1, 2, 4, 5):
+    c.append({"name": "r10_swing_%d" % t, "view": "fp_swing", "state": "sealed", "swing_ticks": t, "display": disp(**RUKIA_FINAL)})
+sets["r10"] = c
+
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]
     json.dump({"candidates": sets[name]}, open(out, "w"), indent=1)

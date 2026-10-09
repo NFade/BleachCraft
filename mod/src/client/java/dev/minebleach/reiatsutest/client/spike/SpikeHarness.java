@@ -548,6 +548,8 @@ public final class SpikeHarness {
 		}
 		Path[] display = new Path[1];
 		String[] original = new String[1];
+		Path[] manifest = new Path[1];
+		String[] manifestOriginal = new String[1];
 		step("tune: bootstrap world", 2, SpikeHarness::bootstrapWorld);
 		stepUntil("tune: wait for world", 40, 20 * 120, () -> { }, SpikeHarness::worldReady);
 		step("tune: setup", 20, () -> {
@@ -568,6 +570,9 @@ public final class SpikeHarness {
 				display[0] = FabricLoader.getInstance().getModContainer(ReiatsuTest.MOD_ID).orElseThrow()
 						.findPath("assets/reiatsu_test/models/item/" + ITEM + "_display.json").orElseThrow();
 				original[0] = Files.readString(display[0]);
+				manifest[0] = FabricLoader.getInstance().getModContainer(ReiatsuTest.MOD_ID).orElseThrow()
+						.findPath("assets/reiatsu_test/zanpakuto/" + ITEM + ".json").orElseThrow();
+				manifestOriginal[0] = Files.readString(manifest[0]);
 			} catch (Exception e) {
 				ReiatsuTest.LOGGER.error(P + "cannot locate display json", e);
 			}
@@ -587,6 +592,13 @@ public final class SpikeHarness {
 					com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(original[0]).getAsJsonObject();
 					root.add("display", c.getAsJsonObject("display"));
 					Files.writeString(display[0], root.toString());
+					if (c.has("arm") && manifest[0] != null) { // candidate first_person_arm pose
+						com.google.gson.JsonObject mroot = com.google.gson.JsonParser.parseString(manifestOriginal[0]).getAsJsonObject();
+						mroot.add("first_person_arm", c.getAsJsonObject("arm"));
+						Files.writeString(manifest[0], mroot.toString());
+					} else if (manifest[0] != null) {
+						Files.writeString(manifest[0], manifestOriginal[0]);
+					}
 				} catch (Exception e) {
 					ReiatsuTest.LOGGER.error(P + "cannot write display json", e);
 				}
@@ -596,7 +608,7 @@ public final class SpikeHarness {
 			boolean dark = view.equals("dark");
 			step("tune " + name + ": view " + view, dark ? 90 : 25, () -> {
 				cmd(dark ? "fill 96 -61 -4 105 -53 5 minecraft:stone hollow" : "time set noon", dark ? "time set midnight" : "time set noon");
-				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.equals("dark");
+				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.equals("dark") || view.equals("fp_swing");
 				// stand/ground/frame views: empty hand (slot 8) and no HUD, so only the placed items show
 				selectSlot(!handView ? 8 : REAL ? 0 : shikai ? 1 : 0);
 				if (mc.currentScreen != null) {
@@ -614,7 +626,7 @@ public final class SpikeHarness {
 				mc.options.getMainArm().setValue(view.equals("fp_left") ? Arm.LEFT : Arm.RIGHT);
 				mc.options.setPerspective(Perspective.FIRST_PERSON);
 				switch (view) {
-					case "fp", "fp_left" -> view(0.5, -60, 0.5, 0, 20);
+					case "fp", "fp_left", "fp_swing" -> view(0.5, -60, 0.5, 0, 20);
 					case "dark" -> view(100.5, -60, 0.5, 0, 15);
 					case "side_r" -> view(20.5 + dx, -60, 0.9, 0, 0);
 					case "side_l" -> view(30.5 + dx, -60, 0.9, 0, 0);
@@ -624,12 +636,18 @@ public final class SpikeHarness {
 					default -> view(0.5, -60, 0.5, 0, 20);
 				}
 			});
+			if (view.equals("fp_swing")) {
+				step("tune " + name + ": swing", c.has("swing_ticks") ? c.get("swing_ticks").getAsInt() : 3, () -> mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND));
+			}
 			step("tune " + name + ": shot", 2, () -> shot("tune_" + name));
 		}
 		step("tune: restore display json", 2, () -> {
 			try {
 				if (display[0] != null && original[0] != null) {
 					Files.writeString(display[0], original[0]);
+				}
+				if (manifest[0] != null && manifestOriginal[0] != null) {
+					Files.writeString(manifest[0], manifestOriginal[0]);
 				}
 			} catch (IOException e) {
 				ReiatsuTest.LOGGER.error(P + "cannot restore display json", e);
