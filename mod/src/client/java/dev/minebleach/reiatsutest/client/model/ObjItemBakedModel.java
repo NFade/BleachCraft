@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.model;
 
+import dev.minebleach.reiatsutest.core.obj.DrawAnimation;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ReleaseState;
 import java.util.List;
@@ -64,9 +65,24 @@ public final class ObjItemBakedModel implements BakedModel {
 	public void emitItemQuads(ItemStack stack, Supplier<Random> randomSupplier, RenderContext context) {
 		long t0 = STATS ? System.nanoTime() : 0L;
 		ReleaseState state = stack.getOrDefault(ModComponents.RELEASE_STATE, ReleaseState.SEALED);
-		ObjItemUnbakedModel.StateMeshes sm = states.byState[state.ordinal()];
 		ModelTransformationMode mode = context.itemTransformationMode();
 		QuadEmitter em = context.getEmitter();
+		float drawP = -1f;
+		if (isHandMode(mode) && states.byState[ReleaseState.SEALED.ordinal()].draw != null) {
+			drawP = DrawTracker.progress(stack); // draw / sheathe animation: the sealed sword at this progress
+			if (drawP >= 0f) {
+				state = ReleaseState.SEALED;
+			}
+		}
+		ObjItemUnbakedModel.StateMeshes sm = states.byState[state.ordinal()];
+		if (drawP >= 0f) {
+			emitDraw(sm, drawP, context);
+			if (STATS) {
+				EMIT_NANOS.addAndGet(System.nanoTime() - t0);
+				EMIT_CALLS.incrementAndGet();
+			}
+			return;
+		}
 		switch (mode) {
 			case GUI -> {
 				if (sm.icon != null) {
@@ -92,6 +108,67 @@ public final class ObjItemBakedModel implements BakedModel {
 			EMIT_NANOS.addAndGet(System.nanoTime() - t0);
 			EMIT_CALLS.incrementAndGet();
 		}
+	}
+
+	private static boolean isHandMode(ModelTransformationMode mode) {
+		return switch (mode) {
+			case GUI, GROUND, FIXED, HEAD -> false;
+			default -> true;
+		};
+	}
+
+	/**
+	 * The sealed sword at draw progress p (0 sheathed, 1 drawn): the sword (hilt + blade) only slides with the hand, the saya
+	 * swings away along the sori arc and shrinks at the end (see DrawAnimation). Per frame quad transforms, a few hundred quads.
+	 */
+	private static void emitDraw(ObjItemUnbakedModel.StateMeshes sm, float p, RenderContext context) {
+		DrawAnimation d = sm.draw;
+		float[] v = new float[3];
+		float[] n = new float[3];
+		Vector3f vv = new Vector3f();
+		context.pushTransform(q -> {
+			for (int c = 0; c < 4; c++) {
+				q.copyPos(c, vv);
+				v[0] = vv.x;
+				v[1] = vv.y;
+				v[2] = vv.z;
+				d.sword(v, p);
+				q.pos(c, v[0], v[1], v[2]);
+			}
+			return true;
+		});
+		sm.drawSword.outputTo(context.getEmitter());
+		if (sm.drawSwordGlow != null) {
+			sm.drawSwordGlow.outputTo(context.getEmitter());
+		}
+		context.popTransform();
+		if (d.sayaScale(p) <= 0.001f) {
+			return;
+		}
+		context.pushTransform(q -> {
+			for (int c = 0; c < 4; c++) {
+				q.copyPos(c, vv);
+				v[0] = vv.x;
+				v[1] = vv.y;
+				v[2] = vv.z;
+				d.saya(v, p);
+				q.pos(c, v[0], v[1], v[2]);
+				if (q.hasNormal(c)) {
+					q.copyNormal(c, vv);
+					n[0] = vv.x;
+					n[1] = vv.y;
+					n[2] = vv.z;
+					d.sayaNormal(n, p);
+					q.normal(c, n[0], n[1], n[2]);
+				}
+			}
+			return true;
+		});
+		sm.drawSaya.outputTo(context.getEmitter());
+		if (sm.drawSayaGlow != null) {
+			sm.drawSayaGlow.outputTo(context.getEmitter());
+		}
+		context.popTransform();
 	}
 
 	/** First person, ground and head draw only this many chain segments (ADR section 1: the full ribbon would fill the screen); fixed draws none, third person all. */

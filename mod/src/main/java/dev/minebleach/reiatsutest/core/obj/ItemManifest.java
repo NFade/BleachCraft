@@ -46,7 +46,18 @@ public final class ItemManifest {
 	public record ArmPose(float[] axis, float roll, float[] grip, float[] anchorPx, float scale, boolean vanilla) {
 	}
 
+	/**
+	 * Draw-from-scabbard animation of the SEALED hand mesh. {@code saya} and {@code blade} are objects of the sealed hand
+	 * list (the scabbard alone, and the sword = hilt + blade); {@code hold} = the point of the sealed model the player holds
+	 * (Blender coordinates, on the saya just above the tsuba: the model is shifted so this point sits where the shikai hilt
+	 * grip sits), {@code regrip} = fraction of the draw in which the hand slides from
+	 * {@code hold} to the hilt grip, {@code overshoot} = the saya travels this many times the clearing travel.
+	 */
+	public record DrawDef(String saya, String blade, float[] hold, float regrip, float overshoot) {
+	}
+
 	public String model;
+	public DrawDef draw; // null = no draw animation
 	public ArmPose firstPersonArm; // null = the item draws no first person arm
 	public final Map<String, Chain> chains = new LinkedHashMap<>();
 	public String displayModel;
@@ -64,6 +75,12 @@ public final class ItemManifest {
 		}
 		if (root.has("first_person_arm")) {
 			m.firstPersonArm = arm(root.getAsJsonObject("first_person_arm"));
+		}
+		if (root.has("draw")) {
+			JsonObject d = root.getAsJsonObject("draw");
+			m.draw = new DrawDef(d.get("saya").getAsString(), d.get("blade").getAsString(), vec(d, "hold", new float[3]),
+					d.has("regrip") ? d.get("regrip").getAsFloat() : 0.3f,
+					d.has("overshoot") ? d.get("overshoot").getAsFloat() : 1.12f);
 		}
 		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("objects").entrySet()) {
 			JsonObject o = e.getValue().getAsJsonObject();
