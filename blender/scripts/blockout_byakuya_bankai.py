@@ -183,6 +183,7 @@ notes = ["Required pieces only; `byakuya_bankai_senkei_sword` is not built (opti
          "No empties are specified for this model; none added."]
 deviations = [
     "Senkei sword deferred (optional per the bible and Gate A decision 7).",
+    "Giant blade bbox top is z 7.984 rather than 8.000: the kissaki tip sits 0.08 m toward the spine inside the tilted last section; the tip height can be pushed to exactly 8.0 in the detail pass.",
     "Wing shape is an interpretation: the bible gives span 6 m, 9 lobes, 150 tris and 0.8 m forward curvature but no feather layout; the fan angles (30 down to -26 degrees) and lengths are guesses to be checked against the Hakuteiken frames at Gate B.",
     "Giant blade has 142 tris (target 170, limit 300); the ring z-stations are chosen so the spline control points get rings.",
     "Hakuteiken blade tip uses 3 rings (34 tris) instead of the full 40; body 20 tris.",
