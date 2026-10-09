@@ -1,0 +1,113 @@
+{
+ "byakuya_shikai_hilt": {
+  "src_verts": 536,
+  "src_faces": 570,
+  "src_quads": 440,
+  "imp_verts": 536,
+  "imp_faces": 570,
+  "obj_lines": {
+   "v": 536,
+   "vt": 659,
+   "vn": 302,
+   "f": 570,
+   "tris": 130,
+   "quads": 440,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.862645149230957e-08,
+  "src_bbox": [
+   [
+    -0.028,
+    -0.046,
+    0.0
+   ],
+   [
+    0.028,
+    0.046,
+    0.285
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "byakuya_shikai_petal": {
+  "src_verts": 10,
+  "src_faces": 12,
+  "src_quads": 4,
+  "imp_verts": 10,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 10,
+   "vt": 8,
+   "vn": 12,
+   "f": 12,
+   "tris": 8,
+   "quads": 4,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.725290298461914e-09,
+  "src_bbox": [
+   [
+    -0.002,
+    -0.009,
+    0.0
+   ],
+   [
+    0.002,
+    0.017,
+    0.12
+   ]
+  ],
+  "meta_origin": [
+   0.2,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "byakuya_shikai_shard": {
+  "src_verts": 6,
+  "src_faces": 5,
+  "src_quads": 3,
+  "imp_verts": 6,
+  "imp_faces": 5,
+  "obj_lines": {
+   "v": 6,
+   "vt": 11,
+   "vn": 5,
+   "f": 5,
+   "tris": 2,
+   "quads": 3,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.3527612686157227e-07,
+  "src_bbox": [
+   [
+    -0.0015,
+    -0.011,
+    -0.0197
+   ],
+   [
+    0.0015,
+    0.009,
+    0.0333
+   ]
+  ],
+  "meta_origin": [
+   0.3,
+   0.0,
+   0.05
+  ],
+  "match": true
+ }
+}

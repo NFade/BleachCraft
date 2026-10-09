@@ -52,4 +52,23 @@ SPECS = {
                    dict(label="drawn, hilt and tsuba close-up", objs=["byakuya_sealed_drawn"], z0=-0.01, z1=0.33, w=320, h=320),
                    dict(label="drawn, tsuba from above (camera elevation 50 deg)", objs=["byakuya_sealed_drawn"], z0=0.19, z1=0.33, w=320, h=320, elev=50.0)],
     ),
+
+    "byakuya_shikai": dict(
+        layout=al.BYAKUYA_SHIKAI,
+        material="byakuya_shikai_atlas",
+        objects={
+            "byakuya_shikai_hilt": dict(budget=2000, target=1400, bbox_min=(-0.028, -0.046, 0.0), bbox_max=(0.028, 0.046, 0.285), tol=0.001, origin=(0, 0, 0)),
+            "byakuya_shikai_petal": dict(budget=20, target=16, bbox_min=(0.198, -0.009, 0.0), bbox_max=(0.202, 0.017, 0.120), tol=0.0006, origin=(0.20, 0, 0)),
+            "byakuya_shikai_shard": dict(budget=12, target=8, bbox_min=(0.2985, -0.011, 0.0303), bbox_max=(0.3015, 0.009, 0.0833), tol=0.0006, origin=(0.30, 0, 0.05)),
+        },
+        empties={"grip_hand": (0, 0, 0.19), "tang_tip": (0, 0, 0.285)},
+        export_objects=["byakuya_shikai_hilt", "byakuya_shikai_petal", "byakuya_shikai_shard"],
+        export_empties=["grip_hand", "tang_tip"],
+        turntable=[dict(label="hilt, full", objs=["byakuya_shikai_hilt"], z0=-0.02, z1=0.31, w=320, h=320),
+                   dict(label="hilt, tsuba and habaki close-up", objs=["byakuya_shikai_hilt"], z0=0.19, z1=0.31, w=320, h=320, cy=0.0),
+                   dict(label="hilt, tsuba from above (camera elevation 50 deg)", objs=["byakuya_shikai_hilt"], z0=0.19, z1=0.33, w=320, h=320, elev=50.0),
+                   dict(label="petal blade (0.12 m, real size), camera elevation 0", objs=["byakuya_shikai_petal"], z0=-0.006, z1=0.126, w=200, h=400, cx=0.20, cy=0.004),
+                   dict(label="petal blade from above (camera elevation 50 deg)", objs=["byakuya_shikai_petal"], z0=-0.006, z1=0.126, w=200, h=400, cx=0.20, cy=0.004, elev=50.0),
+                   dict(label="shard (0.05 m, real size)", objs=["byakuya_shikai_shard"], z0=0.025, z1=0.09, w=320, h=320, cx=0.30, cy=0.0)],
+    ),
 }

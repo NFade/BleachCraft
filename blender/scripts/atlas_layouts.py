@@ -250,3 +250,74 @@ def snowflake_shapes(r_out=0.044, r_rim=0.037, r_hub=0.018, outline_n=48, corner
                 out.append(pts[i])
         wins.append(out)
     return circle(r_out, outline_n), wins
+
+
+# ---- byakuya_shikai (256 x 256): the hilt islands keep the byakuya_sealed positions (same hilt texture, seamless swap); the blade and
+# saya islands are dropped; petal 40 x 24 cell, shard 16 x 16 cell (8 x 16 face + 6 x 16 side strips) in the freed area.
+BYAKUYA_SHIKAI = _mk({
+    "wrap":        (2, 2, 60, 138),
+    "tsuba_front": (134, 2, 44, 72),
+    "tsuba_back":  (182, 2, 44, 72),
+    "tsuba_rim":   (134, 78, 120, 8),
+    "tsuba_win":   (134, 88, 12, 4),
+    "kashira_side": (134, 96, 42, 8),
+    "kashira_cap": (180, 96, 12, 16),
+    "fuchi_side":  (134, 108, 48, 8),
+    "habaki_side": (134, 120, 34, 12),
+    "habaki_top":  (172, 120, 14, 6),
+    "petal":       (66, 2, 40, 24),     # leaf outline, length along u; +X and -X faces share the texels (mirrored UV)
+    "shard_face":  (66, 30, 8, 16),     # the two triangular end faces (shared texels)
+    "shard_side":  (76, 30, 6, 16),     # three 2 px wide strips, one per rectangular side face
+})
+LAYOUTS["byakuya_shikai"] = BYAKUYA_SHIKAI
+SHIKAI_HAB0, SHIKAI_HAB1 = 0.257, 0.285
+
+# petal (ART_BIBLE 1.4, Gate B B10): rings at z 0.042 / 0.084 as (edge y, flat y, spine y, flat half thickness x), tail apex (0,0,0), tip apex (0, 0.012, 0.120)
+PETAL_LEN = 0.120
+PETAL_RINGS = [(0.042, -0.009, 0.004, 0.017, 0.0020), (0.084, -0.003, 0.006, 0.014, 0.0015)]
+PETAL_TIP = (0.012, 0.120)
+PETAL_PX_PER_M = 317.0
+PETAL_YC = 0.004
+
+
+def petal_verts():
+    """10 vertices (x, y, z): 0 tail apex, 1-4 ring A (edge, +x flat, spine, -x flat), 5-8 ring B, 9 tip apex."""
+    v = [(0.0, 0.0, 0.0)]
+    for z, ye, yf, ys, tx in PETAL_RINGS:
+        v += [(0.0, ye, z), (tx, yf, z), (0.0, ys, z), (-tx, yf, z)]
+    v.append((0.0, PETAL_TIP[0], PETAL_TIP[1]))
+    return v
+
+
+def petal_profile(z):
+    """(edge y, flat y, spine y) of the leaf outline projected on the (z, y) plane, piecewise linear along z."""
+    pts = [(0.0, 0.0, 0.0, 0.0)] + [(r[0], r[1], r[2], r[3]) for r in PETAL_RINGS] + [(PETAL_TIP[1], PETAL_TIP[0], PETAL_TIP[0], PETAL_TIP[0])]
+    z = min(max(z, 0.0), PETAL_LEN)
+    for a, b in zip(pts, pts[1:]):
+        if a[0] <= z <= b[0]:
+            t = (z - a[0]) / (b[0] - a[0])
+            return tuple(a[i] + (b[i] - a[i]) * t for i in (1, 2, 3))
+    return pts[-1][1:]
+
+
+def petal_uv_xy(isl, z, y):
+    return isl.uv((1.0 + z * PETAL_PX_PER_M) / isl.w, 0.5 + (y - PETAL_YC) * PETAL_PX_PER_M / isl.h)
+
+
+# shard: 3-sided prism 3 mm thick; triangle in (y, z) around its centroid (bible: 50 x 20 x 3 mm splinter)
+SHARD_TRI_RAW = [(0.003, 0.025), (-0.010, -0.022), (0.010, -0.028)]
+SHARD_T = 0.003
+SHARD_PX_PER_M = 290.0
+
+
+def shard_tri():
+    cy = sum(p[0] for p in SHARD_TRI_RAW) / 3.0
+    cz = sum(p[1] for p in SHARD_TRI_RAW) / 3.0
+    return [(y - cy, z - cz) for y, z in SHARD_TRI_RAW]
+
+
+def shard_face_uv(isl, y, z):
+    t = shard_tri()
+    yc = (min(p[0] for p in t) + max(p[0] for p in t)) / 2.0
+    zc = (min(p[1] for p in t) + max(p[1] for p in t)) / 2.0
+    return isl.uv(0.5 + (y - yc) * SHARD_PX_PER_M / isl.w, 0.5 + (z - zc) * SHARD_PX_PER_M / isl.h)
