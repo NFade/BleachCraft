@@ -34,11 +34,25 @@ public final class ObjItemBakedModel implements BakedModel {
 	private final ObjItemUnbakedModel.BakedStates states;
 	private final ModelTransformation transformation;
 	private final Sprite particle;
+	private final dev.minebleach.reiatsutest.core.obj.ItemManifest.ArmPose armPose;
 
-	ObjItemBakedModel(ObjItemUnbakedModel.BakedStates states, ModelTransformation transformation, Sprite particle) {
+	ObjItemBakedModel(ObjItemUnbakedModel.BakedStates states, ModelTransformation transformation, Sprite particle,
+			dev.minebleach.reiatsutest.core.obj.ItemManifest.ArmPose armPose) {
+		this.armPose = armPose;
 		this.states = states;
 		this.transformation = transformation;
 		this.particle = particle;
+	}
+
+	/** First person arm pose from the manifest, or null. */
+	public dev.minebleach.reiatsutest.core.obj.ItemManifest.ArmPose armPose() {
+		return armPose;
+	}
+
+	/** True if the stack's state draws something in hand (bankai Byakuya draws nothing, so no arm either). */
+	public boolean drawsInHand(ItemStack stack) {
+		ReleaseState state = stack.getOrDefault(ModComponents.RELEASE_STATE, ReleaseState.SEALED);
+		return !states.byState[state.ordinal()].handEmpty;
 	}
 
 	@Override

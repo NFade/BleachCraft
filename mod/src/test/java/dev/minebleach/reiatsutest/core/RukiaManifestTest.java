@@ -76,6 +76,16 @@ class RukiaManifestTest {
 	}
 
 	@Test
+	void firstPersonArmPoseParses() throws IOException {
+		ItemManifest m = manifest();
+		assertNotNull(m.firstPersonArm);
+		assertEquals(3, m.firstPersonArm.axis().length);
+		assertEquals(0.9f, m.firstPersonArm.scale(), 1e-6f);
+		assertEquals(-0.065f, m.firstPersonArm.grip()[1], 1e-6f);
+		assertEquals(null, ItemManifest.parse(text("zanpakuto/spike_item.json")).firstPersonArm); // spike item: no arm
+	}
+
+	@Test
 	void atlasesAndIconsExist() throws IOException {
 		for (String f : List.of("textures/item/rukia_sealed_diffuse.png", "textures/item/rukia_shikai_diffuse.png",
 				"textures/item/rukia_shikai_emissive.png", "textures/item/sode_no_shirayuki_sealed_icon.png",

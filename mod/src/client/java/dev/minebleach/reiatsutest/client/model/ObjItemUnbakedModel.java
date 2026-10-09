@@ -94,6 +94,7 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 				def = man.states.get("sealed");
 			}
 			StateMeshes sm = new StateMeshes();
+			sm.handEmpty = def.hand().isEmpty();
 			sm.handBase = buildBase(mb, def.hand(), sprite, cutout, quadCount);
 			sm.handGlow = buildGlow(mb, def.hand(), sprite, glow, quadCount);
 			sm.otherBase = buildBase(mb, def.other(), sprite, cutout, quadCount);
@@ -118,7 +119,7 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		if (!missing.isEmpty()) {
 			ReiatsuTest.LOGGER.error("[spike] MISSING sprites in atlas: {}", missing);
 		}
-		return new ObjItemBakedModel(states, transformation, particle);
+		return new ObjItemBakedModel(states, transformation, particle, man.firstPersonArm);
 	}
 
 	private Mesh buildBase(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial mat, int[] count) {
@@ -206,6 +207,7 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 
 	/** Baked meshes for one release state. */
 	static final class StateMeshes {
+		boolean handEmpty;
 		Mesh handBase;
 		Mesh handGlow;
 		Mesh otherBase;

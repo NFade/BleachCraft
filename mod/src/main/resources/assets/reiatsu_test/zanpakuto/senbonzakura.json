@@ -2,6 +2,7 @@
   "model": "spike",
   "display_model": "reiatsu_test:item/senbonzakura_display",
   "emissive_tint": "FFFF9EC4",
+  "first_person_arm": { "axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.065, 0], "anchor_px": [0, 0, 0], "scale": 0.9 },
   "objects": {
     "spike_cube":     { "diffuse": "spike_diffuse", "emissive": "spike_emissive" },
     "spike_cube_alt": { "diffuse": "spike_alt_diffuse" }

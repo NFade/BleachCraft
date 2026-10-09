@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 public class ReiatsuTestClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
+		ClientOptions.load();
 		DevWindowPlacement.init();
 		ObjModelPlugin.register();
 		ClientNet.register();

@@ -25,7 +25,17 @@ public final class ItemManifest {
 	public record StateDef(List<String> hand, List<String> other, List<String> dynamic, String icon) {
 	}
 
+	/**
+	 * First person arm pose, in the item's model space (blocks, origin = grip_hand): {@code axis} = direction from the
+	 * shoulder toward the fist (the arm's long axis), {@code roll} = degrees about it, {@code grip} = where the fist centre
+	 * sits relative to the grip (blocks), {@code anchorPx} = extra shift in arm-local pixels, {@code scale} = arm size factor. Right-hand values;
+	 * the left hand mirrors x and the roll.
+	 */
+	public record ArmPose(float[] axis, float roll, float[] grip, float[] anchorPx, float scale) {
+	}
+
 	public String model;
+	public ArmPose firstPersonArm; // null = the item draws no first person arm
 	public String displayModel;
 	public int emissiveTint = 0xFFFFFFFF;
 	public final Map<String, ObjectDef> objects = new LinkedHashMap<>();
@@ -39,6 +49,11 @@ public final class ItemManifest {
 		if (root.has("emissive_tint")) {
 			m.emissiveTint = (int) Long.parseLong(root.get("emissive_tint").getAsString(), 16);
 		}
+		if (root.has("first_person_arm")) {
+			JsonObject a = root.getAsJsonObject("first_person_arm");
+			m.firstPersonArm = new ArmPose(vec(a, "axis", new float[] {-1, 0, 0}), a.has("roll") ? a.get("roll").getAsFloat() : 0f,
+					vec(a, "grip", new float[3]), vec(a, "anchor_px", new float[3]), a.has("scale") ? a.get("scale").getAsFloat() : 1f);
+		}
 		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("objects").entrySet()) {
 			JsonObject o = e.getValue().getAsJsonObject();
 			m.objects.put(e.getKey(), new ObjectDef(o.get("diffuse").getAsString(),
@@ -51,6 +66,14 @@ public final class ItemManifest {
 					o.has("icon") ? o.get("icon").getAsString() : null));
 		}
 		return m;
+	}
+
+	private static float[] vec(JsonObject o, String key, float[] def) {
+		if (!o.has(key)) {
+			return def;
+		}
+		JsonArray a = o.getAsJsonArray(key);
+		return new float[] {a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()};
 	}
 
 	/** Blender model folder of an object: its own {@code model} field, else the manifest default. */
