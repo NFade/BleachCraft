@@ -170,3 +170,45 @@ Open questions for Gate B:
 - Is the 3-way ice material split on the blade (bevel / core / deep spine) the right basis for the later UV layout, or should the blade stay a single ice colour with the layering painted in?
 - ribbon_root: its position relative to the sword origin is meaningless until the player rig is chosen; keep it as a player-space point?
 
+## byakuya_bankai
+
+Scene: `blender/scenes/byakuya_bankai.blend`. Render: `blender/renders/byakuya_bankai_blockout.png`.
+
+| object | tris (evaluated, triangulated) | bbox min (m) | bbox max (m) | size (m) | origin (m) |
+|---|---|---|---|---|---|
+| `byakuya_bankai_blade` | 142 | (-0.07, -0.275, 0.0) | (0.07, 0.8919, 7.9843) | (0.14, 1.1669, 7.9843) | (0.0, 0.0, 0.0) |
+| `byakuya_bankai_blade_lod` | 22 | (1.43, -0.275, 0.0) | (1.57, 0.8307, 7.9843) | (0.14, 1.1057, 7.9843) | (1.5, 0.0, 0.0) |
+| `byakuya_bankai_hilt_ground` | 568 | (2.972, -0.046, 0.0) | (3.028, 0.046, 0.52) | (0.056, 0.092, 0.52) | (3.0, 0.0, 0.0) |
+| `byakuya_bankai_ripple` | 32 | (4.0, -1.0, 0.02) | (6.0, 1.0, 0.02) | (2.0, 2.0, 0.0) | (5.0, 0.0, 0.0) |
+| `hakuteiken_blade_body` | 20 | (7.97, -0.15, 0.0) | (8.03, 0.15, 1.0) | (0.06, 0.3, 1.0) | (8.0, 0.0, 0.0) |
+| `hakuteiken_blade_tip` | 34 | (7.97, -0.15, 1.0) | (8.03, 0.15, 1.45) | (0.06, 0.3, 0.45) | (8.0, 0.0, 1.0) |
+| `hakuteiken_wing_l` | 45 | (14.2096, -0.8, -0.2148) | (20.0, -0.0013, 4.4641) | (5.7904, 0.7987, 4.6789) | (14.0, 0.0, 1.0) |
+| `hakuteiken_wing_r` | 45 | (8.0, -0.8, -0.2148) | (13.7904, -0.0013, 4.4641) | (5.7904, 0.7987, 4.6789) | (14.0, 0.0, 1.0) |
+| `hakuteiken_halo` | 48 | (12.9, 0.3, 3.1) | (15.1, 0.3, 5.3) | (2.2, 0.0, 2.2) | (14.0, 0.3, 4.2) |
+
+Empties: none
+
+Notes:
+- Required pieces only; `byakuya_bankai_senkei_sword` is not built (optional, only after Gate C passes). Petal/shard are reused from byakuya_shikai.
+- Scene layout (each object keeps its own origin): giant blade at the origin, LOD at x 1.5, ground hilt at x 3, ripple at x 5, Hakuteiken blade body at x 8 (z 0 to 1) with the tip sitting on it at z 1.0, wings at x 14 (shoulder root z 1.0, L extends +X, R extends -X), halo centre at (14, 0.3, 4.2).
+- Giant blade: 8.0 m, 0.55 m wide, spine thickness 0.14 m tapering to 0.06 m, sori control points (0.5, 0), (4, 0.10), (6, 0.35), (8, 0.75) smoothed with a cubic Hermite spline (tip 0.75 m toward +Y), kissaki last 0.9 m, 12 rings x 6 vertices + tip. Face materials: soil band z 0 to 0.5, light edge bevel / base flats / shade spine, glow zone z >= 6.8 (`#F2E9FF`).
+- LOD: 3 rings x 4 vertices (z 0, 4.5, 7.1) + tip, 22 tris, same origin and tip as the full blade.
+- Ground hilt: the sealed-sword hilt (shared builder) mirrored to point up over a 0.263 m habaki + blade stub, total 0.52 m, origin at the bottom of the stub (a flat cut end).
+- Ripple: 16-segment flat ring r 0.88 to 1.00 m at z 0.02 (32 tris). Hakuteiken blade body: 2 shinogi rings (20 tris incl. caps), tip: 0.45 m kissaki (34 tris). Halo: 24-segment annulus in the XZ plane (48 tris).
+- Wings: 9 feather sheets per wing (3 quads + tip triangle fan, single sided, normals +Y), longest feather 6.93 m at 30 degrees above X (horizontal reach 6.0 m), lengths decreasing 7.5 percent per feather, tips curve forward (-Y) up to 0.8 m.
+- No empties are specified for this model; none added.
+
+Deviations from the art bible:
+- Senkei sword deferred (optional per the bible and Gate A decision 7).
+- Wing shape is an interpretation: the bible gives span 6 m, 9 lobes, 150 tris and 0.8 m forward curvature but no feather layout; the fan angles (30 down to -26 degrees) and lengths are guesses to be checked against the Hakuteiken frames at Gate B.
+- Giant blade has 142 tris (target 170, limit 300); the ring z-stations are chosen so the spline control points get rings.
+- Hakuteiken blade tip uses 3 rings (34 tris) instead of the full 40; body 20 tris.
+- Ground hilt blade stub is a straight, flat-cut 32 x 10 mm blade section (the buried end).
+- Palette: the giant blade face-material split (light edge bevel, base flats, shade spine) is a blockout stand-in for the painted texture.
+
+Open questions for Gate B:
+- Wing layout: confirm fan direction (longest feather up-and-out at 30 degrees) and that +Y is 'back' with the 0.8 m curve toward -Y (forward).
+- Halo position: bible says centre 0.35 m above the head and 0.3 m behind the back; placed here at (14, 0.3, 4.2) over a wing root at z 1.0, which is only a layout convenience. Should the halo origin be defined relative to the wing root instead?
+- Giant-blade tilt: with sori 0.75 m toward +Y the tip leans over the buried axis; the in-game yaw rule (spine toward the player) is unchanged, but should the buried 0.5 m also be vertical (as built)?
+- Ripple is a single face (normal +Z); is double-sided rendering assumed in code?
+

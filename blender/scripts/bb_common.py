@@ -65,7 +65,7 @@ def link_only(o, coll):
 
 
 # ------------------------------------------------------------------ raw mesh building
-def mesh_obj(name, verts, faces, mat_names=None, face_mats=None, smooth=False):
+def mesh_obj(name, verts, faces, mat_names=None, face_mats=None, smooth=False, recalc=True):
     """Create an object from verts/faces; normals recalculated outward (closed meshes)."""
     me = bpy.data.meshes.new(name)
     bm = bmesh.new()
@@ -77,7 +77,8 @@ def mesh_obj(name, verts, faces, mat_names=None, face_mats=None, smooth=False):
             continue
         if face_mats:
             bf.material_index = face_mats[i]
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if recalc:
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(me)
     bm.free()
     for mn in (mat_names or []):
@@ -567,7 +568,7 @@ def md_section(model, stats, empties, notes, deviations, questions, extra=""):
         L.append("| `%s` | %d | %s | %s | %s | %s |" % (s["name"], s["tris"], tuple(s["bbox_min"]), tuple(s["bbox_max"]),
                                                     tuple(s["size"]), tuple(s["origin"])))
     L.append("")
-    L.append("Empties: " + "; ".join("`%s` (%s)" % (n, ", ".join("%g" % round(c, 4) for c in v)) for n, v in empties) + "\n")
+    L.append("Empties: " + ("; ".join("`%s` (%s)" % (n, ", ".join("%g" % round(c, 4) for c in v)) for n, v in empties) or "none") + "\n")
     if extra:
         L.append(extra + "\n")
     if notes:
