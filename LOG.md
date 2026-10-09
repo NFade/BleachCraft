@@ -147,3 +147,8 @@ Other facts verified from source or run:
 - Re-ran `gradlew test`: 19/19 pass. Reviewed screenshots (`blender/renders/spike/_sheet.png`): mesh visible in hands, armor stand, item frames; tip glows in dark room (Fancy + Fabulous); letters unmirrored.
 - Checkpoint 3 shown to user. Opus used: 2 of 6 (Gate A, ADR).
 - Dev runs (`runClient`, `runSpike`) open the window on the monitor containing `dev_monitor` (mod/gradle.properties, default 1260,-540 = second monitor). Verified: window at (825,-811).
+
+## 2026-10-09: Phase 3 step 1, blockouts (sonnet)
+- All 6 blockouts: `blender/scenes/<model>.blend`, `blender/scripts/blockout_<model>.py` (+ `bb_common.py`), renders `blender/renders/<model>_blockout.png`, stats `blender/renders/BLOCKOUTS.md`.
+- Deviation: the agent reported the MCP socket 127.0.0.1:9876 down and used headless `blender.exe --background --factory-startup` (Workbench renders). Orchestrator re-checked right after: MCP `get_objects_summary` OK. Headless runs are acceptable (scripts are re-runnable, still one Blender job at a time); GUI Blender via MCP preferred for `look` checks.
+- Deferred by the bible: Rukia costume set, Senkei sword (after Gate B/C).
