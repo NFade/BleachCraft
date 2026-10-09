@@ -101,3 +101,31 @@ Open questions for Gate B:
 - Sori reading (20 mm tip offset vs 80 mm chord deviation), same as rukia_sealed.
 - Tsuba windows are modelled as hard-edged L shapes; is the 4 mm hub step readable enough or should the frame get a bevel in the detail pass?
 
+## byakuya_shikai
+
+Scene: `blender/scenes/byakuya_shikai.blend`. Render: `blender/renders/byakuya_shikai_blockout.png`.
+
+| object | tris (evaluated, triangulated) | bbox min (m) | bbox max (m) | size (m) | origin (m) |
+|---|---|---|---|---|---|
+| `byakuya_shikai_hilt` | 560 | (-0.028, -0.046, 0.0) | (0.028, 0.046, 0.315) | (0.056, 0.092, 0.315) | (0.0, 0.0, 0.0) |
+| `byakuya_shikai_petal` | 16 | (0.198, -0.0122, 0.0) | (0.202, 0.0138, 0.12) | (0.004, 0.026, 0.12) | (0.2, 0.0, 0.0) |
+| `byakuya_shikai_shard` | 8 | (0.2985, -0.011, 0.0303) | (0.3015, 0.009, 0.0833) | (0.003, 0.02, 0.053) | (0.3, 0.0, 0.05) |
+
+Empties: `grip_hand` (0, 0, 0.19); `tang_tip` (0, 0, 0.315)
+
+Notes:
+- Hilt is built with the same `bb.bk_hilt()` as byakuya_sealed (kashira, tsuka, fuchi, window-frame tsuba, habaki), so dimensions and palette are identical; the blade is replaced by a 30 mm steel tang stub (5 x 10 mm, `#8E96A3`) above the habaki (z 0.285 to 0.315).
+- Petal: leaf blade 120 mm long, 26 mm wide at 40 percent, 4 mm thick flattened diamond section, 6 mm tang, 5 mm sori toward +Y, 16 tris (limit 20). Origin at the tail end (z 0), +Z along the blade, edge -Y; stored at (0.20, 0, 0) in the scene so it does not overlap the hilt.
+- Shard: 3-sided prism 50 x 20 x 3 mm, 8 tris (limit 12), origin at the centroid, stored at (0.30, 0, 0.05).
+- Petal and shard are shown at their real size; the render rows use a 1 cm ruler for them.
+
+Deviations from the art bible:
+- `tang_tip` empty at z 0.315 instead of 0.31: the 7 mm tsuba pushes habaki to z 0.257 to 0.285 (same shift as byakuya_sealed), so a 30 mm stub ends at 0.315.
+- Petal is 16 tris as a three-station spindle (tail apex, tail ring, widest ring at 40 percent, tip apex); the tip taper is a straight pyramid, no extra ring.
+- Shard is 8 tris (two triangles plus three quads), the bible's 6 would need an open mesh.
+- Tsuka z 0.014 to 0.236 (no overlapping solids), wrap diamonds not modelled; emissive petal zones not set up.
+
+Open questions for Gate B:
+- Petal spindle with only one widest ring reads as a diamond; accept 16 tris or spend the remaining 4 tris on a second taper ring for a leaf-like belly?
+- Should the shard also carry a tiny tang so it matches the petal outline (as a broken piece of one)?
+
