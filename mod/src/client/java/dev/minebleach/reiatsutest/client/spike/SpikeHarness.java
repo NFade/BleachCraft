@@ -556,7 +556,7 @@ public final class SpikeHarness {
 			cmd("gamerule doDaylightCycle false", "gamerule doWeatherCycle false", "gamerule doMobSpawning false",
 					"time set noon", "weather clear", "gamemode creative @s",
 					"item replace entity @s hotbar.0 with " + SPIKE,
-					REAL ? "gamemode creative @s" : "item replace entity @s hotbar.1 with " + SHIKAI,
+					REAL ? "item replace entity @s hotbar.2 with minecraft:iron_sword" : "item replace entity @s hotbar.1 with " + SHIKAI,
 					// stands: right profile x=20, left profile x=30, front x=40; shikai copies +4, bankai copies +8
 					stand(20.5, 90f, stackOf("sealed")), stand(30.5, 270f, stackOf("sealed")), stand(40.5, 180f, stackOf("sealed")),
 					stand(24.5, 90f, stackOf("shikai")), stand(34.5, 270f, stackOf("shikai")), stand(44.5, 180f, stackOf("shikai")),
@@ -610,9 +610,10 @@ public final class SpikeHarness {
 			boolean dark = view.startsWith("dark");
 			step("tune " + name + ": view " + view, dark ? 90 : 25, () -> {
 				cmd(dark ? "fill 96 -61 -4 105 -53 5 minecraft:stone hollow" : "time set noon", dark ? "time set midnight" : "time set noon");
-				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.startsWith("dark") || view.equals("fp_swing");
+				dev.minebleach.reiatsutest.client.model.DrawTracker.debugProgress = c.has("draw_p") ? c.get("draw_p").getAsFloat() : Float.NaN;
+				boolean handView = view.equals("fp") || view.equals("fp_left") || view.startsWith("tp_") || view.equals("gui") || view.startsWith("dark") || view.equals("fp_swing") || view.startsWith("fp_iron");
 				// stand/ground/frame views: empty hand (slot 8) and no HUD, so only the placed items show
-				selectSlot(!handView ? 8 : REAL ? 0 : shikai ? 1 : 0);
+				selectSlot(!handView ? 8 : view.startsWith("fp_iron") ? 2 : REAL ? 0 : shikai ? 1 : 0);
 				if (mc.currentScreen != null) {
 					mc.setScreen(null);
 				}
@@ -626,10 +627,11 @@ public final class SpikeHarness {
 					mc.options.getGuiScale().setValue(wantScale);
 					mc.onResolutionChanged();
 				}
-				mc.options.getMainArm().setValue(view.equals("fp_left") ? Arm.LEFT : Arm.RIGHT);
-				mc.options.setPerspective(view.equals("dark_tp") ? Perspective.THIRD_PERSON_FRONT : Perspective.FIRST_PERSON);
+				mc.options.getMainArm().setValue(view.equals("fp_left") || view.equals("fp_iron_left") ? Arm.LEFT : Arm.RIGHT);
+				mc.options.setPerspective(view.equals("dark_tp") || view.equals("tp_front") ? Perspective.THIRD_PERSON_FRONT
+						: view.equals("tp_back") ? Perspective.THIRD_PERSON_BACK : Perspective.FIRST_PERSON);
 				switch (view) {
-					case "fp", "fp_left", "fp_swing" -> view(0.5, -60, 0.5, 0, 20);
+					case "fp", "fp_left", "fp_swing", "fp_iron", "fp_iron_left", "tp_front", "tp_back" -> view(0.5, -60, 0.5, 0, 20);
 					case "dark", "dark_tp" -> view(100.5, -60, 0.5, 0, 15);
 					case "side_r" -> view(20.5 + dx, -60, 0.9, 0, 0);
 					case "side_l" -> view(30.5 + dx, -60, 0.9, 0, 0);
@@ -642,9 +644,22 @@ public final class SpikeHarness {
 			if (view.equals("fp_swing")) {
 				step("tune " + name + ": swing", c.has("swing_ticks") ? c.get("swing_ticks").getAsInt() : 3, () -> mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND));
 			}
-			step("tune " + name + ": shot", 2, () -> shot("tune_" + name));
+			if (c.has("draw_seq")) { // real time draw (or sheathe): switch the state, then frames every gap ticks
+				com.google.gson.JsonObject sq = c.getAsJsonObject("draw_seq");
+				String to = sq.get("to").getAsString();
+				int frames = sq.get("frames").getAsInt();
+				int gap = sq.has("gap") ? sq.get("gap").getAsInt() : 1;
+				step("tune " + name + ": seq switch to " + to, 3, () -> cmd("reiatsu state " + to + " " + (ITEM.equals("senbonzakura") ? "byakuya" : "rukia")));
+				for (int i = 0; i < frames; i++) {
+					final int k = i;
+					step("tune " + name + ": seq frame " + k, gap, () -> shot("tune_" + name + "_" + k));
+				}
+			} else {
+				step("tune " + name + ": shot", 2, () -> shot("tune_" + name));
+			}
 		}
 		step("tune: restore display json", 2, () -> {
+			dev.minebleach.reiatsutest.client.model.DrawTracker.debugProgress = Float.NaN;
 			try {
 				if (display[0] != null && original[0] != null) {
 					Files.writeString(display[0], original[0]);

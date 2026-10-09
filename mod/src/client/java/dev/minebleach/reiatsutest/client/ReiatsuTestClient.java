@@ -5,6 +5,7 @@ import dev.minebleach.reiatsutest.client.dev.Phase4Harness;
 import dev.minebleach.reiatsutest.client.dev.Phase5Harness;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
 import dev.minebleach.reiatsutest.client.input.ReiatsuKeys;
+import dev.minebleach.reiatsutest.client.model.DrawTracker;
 import dev.minebleach.reiatsutest.client.model.ObjModelPlugin;
 import dev.minebleach.reiatsutest.client.net.ClientNet;
 import dev.minebleach.reiatsutest.client.spike.SpikeHarness;
@@ -22,6 +23,7 @@ public class ReiatsuTestClient implements ClientModInitializer {
 		ReiatsuKeys.init();
 		ReiatsuHud.init();
 		ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(DrawTracker::tick);
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientNet.onJoin());
 		// Dev-only visual harnesses: active ONLY with -Dreiatsu.spike=true / -Dreiatsu.phase4=true (Gradle tasks
 		// runSpike / runPhase4). Normal runs never touch them.

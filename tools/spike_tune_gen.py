@@ -222,8 +222,8 @@ sets["r10"] = c
 B2 = {
     "thirdperson_righthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
     "thirdperson_lefthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
-    "firstperson_righthand": ([-30, 220, -6], [-3, 3, -3], 1.2),
-    "firstperson_lefthand": ([-30, 220, -6], [-3, 3, -3], 1.2),
+    "firstperson_righthand": ([-90.0, 78.1, 78.4], [2.14, -0.29, -5], 2.4),
+    "firstperson_lefthand": ([-90.0, 78.1, 78.4], [2.14, -0.29, -5], 2.4),
     "ground": ([90, 0, 0], [0, 3, -4.5], 0.9),
     "fixed": ([0, 0, 45], [5.6, -5.6, 0], 1.6),
 }
@@ -242,7 +242,106 @@ for st in ("shikai",):
         c.append({"name": "b3_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**B2)})
 sets["b3"] = c
 
-sets["b4"] = sets["b2"] + sets["b3"]
+# d1: final B3 part 1 capture: swing, iron sword reference
+c = []
+c.append({"name": "d1_ref_iron", "view": "fp_iron", "state": "sealed", "display": disp(**B2)})
+c.append({"name": "d1_ref_iron_left", "view": "fp_iron_left", "state": "sealed", "display": disp(**B2)})
+for st in ("sealed", "shikai"):
+    c.append({"name": "d1_%s_swing" % st, "view": "fp_swing", "state": st, "display": disp(**B2)})
+sets["d1"] = c
+sets["b4"] = sets["b2"] + sets["b3"] + sets["d1"]
+
+
+def fpd(r, t, sc):
+    d = dict(B2)
+    d["firstperson_righthand"] = (r, t, sc)
+    d["firstperson_lefthand"] = (r, t, sc)
+    return d
+
+
+import math
+
+# Hand frame of first person (x right, y up, z toward the camera). The vanilla empty-hand arm puts the fist centre at
+# F = (0.134, -0.018, -0.316) blocks = (2.14, -0.29, -5.06) display units (computed from HeldItemRenderer#renderArmHoldingItem).
+F16 = (2.14, -0.29, -5.06)
+
+
+def _norm(v):
+    l = math.sqrt(sum(x * x for x in v))
+    return [x / l for x in v]
+
+
+def _cross(a, b):
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+
+
+def euler_xyz(b, n):
+    """Display rotation [rx, ry, rz] degrees (JOML rotationXYZ = Rx Ry Rz) taking model X to the flat normal n (made
+    perpendicular to b), model Y to the blade axis b, model Z to n x b."""
+    b = _norm(b)
+    d = sum(n[i] * b[i] for i in range(3))
+    n = _norm([n[i] - d * b[i] for i in range(3)])
+    z = _cross(n, b)
+    R = [[n[0], b[0], z[0]], [n[1], b[1], z[1]], [n[2], b[2], z[2]]]
+    sb = max(-1.0, min(1.0, R[0][2]))
+    beta = math.asin(sb)
+    alpha = math.atan2(-R[1][2], R[2][2])
+    gamma = math.atan2(-R[0][1], R[0][0])
+    return [round(math.degrees(x), 1) for x in (alpha, beta, gamma)]
+
+
+def fp_pose(b, n, scale, shift=(0, 0, 0)):
+    """(rotation, translation, scale) for fpd(): pivot (model origin) at the fist F, optional extra shift in display units."""
+    return euler_xyz(b, n), [round(F16[i] + shift[i], 2) for i in range(3)], scale
+
+
+def sealed_view(name, view, state, **fpkw):
+    return {"name": name, "view": view, "state": state, "display": disp(**fpd(*fp_pose(**fpkw)))}
+
+
+sets["f0"] = [{"name": "f0_sealed_fp", "view": "fp", "state": "sealed", "display": disp(**B2)},
+              {"name": "f0_shikai_fp", "view": "fp", "state": "shikai", "display": disp(**B2)}]
+
+# g1: sealed held by the saya, blade axis b, flat normal n (toward the camera = +z)
+c = []
+for nm, b, n in (("A", (-0.30, 0.93, -0.20), (0, 0, 1)), ("B", (-0.30, 0.93, -0.20), (0, 0, -1)),
+                 ("C", (-0.45, 0.88, -0.15), (0, 0, 1)), ("D", (-0.20, 0.96, -0.15), (0, 0, 1))):
+    c.append(sealed_view("g1_" + nm, "fp", "sealed", b=b, n=n, scale=2.4))
+sets["g1"] = c
+
+# g2: tilt variants of g1_B (flat toward the camera, edge to the left), plus the vanilla iron sword for reference
+c = [{"name": "g2_iron", "view": "fp_iron", "state": "sealed", "display": disp(**B2)}]
+for nm, b, n in (("B2", (-0.20, 0.95, -0.20), (0, 0, -1)), ("B3", (-0.20, 0.90, -0.40), (0, 0, -1)),
+                 ("B4", (-0.30, 0.93, -0.20), (0.15, 0, -1)), ("B5", (-0.15, 0.96, -0.25), (0, 0, -1))):
+    c.append(sealed_view("g2_" + nm, "fp", "sealed", b=b, n=n, scale=2.4))
+c.append(sealed_view("g2_B2_shikai", "fp", "shikai", b=(-0.20, 0.95, -0.20), n=(0, 0, -1), scale=2.4))
+c.append(sealed_view("g2_B2_left", "fp_left", "sealed", b=(-0.20, 0.95, -0.20), n=(0, 0, -1), scale=2.4))
+sets["g2"] = c
+
+# g3: draw frames at fixed progress (debug override), first person and third person
+c = []
+for pr in (0.0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.0):
+    c.append({"name": "g3_fp_%02d" % round(pr * 100), "view": "fp", "state": "sealed", "draw_p": pr, "display": disp(**B2)})
+for pr in (0.0, 0.3, 0.6, 0.9):
+    c.append({"name": "g3_tp_%02d" % round(pr * 100), "view": "tp_front", "state": "sealed", "draw_p": pr, "display": disp(**B2)})
+sets["g3"] = c
+
+# g4: third person on the armor stands (side right / front), draw frames
+c = []
+for v in ("side_r", "front"):
+    for pr in (0.0, 0.3, 0.6, 0.9):
+        c.append({"name": "g4_%s_%02d" % (v, round(pr * 100)), "view": v, "state": "sealed", "draw_p": pr, "display": disp(**B2)})
+sets["g4"] = c
+
+# g5: real time draw (state switch on the server, synced attachment drives the DrawTracker) and sheathe, first person
+sets["g5"] = [
+    {"name": "g5_draw", "view": "fp", "state": "sealed", "display": disp(**B2), "draw_seq": {"to": "shikai", "frames": 12, "gap": 1}},
+    {"name": "g5_sheathe", "view": "fp", "state": "shikai", "display": disp(**B2), "draw_seq": {"to": "sealed", "frames": 12, "gap": 1}},
+]
+
+# g6: all three states still, fp right, both items (state shows the final display)
+sets["g6"] = [{"name": "g6_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**B2)}
+              for st in ("sealed", "shikai", "bankai") for v in ("fp", "fp_left", "tp_front", "tp_back")]
 
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]

@@ -2,10 +2,12 @@
   "model": "rukia_sealed",
   "display_model": "reiatsu_test:item/sode_no_shirayuki_display",
   "emissive_tint": "FFBFE4FF",
-  "first_person_arm": { "axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.065, 0], "anchor_px": [0, 0, 0], "scale": 1.0 },
+  "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
+  "draw": {"saya": "rukia_sealed_saya", "blade": "rukia_sealed_drawn", "hold": [0, 0, 0.33], "regrip": 0.3, "overshoot": 1.12},
   "objects": {
     "rukia_sealed_drawn": {"diffuse": "rukia_sealed_diffuse"},
     "rukia_sealed_sheathed": {"diffuse": "rukia_sealed_diffuse"},
+    "rukia_sealed_saya": {"diffuse": "rukia_sealed_diffuse"},
     "rukia_shikai_blade": {"model": "rukia_shikai", "diffuse": "rukia_shikai_diffuse", "emissive": "rukia_shikai_emissive"},
     "rukia_shikai_ribbon_01": {"model": "rukia_shikai", "diffuse": "rukia_shikai_diffuse", "emissive": "rukia_shikai_emissive"},
     "rukia_shikai_ribbon_02": {"model": "rukia_shikai", "diffuse": "rukia_shikai_diffuse", "emissive": "rukia_shikai_emissive"},
@@ -32,7 +34,7 @@
     "ribbon": {"segment": "rukia_bankai_ribbon_seg", "count": 7, "tip": "rukia_bankai_ribbon_tip", "root": [0, 0, -0.012], "pitch": 0.35}
   },
   "states": {
-    "sealed": {"hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_sheathed"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
+    "sealed": {"hand": ["rukia_sealed_saya", "rukia_sealed_drawn"], "other": ["rukia_sealed_sheathed"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
     "shikai": {"hand": ["rukia_shikai_blade"], "other": ["rukia_shikai_blade"], "dynamic": ["rukia_shikai_ribbon_01", "rukia_shikai_ribbon_02", "rukia_shikai_ribbon_03", "rukia_shikai_ribbon_04", "rukia_shikai_ribbon_05", "rukia_shikai_ribbon_06", "rukia_shikai_ribbon_07", "rukia_shikai_ribbon_08", "rukia_shikai_ribbon_09", "rukia_shikai_ribbon_10"], "icon": "sode_no_shirayuki_shikai_icon"},
     "bankai": {"hand": ["rukia_bankai_sword"], "other": ["rukia_bankai_sword"], "dynamic": ["@ribbon"], "icon": "sode_no_shirayuki_bankai_icon"}
   }
