@@ -82,10 +82,13 @@ class RukiaManifestTest {
 	void firstPersonArmPoseParses() throws IOException {
 		ItemManifest m = manifest();
 		assertNotNull(m.firstPersonArm);
-		assertEquals(3, m.firstPersonArm.axis().length);
-		assertEquals(1.0f, m.firstPersonArm.scale(), 1e-6f);
-		assertEquals(-0.065f, m.firstPersonArm.grip()[1], 1e-6f);
+		assertTrue(m.firstPersonArm.vanilla(), "the arm is drawn like the vanilla empty hand, not scaled with the item");
 		assertEquals(null, ItemManifest.parse(text("zanpakuto/spike_item.json")).firstPersonArm); // spike item: no arm
+		// per-state override still supported by the parser
+		ItemManifest o = ItemManifest.parse("""
+				{"model":"x","display_model":"a:b","first_person_arm":{"vanilla":true},"objects":{},"states":{"sealed":{"hand":[],"other":[],"arm":{"scale":0.5}}}}""");
+		assertEquals(0.5f, o.armPose("sealed").scale(), 1e-6f);
+		assertTrue(o.armPose("shikai").vanilla());
 	}
 
 	@Test

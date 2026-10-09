@@ -40,10 +40,10 @@ public final class ItemManifest {
 	/**
 	 * First person arm pose, in the item's model space (blocks, origin = grip_hand): {@code axis} = direction from the
 	 * shoulder toward the fist (the arm's long axis), {@code roll} = degrees about it, {@code grip} = where the fist centre
-	 * sits relative to the grip (blocks), {@code anchorPx} = extra shift in arm-local pixels, {@code scale} = arm size factor. Right-hand values;
+	 * sits relative to the grip (blocks), {@code anchorPx} = extra shift in arm-local pixels, {@code scale} = arm size factor; {@code vanilla} = ignore axis/roll/grip/scale and draw the arm exactly like the vanilla empty hand (only {@code anchorPx} nudges it). Right-hand values;
 	 * the left hand mirrors x and the roll.
 	 */
-	public record ArmPose(float[] axis, float roll, float[] grip, float[] anchorPx, float scale) {
+	public record ArmPose(float[] axis, float roll, float[] grip, float[] anchorPx, float scale, boolean vanilla) {
 	}
 
 	public String model;
@@ -91,7 +91,8 @@ public final class ItemManifest {
 
 	private static ArmPose arm(JsonObject a) {
 		return new ArmPose(vec(a, "axis", new float[] {-1, 0, 0}), a.has("roll") ? a.get("roll").getAsFloat() : 0f,
-				vec(a, "grip", new float[3]), vec(a, "anchor_px", new float[3]), a.has("scale") ? a.get("scale").getAsFloat() : 1f);
+				vec(a, "grip", new float[3]), vec(a, "anchor_px", new float[3]), a.has("scale") ? a.get("scale").getAsFloat() : 1f,
+				a.has("vanilla") && a.get("vanilla").getAsBoolean());
 	}
 
 	/** Arm pose of a state: its own {@code arm} override, else the item default (may be null = no arm). */

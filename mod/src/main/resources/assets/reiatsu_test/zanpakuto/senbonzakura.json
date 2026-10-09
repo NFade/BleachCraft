@@ -2,7 +2,7 @@
   "model": "byakuya_sealed",
   "display_model": "reiatsu_test:item/senbonzakura_display",
   "emissive_tint": "FFF9C8F6",
-  "first_person_arm": { "axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.065, 0], "anchor_px": [0, 0, 0], "scale": 1.0 },
+  "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
   "objects": {
     "byakuya_sealed_drawn": {"diffuse": "byakuya_sealed_diffuse"},
     "byakuya_sealed_sheathed": {"diffuse": "byakuya_sealed_diffuse"},
@@ -21,7 +21,7 @@
   },
   "states": {
     "sealed": {"hand": ["byakuya_sealed_drawn"], "other": ["byakuya_sealed_sheathed"], "dynamic": [], "icon": "senbonzakura_sealed_icon"},
-    "shikai": {"hand": ["byakuya_shikai_hilt"], "other": ["byakuya_shikai_hilt"], "dynamic": [], "icon": "senbonzakura_shikai_icon", "arm": {"axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.12, 0], "anchor_px": [0, 0, 0], "scale": 0.8}},
+    "shikai": {"hand": ["byakuya_shikai_hilt"], "other": ["byakuya_shikai_hilt"], "dynamic": [], "icon": "senbonzakura_shikai_icon"},
     "bankai": {"hand": [], "other": ["byakuya_sealed_sheathed"], "dynamic": [], "icon": "senbonzakura_bankai_icon"}
   }
 }

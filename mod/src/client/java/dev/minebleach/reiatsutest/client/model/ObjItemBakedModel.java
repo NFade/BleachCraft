@@ -182,7 +182,26 @@ public final class ObjItemBakedModel implements BakedModel {
 
 	@Override
 	public ModelTransformation getTransformation() {
-		return transformation;
+		float m = dev.minebleach.reiatsutest.client.ClientOptions.firstPersonScaleMultiplier;
+		if (m == 1f) {
+			return transformation;
+		}
+		if (m != scaledMult || scaled == null) { // first person scale multiplier of the client options, about the grip
+			scaled = new ModelTransformation(transformation.thirdPersonLeftHand, transformation.thirdPersonRightHand,
+					scaleBy(transformation.firstPersonLeftHand, m), scaleBy(transformation.firstPersonRightHand, m),
+					transformation.head, transformation.gui, transformation.ground, transformation.fixed);
+			scaledMult = m;
+		}
+		return scaled;
+	}
+
+	private float scaledMult = 1f;
+	private ModelTransformation scaled;
+
+	private static net.minecraft.client.render.model.json.Transformation scaleBy(
+			net.minecraft.client.render.model.json.Transformation t, float m) {
+		return new net.minecraft.client.render.model.json.Transformation(t.rotation, t.translation,
+				new org.joml.Vector3f(t.scale).mul(m));
 	}
 
 	@Override
