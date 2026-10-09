@@ -7,18 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuMath;
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuState;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import dev.minebleach.reiatsutest.core.voice.PhraseBook;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
-/** STATE_MACHINE section 6, meta tests M2 and M3 (M1 is CorePurityTest). */
+/** STATE_MACHINE section 6, meta tests M2 and M3 (M1 is CorePurityTest). M3 reads voice/phrases.json since phase 5. */
 class BalanceConfigTest {
 	@Test
 	void M2_defaultsInvariants() {
@@ -76,26 +70,24 @@ class BalanceConfigTest {
 		}
 	}
 
-	/** M3: ability command ids equal the state-gated ids of design/VOICE_PHRASES.md section 1. */
+	/**
+	 * M3: ability command ids equal the state-gated ids of the bundled phrase table (voice/phrases.json, generated from
+	 * design/VOICE_PHRASES.md by tools/gen_voice_phrases.py), with the same state and character.
+	 */
 	@Test
-	void M3_commandIdsMatchTheVoiceTable() throws IOException {
-		Path md = Paths.get("..", "design", "VOICE_PHRASES.md");
-		Assumptions.assumeTrue(Files.isRegularFile(md), "design/VOICE_PHRASES.md not reachable from " + Paths.get("").toAbsolutePath());
-		Pattern row = Pattern.compile("^\\| `([a-z_.]+)` \\| (SEALED|SHIKAI|BANKAI|SHIKAI / BANKAI) \\|");
+	void M3_commandIdsMatchThePhraseTable() {
+		PhraseBook book = PhraseBook.loadBundled();
 		Set<String> abilityIds = new HashSet<>();
 		Set<String> all = new HashSet<>();
-		for (String line : Files.readAllLines(md)) {
-			Matcher m = row.matcher(line);
-			if (!m.find()) {
-				continue;
-			}
-			String id = m.group(1);
+		for (PhraseBook.Command c : book.commands()) {
+			String id = c.id();
 			all.add(id);
 			if (!id.endsWith(".release") && !id.equals("common.seal")) {
 				abilityIds.add(id);
 				AbilityId a = AbilityId.fromCommandId(id);
-				assertNotNull(a, "table id without AbilityId: " + id);
-				assertEquals(a.requiredState.name(), m.group(2), id);
+				assertNotNull(a, "phrase table id without AbilityId: " + id);
+				assertEquals(Set.of(a.requiredState), c.states(), id);
+				assertEquals(a.character, c.item(), id);
 			}
 		}
 		Set<String> ours = new HashSet<>();
@@ -107,8 +99,12 @@ class BalanceConfigTest {
 		for (CharacterId ch : new CharacterId[] {CharacterId.RUKIA, CharacterId.BYAKUYA}) {
 			assertTrue(all.contains(CommandIds.forTransition(ch, ZanpakutoState.SHIKAI)));
 			assertTrue(all.contains(CommandIds.forTransition(ch, ZanpakutoState.BANKAI)));
+			assertEquals(Set.of(ZanpakutoState.SEALED), book.command(CommandIds.forTransition(ch, ZanpakutoState.SHIKAI)).states());
+			assertEquals(Set.of(ZanpakutoState.SHIKAI), book.command(CommandIds.forTransition(ch, ZanpakutoState.BANKAI)).states());
+			assertEquals(ch, book.command(CommandIds.forTransition(ch, ZanpakutoState.SHIKAI)).item());
 		}
 		assertTrue(all.contains(CommandIds.SEAL));
+		assertEquals(Set.of(ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command(CommandIds.SEAL).states());
 		assertEquals(14, all.size());
 	}
 }

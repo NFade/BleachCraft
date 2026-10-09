@@ -18,6 +18,12 @@ import java.util.Map;
 public final class StateMachine {
 	/** Upper bound on how many ticks one {@link #tick(int)} call walks (catch-up stays exact within it). */
 	public static final int MAX_CATCH_UP = 100;
+	/**
+	 * Sequence number of a request that the server makes on behalf of the player (the voice bridge, which has no client
+	 * counter): the stale-sequence check is skipped and the stored sequence is left alone, so key presses keep their own
+	 * ordering. Every other rule (rate limit, state, item, locks, cooldown, reiatsu) still applies.
+	 */
+	public static final int SERVER_SEQ = -1;
 
 	private final Clock clock;
 	private final BalanceConfig cfg;
@@ -415,11 +421,13 @@ public final class StateMachine {
 		if (dead || spectator) {
 			return RejectReason.DEAD_OR_SPECTATOR;
 		}
-		if (seqSeen && seq <= lastSeq) {
-			return RejectReason.STALE_SEQ;
+		if (seq != SERVER_SEQ) {
+			if (seqSeen && seq <= lastSeq) {
+				return RejectReason.STALE_SEQ;
+			}
+			seqSeen = true;
+			lastSeq = seq;
 		}
-		seqSeen = true;
-		lastSeq = seq;
 		if (!limiter.tryAcquire()) {
 			return RejectReason.RATE_LIMITED;
 		}

@@ -76,6 +76,12 @@ test {
 processResources {
 	inputs.property "version", project.version
 
+	// the voice bridge page is served by the mod itself (GET /), single source of truth is voice-bridge/index.html
+	from("../voice-bridge") {
+		include "index.html"
+		into "assets/reiatsu_test/voice"
+	}
+
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version
 	}
