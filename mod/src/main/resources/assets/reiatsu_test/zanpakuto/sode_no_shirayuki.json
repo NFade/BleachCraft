@@ -35,6 +35,7 @@
   },
   "states": {
     "sealed": {"hand": ["rukia_sealed_saya", "rukia_sealed_drawn"], "other": ["rukia_sealed_sheathed"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
+    "base": {"hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_drawn"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
     "shikai": {"hand": ["rukia_shikai_blade"], "other": ["rukia_shikai_blade"], "dynamic": ["rukia_shikai_ribbon_01", "rukia_shikai_ribbon_02", "rukia_shikai_ribbon_03", "rukia_shikai_ribbon_04", "rukia_shikai_ribbon_05", "rukia_shikai_ribbon_06", "rukia_shikai_ribbon_07", "rukia_shikai_ribbon_08", "rukia_shikai_ribbon_09", "rukia_shikai_ribbon_10"], "icon": "sode_no_shirayuki_shikai_icon"},
     "bankai": {"hand": ["rukia_bankai_sword"], "other": ["rukia_bankai_sword"], "dynamic": ["@ribbon"], "icon": "sode_no_shirayuki_bankai_icon"}
   }

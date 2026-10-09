@@ -4,6 +4,7 @@
   "item.reiatsu_test.senbonzakura": "Сэнбонзакура",
 
   "key.categories.reiatsu_test": "Reiatsu Test",
+  "key.reiatsu_test.draw": "Достать / убрать меч",
   "key.reiatsu_test.release": "Высвобождение (шикай)",
   "key.reiatsu_test.bankai": "Банкай",
   "key.reiatsu_test.seal": "Запечатать",
@@ -13,15 +14,18 @@
 
   "hud.reiatsu_test.reiatsu": "Рейацу",
   "hud.reiatsu_test.state.sealed": "Запечатан",
+  "hud.reiatsu_test.state.base": "Обнажён",
   "hud.reiatsu_test.state.shikai": "Шикай",
   "hud.reiatsu_test.state.bankai": "Банкай",
-  "hud.reiatsu_test.hint.release": "[%s] Высвободить",
+  "hud.reiatsu_test.hint.draw": "[%s] или правый клик: достать меч",
+  "hud.reiatsu_test.hint.release": "[%s] Высвободить (шикай)",
   "hud.reiatsu_test.bankai_time": "осталось %s с",
   "hud.reiatsu_test.no_ability": "-",
 
   "message.reiatsu_test.denied.state": "В этом состоянии это невозможно",
   "message.reiatsu_test.denied.item": "Возьмите нужный дзанпакто в основную руку",
   "message.reiatsu_test.denied.reiatsu": "Недостаточно рейацу",
+  "message.reiatsu_test.denied.not_drawn": "Сначала достаньте меч",
   "message.reiatsu_test.denied.cooldown": "Ещё не готово",
   "message.reiatsu_test.sealed.hand": "Дзанпакто вернулся в запечатанную форму",
   "message.reiatsu_test.voice.ready": "Голосовой мост готов: %s (открой в Chrome или Edge и нажми Старт)",

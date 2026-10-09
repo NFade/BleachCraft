@@ -24,7 +24,8 @@ class GatingTest {
 
 	@Test
 	void chireMeansDifferentThingsInDifferentStates() {
-		assertEquals("byakuya.shikai.release", fire("chire", CharacterId.BYAKUYA, ZanpakutoState.SEALED));
+		assertEquals("byakuya.shikai.release", fire("chire", CharacterId.BYAKUYA, ZanpakutoState.BASE));
+		assertNull(fire("chire", CharacterId.BYAKUYA, ZanpakutoState.SEALED), "the sword is still in the scabbard");
 		assertEquals("byakuya.bankai.scatter", fire("chire", CharacterId.BYAKUYA, ZanpakutoState.BANKAI));
 		assertNull(fire("chire", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI), "no Chire command in shikai");
 		for (ZanpakutoState st : ZanpakutoState.values()) {
@@ -54,12 +55,30 @@ class GatingTest {
 
 	@Test
 	void itemGate() {
-		assertEquals("rukia.shikai.release", fire("sode no shirayuki", CharacterId.RUKIA, ZanpakutoState.SEALED));
-		assertNull(fire("sode no shirayuki", CharacterId.BYAKUYA, ZanpakutoState.SEALED), "wrong sword in hand");
-		assertNull(fire("sode no shirayuki", CharacterId.NONE, ZanpakutoState.SEALED), "nothing in hand");
-		assertNull(fire("chire senbonzakura", CharacterId.NONE, ZanpakutoState.SEALED));
+		assertEquals("rukia.shikai.release", fire("sode no shirayuki", CharacterId.RUKIA, ZanpakutoState.BASE));
+		assertNull(fire("sode no shirayuki", CharacterId.BYAKUYA, ZanpakutoState.BASE), "wrong sword in hand");
+		assertNull(fire("sode no shirayuki", CharacterId.NONE, ZanpakutoState.BASE), "nothing in hand");
+		assertNull(fire("chire senbonzakura", CharacterId.NONE, ZanpakutoState.BASE));
 		assertNull(fire("hakuren", CharacterId.NONE, ZanpakutoState.SHIKAI));
 		assertNull(fire("attack mode", CharacterId.RUKIA, ZanpakutoState.SHIKAI));
+	}
+
+	/** B4 step 3: the shikai phrase works from the drawn base form only, never with the sword sheathed. */
+	@Test
+	void shikaiPhraseNeedsTheDrawnBaseForm() {
+		for (String phrase : new String[] {"sode no shirayuki", "mae sode no shirayuki", "shirayuki"}) {
+			assertEquals("rukia.shikai.release", fire(phrase, CharacterId.RUKIA, ZanpakutoState.BASE), phrase);
+			assertNull(fire(phrase, CharacterId.RUKIA, ZanpakutoState.SEALED), phrase + " sheathed");
+			assertNull(fire(phrase, CharacterId.RUKIA, ZanpakutoState.SHIKAI), phrase + " already released");
+			assertNull(fire(phrase, CharacterId.RUKIA, ZanpakutoState.BANKAI), phrase + " bankai");
+		}
+		for (String phrase : new String[] {"chire senbonzakura", "chire", "scatter"}) {
+			assertEquals("byakuya.shikai.release", fire(phrase, CharacterId.BYAKUYA, ZanpakutoState.BASE), phrase);
+			assertNull(fire(phrase, CharacterId.BYAKUYA, ZanpakutoState.SEALED), phrase + " sheathed");
+		}
+		// the gate explains why: the phrase is valid in another state, so the server can say "draw the sword first"
+		PhraseMatcher.Result sheathed = m.match("sode no shirayuki", GateContext.of(CharacterId.RUKIA, ZanpakutoState.SEALED, true));
+		assertFalse(sheathed.matched());
 	}
 
 	@Test
@@ -74,8 +93,9 @@ class GatingTest {
 	}
 
 	@Test
-	void sealWorksFromShikaiAndBankaiWithEitherSwordButNotFromSealed() {
+	void sealWorksFromBaseShikaiAndBankaiWithEitherSwordButNotFromSealed() {
 		for (CharacterId ch : new CharacterId[] {CharacterId.RUKIA, CharacterId.BYAKUYA}) {
+			assertEquals("common.seal", fire("seal", ch, ZanpakutoState.BASE));
 			assertEquals("common.seal", fire("seal", ch, ZanpakutoState.SHIKAI));
 			assertEquals("common.seal", fire("запечатать", ch, ZanpakutoState.BANKAI));
 			assertNull(fire("seal", ch, ZanpakutoState.SEALED));

@@ -23,7 +23,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 **Key form** = output of the normaliser defined in section 5.1 (lowercase Latin, no punctuation, no macrons, folded consonants). It is what the matcher compares. Spaces between tokens are kept in the table; the matcher also uses the compact form (spaces removed).
 
-**Gating columns:** `state` = state the player must be in (SEALED, SHIKAI, BANKAI; machine in `design/STATE_MACHINE.md`); `item` = which zanpakuto must be in the main hand (the character is derived from the held item, any visual state of it). The matcher only considers commands whose state and item match; everything else is ignored, not scored. `reiatsu` conditions (full bar for bankai) and cooldowns are checked on the server, not in the matcher: the matcher emits an intent, the server accepts or rejects it.
+**Gating columns:** `state` = state the player must be in (SEALED = sheathed, BASE = drawn base form, SHIKAI, BANKAI; machine in `design/STATE_MACHINE.md`); `item` = which zanpakuto must be in the main hand (the character is derived from the held item, any visual state of it). The matcher only considers commands whose state and item match; everything else is ignored, not scored. `reiatsu` conditions (full bar for bankai) and cooldowns are checked on the server, not in the matcher: the matcher emits an intent, the server accepts or rejects it.
 
 ## 1. Command list
 
@@ -31,26 +31,26 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 | id | state | item in hand | canonical phrase | weak | notes |
 |---|---|---|---|---|---|
-| `rukia.shikai.release` | SEALED | Rukia's zanpakuto | Mae, Sode no Shirayuki | no | SEALED to SHIKAI. Canon. |
+| `rukia.shikai.release` | BASE | Rukia's zanpakuto | Mae, Sode no Shirayuki | no | BASE to SHIKAI (the sword must be drawn first, B4 step 3). Canon. |
 | `rukia.shikai.tsukishiro` | SHIKAI | Rukia's zanpakuto | Some no mai, Tsukishiro | no | Dance 1 (ice ring + light pillar). Name canon, "dance" prefix optional. |
 | `rukia.shikai.hakuren` | SHIKAI | Rukia's zanpakuto | Tsugi no mai, Hakuren | no | Dance 2 (ice wave). Same prefix rules. |
 | `rukia.shikai.shirafune` | SHIKAI | Rukia's zanpakuto | San no mai, Shirafune | no | Dance 3 (ice blade). Same prefix rules. |
 | `rukia.bankai.release` | SHIKAI | Rukia's zanpakuto | Bankai, Hakka no Togame | no | SHIKAI to BANKAI. Server requires full reiatsu. Phrase is game-sourced (Gate A 9). |
 | `rukia.bankai.absolute_zero` | BANKAI | Rukia's zanpakuto | (mod-defined) Absolute zero | no | Active area freeze. No canon phrase exists: mod-defined. |
-| `byakuya.shikai.release` | SEALED | Byakuya's zanpakuto | Chire, Senbonzakura | no | SEALED to SHIKAI. Canon. Lone "Chire" and "Scatter" are weak (see 3). |
+| `byakuya.shikai.release` | BASE | Byakuya's zanpakuto | Chire, Senbonzakura | no | BASE to SHIKAI (the sword must be drawn first, B4 step 3). Canon. Lone "Chire" and "Scatter" are weak (see 3). |
 | `byakuya.shikai.mode_attack` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Attack mode | no | Swarm follows the aim. Mod-defined phrase. |
 | `byakuya.shikai.mode_barrier` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Barrier mode | no | Dome mode. Mod-defined phrase. |
 | `byakuya.bankai.release` | SHIKAI | Byakuya's zanpakuto | Bankai, Senbonzakura Kageyoshi | no | SHIKAI to BANKAI. Server requires full reiatsu. "Chire" never triggers it (Gate A 8). |
 | `byakuya.bankai.scatter` | BANKAI | Byakuya's zanpakuto | Chire (same word as shikai) / mod: Petal storm | no | Giant blades to petal storm. Canon word "Chire" (same word as shikai, different state) + mod aliases. |
 | `byakuya.bankai.hakuteiken` | BANKAI | Byakuya's zanpakuto | Shukei: Hakuteiken | no | Final strike. Canon name. |
 | `byakuya.bankai.senkei` | BANKAI | Byakuya's zanpakuto | Senkei | no | OPTIONAL (ART_BIBLE stretch). Build only if Senkei is built. |
-| `common.seal` | SHIKAI / BANKAI | either zanpakuto | (mod-defined) Seal | yes | Back to SEALED from SHIKAI or BANKAI. Mod-defined. Whole-utterance only. |
+| `common.seal` | BASE / SHIKAI / BANKAI | either zanpakuto | (mod-defined) Seal | yes | Back to SEALED (sheathed) from BASE, SHIKAI or BANKAI. Mod-defined. Whole-utterance only. |
 
 "weak" = the command is made of short or very common words and is accepted only when the **whole utterance** is the phrase (section 3.1). A few strong commands also carry weak lone-word variants ("Chire", "Scatter"); these are marked in their tables.
 
 ### 1.1 `rukia.shikai.release`
 
-- **Required state:** SEALED. **Item:** Rukia's zanpakuto in the main hand.
+- **Required state:** BASE. **Item:** Rukia's zanpakuto in the main hand.
 - **Canonical phrase:** Mae, Sode no Shirayuki
 - **Notes:** Release phrase 舞え (mae, "dance") + zanpakuto name. Name alone is accepted; "Mae" alone is not.
 
@@ -176,7 +176,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ### 1.7 `byakuya.shikai.release`
 
-- **Required state:** SEALED. **Item:** Byakuya's zanpakuto in the main hand.
+- **Required state:** BASE. **Item:** Byakuya's zanpakuto in the main hand.
 - **Canonical phrase:** Chire, Senbonzakura
 - **Notes:** Release word 散れ (chire, "scatter"). `ART_BIBLE` storyboard calls the shikai release "Chire". Name alone ("Senbonzakura") is **not** a trigger.
 
@@ -592,7 +592,7 @@ Totals: 160 ASR rows, 115 tier F (fuzzy reaches them), 45 tier A (alias required
 1. **Window match, not full-string match.** The matcher looks for the variant inside the utterance (extra words before or after are allowed) for every **strong** variant. "Okay now Sode no Shirayuki please" fires.
 2. **Weak variants need a whole-utterance match.** The utterance, after removing the filler words `please, now, пожалуйста, давай, ну, сейчас, お願い`, must equal the variant. Applies to every variant of `common.seal` and to the lone-word variants "Chire", "Scatter", "Чире", "散れ", "ちれ". Reason: these are short or common words ("seal", "scatter", "печать").
 3. **Names may be said without the prefix.** The ability name alone is enough: `Hakuren`, `Tsukishiro`, `Shirafune`, `Hakuteiken`, `Hakka no Togame`, `Kageyoshi`. The prefix alone ("Tsugi no mai", "Some no mai", "Mae", "Shukei", "Sode", "Senbonzakura") is **never** enough.
-4. **State/item gating happens before scoring**; a phrase for another state is not an error, it is simply ignored. This is what separates "Chire" (shikai release in SEALED, petal storm in BANKAI, ignored in SHIKAI) and "Bankai" (release in SHIKAI, ignored in SEALED and BANKAI).
+4. **State/item gating happens before scoring**; a phrase for another state is not an error, it is simply ignored. This is what separates "Chire" (shikai release in BASE, petal storm in BANKAI, ignored in SHIKAI) and "Bankai" (release in SHIKAI, ignored in BASE, SEALED and BANKAI).
 5. **Cross-language tolerance.** All variants of all languages are matched regardless of the `lang` field (people mix: an en-US session will hear Cyrillic-like romaji). `lang` is only logged.
 6. **Margin rule.** If two different commands of the gated set both pass, the higher wins only if it leads by at least 0.03; otherwise nothing fires (log "ambiguous"). With the current table this never happens inside one state (checked), so it is a safety net for future edits.
 7. **Same-utterance chaining is blocked** (consumed-text rule, 5.5): "Bankai, Hakka no Togame" fires bankai release once; the trailing name must not then fire anything in the new BANKAI state.
@@ -623,10 +623,10 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | text | state | item in hand | expected |
 |---|---|---|---|
 | senbonzakura | SHIKAI | byakuya | none * |
-| まえそでのしらゆき | SEALED | rukia | `rukia.shikai.release` |
+| まえそでのしらゆき | BASE | rukia | `rukia.shikai.release` |
 | そめのまいつきしろ | SHIKAI | rukia | `rukia.shikai.tsukishiro` |
 | ばんかいせんぼんざくらかげよし | SHIKAI | byakuya | `byakuya.bankai.release` |
-| senbonzakura | SEALED | byakuya | none * |
+| senbonzakura | BASE | byakuya | none * |
 | senbonzakura | BANKAI | byakuya | none |
 | сенбонзакура | SHIKAI | byakuya | none |
 | 千本桜 | SHIKAI | byakuya | none |
@@ -637,16 +637,16 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | bankai | SEALED | byakuya | none * |
 | bankai | BANKAI | byakuya | none * |
 | chire | SHIKAI | byakuya | none * |
-| chire | SEALED | byakuya | `byakuya.shikai.release` * |
+| chire | BASE | byakuya | `byakuya.shikai.release` * |
 | chire senbonzakura | BANKAI | byakuya | `byakuya.bankai.scatter` |
 | chire | BANKAI | byakuya | `byakuya.bankai.scatter` * |
-| scatter | SEALED | byakuya | `byakuya.shikai.release` |
+| scatter | BASE | byakuya | `byakuya.shikai.release` |
 | scatter | BANKAI | byakuya | `byakuya.bankai.scatter` |
-| please scatter | SEALED | byakuya | `byakuya.shikai.release` |
-| scatter the seeds | SEALED | byakuya | none * |
-| shirayuki | SEALED | rukia | `rukia.shikai.release` |
-| mae | SEALED | rukia | none |
-| sode | SEALED | rukia | none |
+| please scatter | BASE | byakuya | `byakuya.shikai.release` |
+| scatter the seeds | BASE | byakuya | none * |
+| shirayuki | BASE | rukia | `rukia.shikai.release` |
+| mae | BASE | rukia | none |
+| sode | BASE | rukia | none |
 | shirayuki | SHIKAI | rukia | none |
 | hakka no togame | SHIKAI | rukia | `rukia.bankai.release` * |
 | bankai hakka no togame | SHIKAI | rukia | `rukia.bankai.release` |
@@ -659,7 +659,7 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | shirafune | SHIKAI | rukia | `rukia.shikai.shirafune` |
 | absolute zero | BANKAI | rukia | `rukia.bankai.absolute_zero` |
 | absolute zero | SHIKAI | rukia | none |
-| chire senbonzakura | SEALED | rukia | none |
+| chire senbonzakura | BASE | rukia | none |
 | bankai | SHIKAI | rukia | `rukia.bankai.release` |
 | hakuteiken | SHIKAI | byakuya | none |
 | hakuteiken | BANKAI | byakuya | `byakuya.bankai.hakuteiken` |
@@ -685,17 +685,17 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | banzai | SHIKAI | byakuya | none |
 | bonsai | SHIKAI | byakuya | none |
 | bunkai | SHIKAI | byakuya | `byakuya.bankai.release` |
-| cherry | SEALED | byakuya | none |
-| cherry blossoms are pretty | SEALED | byakuya | none |
-| cheery senbonzakura | SEALED | byakuya | `byakuya.shikai.release` |
+| cherry | BASE | byakuya | none |
+| cherry blossoms are pretty | BASE | byakuya | none |
+| cheery senbonzakura | BASE | byakuya | `byakuya.shikai.release` |
 | first dance moon white | SHIKAI | rukia | `rukia.shikai.tsukishiro` |
 | first dance | SHIKAI | rukia | none |
 | next dance | SHIKAI | rukia | none |
-| dance sode no shirayuki | SEALED | rukia | `rukia.shikai.release` |
+| dance sode no shirayuki | BASE | rukia | `rukia.shikai.release` |
 | sode no shirayuki | SHIKAI | rukia | none |
-| okay now sode no shirayuki please | SEALED | rukia | `rukia.shikai.release` |
-| mae sode no shirayuki | SEALED | rukia | `rukia.shikai.release` |
-| dance | SEALED | rukia | none |
+| okay now sode no shirayuki please | BASE | rukia | `rukia.shikai.release` |
+| mae sode no shirayuki | BASE | rukia | `rukia.shikai.release` |
+| dance | BASE | rukia | none |
 | some no mai tsukishiro | SHIKAI | rukia | `rukia.shikai.tsukishiro` |
 | tsugi no mai | SHIKAI | rukia | none |
 | tsugi no mai hakuren | SHIKAI | rukia | `rukia.shikai.hakuren` |
@@ -728,15 +728,19 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | seal it | SHIKAI | byakuya | `common.seal` |
 | 封印 | BANKAI | rukia | `common.seal` |
 | запечатать меч | SHIKAI | byakuya | `common.seal` |
-| chire | SEALED | byakuya | `byakuya.shikai.release` * |
+| chire | BASE | byakuya | `byakuya.shikai.release` * |
 | 千本桜景厳 | SHIKAI | byakuya | `byakuya.bankai.release` |
+| mae sode no shirayuki | SEALED | rukia | none * |
+| shirayuki | SEALED | rukia | none * |
+| chire | SEALED | byakuya | none * |
+| scatter | SEALED | byakuya | none * |
 
 ### 3.4 Special cases decided here
 
 - **"Bank eye"** is listed as a neutral near-miss in the brief and is kept neutral. It is, however, one of the most likely en-US renderings of "bankai". With the rules above it does not fire (compact key `banke`: shorter keys must match a variant exactly). If field captures show it is the dominant rendering, add it as a tier-A alias for `*.bankai.release` (the state gate then limits the damage to SHIKAI with the item in hand). Decision needed in ADR.
 - **"Banzai", "bonsai", "банка", "банзай"** differ from "bankai" by one letter or one letter missing. Short keys (6 letters or less) are therefore exact-match only; Jaro-Winkler alone would score "банка" at 0.967 and "banzai" at 0.92, which is why a plain threshold is not enough (see 5.2).
 - **"Hakka no Togame" in BANKAI state** is ignored on purpose. Otherwise the second half of "Bankai, Hakka no Togame" could re-fire as a different command if the first half fired from an interim result.
-- **"Chire" collisions:** English "cherry" (key `cery`) and Russian "чирей" (boil, key `cire`) are the only real words close to the key. "Cherry" does not fire; "чирей" fires as a lone word in SEALED (Byakuya) and BANKAI. Accepted as a known, very rare collision.
+- **"Chire" collisions:** English "cherry" (key `cery`) and Russian "чирей" (boil, key `cire`) are the only real words close to the key. "Cherry" does not fire; "чирей" fires as a lone word in BASE (Byakuya) and BANKAI. Accepted as a known, very rare collision.
 - **"Absolute zero"** is also ordinary physics talk. It only matters when Rukia holds her bankai sword in BANKAI state, so no further rule is applied.
 - **Rukia vs Byakuya "Bankai":** the same word triggers whichever character the held item belongs to. Nothing to disambiguate.
 

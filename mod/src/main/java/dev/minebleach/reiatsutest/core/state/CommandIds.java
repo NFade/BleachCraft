@@ -11,8 +11,10 @@ public final class CommandIds {
 	private CommandIds() {
 	}
 
+	/** Voice command of a transition; null for BASE (the draw has no voice command, it is the key or a right click). */
 	public static String forTransition(CharacterId character, ZanpakutoState target) {
 		return switch (target) {
+			case BASE -> null;
 			case SHIKAI -> character == CharacterId.BYAKUYA ? BYAKUYA_SHIKAI_RELEASE : RUKIA_SHIKAI_RELEASE;
 			case BANKAI -> character == CharacterId.BYAKUYA ? BYAKUYA_BANKAI_RELEASE : RUKIA_BANKAI_RELEASE;
 			case SEALED -> SEAL;

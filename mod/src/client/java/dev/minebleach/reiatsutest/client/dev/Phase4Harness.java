@@ -319,6 +319,53 @@ public final class Phase4Harness {
 			sCheck("A1 server SEALED", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
 		});
 		step("shot sealed HUD", 5, () -> shot("01_rukia_sealed_hud"));
+		// B4 step 3: shikai is entered from the drawn base form only
+		step("A1b press R with the sword in the scabbard", 12, () -> press(ReiatsuKeys.RELEASE));
+		step("A1b checks: SEALED to SHIKAI is rejected with its own feedback", 3, () -> {
+			cCheck("A1b R while sealed is DENIED_NOT_DRAWN", () -> lastResultIs("DENIED_NOT_DRAWN") ? null : "last result " + lastResult());
+			sCheck("A1b server still SEALED", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+			sCheck("A1b reiatsu untouched", p -> sm(p).reiatsu().value() == 1000 ? null : "reiatsu " + sm(p).reiatsu().value());
+			cCheck("A1b feedback text is the draw-first message", () -> {
+				String key = "message.reiatsu_test.denied.not_drawn";
+				return net.minecraft.client.resource.language.I18n.hasTranslation(key) ? null : "no translation for " + key;
+			});
+			shot("01b_not_drawn_feedback");
+		});
+		step("A1c press J (draw)", 12, () -> press(ReiatsuKeys.DRAW));
+		step("A1c checks: base form", 3, () -> {
+			sCheck("A1c server BASE/RUKIA", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA));
+			cCheck("A1c client BASE/RUKIA (attachment sync)", () -> clientExpect(ZanpakutoState.BASE, CharacterId.RUKIA));
+			cCheck("A1c held stack component BASE (render mirror)", () -> clientStack(ReleaseState.BASE));
+			cCheck("A1c action_result OK", () -> lastResultIs("OK") ? null : "last result " + lastResult());
+			sCheck("A1c the draw cost nothing", p -> sm(p).reiatsu().value() == 1000 ? null : "reiatsu " + sm(p).reiatsu().value());
+			shot("01c_rukia_base_hud");
+		});
+		step("A1d press J again (sheathe)", 12, () -> press(ReiatsuKeys.DRAW));
+		step("A1d checks: back in the scabbard", 3, () -> {
+			sCheck("A1d server SEALED", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+			cCheck("A1d client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
+			cCheck("A1d held stack SEALED", () -> clientStack(ReleaseState.SEALED));
+		});
+		step("A1e right click with the sword (draw)", 12, () -> {
+			mc.interactionManager.interactItem(mc.player, net.minecraft.util.Hand.MAIN_HAND);
+		});
+		step("A1e checks: right click draws", 3, () -> {
+			sCheck("A1e server BASE/RUKIA after the right click", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA));
+			cCheck("A1e client BASE", () -> clientExpect(ZanpakutoState.BASE, CharacterId.RUKIA));
+		});
+		step("A1f press V (seal from the base form)", 12, () -> press(ReiatsuKeys.SEAL));
+		step("A1f checks: seal from BASE", 3, () -> {
+			sCheck("A1f server SEALED", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+			sCheck("A1f no release lock after sheathing the base form", p -> sm(p).releaseLockEndTick() <= p.getServer().getTicks() ? null : "release lock still active");
+		});
+		step("A1g press J (draw again)", 12, () -> press(ReiatsuKeys.DRAW));
+		step("A1g checks: base again", 3, () -> {
+			sCheck("A1g server BASE", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA));
+			cCheck("A1g Z in the base form is refused locally (no abilities before shikai)", () -> {
+				var z = ClientState.zanpakuto();
+				return dev.minebleach.reiatsutest.core.state.AbilityId.forSlot(z.characterId(), z.zanpakutoState(), 0) == null ? null : "ability in BASE";
+			});
+		});
 		step("press R (release)", 12, () -> press(ReiatsuKeys.RELEASE));
 		step("A2 checks: shikai", 3, () -> {
 			sCheck("A2 server SHIKAI/RUKIA", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
@@ -482,9 +529,9 @@ public final class Phase4Harness {
 			cCheck("A12 client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
 			cCheck("A12 held stack SEALED", () -> clientStack(ReleaseState.SEALED));
 		});
-		step("press R during release lock", 8, () -> press(ReiatsuKeys.RELEASE));
+		step("press J during release lock", 8, () -> press(ReiatsuKeys.DRAW));
 		step("A13 checks: release lock", 3, () -> {
-			cCheck("A13 R during the 2 s release lock is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
+			cCheck("A13 J during the 2 s release lock is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
 		});
 
 		// ---------------- B. Byakuya
@@ -492,6 +539,11 @@ public final class Phase4Harness {
 			cmd("kill @e[type=minecraft:zombie]", "reiatsu full");
 			selectSlot(1);
 			view(0.5, -60, 0.5, 0, 15);
+		});
+		step("B1 press J (byakuya draw)", 14, () -> press(ReiatsuKeys.DRAW));
+		step("B1 base checks", 3, () -> {
+			sCheck("B1 server BASE/BYAKUYA", p -> expectState(p, ZanpakutoState.BASE, CharacterId.BYAKUYA));
+			cCheck("B1 held stack BASE", () -> clientStack(ReleaseState.BASE));
 		});
 		step("B1 press R (byakuya shikai)", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("B1 checks", 3, () -> {
@@ -542,7 +594,8 @@ public final class Phase4Harness {
 			cCheck("B5 held stack SEALED", () -> clientStack(ReleaseState.SEALED));
 			shot("13_after_bankai_cap");
 		});
-		step("wait recovery lock 8 s, full reiatsu, release", 175, () -> cmd("reiatsu full"));
+		step("wait recovery lock 8 s, full reiatsu, draw", 175, () -> cmd("reiatsu full"));
+		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("wait for full bar, bankai", 5, () -> cmd("reiatsu full"));
 		step("press G", 14, () -> press(ReiatsuKeys.BANKAI));
@@ -579,6 +632,7 @@ public final class Phase4Harness {
 			selectSlot(0);
 			cmd("reiatsu full");
 		});
+		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("select empty slot", 10, () -> selectSlot(5));
 		step("C1 checks: inside the 1 s hand grace", 3, () -> {
@@ -593,14 +647,37 @@ public final class Phase4Harness {
 			selectSlot(0);
 			cmd("reiatsu full");
 		});
+		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("C2 remove the item (drop)", 6, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
 		step("C2 checks: immediate seal on drop", 3, () -> {
 			sCheck("C2 SEALED right after the item left the inventory", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
 		});
-		step("C3 give back, release, die", 20, () -> {
+		step("C2b give back, only draw, then drop", 20, () -> {
 			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
 		});
+		step("C2b press J", 14, () -> press(ReiatsuKeys.DRAW));
+		step("C2b checks: drawn", 2, () -> sCheck("C2b server BASE", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA)));
+		step("C2b remove the item", 6, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
+		step("C2b checks: immediate seal on drop of the drawn sword", 3, () -> {
+			sCheck("C2b SEALED right after the item left the inventory", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+		});
+		step("C2c give back, draw, switch hand away (hand grace)", 20, () -> {
+			cmd("item replace entity @s hotbar.0 with " + RUKIA);
+		});
+		step("C2c press J", 14, () -> press(ReiatsuKeys.DRAW));
+		step("C2c select empty slot", 10, () -> selectSlot(5));
+		step("C2c checks: inside the grace", 3, () -> sCheck("C2c still BASE after 0.5 s without the item", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA)));
+		step("C2c wait out the grace", 22, () -> { });
+		step("C2c checks: grace expired", 3, () -> {
+			sCheck("C2c SEALED after the grace", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+			cCheck("C2c client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
+		});
+		step("C3 give back, release, die", 20, () -> {
+			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
+			selectSlot(0);
+		});
+		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("kill the player", 30, () -> cmd("kill @s"));
 		stepUntil("respawn", 5, 400, () -> {
@@ -625,6 +702,7 @@ public final class Phase4Harness {
 			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full", "tp @s 0.5 -60 0.5 0 20");
 			selectSlot(0);
 		});
+		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("C4 checks: released before the trip", 2, () -> {
 			sCheck("C4 SHIKAI before dimension change", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
