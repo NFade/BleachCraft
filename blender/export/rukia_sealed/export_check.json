@@ -1,0 +1,76 @@
+{
+ "rukia_sealed_sheathed": {
+  "src_verts": 760,
+  "src_faces": 780,
+  "src_quads": 612,
+  "imp_verts": 760,
+  "imp_faces": 780,
+  "obj_lines": {
+   "v": 760,
+   "vt": 950,
+   "vn": 531,
+   "f": 780,
+   "tris": 168,
+   "quads": 612,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.76837158203125e-07,
+  "src_bbox": [
+   [
+    -0.031,
+    -0.036,
+    0.0
+   ],
+   [
+    0.031,
+    0.1131,
+    1.0024
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_sealed_drawn": {
+  "src_verts": 577,
+  "src_faces": 614,
+  "src_quads": 462,
+  "imp_verts": 577,
+  "imp_faces": 614,
+  "obj_lines": {
+   "v": 577,
+   "vt": 796,
+   "vn": 377,
+   "f": 614,
+   "tris": 152,
+   "quads": 462,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.031,
+    -0.036,
+    0.0
+   ],
+   [
+    0.031,
+    0.0864,
+    0.9785
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ }
+}

@@ -4,7 +4,7 @@
 import bpy, bmesh, math, json, os, re
 from mathutils import Vector, Matrix
 
-ROOT = r"D:\MineBleach\blender"
+ROOT = os.environ.get("BB_ROOT", r"D:\MineBleach\blender")
 SCENES = os.path.join(ROOT, "scenes")
 RENDERS = os.path.join(ROOT, "renders")
 TMP = os.environ.get("BB_TMP", r"C:\Users\efeki\AppData\Local\Temp\claude\D--MineBleach\3ed047c0-7628-4215-89c7-999cf89b2df5\scratchpad")
@@ -210,7 +210,7 @@ def rect(hx, hy, cx=0.0, cy=0.0):
 
 
 # ------------------------------------------------------------------ sori / blade
-SORI_K = 1.0
+SORI_K = 4.0   # Gate B B1: sori = chord deviation; tip offset from the base axis = 4 x chord deviation (parabola)
 
 
 def sori_off(z, z0, length, tip_off):
@@ -239,8 +239,7 @@ def lerp(a, b, t):
 
 def blade(name, z0, length, root_w, yok_w, root_t, tip_t, kissaki, sori_chord, mat_name, n_mid=5, mat_names=None, pattern=None):
     """Katana blade from z0 (after the habaki) to z0+length. The base tangent runs along +Z and the centreline is a parabola
-    whose tip is offset toward +Y by sori * SORI_K (SORI_K = 1: sori = tip deflection from the base axis, the same
-    convention as the giant bankai blade; SORI_K = 4 would make sori the chord deviation)."""
+    whose tip is offset toward +Y by sori * SORI_K (Gate B B1: SORI_K = 4, sori = chord deviation, tip offset = 4 x sori)."""
     tip_off = SORI_K * sori_chord
     z_tip = z0 + length
     z_yk = z_tip - kissaki
@@ -265,8 +264,8 @@ def blade(name, z0, length, root_w, yok_w, root_t, tip_t, kissaki, sori_chord, m
 
 
 # ------------------------------------------------------------------ hilt parts (BASE, ART_BIBLE 1.0)
-def hilt_parts(prefix, wrap, kashira_m, fuchi_m, tsuka_len=0.25, kashira_dims=(0.015, 0.011, 0.014),
-               tsuka_dims=(0.015, 0.012), fuchi_dims=(0.016, 0.013), fuchi_len=0.014, swell=0.003, kashira_cyl=False):
+def hilt_parts(prefix, wrap, kashira_m, fuchi_m, tsuka_len=0.25, kashira_dims=(0.011, 0.015, 0.014),
+               tsuka_dims=(0.012, 0.015), fuchi_dims=(0.013, 0.016), fuchi_len=0.014, swell=0.003, kashira_cyl=False):
     """kashira + tsuka + fuchi as separate objects (joined later). Tsuka runs from the kashira top to the fuchi bottom,
     so volumes do not overlap (deviation from 'tsuka z 0 to 0.250', documented)."""
     ka, kb, kh = kashira_dims
@@ -302,21 +301,22 @@ def _cutter(name, pts, z0, z1):
 
 
 def tsuba_rukia_sealed(prefix, z0, mat_name, thick=0.006):
+    """Gate B B4: concave corner radius 10 mm, slits 20 mm long (x +-0.010), 6 mm max width, centred y = +-0.025, bow 3 mm
+    toward the blade hole, n = 8 points per side."""
     z1 = z0 + thick
-    o = prism(prefix + "_tsuba", concave_rect(0.031, 0.036, 0.008, 4), z0, z1, mat_name)
+    o = prism(prefix + "_tsuba", concave_rect(0.031, 0.036, 0.010, 4), z0, z1, mat_name)
     cutters = []
+    n = 8
     for sy in (-1, 1):
         pts = []
-        n = 6
         for k in range(n + 1):
-            x = -0.007 + 0.014 * k / n
-            c = -sy * 0.0025 * (x / 0.007) ** 2
-            pts.append((x, sy * 0.026 + c + 0.002 * (1 - (x / 0.007) ** 2) ** 0.5 + 0.0003))
+            x = -0.010 + 0.020 * k / n
+            c = -sy * 0.003 * (x / 0.010) ** 2
+            pts.append((x, sy * 0.025 + c + 0.003 * (1 - (x / 0.010) ** 2) ** 0.5 + 0.0003))
         for k in range(n, -1, -1):
-            x = -0.007 + 0.014 * k / n
-            c = -sy * 0.0025 * (x / 0.007) ** 2
-            pts.append((x, sy * 0.026 + c - 0.002 * (1 - (x / 0.007) ** 2) ** 0.5 - 0.0003))
-        # drop duplicate end points
+            x = -0.010 + 0.020 * k / n
+            c = -sy * 0.003 * (x / 0.010) ** 2
+            pts.append((x, sy * 0.025 + c - 0.003 * (1 - (x / 0.010) ** 2) ** 0.5 - 0.0003))
         dd = []
         for p in pts:
             if not dd or (abs(p[0] - dd[-1][0]) > 1e-9 or abs(p[1] - dd[-1][1]) > 1e-9):
@@ -325,9 +325,10 @@ def tsuba_rukia_sealed(prefix, z0, mat_name, thick=0.006):
     return boolean_diff(o, cutters)
 
 
-def tsuba_snowflake(prefix, z0, mat_name, thick=0.006, r_out=0.040, r_rim=0.032, r_hub=0.020):
+def tsuba_snowflake(prefix, z0, mat_name, thick=0.006, r_out=0.044, r_rim=0.037, r_hub=0.018):
+    """Gate B B5 defaults: 88 mm outer, rim 7 mm, hub 36 mm, 48-segment outline."""
     z1 = z0 + thick
-    o = prism(prefix + "_tsuba", circle_pts(r_out, 36), z0, z1, mat_name)
+    o = prism(prefix + "_tsuba", circle_pts(r_out, 48), z0, z1, mat_name)
 
     def h(r):
         return (0.0035 + (r - r_hub) / (r_rim - r_hub) * 0.0025)
@@ -574,7 +575,10 @@ def md_section(model, stats, empties, notes, deviations, questions, extra=""):
     if notes:
         L.append("Notes:\n" + "\n".join("- " + n for n in notes) + "\n")
     L.append("Deviations from the art bible:\n" + "\n".join("- " + d for d in deviations) + "\n")
-    L.append("Open questions for Gate B:\n" + "\n".join("- " + q for q in questions) + "\n")
+    if questions:
+        L.append("Open questions for Gate B:\n" + "\n".join("- " + q for q in questions) + "\n")
+    else:
+        L.append("Gate B edits applied (see design/GATE_B.md).\n")
     return "\n".join(L)
 
 
@@ -644,6 +648,6 @@ def bk_materials():
 
 def bk_hilt(prefix):
     """Kashira (cream cylinder), lavender tsuka, bronze fuchi and the window-frame tsuba at z 0.250 to 0.257."""
-    parts = hilt_parts(prefix, "bk_lavender", "bk_kashira", "bk_bronze", kashira_dims=(0.015, 0.011, 0.014), kashira_cyl=True)
+    parts = hilt_parts(prefix, "bk_lavender", "bk_kashira", "bk_bronze", kashira_dims=(0.011, 0.015, 0.014), kashira_cyl=True)
     parts.append(tsuba_byakuya_sealed(prefix, 0.250, "bk_bronze"))
     return parts

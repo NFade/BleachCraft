@@ -18,8 +18,8 @@ bb.mat("rk_ribbon", "#F4F8FF", rough=0.6)
 
 # ---- rukia_shikai_blade: hilt, snowflake tsuba, habaki, blade (one mesh)
 parts = bb.hilt_parts("k", "rk_wrap", "rk_blade", "rk_blade")
-kash = parts[0]
-bb.boolean_diff(kash, [bb.cyl_x("k_hole", 0.002, -0.03, 0.03, 0.0, 0.007)])  # 4 mm ribbon hole through the kashira (along X)
+# Gate B B8: no 4 mm ribbon hole; a 14 x 8 x 10 mm knot block hangs below the kashira (ribbon_root = its bottom)
+parts.append(bb.box("k_knot", (-0.007, -0.004, -0.010), (0.007, 0.004, 0.000), "rk_ribbon"))
 parts.append(bb.tsuba_snowflake("k", 0.250, "rk_blade"))
 parts.append(bb.habaki("k", 0.256, "rk_blade"))
 bl, tip = bb.blade("k_blade", 0.284, 1.036 - 0.284, 0.028, 0.020, 0.009, 0.004, 0.070, 0.008, "rk_blade")
@@ -28,16 +28,14 @@ sword = bb.join(parts, "rukia_shikai_blade")
 bb.link_only(sword, exp)
 
 # ---- ribbon: 10 segments, hinge at the proximal end, mesh runs along -Z (rest pose hangs/trails behind the pommel)
-SEG, OVER, W0, W1, T, ROOT = 0.25, 0.010, 0.040, 0.028, 0.002, -0.010
+SEG, OVER, W0, W1, T, ROOT = 0.25, 0.0, 0.040, 0.028, 0.002, -0.010   # Gate B B6: OVER = 0 (no overlap)
 width = lambda d: W0 + (W1 - W0) * d / (10 * SEG)
 ribbons = []
 for n in range(1, 11):
     d0 = (n - 1) * SEG
     d1 = d0 + SEG + OVER
     pts = [(-width(d0) / 2, 0.0), (width(d0) / 2, 0.0), (width(d1) / 2, -(SEG + OVER)), (-width(d1) / 2, -(SEG + OVER))]
-    if n == 10:  # swallow-tail cut
-        hw = width(d1) / 2
-        pts = [(-width(d0) / 2, 0.0), (width(d0) / 2, 0.0), (hw, -(SEG + OVER)), (0.0, -(SEG + OVER) + 0.05), (-hw, -(SEG + OVER))]
+    # Gate B B7: segment 10 is the same 12-tri trapezoid; the swallow tail is an alpha cut-out in the texture
     o = bb.prism_y("rukia_shikai_ribbon_%02d" % n, pts, -T / 2, T / 2, "rk_ribbon")
     o.location = (0.0, 0.0, ROOT - (n - 1) * SEG)
     bb.link_only(o, exp)
@@ -50,23 +48,18 @@ for n, v in empties:
 chk = bb.tsuba_snowflake("chk", 0.250, "rk_blade")
 chk.name = "tsuba_check"
 allobj = [sword] + ribbons
-notes = ["Blade 0.752 m from the habaki top (0.78 m from the habaki start): width 28 to 20 mm, thickness 9 to 4 mm, kissaki 70 mm, sori 8 mm; overall 1.036 m. Habaki is the BASE 32 x 10 mm box.",
-         "Snowflake tsuba: 80 mm round plate, rim 8 mm, hub 40 mm, six spokes widening 7 to 12 mm, six rounded-trapezoid windows (boolean cut, clean circle outline).",
-         "Kashira: oval cap with a 4 mm cross hole (along X) for the ribbon; `ribbon_root` empty at (0, 0, -0.010).",
-         "Ribbon: 10 hinged segments, 0.25 m pitch (0.26 m mesh, 10 mm overlap), 40 to 28 mm wide, 2 mm thick, trapezoid prisms (12 tris), segment 10 has the swallow tail. Origins = hinge points at z = -0.010 - 0.25 (n-1).",
+notes = ["Blade 0.752 m from the habaki top (0.78 m from the habaki start): width 28 to 20 mm, thickness 9 to 4 mm, kissaki 70 mm, sori 8 mm chord deviation (tip offset 32 mm after Gate B B1); overall 1.036 m. Habaki is the BASE 32 x 10 mm box.",
+         "Snowflake tsuba (Gate B B5): 88 mm round plate (48-segment outline), rim 7 mm, hub 36 mm, six spokes widening 7 to 12 mm, six windows 19 mm deep (boolean cut).",
+         "Kashira: plain oval cap, 22 x 30 mm (Gate B B2). Gate B B8: a 14 x 8 x 10 mm knot block (`rk_ribbon` material) is joined into the blade mesh below the kashira; `ribbon_root` (0, 0, -0.010) is its bottom face.",
+         "Ribbon (Gate B B6, B7): 10 hinged segments, exactly 0.25 m long, pitch 0.25 m, no overlap, 40 to 28 mm wide, 2 mm thick, identical trapezoid prisms of 12 tris (the swallow tail of segment 10 is a texture alpha cut-out). Origins = hinge points at z = -0.010 - 0.25 (n-1).",
          "Objects are not parented; ribbon objects keep location = hinge, rotation 0, scale 1."]
 deviations = [
-    "Ribbon mesh runs along local -Z (the ribbon trails behind the pommel at z < 0, and rotation must stay 0 for export), so the 'local +Z points along the ribbon' wording of the bible cannot hold literally; the chain axis is -Z. The Java chain code must bend about local X with the sign flipped.",
-    "`rukia_shikai_ribbon_10` has 16 tris (pentagon prism for the swallow tail) against the 12 limit; the other nine are 12. A single-sided 3-tri-per-face strip would meet the limit at detail time.",
-    "Sori 8 mm is the tip deflection from the base axis (see rukia_sealed note on `bb.SORI_K`).",
+    "Ribbon mesh runs along local -Z (the ribbon trails behind the pommel at z < 0, and rotation must stay 0 for export), so the 'local +Z points along the ribbon' wording of the bible cannot hold literally (Gate B: kept, code bends about local X).",
+    "Sori 8 mm is the chord deviation; tip offset = 4 x 8 = 32 mm (Gate B B1, bb.SORI_K = 4).",
     "Tsuka runs z 0.014 to 0.236 between kashira and fuchi (no overlapping solids); wrap-diamond gaps `#C9D6EA` are texture-only and not modelled; emissive zones are not set up in the blockout.",
     "Tsuba blade hole not cut (enclosed pocket under the habaki).",
 ]
-questions = [
-    "Ribbon axis: is a local -Z mesh (rotation applied) acceptable for the chain animation, or should the objects be authored with +Z along the ribbon and a 180 degree rotation baked in the loader?",
-    "Ribbon width is along X and thickness along Y (flat in the XZ plane). Should it face the viewer in first person instead (flat in YZ)?",
-    "Is the 16-tri tail on segment 10 acceptable at blockout level?",
-]
+questions = []
 bb.finish(MODEL, allobj, [("sword", [sword], 0.10), ("ribbon_and_sword", allobj, 0.25, dict(H=860)),
                           ("tsuba_detail", [chk], 0.01, dict(views=[bb.VIEW_TOP, bb.VIEWS[2]], W=520, H=520))],
           empties, notes, deviations, questions, temp_objs=[chk])
