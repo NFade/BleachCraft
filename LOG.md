@@ -152,3 +152,4 @@ Other facts verified from source or run:
 - All 6 blockouts: `blender/scenes/<model>.blend`, `blender/scripts/blockout_<model>.py` (+ `bb_common.py`), renders `blender/renders/<model>_blockout.png`, stats `blender/renders/BLOCKOUTS.md`.
 - Deviation: the agent reported the MCP socket 127.0.0.1:9876 down and used headless `blender.exe --background --factory-startup` (Workbench renders). Orchestrator re-checked right after: MCP `get_objects_summary` OK. Headless runs are acceptable (scripts are re-runnable, still one Blender job at a time); GUI Blender via MCP preferred for `look` checks.
 - Deferred by the bible: Rukia costume set, Senkei sword (after Gate B/C).
+- Gate B (opus call 3/6): all 6 APPROVED WITH EDITS, 16 edits B1–B16 (`design/GATE_B.md`). Key: SORI_K=4 (80 mm tip offset), enlarge guard details for in-hand readability, ribbon fixes, Hakuteiken wing as one 48-tri sheet, giant-blade tip hook.
