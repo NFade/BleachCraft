@@ -222,8 +222,8 @@ sets["r10"] = c
 B2 = {
     "thirdperson_righthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
     "thirdperson_lefthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
-    "firstperson_righthand": ([-30, 220, -6], [-3, 3, -3], 1.2),
-    "firstperson_lefthand": ([-30, 220, -6], [-3, 3, -3], 1.2),
+    "firstperson_righthand": ([123, -39, 135], [0.77, 1.58, -5.93], 2.4),
+    "firstperson_lefthand": ([123, -39, 135], [0.77, 1.58, -5.93], 2.4),
     "ground": ([90, 0, 0], [0, 3, -4.5], 0.9),
     "fixed": ([0, 0, 45], [5.6, -5.6, 0], 1.6),
 }
@@ -242,7 +242,64 @@ for st in ("shikai",):
         c.append({"name": "b3_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**B2)})
 sets["b3"] = c
 
-sets["b4"] = sets["b2"] + sets["b3"]
+# d1: final B3 part 1 capture: swing, iron sword reference
+c = []
+c.append({"name": "d1_ref_iron", "view": "fp_iron", "state": "sealed", "display": disp(**B2)})
+c.append({"name": "d1_ref_iron_left", "view": "fp_iron_left", "state": "sealed", "display": disp(**B2)})
+for st in ("sealed", "shikai"):
+    c.append({"name": "d1_%s_swing" % st, "view": "fp_swing", "state": st, "display": disp(**B2)})
+sets["d1"] = c
+# e1: near vertical blade, broad flat face toward the camera (user feedback), candidates P1..P5 (Euler for rotationXYZ computed
+# from blade axis b and flat normal n: R = [n b n x b]); T = fist centre F + b * 0.065 * scale * 16
+E1 = (("P1", [-98.5, -84.2, -82.1], [2.39, 2.09, -5.76]), ("P2", [81.5, 84.2, -97.9], [2.39, 2.09, -5.76]),
+      ("P3", [-24.4, -53.8, -9.8], [2.39, 2.09, -5.76]), ("P4", [-98.5, -75.4, -89.6], [2.77, 2.1, -5.44]),
+      ("P5", [165.5, -55.0, -180.0], [2.14, 2.13, -5.68]))
+c = []
+for n, eu, t in E1:
+    c.append({"name": "e1_" + n, "view": "fp", "state": "sealed", "display": disp(**fpd(eu, t, 2.4))})
+for n, eu, t in E1[:3]:
+    c.append({"name": "e1l_" + n, "view": "fp_left", "state": "sealed", "display": disp(**fpd(eu, t, 2.4))})
+sets["e1"] = c
+sets["b4"] = sets["b2"] + sets["b3"] + sets["d1"]
+
+# c1: step B3 part 1, first person about 2x bigger and diagonal (user references: blade across the screen from the lower right)
+def fpd(r, t, sc):
+    d = dict(B2)
+    d["firstperson_righthand"] = (r, t, sc)
+    d["firstperson_lefthand"] = (r, t, sc)
+    return d
+
+
+c = []
+for n, r, t, sc, asc in (("A", [-30, 220, -30], [-3, 3, -3], 2.4, 0.8), ("B", [-40, 220, -40], [-3, 3, -3], 2.4, 0.8),
+                         ("C", [-30, 220, -45], [-3, 3, -3], 2.2, 0.8), ("D", [-45, 220, -35], [-3, 3, -3], 2.6, 0.8),
+                         ("E", [-30, 230, -40], [-3, 3, -3], 2.4, 0.55), ("F", [-20, 220, -35], [-3, 3, -3], 2.4, 0.55),
+                         ("G", [-30, 220, -30], [-3, 3, -3], 2.4, 0.55), ("H", [-30, 200, -35], [-3, 3, -3], 2.4, 0.8)):
+    c.append({"name": "c1_" + n, "view": "fp", "state": "sealed", "display": disp(**fpd(r, t, sc)),
+              "arm": arm((0.5, 0.4, 0.8), scale=asc)})
+sets["c1"] = c
+
+# c2: vanilla-size arm (renderArmHoldingItem chain) + big diagonal sword. Fist centre in the hand frame (computed from the
+# vanilla chain, right hand) F = (0.134, -0.018, -0.316) blocks = (2.14, -0.29, -5.06) display units; the sword grip is put
+# slightly above it along the blade so that the fist covers the middle of the tsuka (0.065 m below the grip, times scale).
+F16 = (2.14, -0.29, -5.06)
+
+
+def sword_fp(euler, b, sc, slide=0.065):
+    t = [F16[i] + b[i] * slide * sc * 16 for i in range(3)]
+    return euler, [round(x, 2) for x in t], sc
+
+
+c = []
+for n, eu, b, sc in (("V1", [123, -39, 135], (-0.55, 0.75, -0.35), 2.4), ("V2", [123, -27, 133], (-0.65, 0.65, -0.4), 2.4),
+                     ("V3", [127, -41, 143], (-0.45, 0.8, -0.4), 2.4), ("V4", [123, -39, 135], (-0.55, 0.75, -0.35), 2.0),
+                     ("V5", [123, -27, 133], (-0.65, 0.65, -0.4), 2.0), ("V6", [127, -41, 143], (-0.45, 0.8, -0.4), 2.8)):
+    e, t, sc2 = sword_fp(eu, b, sc)
+    c.append({"name": "c2_" + n, "view": "fp", "state": "sealed", "display": disp(**fpd(e, t, sc2)),
+              "arm": {"vanilla": True}})
+    c.append({"name": "c2l_" + n, "view": "fp_left", "state": "sealed", "display": disp(**fpd(e, t, sc2)),
+              "arm": {"vanilla": True}})
+sets["c2"] = c
 
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]

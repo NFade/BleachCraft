@@ -556,7 +556,7 @@ public final class SpikeHarness {
 			cmd("gamerule doDaylightCycle false", "gamerule doWeatherCycle false", "gamerule doMobSpawning false",
 					"time set noon", "weather clear", "gamemode creative @s",
 					"item replace entity @s hotbar.0 with " + SPIKE,
-					REAL ? "gamemode creative @s" : "item replace entity @s hotbar.1 with " + SHIKAI,
+					REAL ? "item replace entity @s hotbar.2 with minecraft:iron_sword" : "item replace entity @s hotbar.1 with " + SHIKAI,
 					// stands: right profile x=20, left profile x=30, front x=40; shikai copies +4, bankai copies +8
 					stand(20.5, 90f, stackOf("sealed")), stand(30.5, 270f, stackOf("sealed")), stand(40.5, 180f, stackOf("sealed")),
 					stand(24.5, 90f, stackOf("shikai")), stand(34.5, 270f, stackOf("shikai")), stand(44.5, 180f, stackOf("shikai")),
@@ -610,9 +610,9 @@ public final class SpikeHarness {
 			boolean dark = view.startsWith("dark");
 			step("tune " + name + ": view " + view, dark ? 90 : 25, () -> {
 				cmd(dark ? "fill 96 -61 -4 105 -53 5 minecraft:stone hollow" : "time set noon", dark ? "time set midnight" : "time set noon");
-				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.startsWith("dark") || view.equals("fp_swing");
+				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.startsWith("dark") || view.equals("fp_swing") || view.startsWith("fp_iron");
 				// stand/ground/frame views: empty hand (slot 8) and no HUD, so only the placed items show
-				selectSlot(!handView ? 8 : REAL ? 0 : shikai ? 1 : 0);
+				selectSlot(!handView ? 8 : view.startsWith("fp_iron") ? 2 : REAL ? 0 : shikai ? 1 : 0);
 				if (mc.currentScreen != null) {
 					mc.setScreen(null);
 				}
@@ -626,10 +626,10 @@ public final class SpikeHarness {
 					mc.options.getGuiScale().setValue(wantScale);
 					mc.onResolutionChanged();
 				}
-				mc.options.getMainArm().setValue(view.equals("fp_left") ? Arm.LEFT : Arm.RIGHT);
+				mc.options.getMainArm().setValue(view.equals("fp_left") || view.equals("fp_iron_left") ? Arm.LEFT : Arm.RIGHT);
 				mc.options.setPerspective(view.equals("dark_tp") ? Perspective.THIRD_PERSON_FRONT : Perspective.FIRST_PERSON);
 				switch (view) {
-					case "fp", "fp_left", "fp_swing" -> view(0.5, -60, 0.5, 0, 20);
+					case "fp", "fp_left", "fp_swing", "fp_iron", "fp_iron_left" -> view(0.5, -60, 0.5, 0, 20);
 					case "dark", "dark_tp" -> view(100.5, -60, 0.5, 0, 15);
 					case "side_r" -> view(20.5 + dx, -60, 0.9, 0, 0);
 					case "side_l" -> view(30.5 + dx, -60, 0.9, 0, 0);
