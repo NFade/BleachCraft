@@ -1,8 +1,34 @@
 # ART BIBLE: Reiatsu Test mod (Rukia + Byakuya prototype)
 
-**Revision: v2 (Gate A applied, 2026-10-08)**
+**Revision: v3 (Gate B applied, 2026-10-09)**
 
-Changelog (edit id, section, summary; edits are defined in `design/GATE_A.md` section 2):
+Changelog v3 (Gate B edit id, section, summary; edits are defined in `design/GATE_B.md` sections 2, 3 and 6; Gate B wins over v2):
+- B1, 0.5 and 1.0: sori is the chord deviation; tip offset from the base tangent = 4 x chord deviation (sealed 80 mm, shikai and bankai sword 32 mm, saya 92 mm).
+- B2, 1.0, 1.3, 1.6: grip ovals long along Y: kashira 22 x 30 x 14 mm, tsuka 24 x 30 mm, fuchi 26 x 32 mm; applies to all hilts incl. the ground hilt.
+- B3, 0.5: rule restated: effect meshes keep their own origin; scene layout offsets are not part of the export contract.
+- B4, 1.1: Rukia sealed tsuba slits 20 x 6 mm at y +-25 mm, concave corner radius 10 mm.
+- B5, 1.2: snowflake tsuba 88 mm outer, rim 7 mm, hub 36 mm, 48 outline segments, windows 19 mm deep.
+- B6, 1.2: ribbon segments 0.25 m with no overlap; hinges at z = -0.010 - 0.25 (n-1).
+- B7, 1.2: segment 10 is the 12-tri trapezoid; swallow tail is an alpha cut-out in the strip texture.
+- B8, 1.2: 4 mm kashira hole replaced by a 14 x 8 x 10 mm pommel knot block (`rk_ribbon`) in `rukia_shikai_blade`.
+- B9, 1.4 and 2.4: no tang stub; habaki is the hilt end; `tang_tip` at (0, 0, 0.285).
+- B10, 1.4: petal rebuilt as a 16-tri crescent leaf (two rings, 26 mm max width at z 0.042); tang painted only.
+- B11, 1.5: Rukia bankai guard 96 x 22 mm, bridge 36 mm, slot windows 14 x 26 mm, rims 4 mm.
+- B12, 1.6 and 2.5: Hakuteiken wings are one continuous 48-tri sheet per wing (feather fan 48 to -12 degrees, longest feather 6.0 m, 2.40 m shortest).
+- B13, 1.6: giant blade fixed-slope bend (0.0, 0.07, 0.17, 0.33), new ring stations, tip apex at z = 8.000, 142 tris at blockout, LOD rings at z 0, 4.5, 7.1.
+- B14, 1.6: ground hilt rotated 180 degrees about Y (not mirrored); edge stays -Y.
+- B15, 1.6: Hakuteiken blade 0.10 (Y) x 0.03 (X) m; kissaki 0.20 m.
+- B16, 1.6: ripple single-sided +Z; halo and wings single-sided +Y, drawn with back-face culling off (fallback: duplicated reversed faces).
+- G3, 1.2, 1.3, 1.5, 1.6 and 3: Gate B section 3 answers folded in (ribbon axis -Z, rotation 0, bend about local X; Byakuya tsuba z 0.250 to 0.257 with +1 mm shift; Rukia bankai costume origins and `ribbon_root` (0, 0.12, 0.90) player-space; wing/halo/ripple rules).
+
+Consistency fixes made while applying v3 (not in GATE_B.md):
+- F1, 1.6 emissive zones: the gradient start moved from z = 6.3 m to z = 6.8 m so it matches "top 1.2 m" (8.0 - 1.2) and the B13 glow-zone faces (gaps from z >= 6.85).
+- F2, 0.6 and 1.6: Hakuteiken set budget 900 stays the hard limit; blockout total is about 300 (blade 2 parts, wings 48 x 2, halo 48).
+- F3, 1.2: the old `+Z points along the ribbon` wording replaced by the -Z axis rule of Gate B section 3.
+
+Previous revision: v2 (Gate A applied, 2026-10-08).
+
+Changelog v2 (edit id, section, summary; edits are defined in `design/GATE_A.md` section 2):
 - E1, 1.0: heading cleaned (stray "item space of 0.5" removed).
 - E2, 0.5 and 1.2: `grip_hand` moved to z 0.19 (bankai sword 0.22).
 - E3, 0.5: export rule added (one OBJ per object, shared textures, empties in a JSON file).
@@ -43,7 +69,7 @@ Consistency fixes made while applying (not in GATE_A.md):
 - C8, 2.0: the frost_edge sentence ended with a full stop, not a semicolon; `freeze_desat` was inserted after it with the stop moved to the end.
 
 Phase 1c deliverable. Contract for the Blender modelling agents (phase 3) and the VFX agents (phase 6).
-Status: APPROVED WITH EDITS at Gate A (see design/GATE_A.md); edits applied. English. All text is original; reference images in `refs/` are private modelling references and must never be copied into the mod.
+Status: APPROVED WITH EDITS at Gate A (see design/GATE_A.md) and at Gate B (see design/GATE_B.md); edits applied (v3). English. All text is original; reference images in `refs/` are private modelling references and must never be copied into the mod.
 
 Source tags used below: **[RS]** research/rukia_sealed_shikai.md, **[RB]** research/rukia_bankai.md, **[BS]** research/byakuya_sealed_shikai.md, **[BB]** research/byakuya_bankai.md, followed by a section number; **[img name]** = `refs/<name>` (I looked at these frames myself). Where a number is my own choice because sources are silent it is marked **DECISION** (and **DECISION (low-confidence source)** when the research flags the underlying fact as uncertain).
 
@@ -77,10 +103,10 @@ Source tags used below: **[RS]** research/rukia_sealed_shikai.md, **[RB]** resea
 
 ### 0.5 Coordinate convention (PROPOSAL, final in design/ADR.md)
 - Blender Z-up, right-handed. Item-space origin = centre of the pommel end (kashira) of the hilt ("start of the hilt"). Blade axis = +Z, so the tsuka occupies z = 0 to 0.25 (0.28 for `rukia_bankai_sword`) and the blade runs to the tip at the +Z end.
-- Cutting edge faces **-Y**, the spine (mune) faces +Y. Flat blade faces look along +-X. Sori (curvature): the tip deflects toward **+Y** (toward the spine), as on a real katana.
+- Cutting edge faces **-Y**, the spine (mune) faces +Y. Flat blade faces look along +-X. Sori (curvature): the tip deflects toward **+Y** (toward the spine), as on a real katana. The sori value of a model is the chord deviation; the tip offset from the base tangent is 4 x that value (B1).
 - Each hand-held model carries an empty `grip_hand` at (0, 0, 0.19) (for rukia_bankai_sword: (0, 0, 0.22), because its tsuka is longer, see E11) (palm centre on the tsuka) so code can re-pivot the in-hand transform. Models with a tip carry an empty `tip` at the blade end.
 - Default Blender OBJ export (Y-up, -Z forward) maps (x, y, z) in Blender to (x, z, -y) in OBJ: the blade ends up along +Y in OBJ and the cutting edge faces +Z in OBJ. The ADR decides how this maps onto Minecraft hand display transforms.
-- Instanced or stretched meshes (giant bankai blade, Hakuteiken blade) use their own local origin, defined in their section.
+- Instanced or stretched meshes (giant bankai blade, Hakuteiken blade) use their own local origin, defined in their section. Effect meshes (petal, shard, crystals, shell, ribbons, LOD, Hakuteiken parts) keep their own origin; the scene layout offset recorded in `<model>_meta.json` is layout only and ignored by the Java loader (B3).
 - Export hygiene: apply all modifiers and scale, triangulate on export, normals outward, no loose geometry, object names exactly as listed in this document (lowercase snake_case), materials named `<model>_atlas`.
 - Export one OBJ per object listed under **Objects**, file name = object name (`blender/export/<model>/<object>.obj`). All OBJs of a model use the same `<model>_diffuse.png` and `<model>_emissive.png`. Empties are not exported; write them to `blender/export/<model>/<model>_empties.json` as `{"<empty name>": [x, y, z]}` in Blender coordinates.
 
@@ -101,7 +127,7 @@ Source tags used below: **[RS]** research/rukia_sealed_shikai.md, **[RB]** resea
 ### 1.0 Shared katana base ("BASE", used by the sealed and shikai models, metres)
 
 ```
- +Y (spine)  <---- side view, looking along -X ---->     blade tip deflects toward +Y (sori 2 cm)
+ +Y (spine)  <---- side view, looking along -X ---->     blade tip deflects toward +Y (sori 20 mm chord deviation, tip offset 80 mm)
                                       _.-'  tip
                                 _.-'
                           _.-'        blade (nagasa) 0.724 incl. habaki, z 0.256 to 0.980
@@ -113,14 +139,14 @@ Source tags used below: **[RS]** research/rukia_sealed_shikai.md, **[RB]** resea
 
 | Part | Spec |
 |---|---|
-| Kashira (pommel cap) | z 0 to 0.014, oval 30 x 22 mm |
-| Tsuka (grip) | z 0 to 0.250, oval section 30 (X) x 24 (Y) mm, 3 mm swell in the middle third, 12-sided, 10 rings |
-| Fuchi (collar) | z 0.236 to 0.250, 32 x 26 mm |
+| Kashira (pommel cap) | z 0 to 0.014, oval 22 (X) x 30 (Y) mm (long axis along the edge-spine axis, B2) |
+| Tsuka (grip) | z 0 to 0.250, oval section 24 (X) x 30 (Y) mm (long axis Y, B2), 3 mm swell in the middle third, 12-sided, 10 rings |
+| Fuchi (collar) | z 0.236 to 0.250, 26 (X) x 32 (Y) mm |
 | Tsuba | z 0.250 to 0.256 (6 mm thick), shape per sword |
 | Habaki (blade collar) | z 0.256 to 0.284, 32 x 10 mm |
 | Blade (nagasa, from habaki start) | 0.724 m; width 32 mm at root tapering to 22 mm at the yokote line (z 0.91), kissaki (tip) 70 mm long; thickness 10 mm at root to 5 mm near the tip; shinogi-zukuri section (6 vertices per ring, ridge at 55 percent of the width from the edge) |
-| Sori | 20 mm maximum deviation from the chord, tip toward +Y |
-| Saya (scabbard) | z 0.256 to 1.000, oval 40 (X) x 26 (Y) mm, follows the same 20 mm sori plus 3 mm, koiguchi collar 14 mm, kojiri end cap 18 mm |
+| Sori | 20 mm maximum deviation from the chord, tip toward +Y; tip offset from the base tangent = 4 x chord deviation = 80 mm (B1) |
+| Saya (scabbard) | z 0.256 to 1.000, oval 40 (X) x 26 (Y) mm, follows the same sori plus 3 mm (23 mm chord deviation, 92 mm tip offset), koiguchi collar 14 mm, kojiri end cap 18 mm |
 | Overall (drawn) | 0.980 m. Overall (sheathed) 1.000 m |
 
 Why these numbers: no source gives a length ([RS 2a], [BS 2a], [BB 2]); Rukia is 144 cm and Byakuya 180 cm, both carry a "normal katana", so one standard katana is the honest common denominator. **DECISION (low-confidence source)**: identical base length for both characters; differences come from the tsuba, wrap and colour, which are the details sources and frames do give.
@@ -137,7 +163,7 @@ Why these numbers: no source gives a length ([RS 2a], [BS 2a], [BB 2]); Rukia is
 The hilt, tsuba and habaki are duplicated mesh data (not linked) so each object exports independently.
 
 **Silhouette and proportions** (BASE plus overrides)
-- Tsuba: rectangular with concave (inward-curved) corners, 72 mm long (along Y) x 62 mm (along X), 6 mm thick, with two curved slits above and below the blade hole (sukashi, 14 x 4 mm each); flame-like embossing on the two long sides is texture only, not geometry. [RS 2a]; frame [img rukia_sealed_1] shows a tall, flat rectangular guard. Rim bevel 1 segment.
+- Tsuba: rectangular with concave (inward-curved) corners, 72 mm long (along Y) x 62 mm (along X), 6 mm thick, with concave corners of radius 10 mm and two curved slits above and below the blade hole (sukashi, 20 (X) x 6 mm maximum width each, centred at y = +-25 mm, 3 mm bow with the ends bending toward the blade hole; B4); flame-like embossing on the two long sides is texture only, not geometry. [RS 2a]; frame [img rukia_sealed_1] shows a tall, flat rectangular guard. Rim bevel 1 segment.
 - Tsuka wrap: flat diamond lacing (hishimaki), 9 diamonds visible along the grip, each about 22 mm long, deep red lacing over a cream underlay. [img rukia_sealed_1, rukia_sealed_7]. Wiki says "reddish-brown", the frames say deep red with a diamond pattern; frames win (DECISION (low-confidence source), [RS 8 q2]).
 - Kashira: dull gold-bronze cap. Not described in any source and not visible in frames; **DECISION (low-confidence source)**: simple oval cap in the guard colour, darkened.
 - Saya: plain dark lacquer, no ribbon or tassel. [img rukia_sealed_7, rukia_sealed_8] show a dark scabbard; sources record only "dark" [RS 2a]. Add a small tan koiguchi and kojiri fitting to tie it to the tsuba colour (**DECISION (low-confidence source)**).
@@ -167,18 +193,18 @@ The hilt, tsuba and habaki are duplicated mesh data (not linked) so each object 
 
 **Objects**:
 1. `rukia_shikai_blade`: hilt, snowflake tsuba, blade, all one mesh.
-2. `rukia_shikai_ribbon_01` ... `rukia_shikai_ribbon_10`: ten separate objects, one per ribbon segment, for code animation. Origin of each = the hinge at its proximal end; the +Z axis of each points along the ribbon so a chain of rotations bends it like a flag.
+2. `rukia_shikai_ribbon_01` ... `rukia_shikai_ribbon_10`: ten separate objects, one per ribbon segment, for code animation. Origin of each = the hinge at its proximal end; the mesh runs along local -Z (ribbon hangs toward -Z) with applied rotation 0; code rotates each segment about its local X axis through its origin, and the next hinge is the previous segment's local point (0, 0, -0.25) after rotation, so a chain of rotations bends it like a flag. Ribbon plane is flat in XZ (width X, thickness Y); no 180 degree bake (G3, F3).
 3. Empties: `grip_hand` (0, 0, 0.19), `ribbon_root` (0, 0, -0.010), `tip`.
 
 **Silhouette and proportions**
 - Everything is white. Sources: blade, hilt and tsuba turn white [RS 2b].
 - Blade: same BASE blade but straighter and a little longer and slimmer: 0.78 m (from habaki start), width 28 mm at root to 20 mm at the yokote line, thickness 9 mm to 4 mm, sori 8 mm. Overall length 1.036 m. **DECISION (low-confidence source)**: [RS 2b] says length is unknown and "assume unchanged", but [img rukia_shikai_1, rukia_shikai_3] show a clearly longer, straighter, slimmer blade than the sealed one; I follow the frames so the shikai reads as a distinct, more elegant silhouette.
-- Tsuba: "hollow snowflake-like circle" [RS 2b]. Round ring, outer diameter 80 mm, 6 mm thick, rim width 8 mm (inner rim diameter 64 mm), central hub diameter 40 mm holding the blade hole, six spokes that widen from 7 mm at the hub to 12 mm at the rim, giving six rounded-triangle windows. The outer edge is a clean circle (no notches). Frames: [img rukia_shikai_3] (manga ch. 266), [img rukia_shikai_10] (anime ep. 149).
-- Tsuka: same BASE grip, white lacing, but flatter wrap: 9 diamonds, ridge lines kept so the wrap pattern reads in white-on-white (shade the diamond gaps with `#C9D6EA`). Kashira: small white cap with a 4 mm hole where the ribbon attaches.
-- Ribbon: one long white ribbon from the pommel, singular per the wiki [RS 2b] and frames [img rukia_shikai_1, rukia_shikai_2, rukia_shikai_3]. Total 2.5 m = 10 segments x 0.25 m; width 40 mm at segment 01 tapering to 28 mm at segment 10; each segment is a 2 x 1 quad strip with 2 mm thickness (12 tris max); adjacent segments overlap 10 mm at the hinge so no gap opens when bent. Swallow-tail cut on segment 10. Code note: in first-person view only segments 01 to 04 are drawn.
+- Tsuba: "hollow snowflake-like circle" [RS 2b]. Round ring, outer diameter 88 mm, 6 mm thick, rim width 7 mm (inner rim diameter 74 mm), central hub diameter 36 mm holding the blade hole (the 32 x 10 mm habaki fits: corner radius 16.8 mm), six spokes that widen from 7 mm at the hub to 12 mm at the rim, giving six rounded-triangle windows 19 mm deep radially. The outer edge is a clean circle (48 segments, no notches). (B5) Frames: [img rukia_shikai_3] (manga ch. 266), [img rukia_shikai_10] (anime ep. 149).
+- Tsuka: same BASE grip, white lacing, but flatter wrap: 9 diamonds, ridge lines kept so the wrap pattern reads in white-on-white (shade the diamond gaps with `#C9D6EA`). Kashira: small white cap. The ribbon hangs from a pommel knot block under it (box 14 (X) x 8 (Y) x 10 mm, z -0.010 to 0.000, material `rk_ribbon`, joined into `rukia_shikai_blade`); no hole (B8).
+- Ribbon: one long white ribbon from the pommel, singular per the wiki [RS 2b] and frames [img rukia_shikai_1, rukia_shikai_2, rukia_shikai_3]. Total 2.5 m = 10 segments x 0.25 m; width 40 mm at segment 01 tapering to 28 mm at segment 10 (segment 10 spans 29.2 to 28.0 mm); each segment is a trapezoid prism 0.25 m long with 2 mm thickness (12 tris), pitch 0.25 m, no overlap between segments (the sub-millimetre hinge gap is accepted; B6), hinges at z = -0.010 - 0.25 (n-1). Segment 10 is the same 12-tri prism; the swallow tail is an alpha cut-out in the ribbon strip texture (V notch 50 mm deep in the last 25 x 8 px cell; B7). Code note: in first-person view only segments 01 to 04 are drawn.
 - Side sketch (not to scale):
 ```
- ribbon  ~~~~~(~~~~~[ kashira ]==tsuka==(  snowflake ring )======blade (white, nearly straight)====>
+ ribbon  ~~~~~(~~~~~[knot][kashira]==tsuka==(  snowflake ring )======blade (white, nearly straight)====>
  z<0                z=0                  z=0.25                 z 0.256 to 1.036
 ```
 
@@ -194,7 +220,7 @@ The hilt, tsuba and habaki are duplicated mesh data (not linked) so each object 
 **Materials (preview)**: blade Roughness 0.25, a little Subsurface/translucent white; ribbon Roughness 0.6, double-sided.
 **Emissive zones**: faint cold glow so the item stays visible in dark caves: blade edge strip and tsuba spokes, colour `#BFE4FF`, Emission Strength 0.4 (emissive map value about 35 percent); ribbon edges 25 percent. The release flash and the light ring in [img rukia_shikai_2] are VFX (section 2), not geometry.
 **Triangle budget**: blade+hilt 3000 total; ribbon segments 12 tris each (120 total).
-**Texture**: 256x256. Layout: top band tsuka wrap + kashira; right 80x80 px square for the snowflake tsuba (hero, 500 px/m); middle blade strips; bottom band ribbon (one continuous strip 250 x 8 px, 10 cells of 25 x 8 px, so the texture flows along the chain).
+**Texture**: 256x256. Layout: top band tsuka wrap + kashira; right 80x80 px square for the snowflake tsuba (hero, 500 px/m); middle blade strips; bottom band ribbon (one continuous strip 250 x 8 px, 10 cells of 25 x 8 px, so the texture flows along the chain; the swallow-tail notch is alpha in cell 10).
 **Manga vs anime**: same design in both [RS 5]; anime adds a bluish ambient tint. We follow the anime cool white.
 
 ---
@@ -207,9 +233,9 @@ The hilt, tsuba and habaki are duplicated mesh data (not linked) so each object 
 3. Empties `grip_hand`, `tip`.
 
 **Silhouette and proportions** (BASE plus overrides)
-- Tsuba: bronze **open window frame**, "like a four-pane window" [BS 2a]; frames [img byakuya_sealed_1] (tall frame, stepped windows), [img byakuya_sealed_6], [img byakuya_sealed_9]. Outer 92 mm (along Y) x 56 mm (along X), 7 mm thick, corner radius 5 mm. Outer frame bar 8 mm; longitudinal centre bar (along Y) 10 mm wide; transverse bar (along X) 8 mm wide; solid central hub plate 40 mm (Y) x 18 mm (X) that holds the 32 x 10 mm blade hole. Result: four windows of about 30 x 15 mm, each with a 4 mm step where it meets the hub. Clearly larger and taller than Rukia's guard; this is the signature of the sealed state.
+- Tsuba: bronze **open window frame**, "like a four-pane window" [BS 2a]; frames [img byakuya_sealed_1] (tall frame, stepped windows), [img byakuya_sealed_6], [img byakuya_sealed_9]. Outer 92 mm (along Y) x 56 mm (along X), 7 mm thick (z 0.250 to 0.257; habaki, blade and saya shift up 1 mm, the tip stays at z 0.980), corner radius 5 mm; only the outer rim is bevelled (1 segment), the windows keep hard edges and the 4 mm hub step (G3). Outer frame bar 8 mm; longitudinal centre bar (along Y) 10 mm wide; transverse bar (along X) 8 mm wide; solid central hub plate 40 mm (Y) x 18 mm (X) that holds the 32 x 10 mm blade hole. Result: four windows of about 30 x 15 mm, each with a 4 mm step where it meets the hub. Clearly larger and taller than Rukia's guard; this is the signature of the sealed state.
 - Tsuka: lavender fabric lacing in a fine diamond pattern; between lacing the frames show cream-yellow diamonds ([img byakuya_sealed_1, byakuya_sealed_3]). 11 diamonds along the grip (smaller than Rukia's, 18 mm), lacing wider than the diamonds so the cord reads as dominant.
-- Kashira: cream/ivory cap (cylinder, 30 x 22 mm, 14 mm high) visible at the top of the hilt in [img byakuya_sealed_1, byakuya_sealed_2]. Fuchi and the tsuba share the bronze colour [BS 2a].
+- Kashira: cream/ivory cap (cylinder, 22 (X) x 30 (Y) mm, 14 mm high; B2) visible at the top of the hilt in [img byakuya_sealed_1, byakuya_sealed_2]. Fuchi and the tsuba share the bronze colour [BS 2a].
 - Saya: **conflict**. The wiki says white [BS 2a]; the frames that show his sheath ([img byakuya_sealed_5], backlit but violet; [img byakuya_sealed_4], night) show it dark. **DECISION (low-confidence source)**: dark violet-black saya, `#2E2840`, because it matches the frames and the anime palette and visually separates the item from the white shikai. No white variant is made (Gate A decision Q1).
 - No tassels or ribbons on the sword. The white obi is clothing, not part of the item. [BS 2a]
 
@@ -234,17 +260,17 @@ The hilt, tsuba and habaki are duplicated mesh data (not linked) so each object 
 ### 1.4 byakuya_shikai
 
 **Objects**:
-1. `byakuya_shikai_hilt`: kashira, tsuka, fuchi, tsuba, habaki and a 30 mm bare tang stub. The blade is gone: "only the handle and tsuba remain" [BS 4c]. Identical hilt dimensions and palette as `byakuya_sealed` (1.3); build it by copying that hilt so the swap is seamless.
+1. `byakuya_shikai_hilt`: kashira, tsuka, fuchi, tsuba and habaki (32 (Y) x 10 (X) x 28 mm, z 0.257 to 0.285, flat top); the habaki is the end of the hilt, no tang stub (B9). The blade is gone: "only the handle and tsuba remain" [BS 4c]. Identical hilt dimensions and palette as `byakuya_sealed` (1.3); build it by copying that hilt so the swap is seamless.
 2. `byakuya_shikai_petal`: one petal-blade, instanced by code in the thousands.
 3. `byakuya_shikai_shard`: one broken fragment, used for impact debris.
-4. Empties `grip_hand`, `tang_tip` (z 0.31).
+4. Empties `grip_hand`, `tang_tip` (0, 0, 0.285) (habaki top, the petal stream emitter).
 
-The tang stub is **DECISION (low-confidence source)**: sources only say the blade separates; a 30 mm steel stub (`#8E96A3`, 10 x 5 mm section) stops the hilt from looking like a cut-off tube.
+No tang stub: frame [img byakuya_shikai_11] (manga ch. 116, hilt after release) shows the habaki block with a flat top and no steel stub (B9).
 
 **Petal-blade proportions**
-- Slim leaf-shaped blade, length 0.120 m, maximum width 0.026 m at 40 percent of the length, thickness 0.004 m, tip pointed, tail ending in a 0.006 m tang, sori 0.005 m. Cross-section a flattened diamond. [BS 2b] gives no size ("too small to see", est. under 1 cm real); a 12 cm petal is a deliberate enlargement so the swarm reads at Minecraft scale, flagged **DECISION (low-confidence source)**. Evidence for the leaf-blade look: [img byakuya_bankai_2, byakuya_bankai_5] (manga, slender leaf blades), colour from [img byakuya_shikai_3]. Note: [img byakuya_shikai_1] shows Senkei-type cross-guard swords, not petals; do not use it for the petal.
+- Slim crescent leaf blade (B10), length 0.120 m, maximum width 0.026 m at z 0.042 (35 percent of the length), 0.017 m wide at z 0.084, thickness 0.004 m (0.003 m at z 0.084), pointed tail apex and tip apex, tip apex shifted 12 mm toward +Y (spine side, the crescent curve); no tang in geometry (a 6 mm tang is painted in the texture cell only). Cross-section a flattened diamond. [BS 2b] gives no size ("too small to see", est. under 1 cm real); a 12 cm petal is a deliberate enlargement so the swarm reads at Minecraft scale, flagged **DECISION (low-confidence source)**. Evidence for the leaf-blade look: [img byakuya_bankai_2, byakuya_bankai_5] (manga, slender leaf blades), colour from [img byakuya_shikai_3]. Note: [img byakuya_shikai_1] shows Senkei-type cross-guard swords, not petals; do not use it for the petal.
 - Origin at the tail end; +Z along the blade, edge -Y, same as BASE.
-- Tris: two rings (3 verts each side) + tip + tail = about 14 tris. Hard limit 20.
+- Tris: two shaped 4-vertex rings (edge, two flats, spine) + tail apex + tip apex = 16 tris (tail fan 4 tris + 4 ring-to-ring quads = 8 tris + tip fan 4 tris). Hard limit 20.
 - Shard: irregular triangular splinter 0.05 x 0.02 x 0.003 m, 3-sided prism, 6 tris (limit 12), origin at centroid.
 
 **Palette (anime default)**
@@ -276,13 +302,13 @@ Research baseline: the sword stays similar to the shikai but is made of transpar
 4. `rukia_bankai_shard_a`, `_b` (required): flat ice splinters for the shatter effect.
 4b. `rukia_bankai_ice_shell` (required): faceted ice capsule for encasing mobs, 1.0 x 1.0 x 2.0 m (X, Y, Z), origin at the bottom centre, 10-sided, 3 rings with irregular facets, max 120 tris; code scales it to the mob's bounding box. Palette `#8EC9EE` over `#D9E8F5`, diffuse alpha 180, emissive 30 percent.
 5. Costume set (in scope, modelled last; player-scale, for a 1.8 m Minecraft player): `rukia_bankai_collar`, `rukia_bankai_pauldron_l`, `rukia_bankai_pauldron_r`, `rukia_bankai_crown`, `rukia_bankai_chest_flower`.
-6. Empties `grip_hand` (0, 0, 0.22), `tip`, `ribbon_root` (back, at obi height).
+6. Empties `grip_hand` (0, 0, 0.22), `tip`, `ribbon_root` = player-space point (0, 0.12, 0.90) (player origin at the feet, facing -Y, back +Y; consumed by the player feature renderer, not the item).
 
 **Silhouette and proportions**
-- Sword: tsuka 0.28 m (z 0 to 0.28; longer than BASE, the frames show a long two-hand grip), tsuba z 0.28 to 0.286, habaki z 0.286 to 0.314, blade 0.78 m from the habaki start, sori 8 mm, overall 1.066 m. Tsuba: a narrow openwork oblong guard, stadium outline 84 mm (along Y) x 22 mm (along X), 6 mm thick, rim 4 mm, solid centre bridge 44 mm (along Y) that holds the blade hole, so two stadium windows of about 16 x 14 mm. Blade made of "ice": 12 mm thick spine, a clear central core strip, brighter edge bevel. Hilt wrap: pale ice-white lacing with blue-grey diamonds. Frames: [img rukia_bankai_2, rukia_bankai_3]. Kashira: plain pale cap, BASE size.
-- Ribbon segment: 0.35 m x 0.07 m, 12 tris, tip piece 0.35 m with a pointed end. [RB 2] says "numerous loops" (not counted) and frames show 3 to 4 big loops; so 3 ribbon chains.
+- Sword: tsuka 0.28 m (z 0 to 0.28; longer than BASE, the frames show a long two-hand grip), tsuba z 0.28 to 0.286, habaki z 0.286 to 0.314, blade 0.78 m from the habaki start, sori 8 mm chord deviation (32 mm tip offset; B1), overall 1.066 m. Tsuba: a narrow openwork oblong guard, stadium outline 96 mm (along Y) x 22 mm (along X), 6 mm thick (z 0.280 to 0.286), end and side rims 4 mm, solid centre bridge 36 mm (along Y) that holds the 32 x 14 mm habaki, so two stadium slot windows of 14 (X) x 26 (Y) mm spanning |y| 18 to 44 mm (B11). Blade made of "ice": 12 mm thick spine, a clear central core strip, brighter edge bevel. Hilt wrap: pale ice-white lacing with blue-grey diamonds. Frames: [img rukia_bankai_2, rukia_bankai_3]. Kashira: plain pale cap, BASE size.
+- Ribbon segment: 0.35 m x 0.07 m, 12 tris, tip piece 0.35 m with a pointed end; same axis rule as rukia_shikai (mesh along -Z, rotation 0, bend about local X). [RB 2] says "numerous loops" (not counted) and frames show 3 to 4 big loops; so 3 ribbon chains.
 - Crystals: hexagonal prisms with pointed tips, base radius = height / 6, one slightly bent variant, 36 to 60 tris each. Their bases sit at z = 0 for ground placement.
-- Costume (in scope, modelled last): collar = tall layered stand-up collar, 0.22 m high, 3 stacked flared tiers [img rukia_bankai_2, rukia_bankai_3]; pauldrons = layered plate stack 0.22 x 0.16 x 0.09 m each, 4 plates stepping outward, with an angular upswept edge; crown = a fan of 6 ice spikes (longest 0.12 m) on the right side of the head, sweeping up and back, with a fringe of 5 thin vertical ice strips (0.06 m) hanging below it [img rukia_bankai_2, rukia_bankai_3]; chest flower = six-petal snowflake 0.09 m across, relief 15 mm, with a fringe of 4 thin ice strips (0.05 m) hanging below it.
+- Costume (in scope, modelled last): collar = tall layered stand-up collar, 0.22 m high, 3 stacked flared tiers [img rukia_bankai_2, rukia_bankai_3]; pauldrons = layered plate stack 0.22 x 0.16 x 0.09 m each, 4 plates stepping outward, with an angular upswept edge; crown = a fan of 6 ice spikes (longest 0.12 m) on the right side of the head, sweeping up and back, with a fringe of 5 thin vertical ice strips (0.06 m) hanging below it [img rukia_bankai_2, rukia_bankai_3]; chest flower = six-petal snowflake 0.09 m across, relief 15 mm, with a fringe of 4 thin ice strips (0.05 m) hanging below it. Costume is built against a non-exported helper of the vanilla player model in unscaled model space (1 px = 1/16 m, facing -Y, back +Y; the feature renderer applies the 0.9375 scale). Origins: collar and chest_flower (0, 0, 1.50), pauldrons (+-0.3125, 0, 1.375), crown (0, 0, 1.50).
 
 **Palette**
 | Part | HEX | Notes |
@@ -309,7 +335,7 @@ Research baseline: the sword stays similar to the shikai but is made of transpar
 
 **Objects**:
 1. `byakuya_bankai_blade` (required): one giant blade for instancing.
-1b. `byakuya_bankai_blade_lod` (required): same outline, origin and UV region as `byakuya_bankai_blade`, 3 rings x 4 vertices plus the tip (flat slab, same 0.75 m sori), max 24 tris; used beyond 32 blocks from the camera.
+1b. `byakuya_bankai_blade_lod` (required): same outline, origin and UV region as `byakuya_bankai_blade`, 3 rings x 4 vertices (at z 0, 4.5 and 7.1) plus the same tip apex (flat slab, same 0.75 m sori, same `dev()` curve), max 24 tris; used beyond 32 blocks from the camera.
 2. `byakuya_bankai_hilt_ground` (required): the dropped sword's hilt standing in the ground.
 3. `byakuya_bankai_ripple` (required): flat ring mesh for the ground ripple under the hilt.
 4. `hakuteiken_blade_body`, `hakuteiken_blade_tip`, `hakuteiken_wing_l`, `hakuteiken_wing_r`, `hakuteiken_halo` (required for Shukei: Hakuteiken): the stretch set.
@@ -318,19 +344,19 @@ Research baseline: the sword stays similar to the shikai but is made of transpar
 
 **Giant blade (instanced)**
 - Origin at the centre of the blade base. +Z up. The lower 0.5 m is the "buried" section (no detail, textured with a dark soil-edge band) so the blade can be sunk 0.5 m into the ground and the intersection is hidden.
-- Height 8.0 m (visible 7.5 m), width 0.55 m, thickness 0.14 m at the spine tapering to 0.06 m at the tip, sori 0.75 m toward +Y (spine side), concentrated in the upper half: deviation from the straight base axis 0 at z 0.5, 0.10 m at z 4.0, 0.35 m at z 6.0, 0.75 m at the tip, kissaki the last 0.9 m, shinogi ridge 55 percent. Aspect about 1:14, matching [img byakuya_bankai_3]. Sources: no size given [BB 2, 8 q11]; the 8 m figure is my estimate from [img byakuya_bankai_3, byakuya_bankai_4], where blades are several times Byakuya's height: **DECISION (low-confidence source)** (research suggests 5 to 10 m).
+- Height 8.0 m (visible 7.5 m), width 0.55 m, thickness 0.14 m at the spine tapering to 0.06 m at the tip, sori 0.75 m toward +Y (spine side), concentrated in the upper half: deviation from the straight base axis 0 at z 0.5 (vertical below, the buried 0.5 m), 0.10 m at z 4.0, 0.35 m at z 6.0, 0.75 m at the tip, kissaki the last 0.9 m, shinogi ridge 55 percent. The bend uses fixed slopes dy/dz 0.0, 0.07, 0.17, 0.33 at z = 0.5, 4.0, 6.0, 8.0 (segment angles rise monotonically from 0 to about 17 degrees, so the tip hooks inward); the tip apex world z is exactly 8.000 (B13). Ring stations z = 0, 0.5, 2.0, 3.5, 4.5, 5.3, 6.0, 6.5, 6.85, 7.1 (full width 0.55 m), 7.55 (0.40 m wide, y shift 0.04), 7.85 (0.18 m wide, y shift 0.06); glow-zone faces are the gaps from z >= 6.85. Aspect about 1:14, matching [img byakuya_bankai_3]. Sources: no size given [BB 2, 8 q11]; the 8 m figure is my estimate from [img byakuya_bankai_3, byakuya_bankai_4], where blades are several times Byakuya's height: **DECISION (low-confidence source)** (research suggests 5 to 10 m).
 - Edge faces -Y, spine +Y. In the rows the edge points outward and the spine inward, so tips lean toward Byakuya, as in [img byakuya_bankai_3, byakuya_bankai_4]. Code yaws the left-row instances 180 degrees so +Y always points to the central axis.
-- Flat-shaded, 12 rings x 6 vertices; tris about 170, hard limit 300. No separate habaki or tang; this is a blade slab, not a sword.
+- Flat-shaded, 12 rings x 6 vertices; 142 tris at blockout (target 190 after detailing), hard limit 300. No separate habaki or tang; this is a blade slab, not a sword.
 
 **Ground hilt**
-- The released sealed sword drops tip-down and sinks "as if into water" [BB 3]. Object = BASE hilt from 1.3 (kashira, tsuka, tsuba) pointing **up** (+Z) with a 0.25 m blade stub below it, so code can slide it down into the ground; origin at the bottom of the stub. Total height 0.52 m. Tris limit 1500.
-- Ripple: flat ring, outer radius 1.0 m, width 0.12 m, 32 tris, scaled by code from 0 to 6 m; lies at z = 0.02.
+- The released sealed sword drops tip-down and sinks "as if into water" [BB 3]. Object = BASE hilt from 1.3 (kashira, tsuka, tsuba) pointing **up** (+Z) with a 0.25 m blade stub below it, so code can slide it down into the ground; origin at the bottom of the stub. Total height 0.52 m. Tris limit 1500. Built by rotating the hilt 180 degrees about Y (rotated, not mirrored; translation 0.52): kashira up, stub bottom at z 0, the cutting edge stays -Y so the yaw convention matches every other Byakuya mesh (B14). Grip ovals as in BASE (B2).
+- Ripple: flat ring, outer radius 1.0 m, width 0.12 m, 32 tris, scaled by code from 0 to 6 m; lies at z = 0.02; single-sided +Z (only seen from above; B16).
 
 **Hakuteiken set** (from [img byakuya_bankai_10, byakuya_bankai_11])
-- Blade body: unit length, a straight prism along +Z, z 0 to 1.0, width 0.30 m, thickness 0.06 m, 6 tris per ring and only 2 rings, so non-uniform scaling on Z is safe (all detail is in the UVs; stretched UV along Z with a tileable glow stripe). Origin at the hilt-side end. The tip is separate and never scaled: `hakuteiken_blade_tip`, 0.45 m kissaki, 40 tris.
-- Wings: two mirrored feather sheets, span 6.0 m each, 9 spiky feather lobes decreasing in size, slightly curved forward (0.8 m), single-sided with alpha cut-out, 150 tris each. Origin at the shoulder root; +Z up, X outward.
-- Halo: vertical ring, outer radius 1.10 m, inner 1.00 m, 48 tris, double-sided, origin at its centre, plane = XZ; code places the centre 0.35 m above the top of the head and 0.3 m behind the back.
-- All five pieces are fully emissive white. Tris total about 900.
+- Blade body: unit length, a straight prism along +Z, z 0 to 1.0, width 0.10 m (Y), thickness 0.03 m (X), 2 shinogi rings (6 vertices per ring), so non-uniform scaling on Z is safe (all detail is in the UVs; stretched UV along Z with a tileable glow stripe). Origin at the hilt-side end. The tip is separate and never scaled: `hakuteiken_blade_tip`, 0.20 m kissaki, up to 40 tris; rings (z, width, thickness) = (0.0, 0.10, 0.03), (0.08, 0.09, 0.027), (0.15, 0.06, 0.02), apex (0, 0.017, 0.20) (B15).
+- Wings: two mirrored feather sheets, each one continuous sheet (no overlapping faces; B12). 9 feathers fan out from the root at 48, 40.5, 33, 25.5, 18, 10.5, 3, -4.5, -12 degrees above horizontal; feather length 6.0 m (top) decreasing by 7.5 percent of 6.0 m per feather to 2.40 m ("span 6.0 m" means the longest feather length); curved forward (toward -Y) by 0.8 m x (r / 6.0 m)^2 at planar radius r; 48 tris per wing (limit 150), single-sided with alpha cut-out, normals +Y (+Y = behind the player). Origin at the shoulder root R; X outward (`_l` extends +X).
+- Halo: vertical ring, outer radius 1.10 m, inner 1.00 m, 48 tris, single-sided +Y (B16), origin at its centre, plane = XZ; code places the centre 0.35 m above the top of the head and 0.3 m behind the back.
+- All five pieces are fully emissive white. Tris total about 300 at blockout (limit 900). Wings and halo are drawn with back-face culling disabled (translucent emissive layer of the effect renderer; the ADR spike verifies it); if culling cannot be disabled, duplicate their faces with reversed winding (halo 96 tris, wings 96 each, still inside 900).
 
 **Senkei sword** (optional): 1.0 m small sword with a cross-shaped tsuba (80 mm), blade 0.70 m, 150 tris, origin at the hilt end, strongly emissive. [BB 4.3, img byakuya_bankai_7] shows hundreds of such glowing cross-guard blades in curved rows. Scope: Senkei is not in the minimum ability list; it is kept as an optional stretch so Hakuteiken's "condensed blades" story can be told. Do not model it before the required objects pass Gate B.
 
@@ -350,8 +376,8 @@ Research baseline: the sword stays similar to the shikai but is made of transpar
 | Senkei sword | `#F25FB8` body glow, core `#FFD3EE` | [BB 4.3], low-confidence estimate |
 
 **Materials (preview)**: giant blade Metallic 0.7, Roughness 0.4 (painted streaks matter more); wings and halo pure Emission, Strength 4.0.
-**Emissive zones**: the top 1.2 m of the giant blade: a vertical gradient from 0 percent at z = 6.3 m to 100 percent at the tip, plus a 2 cm edge line at 40 percent along the whole edge. Research: the released blades are not described as glowing [BB 2], so the glow is **DECISION (low-confidence source)** and exists to support the petalisation moment and give the storm a lit leading edge. Hakuteiken wings, halo, blade: 100 percent. Senkei sword: 100 percent.
-**Triangle budget**: giant blade 300 (target 170), blade LOD 24, ground hilt 1500, ripple 32, Hakuteiken set 900, Senkei sword 150.
+**Emissive zones**: the top 1.2 m of the giant blade: a vertical gradient from 0 percent at z = 6.8 m to 100 percent at the tip (F1), plus a 2 cm edge line at 40 percent along the whole edge. Research: the released blades are not described as glowing [BB 2], so the glow is **DECISION (low-confidence source)** and exists to support the petalisation moment and give the storm a lit leading edge. Hakuteiken wings, halo, blade: 100 percent. Senkei sword: 100 percent.
+**Triangle budget**: giant blade 300 (blockout 142, target 190), blade LOD 24, ground hilt 1500, ripple 32, Hakuteiken set 900 (blockout about 300), Senkei sword 150.
 **Texture**: 512x512. Layout: left 160x256 = giant blade (mapped so a 1:14 slab takes the full height, 32 px per metre; seams on the spine); top-right 192x128 = hilt strips and tsuba; middle-right 192x192 = wing alpha sheet (mirrored, one feather group painted); bottom-right 128x128 = halo ring + Hakuteiken blade glow strip; Senkei sword 64x64 in the bottom-left. Most texel space goes to the giant blade (it is the signature silhouette).
 **Manga vs anime**: manga shows the giant blades as plain white-grey slabs and the petals as white-lavender on navy ([img byakuya_bankai_2, byakuya_bankai_5]); the anime shows silver blades in two converging rows on a blue ground and pink glowing Senkei ([img byakuya_bankai_3, byakuya_bankai_4, byakuya_bankai_7]) [BB 5]. Follow the anime (silver blades, pink glow); the manga look is a tint variant (petals `#E9E7F4`).
 
@@ -462,7 +488,7 @@ Source: [BS 3, 4a to 4c]. The blade scatters into a thousand blades that are ste
 #### Release (Chire)
 | t | Event | Shape / colour / size | Particles | Sound | Screen |
 |---|---|---|---|---|---|
-| 0.0 | Blade separates | The held item switches to `byakuya_shikai_hilt`; a petal stream sprays from the stub, cone angle 25 degrees, length 3 blocks | 200 `petal` over 0.4 s | `block.pink_petals.break` x3 + `entity.illusioner.cast_spell` | flash 40 percent, lavender tint, 0.05 s |
+| 0.0 | Blade separates | The held item switches to `byakuya_shikai_hilt`; a petal stream sprays from the habaki top (`tang_tip`), cone angle 25 degrees, length 3 blocks | 200 `petal` over 0.4 s | `block.pink_petals.break` x3 + `entity.illusioner.cast_spell` | flash 40 percent, lavender tint, 0.05 s |
 | 0.2 | Cloud forms | Swarm gathers into a loose ring around the player, radius 2, height 1.5 | up to 1000 petals active | `entity.phantom.flap` quiet loop | none |
 | 0.5 | Swarm idle | Orbit at 0.6 rev/s, small noise, slight upward drift | 1000 petals | `block.pink_petals.step` randomly every 0.5 s | none |
 
@@ -520,11 +546,11 @@ Optional stretch; only if time permits after the required effects pass. [BB 4.3,
 | 2.0 | Release (Ikka Senjinka, optional) | All swords fly to the target within 0.5 s | 96 swords, plus 120 pink `petal` | `entity.player.attack.crit` rapid x8 | shake 0.8 degrees |
 
 #### Shukei: Hakuteiken
-[BB 4.5, img byakuya_bankai_10, byakuya_bankai_11]. Condenses everything into one sword; white wings and a vertical halo form on his back. Wing span 6 m each, halo radius 1.1 m, strike distance up to 20 blocks.
+[BB 4.5, img byakuya_bankai_10, byakuya_bankai_11]. Condenses everything into one sword; white wings and a vertical halo form on his back. Longest wing feather 6 m, halo radius 1.1 m, strike distance up to 20 blocks.
 | t | Event | Shape / colour / size | Particles | Sound | Screen |
 |---|---|---|---|---|---|
 | 0.0 | Condense | All petals and swords rush into the sword in his hand | 2000 petals converging | `block.beacon.activate` | vignette_dark 60 percent |
-| 0.5 | Wings and halo | `hakuteiken_wing_l/r` unfold 0 to 6 m in 0.4 s; `hakuteiken_halo` fades in behind the head, white `#FFFFFF` | 80 white `frost_mote`-style feathers | `entity.ender_dragon.flap` + `block.bell.use` | flash 40 percent |
+| 0.5 | Wings and halo | `hakuteiken_wing_l/r` unfold (longest feather 0 to 6 m) in 0.4 s; `hakuteiken_halo` fades in behind the head, white `#FFFFFF` | 80 white `frost_mote`-style feathers | `entity.ender_dragon.flap` + `block.bell.use` | flash 40 percent |
 | 1.0 | Blade glow | `hakuteiken_blade_body` brightens; length grows 1 to 4 m | 40 | `block.amethyst_block.resonate` | none |
 | 1.5 | Strike | Blade stretches to the target distance (Z scale), a white line | 200 white particles along the line | `entity.warden.sonic_boom` + `item.mace.smash_ground` | bankai_flash 80 percent, shake 1.2 degrees, 0.5 s |
 | 1.8 | Impact | White burst radius 5, ground ring `snow_ring` radius 8, `#FFFFFF` | 300 | `entity.generic.explode` + `block.glass.break` | flash decays over 0.4 s |
@@ -556,6 +582,19 @@ Resolved decisions, one line per former open question (same numbering). Source: 
 13. **Texture sizes:** 256x256 for the four small models and 512x512 for the two bankai models are confirmed.
 14. **Coordinate convention:** no objection to Z-up, origin at the kashira, edge -Y, sori toward +Y; only the `grip_hand` height changes (E2) and export becomes one OBJ per object (E3).
 15. **Colour accuracy:** no separate sampling pass; the bible HEX values (as edited) are binding starting values, painters check them against the cited frames, and Gate C reviews colour on turntables.
+
+### Gate B answers affecting stated values (final)
+
+Source: `design/GATE_B.md` section 3.
+
+- **Sori:** chord reading, `SORI_K = 4`; saya follows the blade sori plus 3 mm (92 mm tip offset).
+- **Tsuka oval:** 24 (X) x 30 (Y) mm, fuchi and kashira likewise (B2).
+- **Ribbons (shikai and bankai):** mesh along local -Z, rotation 0, bend about local X, flat in XZ; segment 10 is a 12-tri trapezoid with an alpha swallow tail.
+- **Byakuya sealed:** tsuba stays 7 mm at z 0.250 to 0.257 with the 1 mm upward shift of habaki, blade and saya (tip 0.980); hard-edged L windows and the 4 mm hub step stay, bevel on the outer rim only.
+- **Byakuya shikai:** petal is the 16-tri crescent leaf (B10); the shard stays an irregular 8-tri splinter without a tang.
+- **Rukia bankai:** costume set modelled after the B-edits against the vanilla player helper (see 1.5); ice faces keep the bevel / core / spine split only as a UV layout guide, the exported material is `rukia_bankai_atlas`.
+- **Byakuya bankai:** wings follow B12 (+Y = behind the player, curve toward -Y); halo origin stays at its own centre, placed by code independent of the wing root; the buried 0.5 m of the giant blade is vertical.
+- **Deferred:** Senkei sword stays deferred until Gate C passes; GUI icons come after detailing.
 
 ---
 
