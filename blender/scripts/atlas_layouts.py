@@ -7,11 +7,11 @@ ATLAS = 256
 class Isl:
     """Rectangular UV island. uv(fx, fy): fx 0..1 left to right, fy 0..1 BOTTOM to TOP (V up)."""
 
-    def __init__(self, name, x, y, w, h):
-        self.name, self.x, self.y, self.w, self.h = name, x, y, w, h
+    def __init__(self, name, x, y, w, h, atlas=ATLAS):
+        self.name, self.x, self.y, self.w, self.h, self.atlas = name, x, y, w, h, atlas
 
     def uv(self, fx, fy):
-        return ((self.x + fx * self.w) / ATLAS, 1.0 - (self.y + (1.0 - fy) * self.h) / ATLAS)
+        return ((self.x + fx * self.w) / self.atlas, 1.0 - (self.y + (1.0 - fy) * self.h) / self.atlas)
 
     def px(self, fx, fy):
         return (self.x + fx * self.w, self.y + (1.0 - fy) * self.h)
@@ -23,8 +23,8 @@ class Isl:
         return "Isl(%s,%d,%d,%d,%d)" % (self.name, self.x, self.y, self.w, self.h)
 
 
-def _mk(d):
-    return {k: Isl(k, *v) for k, v in d.items()}
+def _mk(d, atlas=ATLAS):
+    return {k: Isl(k, *v, atlas=atlas) for k, v in d.items()}
 
 
 # ---- shared hilt constants (Gate B detailing guidance)
@@ -321,3 +321,88 @@ def shard_face_uv(isl, y, z):
     yc = (min(p[0] for p in t) + max(p[0] for p in t)) / 2.0
     zc = (min(p[1] for p in t) + max(p[1] for p in t)) / 2.0
     return isl.uv(0.5 + (y - yc) * SHARD_PX_PER_M / isl.w, 0.5 + (z - zc) * SHARD_PX_PER_M / isl.h)
+
+
+# ---- rukia_bankai (512 x 512, ART_BIBLE 1.5): the left 256 px column (x < 256) is RESERVED for the deferred costume set; every
+# required piece lives in the right column. Palette/emissive per bible; ice parts carry diffuse alpha 200 (shell 180).
+BANKAI_ATLAS = 512
+RUKIA_BANKAI = _mk({
+    "wrap":         (258, 2, 60, 168),     # 22 rings x 12 sides, 21 gaps x 8 px, 4 diamonds around
+    "blade_a":      (322, 2, 10, 226),     # +X side: edge bevel (u 0..0.55) + core flat (0.55..1), u = edge -> spine
+    "blade_b":      (334, 2, 10, 226),     # -X side
+    "blade_s":      (346, 2, 5, 226),      # spine
+    "blade_e":      (353, 2, 3, 226),      # edge flat
+    "tsuba_front":  (360, 2, 18, 70),      # planar, 720 px/m: 22 (X) x 96 (Y) mm
+    "tsuba_back":   (380, 2, 18, 70),
+    "tsuba_rim":    (400, 2, 108, 8),
+    "tsuba_win":    (400, 12, 16, 4),
+    "kashira_side": (400, 18, 42, 8),
+    "kashira_cap":  (446, 18, 12, 16),
+    "fuchi_side":   (400, 28, 48, 8),
+    "habaki_side":  (400, 38, 34, 12),
+    "habaki_top":   (438, 38, 8, 16),
+    "shell_body":   (362, 80, 120, 72),    # 10 columns x 12 px, 4 rows x 18 px: one patch per facet
+    "shell_top":    (362, 154, 36, 36),
+    "shell_bot":    (402, 154, 36, 36),
+    "ribbon_seg":   (258, 234, 104, 20),   # along the length x across the width (297 / 286 px/m)
+    "ribbon_tip":   (366, 234, 104, 20),
+    "crystal_d":    (258, 258, 120, 120),
+    "crystal_c":    (382, 258, 72, 72),
+    "crystal_b":    (458, 258, 48, 48),
+    "crystal_a":    (382, 334, 32, 32),
+    "shard_a_face": (418, 334, 12, 40),
+    "shard_a_side": (432, 334, 6, 40),
+    "shard_b_face": (442, 334, 10, 28),
+    "shard_b_side": (454, 334, 6, 28),
+}, BANKAI_ATLAS)
+LAYOUTS["rukia_bankai"] = RUKIA_BANKAI
+BANKAI_TSUBA_PX_PER_M = 720.0
+BANKAI_WRAP_RINGS = 22
+BANKAI_HABAKI_PX_PER_M = 440.0
+# crystals: ring heights as fractions of the height (the apex fan covers the rest up to 1.0), ring radius factors
+CRYSTAL_RINGS = {"a": ([0.0, 0.30, 0.60, 0.82], [1.0, 0.97, 0.88, 0.72]), "b": ([0.0, 0.30, 0.60, 0.82], [1.0, 0.97, 0.88, 0.72]),
+                 "c": ([0.0, 0.30, 0.60, 0.82], [1.0, 0.97, 0.88, 0.72]), "d": ([0.0, 0.45, 0.78], [1.0, 0.95, 0.78])}
+CRYSTAL_H = {"a": 0.15, "b": 0.30, "c": 0.60, "d": 1.20}
+CRYSTAL_BEND = {"a": 0.0, "b": 0.0, "c": 0.10, "d": 0.0}
+CRYSTAL_SEED = {"a": 11, "b": 12, "c": 13, "d": 14}
+SHELL_COLS, SHELL_ROWS = 10, 4
+# shards: (length, width) in m, raw triangle in (y, z); 3 mm thick
+SHARDS = {"a": (0.12, 0.03), "b": (0.08, 0.025)}
+BANKAI_SHARD_PX_PER_M = 300.0
+
+
+def bankai_shard_tri(key):
+    ln, wd = SHARDS[key]
+    tri = [(0.12 * wd, ln / 2), (-0.5 * wd, -ln / 2 + 0.01), (0.5 * wd, -ln / 2)]
+    cy, cz = sum(p[0] for p in tri) / 3, sum(p[1] for p in tri) / 3
+    return [(y - cy, z - cz) for y, z in tri]
+
+
+def bankai_shard_face_uv(isl, key, y, z):
+    t = bankai_shard_tri(key)
+    yc = (min(p[0] for p in t) + max(p[0] for p in t)) / 2.0
+    zc = (min(p[1] for p in t) + max(p[1] for p in t)) / 2.0
+    return isl.uv(0.5 + (y - yc) * BANKAI_SHARD_PX_PER_M / isl.w, 0.5 + (z - zc) * BANKAI_SHARD_PX_PER_M / isl.h)
+
+
+def stadium(hx, hy, n):
+    """Stadium along Y (CCW): half width hx, half length hy, semicircular ends of radius hx with n segments each."""
+    pts = []
+    for k in range(n + 1):
+        t = math.pi * k / n
+        pts.append((hx * math.cos(t), hy - hx + hx * math.sin(t)))
+    for k in range(n + 1):
+        t = math.pi + math.pi * k / n
+        pts.append((hx * math.cos(t), -hy + hx + hx * math.sin(t)))
+    return pts
+
+
+def bankai_tsuba_shapes():
+    """Gate B B11: outline stadium 22 (X) x 96 (Y) mm, 16 segments per end; two slot windows 14 x 26 mm centred at y = +-31 mm
+    (|y| 18..44), 8 segments per end, clockwise holes. Centre bridge 36 mm, end and side rims 4 mm."""
+    outline = stadium(0.011, 0.048, 16)
+    holes = []
+    for sy in (-1, 1):
+        h = [(x, y + sy * 0.031) for x, y in stadium(0.007, 0.013, 8)]
+        holes.append(h[::-1])
+    return outline, holes

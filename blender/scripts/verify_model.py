@@ -118,6 +118,7 @@ def uv_check(o, layout):
     dens = []        # (px/m, island or None)
     mw = o.matrix_world
     names = list(layout.keys()) if layout else []
+    AT = next(iter(layout.values())).atlas if layout else 256
     for p in me.polygons:
         uvs = [tuple(uvl.data[li].uv) for li in p.loop_indices]
         if any(u < -1e-6 or u > 1 + 1e-6 or v < -1e-6 or v > 1 + 1e-6 for u, v in uvs):
@@ -131,8 +132,8 @@ def uv_check(o, layout):
             degenerate += 1
             continue
         area = p.area
-        cx = sum(u for u, v in uvs) / len(uvs) * 256
-        cy = (1 - sum(v for u, v in uvs) / len(uvs)) * 256
+        cx = sum(u for u, v in uvs) / len(uvs) * AT
+        cy = (1 - sum(v for u, v in uvs) / len(uvs)) * AT
         isl = None
         for nm in names:
             i = layout[nm]
@@ -140,7 +141,7 @@ def uv_check(o, layout):
                 isl = nm
                 break
         if area > 1e-10:
-            dens.append((math.sqrt(uva * 256 * 256 / area), isl))
+            dens.append((math.sqrt(uva * AT * AT / area), isl))
     ev.to_mesh_clear()
     over = buf > 1
     res.update(out_of_range_faces=out_of_range, degenerate_uv_faces=degenerate, covered_texels_1024=int((buf > 0).sum()),
@@ -149,7 +150,7 @@ def uv_check(o, layout):
     ys, xs = np.nonzero(over)
     oi = {}
     for y, x in zip(ys[::7], xs[::7]):
-        px, py = x / RES * 256, y / RES * 256
+        px, py = x / RES * AT, y / RES * AT
         for nm in names:
             i = layout[nm]
             if i.x <= px < i.x + i.w and i.y <= py < i.y + i.h:

@@ -371,10 +371,11 @@ def tsuba_byakuya_sealed(prefix, z0, mat_name, thick=0.007):
 
 def tsuba_bankai_bar(prefix, z0, mat_name, thick=0.006):
     z1 = z0 + thick
-    o = prism(prefix + "_tsuba", stadium(0.011, 0.042, 6), z0, z1, mat_name)
+    # Gate B B11: outline 96 (Y) x 22 (X) mm, slot windows 14 x 26 mm at y = +-31 mm (|y| 18..44), bridge 36 mm, rims 4 mm
+    o = prism(prefix + "_tsuba", stadium(0.011, 0.048, 8), z0, z1, mat_name)
     cutters = []
     for sy in (-1, 1):
-        pts = [(x, y + sy * 0.030) for x, y in stadium(0.007, 0.008, 4)]
+        pts = [(x, y + sy * 0.031) for x, y in stadium(0.007, 0.013, 6)]
         cutters.append(_cutter(prefix + "_win", pts, z0, z1))
     return boolean_diff(o, cutters)
 

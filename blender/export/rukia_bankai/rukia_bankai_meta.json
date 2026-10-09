@@ -1,0 +1,74 @@
+{
+  "format": 1,
+  "units": "m",
+  "space": "blender_zup",
+  "empties": {
+    "grip_hand": [
+      0.0,
+      0.0,
+      0.22
+    ],
+    "tip": [
+      0.0,
+      0.037978,
+      1.065491
+    ],
+    "ribbon_root": [
+      0.0,
+      0.12,
+      0.9
+    ]
+  },
+  "objects": {
+    "rukia_bankai_sword": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rukia_bankai_ribbon_seg": [
+      0.3,
+      0.0,
+      0.4
+    ],
+    "rukia_bankai_ribbon_tip": [
+      0.45,
+      0.0,
+      0.4
+    ],
+    "rukia_bankai_crystal_a": [
+      0.8,
+      0.0,
+      0.0
+    ],
+    "rukia_bankai_crystal_b": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "rukia_bankai_crystal_c": [
+      1.3,
+      0.0,
+      0.0
+    ],
+    "rukia_bankai_crystal_d": [
+      1.8,
+      0.0,
+      0.0
+    ],
+    "rukia_bankai_shard_a": [
+      2.2,
+      0.0,
+      0.06
+    ],
+    "rukia_bankai_shard_b": [
+      2.35,
+      0.0,
+      0.04
+    ],
+    "rukia_bankai_ice_shell": [
+      3.0,
+      0.0,
+      0.0
+    ]
+  }
+}

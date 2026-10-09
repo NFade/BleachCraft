@@ -5,14 +5,14 @@ from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import atlas_layouts as al
 model = sys.argv[1]
-S = 3
+S = 2 if al.LAYOUTS[model][next(iter(al.LAYOUTS[model]))].atlas > 256 else 3
 d = Image.open(r"D:\MineBleach\blender\export\%s\%s_diffuse.png" % (model, model)).convert("RGBA")
 e = Image.open(r"D:\MineBleach\blender\export\%s\%s_emissive.png" % (model, model)).convert("RGBA")
 bg = Image.new("RGBA", d.size, (40, 40, 44, 255))
 bg.alpha_composite(d)
 ee = Image.new("RGBA", e.size, (0, 0, 0, 255))
 a = e.split()[3]
-TINT = (249, 200, 246, 255) if model == "byakuya_shikai" else (191, 228, 255, 255)
+TINT = (249, 200, 246, 255) if model == "byakuya_shikai" else (207, 239, 255, 255) if model == "rukia_bankai" else (191, 228, 255, 255)
 ee.paste(Image.new("RGBA", e.size, TINT), (0, 0), a)
 sheet = Image.new("RGB", (d.width * S * 2 + 30, d.height * S + 24), (20, 20, 22))
 dd = ImageDraw.Draw(sheet)

@@ -303,7 +303,7 @@ def bezier_corner(p_in, p_corner, p_out, segs):
 
 
 # ------------------------------------------------------------------ materials (preview) and scene helpers
-def atlas_material(model, diffuse=None, emissive=None, tint="#FFFFFF", strength=1.0, cutout=False):
+def atlas_material(model, diffuse=None, emissive=None, tint="#FFFFFF", strength=1.0, cutout=False, blend=False):
     """One material `<model>_atlas`. Principled BSDF preview: diffuse PNG (Closest) as base colour; emissive PNG alpha x tint as
     emission. The baked PNGs are what ships; this is only for the turntable and visual checks."""
     name = model + "_atlas"
@@ -341,6 +341,12 @@ def atlas_material(model, diffuse=None, emissive=None, tint="#FFFFFF", strength=
     if cutout:
         try:
             m.surface_render_method = 'DITHERED'
+        except Exception:
+            pass
+    if blend:    # translucent ice preview (diffuse alpha < 255); the shipped look is decided by the PNG alpha, not this flag
+        try:
+            m.surface_render_method = 'BLENDED'
+            m.use_backface_culling = False
         except Exception:
             pass
     return m
