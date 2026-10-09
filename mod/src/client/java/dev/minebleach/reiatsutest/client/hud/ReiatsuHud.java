@@ -58,7 +58,7 @@ public final class ReiatsuHud {
 		int w = ctx.getScaledWindowWidth();
 		int h = ctx.getScaledWindowHeight();
 		int x = w / 2 - BAR_W / 2;
-		int y = h - 76;
+		int y = h - 94;
 		long nowMs = System.currentTimeMillis();
 
 		int fillColor = character == CharacterId.BYAKUYA ? 0xFFFF9EC4 : 0xFF7FD4FF;
@@ -94,7 +94,7 @@ public final class ReiatsuHud {
 		}
 
 		// cooldown boxes: three slots with the ability name, key and remaining seconds
-		int boxW = 58;
+		int boxW = 74;
 		int boxH = 24;
 		int gap = 4;
 		int total = 3 * boxW + 2 * gap;

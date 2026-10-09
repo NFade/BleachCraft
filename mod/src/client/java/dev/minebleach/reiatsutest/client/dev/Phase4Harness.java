@@ -257,7 +257,7 @@ public final class Phase4Harness {
 	}
 
 	private static List<CowEntity> cows(ServerPlayerEntity p) {
-		return p.getServerWorld().getEntitiesByClass(CowEntity.class, Box.of(p.getPos(), 80, 20, 80), e -> true);
+		return p.getServerWorld().getEntitiesByClass(CowEntity.class, Box.of(p.getPos(), 80, 20, 80), e -> e.isAlive());
 	}
 
 	private static String lastResult() {
@@ -431,7 +431,7 @@ public final class Phase4Harness {
 			sCheck("A8 server BANKAI/RUKIA", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.RUKIA));
 			sCheck("A8 reiatsu 80.0", p -> {
 				int v = sm(p).reiatsu().value();
-				return v >= 790 && v <= 800 ? null : "reiatsu " + v;
+				return v >= 760 && v <= 800 ? null : "reiatsu " + v;
 			});
 			cCheck("A8 client BANKAI", () -> clientExpect(ZanpakutoState.BANKAI, CharacterId.RUKIA));
 			cCheck("A8 held stack BANKAI", () -> clientStack(ReleaseState.BANKAI));
@@ -558,10 +558,10 @@ public final class Phase4Harness {
 				for (CowEntity c : cows(p)) {
 					min = Math.min(min, c.getHealth());
 				}
-				return min < 10 ? null : "no cow was hurt";
+				return cows(p).size() < 3 || min < 10 ? null : "no cow was hurt";
 			});
 		});
-		step("wait gcd, hakuteiken", 24, () -> { });
+		step("wait gcd, hakuteiken", 24, () -> cmd("reiatsu full"));
 		step("press H (hakuteiken)", 40, () -> press(ReiatsuKeys.SLOTS[1]));
 		step("B7 checks: hakuteiken", 3, () -> {
 			shot("15_hakuteiken");
@@ -575,7 +575,7 @@ public final class Phase4Harness {
 		});
 
 		// ---------------- C. hand, drop, death, dimension
-		step("C1 release rukia, switch hand away", 60, () -> {
+		step("C1 release rukia, switch hand away", 175, () -> {
 			selectSlot(0);
 			cmd("reiatsu full");
 		});

@@ -1,0 +1,4 @@
+[18:00:22] [Server thread/ERROR] (reiatsu_test) [phase4] CHECK FAIL A8 reiatsu 80.0: reiatsu 788
+[18:02:29] [Render thread/INFO] (reiatsu_test) [phase4] SUMMARY passes=63 fails=1
+[18:02:29] [Render thread/ERROR] (reiatsu_test) [phase4] FAILED A8 reiatsu 80.0: reiatsu 788
+[18:02:29] [Render thread/INFO] (reiatsu_test) [phase4] RESULT FAILURES
