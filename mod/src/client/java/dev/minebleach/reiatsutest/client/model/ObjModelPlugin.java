@@ -37,6 +37,9 @@ public final class ObjModelPlugin {
 	public static void register() {
 		PreparableModelLoadingPlugin.register(ObjModelPlugin::load, (data, ctx) -> {
 			ReiatsuTest.LOGGER.info("[spike] model loading plugin: {} OBJ item model(s) prepared", data.size());
+			Map<String, ObjModelData> byItem = new LinkedHashMap<>();
+			data.values().forEach(d -> byItem.put(d.itemName(), d));
+			ObjModelRegistry.set(byItem);
 			ctx.resolveModel().register(rc -> {
 				Identifier id = rc.id();
 				if (LOG_ALL_IDS && ReiatsuTest.MOD_ID.equals(id.getNamespace())) {

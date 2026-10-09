@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.client.model;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.obj.AxisMapper;
 import dev.minebleach.reiatsutest.core.obj.EmissiveMask;
 import dev.minebleach.reiatsutest.core.obj.ItemManifest;
 import dev.minebleach.reiatsutest.core.obj.ObjGeometry;
@@ -73,6 +74,7 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		MeshBuilder mb = renderer.meshBuilder();
 		MaterialFinder mf = renderer.materialFinder();
 		RenderMaterial cutout = mf.clear().blendMode(BlendMode.CUTOUT).find();
+		RenderMaterial translucent = mf.clear().blendMode(BlendMode.TRANSLUCENT).find();
 		RenderMaterial glow = mf.clear().emissive(true).disableDiffuse(true).blendMode(BlendMode.TRANSLUCENT).find();
 
 		Map<String, Sprite> sprites = new LinkedHashMap<>();
@@ -95,14 +97,24 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			}
 			StateMeshes sm = new StateMeshes();
 			sm.handEmpty = def.hand().isEmpty();
-			sm.handBase = buildBase(mb, def.hand(), sprite, cutout, quadCount);
-			sm.handGlow = buildGlow(mb, def.hand(), sprite, glow, quadCount);
-			sm.otherBase = buildBase(mb, def.other(), sprite, cutout, quadCount);
-			sm.otherGlow = buildGlow(mb, def.other(), sprite, glow, quadCount);
-			for (String seg : def.dynamic()) {
-				sm.dynamic.add(buildBase(mb, List.of(seg), sprite, cutout, quadCount));
-				sm.dynamicGlow.add(buildGlow(mb, List.of(seg), sprite, glow, quadCount));
-				sm.dynamicHinges.add(data.metaOf(seg).originModel(seg));
+			sm.handBase = buildBase(mb, def.hand(), sprite, cutout, translucent, NO_SHIFT, quadCount);
+			sm.handGlow = buildGlow(mb, def.hand(), sprite, glow, NO_SHIFT, quadCount);
+			sm.otherBase = buildBase(mb, def.other(), sprite, cutout, translucent, NO_SHIFT, quadCount);
+			sm.otherGlow = buildGlow(mb, def.other(), sprite, glow, NO_SHIFT, quadCount);
+			for (ItemManifest.DynSeg ds : man.dynamicSegments(def)) {
+				String seg = ds.object();
+				float[] origin = data.metaOf(seg).originModel(seg);
+				float[] shift = new float[3];
+				float[] hinge = origin;
+				if (ds.hingeBlender() != null) { // chain member: the same OBJ object moved to its own hinge
+					hinge = AxisMapper.blenderToModel(ds.hingeBlender(), data.metaOf(seg).empties.getOrDefault("grip_hand", new float[3]));
+					for (int i = 0; i < 3; i++) {
+						shift[i] = hinge[i] - origin[i];
+					}
+				}
+				sm.dynamic.add(buildBase(mb, List.of(seg), sprite, cutout, translucent, shift, quadCount));
+				sm.dynamicGlow.add(buildGlow(mb, List.of(seg), sprite, glow, shift, quadCount));
+				sm.dynamicHinges.add(hinge);
 			}
 			if (def.icon() != null) {
 				sm.icon = buildIcon(mb, sprite.apply(def.icon()), cutout);
@@ -119,16 +131,19 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		if (!missing.isEmpty()) {
 			ReiatsuTest.LOGGER.error("[spike] MISSING sprites in atlas: {}", missing);
 		}
-		return new ObjItemBakedModel(states, transformation, particle, man.firstPersonArm);
+		return new ObjItemBakedModel(states, transformation, particle, man);
 	}
 
-	private Mesh buildBase(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial mat, int[] count) {
+	private static final float[] NO_SHIFT = new float[3];
+
+	private Mesh buildBase(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial mat,
+			RenderMaterial translucentMat, float[] shift, int[] count) {
 		QuadEmitter em = mb.getEmitter();
 		for (String obj : objects) {
 			ItemManifest.ObjectDef def = data.manifest().objects.get(obj);
 			Sprite sp = sprite.apply(def.diffuse());
 			for (ObjGeometry.Quad q : data.quads().get(obj)) {
-				emit(em, q, sp, mat, 0xFFFFFFFF, 0f);
+				emit(em, q, sp, def.translucent() ? translucentMat : mat, 0xFFFFFFFF, 0f, shift);
 				count[0]++;
 			}
 		}
@@ -136,7 +151,8 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 	}
 
 	/** Emissive overlay: only quads whose UV rectangle covers a texel with alpha &gt; 0; null when empty. */
-	private Mesh buildGlow(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial mat, int[] count) {
+	private Mesh buildGlow(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial mat,
+			float[] shift, int[] count) {
 		QuadEmitter em = mb.getEmitter();
 		int n = 0;
 		for (String obj : objects) {
@@ -148,7 +164,7 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			Sprite sp = sprite.apply(def.emissive());
 			for (ObjGeometry.Quad q : data.quads().get(obj)) {
 				if (mask.anyEmissive(q.uv())) {
-					emit(em, q, sp, mat, data.manifest().emissiveTint, GLOW_OFFSET);
+					emit(em, q, sp, mat, data.manifest().emissiveTint, GLOW_OFFSET, shift);
 					n++;
 					count[0]++;
 				}
@@ -165,11 +181,12 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 	 */
 	private static final boolean GLOW_NORMAL_UP = !"none".equals(System.getProperty("reiatsu.glowNormal"));
 
-	private static void emit(QuadEmitter em, ObjGeometry.Quad q, Sprite sprite, RenderMaterial mat, int argb, float offset) {
+	private static void emit(QuadEmitter em, ObjGeometry.Quad q, Sprite sprite, RenderMaterial mat, int argb, float offset,
+			float[] shift) {
 		for (int c = 0; c < 4; c++) {
 			float[] n = q.nrm()[c];
 			float[] p = q.pos()[c];
-			em.pos(c, p[0] + n[0] * offset, p[1] + n[1] * offset, p[2] + n[2] * offset);
+			em.pos(c, p[0] + shift[0] + n[0] * offset, p[1] + shift[1] + n[1] * offset, p[2] + shift[2] + n[2] * offset);
 			em.uv(c, q.uv()[c][0], q.uv()[c][1]);
 			if (GLOW_NORMAL_UP && offset > 0f) {
 				em.normal(c, 0f, 1f, 0f);

@@ -557,14 +557,15 @@ public final class SpikeHarness {
 					"time set noon", "weather clear", "gamemode creative @s",
 					"item replace entity @s hotbar.0 with " + SPIKE,
 					REAL ? "gamemode creative @s" : "item replace entity @s hotbar.1 with " + SHIKAI,
-					// right-profile stand (x=20), left-profile stand (x=30), front-facing stand (x=40); +4 = shikai copies
-					stand(20.5, 90f, SPIKE), stand(30.5, 270f, SPIKE), stand(40.5, 180f, SPIKE),
-					stand(24.5, 90f, SHIKAI), stand(34.5, 270f, SHIKAI), stand(44.5, 180f, SHIKAI),
-					"summon minecraft:item 50.5 -59.2 2.6 {Item:{id:\"" + SPIKE + "\",count:1},NoGravity:1b,PickupDelay:32767s,Age:-32768s,Motion:[0.0,0.0,0.0]}",
-					"summon minecraft:item 54.5 -59.2 2.6 {Item:{id:\"" + SPIKE + "\",count:1,components:{\"reiatsu_test:release_state\":\"shikai\"}},NoGravity:1b,PickupDelay:32767s,Age:-32768s,Motion:[0.0,0.0,0.0]}",
-					"fill 58 -60 3 68 -57 3 minecraft:stone",
-					"summon minecraft:item_frame 60 -59 2 {Facing:2b,Item:{id:\"" + SPIKE + "\",count:1}}",
-					"summon minecraft:item_frame 64 -59 2 {Facing:2b,Item:" + stackNbt(SHIKAI) + "}",
+					// stands: right profile x=20, left profile x=30, front x=40; shikai copies +4, bankai copies +8
+					stand(20.5, 90f, stackOf("sealed")), stand(30.5, 270f, stackOf("sealed")), stand(40.5, 180f, stackOf("sealed")),
+					stand(24.5, 90f, stackOf("shikai")), stand(34.5, 270f, stackOf("shikai")), stand(44.5, 180f, stackOf("shikai")),
+					stand(28.5, 90f, stackOf("bankai")), stand(38.5, 270f, stackOf("bankai")), stand(48.5, 180f, stackOf("bankai")),
+					groundItem(50.5, "sealed"), groundItem(54.5, "shikai"), groundItem(58.5, "bankai"),
+					"fill 58 -60 3 72 -57 3 minecraft:stone",
+					"summon minecraft:item_frame 60 -59 2 {Facing:2b,Item:" + stackNbt(stackOf("sealed")) + "}",
+					"summon minecraft:item_frame 64 -59 2 {Facing:2b,Item:" + stackNbt(stackOf("shikai")) + "}",
+					"summon minecraft:item_frame 68 -59 2 {Facing:2b,Item:" + stackNbt(stackOf("bankai")) + "}",
 					"tp @s 0.5 -60 0.5 0 0");
 			try {
 				display[0] = FabricLoader.getInstance().getModContainer(ReiatsuTest.MOD_ID).orElseThrow()
@@ -581,10 +582,11 @@ public final class SpikeHarness {
 			com.google.gson.JsonObject c = el.getAsJsonObject();
 			String name = c.get("name").getAsString();
 			String view = c.get("view").getAsString();
-			boolean shikai = c.has("state") && c.get("state").getAsString().equals("shikai");
-			int dx = shikai ? 4 : 0;
+			String stateName = c.has("state") ? c.get("state").getAsString() : "sealed";
+			boolean shikai = stateName.equals("shikai");
+			int dx = stateName.equals("shikai") ? 4 : stateName.equals("bankai") ? 8 : 0;
 			step("tune " + name + ": write display + reload", 2, () -> {
-				if (view.equals("dark")) {
+				if (view.startsWith("dark")) {
 					cmd("tp @s 100.5 -60 0.5 0 15"); // let the chunks around the dark room load during the reload
 				}
 				try {
@@ -605,33 +607,34 @@ public final class SpikeHarness {
 				reloadFuture = mc.reloadResources();
 			});
 			stepUntil("tune " + name + ": wait reload", 10, 20 * 60, () -> { }, SpikeHarness::reloadFinished);
-			boolean dark = view.equals("dark");
+			boolean dark = view.startsWith("dark");
 			step("tune " + name + ": view " + view, dark ? 90 : 25, () -> {
 				cmd(dark ? "fill 96 -61 -4 105 -53 5 minecraft:stone hollow" : "time set noon", dark ? "time set midnight" : "time set noon");
-				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.equals("dark") || view.equals("fp_swing");
+				boolean handView = view.equals("fp") || view.equals("fp_left") || view.equals("gui") || view.startsWith("dark") || view.equals("fp_swing");
 				// stand/ground/frame views: empty hand (slot 8) and no HUD, so only the placed items show
 				selectSlot(!handView ? 8 : REAL ? 0 : shikai ? 1 : 0);
 				if (mc.currentScreen != null) {
 					mc.setScreen(null);
 				}
 				if (REAL && handView) {
-					cmd("reiatsu state " + (shikai ? "shikai" : "sealed") + " rukia");
+					cmd("reiatsu state " + stateName + " " + (ITEM.equals("senbonzakura") ? "byakuya" : "rukia"));
 				}
-				mc.options.hudHidden = !handView; // F1 would also hide the hand
+				mc.options.hudHidden = !handView;
+ // F1 would also hide the hand
 				int wantScale = view.equals("gui") ? 4 : 0;
 				if (mc.options.getGuiScale().getValue() != wantScale) {
 					mc.options.getGuiScale().setValue(wantScale);
 					mc.onResolutionChanged();
 				}
 				mc.options.getMainArm().setValue(view.equals("fp_left") ? Arm.LEFT : Arm.RIGHT);
-				mc.options.setPerspective(Perspective.FIRST_PERSON);
+				mc.options.setPerspective(view.equals("dark_tp") ? Perspective.THIRD_PERSON_FRONT : Perspective.FIRST_PERSON);
 				switch (view) {
 					case "fp", "fp_left", "fp_swing" -> view(0.5, -60, 0.5, 0, 20);
-					case "dark" -> view(100.5, -60, 0.5, 0, 15);
+					case "dark", "dark_tp" -> view(100.5, -60, 0.5, 0, 15);
 					case "side_r" -> view(20.5 + dx, -60, 0.9, 0, 0);
 					case "side_l" -> view(30.5 + dx, -60, 0.9, 0, 0);
 					case "front" -> view(40.5 + dx, -60, 0.9, 0, 0);
-					case "ground" -> view(50.5 + dx, -60, 0.2, 0, 18);
+					case "ground" -> view(50.5 + dx, -60, -10.2, 0, 18);
 					case "frame" -> view(60.5 + dx, -60, 0.5, 0, 0);
 					default -> view(0.5, -60, 0.5, 0, 20);
 				}
@@ -654,6 +657,16 @@ public final class SpikeHarness {
 			}
 		});
 		step("tune: finish", 5, () -> mc.scheduleStop());
+	}
+
+	/** Command item string of the item under test in a release state. */
+	private static String stackOf(String state) {
+		return state.equals("sealed") ? SPIKE : SPIKE + "[reiatsu_test:release_state=\"" + state + "\"]";
+	}
+
+	private static String groundItem(double x, String state) {
+		return "summon minecraft:item " + x + " -59.2 -7.4 {Item:" + stackNbt(stackOf(state))
+				+ ",NoGravity:1b,PickupDelay:32767s,Age:-32768s,Motion:[0.0,0.0,0.0]}";
 	}
 
 	private static String stand(double x, float yaw) {

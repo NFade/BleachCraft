@@ -28,7 +28,8 @@ public final class ObjMeta {
 
 	/** Grip in OBJ axes. */
 	public float[] gripObj() {
-		return AxisMapper.blenderToObj(empties.get("grip_hand"));
+		float[] g = empties.get("grip_hand");
+		return g == null ? new float[3] : AxisMapper.blenderToObj(g); // effect-only models (bankai) have no grip: origin
 	}
 
 	/** Object origin in OBJ axes (zero if the object is not listed). */

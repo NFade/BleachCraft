@@ -1,15 +1,27 @@
 {
-  "model": "spike",
+  "model": "byakuya_sealed",
   "display_model": "reiatsu_test:item/senbonzakura_display",
-  "emissive_tint": "FFFF9EC4",
-  "first_person_arm": { "axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.065, 0], "anchor_px": [0, 0, 0], "scale": 0.9 },
+  "emissive_tint": "FFF9C8F6",
+  "first_person_arm": { "axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.065, 0], "anchor_px": [0, 0, 0], "scale": 1.0 },
   "objects": {
-    "spike_cube":     { "diffuse": "spike_diffuse", "emissive": "spike_emissive" },
-    "spike_cube_alt": { "diffuse": "spike_alt_diffuse" }
+    "byakuya_sealed_drawn": {"diffuse": "byakuya_sealed_diffuse"},
+    "byakuya_sealed_sheathed": {"diffuse": "byakuya_sealed_diffuse"},
+    "byakuya_shikai_hilt": {"model": "byakuya_shikai", "diffuse": "byakuya_shikai_diffuse"},
+    "byakuya_shikai_petal": {"model": "byakuya_shikai", "diffuse": "byakuya_shikai_diffuse", "emissive": "byakuya_shikai_emissive"},
+    "byakuya_shikai_shard": {"model": "byakuya_shikai", "diffuse": "byakuya_shikai_diffuse"},
+    "byakuya_bankai_blade": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "byakuya_bankai_blade_lod": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "byakuya_bankai_hilt_ground": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "byakuya_bankai_ripple": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "hakuteiken_blade_body": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "hakuteiken_blade_tip": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "hakuteiken_halo": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "hakuteiken_wing_l": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"},
+    "hakuteiken_wing_r": {"model": "byakuya_bankai", "diffuse": "byakuya_bankai_diffuse", "emissive": "byakuya_bankai_emissive"}
   },
   "states": {
-    "sealed": { "hand": ["spike_cube"],     "other": ["spike_cube"],     "dynamic": [], "icon": "senbonzakura_sealed_icon" },
-    "shikai": { "hand": ["spike_cube_alt"], "other": ["spike_cube_alt"], "dynamic": [], "icon": "senbonzakura_shikai_icon" },
-    "bankai": { "hand": [],                 "other": ["spike_cube"],     "dynamic": [], "icon": "senbonzakura_bankai_icon" }
+    "sealed": {"hand": ["byakuya_sealed_drawn"], "other": ["byakuya_sealed_sheathed"], "dynamic": [], "icon": "senbonzakura_sealed_icon"},
+    "shikai": {"hand": ["byakuya_shikai_hilt"], "other": ["byakuya_shikai_hilt"], "dynamic": [], "icon": "senbonzakura_shikai_icon", "arm": {"axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.12, 0], "anchor_px": [0, 0, 0], "scale": 0.8}},
+    "bankai": {"hand": [], "other": ["byakuya_sealed_sheathed"], "dynamic": [], "icon": "senbonzakura_bankai_icon"}
   }
 }

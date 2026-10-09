@@ -2,7 +2,7 @@
   "model": "rukia_sealed",
   "display_model": "reiatsu_test:item/sode_no_shirayuki_display",
   "emissive_tint": "FFBFE4FF",
-  "first_person_arm": { "axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.065, 0], "anchor_px": [0, 0, 0], "scale": 0.9 },
+  "first_person_arm": { "axis": [0.5, 0.4, 0.8], "roll": 0, "grip": [0, -0.065, 0], "anchor_px": [0, 0, 0], "scale": 1.0 },
   "objects": {
     "rukia_sealed_drawn": {"diffuse": "rukia_sealed_diffuse"},
     "rukia_sealed_sheathed": {"diffuse": "rukia_sealed_diffuse"},
@@ -17,15 +17,23 @@
     "rukia_shikai_ribbon_08": {"model": "rukia_shikai", "diffuse": "rukia_shikai_diffuse", "emissive": "rukia_shikai_emissive"},
     "rukia_shikai_ribbon_09": {"model": "rukia_shikai", "diffuse": "rukia_shikai_diffuse", "emissive": "rukia_shikai_emissive"},
     "rukia_shikai_ribbon_10": {"model": "rukia_shikai", "diffuse": "rukia_shikai_diffuse", "emissive": "rukia_shikai_emissive"},
-    "spike_cube": {"model": "spike", "diffuse": "spike_diffuse", "emissive": "spike_emissive"},
-    "spike_strip_01": {"model": "spike", "diffuse": "spike_diffuse"},
-    "spike_strip_02": {"model": "spike", "diffuse": "spike_diffuse"}
+    "rukia_bankai_sword": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true},
+    "rukia_bankai_ribbon_seg": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive"},
+    "rukia_bankai_ribbon_tip": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive"},
+    "rukia_bankai_crystal_a": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true},
+    "rukia_bankai_crystal_b": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true},
+    "rukia_bankai_crystal_c": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true},
+    "rukia_bankai_crystal_d": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true},
+    "rukia_bankai_shard_a": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true},
+    "rukia_bankai_shard_b": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true},
+    "rukia_bankai_ice_shell": {"model": "rukia_bankai", "diffuse": "rukia_bankai_diffuse", "emissive": "rukia_bankai_emissive", "translucent": true}
+  },
+  "chains": {
+    "ribbon": {"segment": "rukia_bankai_ribbon_seg", "count": 7, "tip": "rukia_bankai_ribbon_tip", "root": [0, 0, -0.012], "pitch": 0.35}
   },
   "states": {
-    "sealed": { "hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_sheathed"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon" },
-    "shikai": { "hand": ["rukia_shikai_blade"], "other": ["rukia_shikai_blade"],
-                "dynamic": ["rukia_shikai_ribbon_01", "rukia_shikai_ribbon_02", "rukia_shikai_ribbon_03", "rukia_shikai_ribbon_04", "rukia_shikai_ribbon_05", "rukia_shikai_ribbon_06", "rukia_shikai_ribbon_07", "rukia_shikai_ribbon_08", "rukia_shikai_ribbon_09", "rukia_shikai_ribbon_10"],
-                "icon": "sode_no_shirayuki_shikai_icon" },
-    "bankai": { "hand": ["spike_cube"], "other": ["spike_cube"], "dynamic": ["spike_strip_01", "spike_strip_02"], "icon": "sode_no_shirayuki_bankai_icon" }
+    "sealed": {"hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_sheathed"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
+    "shikai": {"hand": ["rukia_shikai_blade"], "other": ["rukia_shikai_blade"], "dynamic": ["rukia_shikai_ribbon_01", "rukia_shikai_ribbon_02", "rukia_shikai_ribbon_03", "rukia_shikai_ribbon_04", "rukia_shikai_ribbon_05", "rukia_shikai_ribbon_06", "rukia_shikai_ribbon_07", "rukia_shikai_ribbon_08", "rukia_shikai_ribbon_09", "rukia_shikai_ribbon_10"], "icon": "sode_no_shirayuki_shikai_icon"},
+    "bankai": {"hand": ["rukia_bankai_sword"], "other": ["rukia_bankai_sword"], "dynamic": ["@ribbon"], "icon": "sode_no_shirayuki_bankai_icon"}
   }
 }

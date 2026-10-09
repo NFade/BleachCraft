@@ -37,14 +37,17 @@ class RukiaManifestTest {
 		assertEquals("rukia_sealed", m.modelOf("rukia_sealed_drawn"));
 		assertEquals("rukia_shikai", m.modelOf("rukia_shikai_blade"));
 		assertEquals("rukia_shikai", m.modelOf("rukia_shikai_ribbon_10"));
-		assertEquals("spike", m.modelOf("spike_cube")); // bankai placeholder until its model exists
+		assertEquals("rukia_bankai", m.modelOf("rukia_bankai_sword"));
+		assertTrue(m.objects.get("rukia_bankai_sword").translucent());
+		assertTrue(!m.objects.get("rukia_bankai_ribbon_seg").translucent());
 	}
 
 	@Test
 	void everyStateObjectExistsAndParses() throws IOException {
 		ItemManifest m = manifest();
 		for (var e : m.states.entrySet()) {
-			for (List<String> list : List.of(e.getValue().hand(), e.getValue().other(), e.getValue().dynamic())) {
+			java.util.List<String> dyn = m.dynamicSegments(e.getValue()).stream().map(ItemManifest.DynSeg::object).toList();
+			for (List<String> list : List.of(e.getValue().hand(), e.getValue().other(), dyn)) {
 				for (String object : list) {
 					assertTrue(m.objects.containsKey(object), e.getKey() + " references unknown object " + object);
 					String model = m.modelOf(object);
@@ -80,9 +83,27 @@ class RukiaManifestTest {
 		ItemManifest m = manifest();
 		assertNotNull(m.firstPersonArm);
 		assertEquals(3, m.firstPersonArm.axis().length);
-		assertEquals(0.9f, m.firstPersonArm.scale(), 1e-6f);
+		assertEquals(1.0f, m.firstPersonArm.scale(), 1e-6f);
 		assertEquals(-0.065f, m.firstPersonArm.grip()[1], 1e-6f);
 		assertEquals(null, ItemManifest.parse(text("zanpakuto/spike_item.json")).firstPersonArm); // spike item: no arm
+	}
+
+	@Test
+	void bankaiRibbonChainExpandsToSevenSegmentsAndATip() throws IOException {
+		ItemManifest m = manifest();
+		var segs = m.dynamicSegments(m.states.get("bankai"));
+		assertEquals(8, segs.size());
+		assertEquals("rukia_bankai_ribbon_seg", segs.get(0).object());
+		assertEquals("rukia_bankai_ribbon_tip", segs.get(7).object());
+		// hinges every 0.35 m down the -Z axis of Blender, starting at the root
+		assertEquals(-0.012f, segs.get(0).hingeBlender()[2], 1e-6f);
+		assertEquals(-0.012f - 0.35f * 3, segs.get(3).hingeBlender()[2], 1e-5f);
+		assertEquals(-0.012f - 0.35f * 7, segs.get(7).hingeBlender()[2], 1e-5f);
+		// effect meshes are declared (so they are loaded and addressable) but not part of any in-hand state
+		for (String n : List.of("rukia_bankai_crystal_a", "rukia_bankai_crystal_d", "rukia_bankai_shard_a", "rukia_bankai_ice_shell")) {
+			assertTrue(m.objects.containsKey(n), n);
+			assertTrue(m.states.values().stream().noneMatch(st -> st.hand().contains(n) || st.other().contains(n)));
+		}
 	}
 
 	@Test
