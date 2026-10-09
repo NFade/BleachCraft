@@ -8,10 +8,13 @@ SPECS = {
         objects={
             "rukia_sealed_drawn": dict(budget=3000, target=1800, bbox_min=(-0.031, -0.036, 0.0), bbox_max=(0.031, 0.0864, 0.9785), tol=0.003, origin=(0, 0, 0)),
             "rukia_sealed_sheathed": dict(budget=2500, target=2000, bbox_min=(-0.031, -0.036, 0.0), bbox_max=(0.031, 0.1131, 1.0024), tol=0.003, origin=(0, 0, 0)),
+            "rukia_sealed_saya": dict(budget=1000, target=750, bbox_min=(-0.014, -0.021, 0.256), bbox_max=(0.014, 0.1147, 1.0028), tol=0.001, origin=(0, 0, 0)),
         },
-        empties={"grip_hand": (0, 0, 0.19), "tip": (0, 0.0864, 0.9785)},
-        export_objects=["rukia_sealed_sheathed", "rukia_sealed_drawn"],
-        export_empties=["grip_hand", "tip"],
+        empties={"grip_hand": (0, 0, 0.19), "tip": (0, 0.0864, 0.9785), "saya_mouth": (0, 0, 0.256)},
+        export_objects=["rukia_sealed_sheathed", "rukia_sealed_drawn", "rukia_sealed_saya"],
+        export_empties=["grip_hand", "tip", "saya_mouth"],
+        # saya_mouth = centre of the open mouth (plane z = 0.256, where the tsuba touches the koiguchi); blade_axis note goes into the meta JSON
+        blade_axis=dict(mouth="saya_mouth", tip="tip", arc_len=0.696, arc_tip_off=0.080),
         turntable=[dict(label="drawn, full", objs=["rukia_sealed_drawn"], z0=-0.03, z1=1.0, w=160, h=640, cy=0.03),
                    dict(label="sheathed, full", objs=["rukia_sealed_sheathed"], z0=-0.03, z1=1.03, w=160, h=640, cy=0.05),
                    dict(label="drawn, hilt and tsuba close-up", objs=["rukia_sealed_drawn"], z0=-0.01, z1=0.33, w=320, h=320),
@@ -43,10 +46,13 @@ SPECS = {
         objects={
             "byakuya_sealed_drawn": dict(budget=3200, target=1900, bbox_min=(-0.038, -0.056, 0.0), bbox_max=(0.038, 0.0864, 0.9785), tol=0.003, origin=(0, 0, 0)),
             "byakuya_sealed_sheathed": dict(budget=2800, target=2300, bbox_min=(-0.038, -0.056, 0.0), bbox_max=(0.038, 0.1131, 1.0024), tol=0.003, origin=(0, 0, 0)),
+            "byakuya_sealed_saya": dict(budget=1000, target=750, bbox_min=(-0.014, -0.021, 0.257), bbox_max=(0.014, 0.1147, 1.0028), tol=0.001, origin=(0, 0, 0)),
         },
-        empties={"grip_hand": (0, 0, 0.19), "tip": (0, 0.0864, 0.9785)},
-        export_objects=["byakuya_sealed_sheathed", "byakuya_sealed_drawn"],
-        export_empties=["grip_hand", "tip"],
+        empties={"grip_hand": (0, 0, 0.19), "tip": (0, 0.0864, 0.9785), "saya_mouth": (0, 0, 0.257)},
+        export_objects=["byakuya_sealed_sheathed", "byakuya_sealed_drawn", "byakuya_sealed_saya"],
+        export_empties=["grip_hand", "tip", "saya_mouth"],
+        # saya_mouth = centre of the open mouth (plane z = 0.257, where the tsuba touches the koiguchi); blade_axis note goes into the meta JSON
+        blade_axis=dict(mouth="saya_mouth", tip="tip", arc_len=0.695, arc_tip_off=0.080),
         turntable=[dict(label="drawn, full", objs=["byakuya_sealed_drawn"], z0=-0.03, z1=1.0, w=160, h=640, cy=0.03),
                    dict(label="sheathed, full", objs=["byakuya_sealed_sheathed"], z0=-0.03, z1=1.03, w=160, h=640, cy=0.05),
                    dict(label="drawn, hilt and tsuba close-up", objs=["byakuya_sealed_drawn"], z0=-0.01, z1=0.33, w=320, h=320),

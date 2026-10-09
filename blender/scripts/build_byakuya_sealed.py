@@ -63,8 +63,16 @@ dc.tube(mb, [sori_ring(SA * k + 0.0005, SB * k + 0.0005, z) for z, k in kz], 4, 
         cap0=(L["kojiri"], 1e-9, True), cap1=(L["kojiri_cap"], 450.0, False))
 sheathed = mb.finish("byakuya_sealed_sheathed", mat, exp)
 
-for o in (drawn, sheathed):
+# ---- byakuya_sealed_saya: the scabbard alone for the draw animation (same origin / outer rings / UVs as the saya part of `sheathed`,
+# one closed shell with an open mouth at z = Z0, dark inner liner; no tsuka, tsuba, habaki, kashira or blade). Added after the two
+# objects above, so their geometry is untouched.
+mb = dc.MB()
+saya_info = dc.build_saya(mb, L, Z0, z_s0, z_s1, LEN, TIP_OFF, SA, SB, NR)
+saya_o = mb.finish("byakuya_sealed_saya", mat, exp)
+
+for o in (drawn, sheathed, saya_o):
     o.data.update()
-emp = dc.set_empties(exp, [("grip_hand", (0, 0, 0.19)), ("tip", tuple(apex))])
+emp = dc.set_empties(exp, [("grip_hand", (0, 0, 0.19)), ("tip", tuple(apex)), ("saya_mouth", (0.0, 0.0, Z0))])
 sheathed.hide_set(True)
-result = {"apex": tuple(apex), "tris": {o.name: sum(len(p.vertices) - 2 for p in o.data.polygons) for o in (drawn, sheathed)}}
+saya_o.hide_set(True)
+result = {"apex": tuple(apex), "tris": {o.name: sum(len(p.vertices) - 2 for p in o.data.polygons) for o in (drawn, sheathed, saya_o)}, "saya": saya_info}

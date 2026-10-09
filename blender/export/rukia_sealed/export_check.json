@@ -72,5 +72,42 @@
    0.0
   ],
   "match": true
+ },
+ "rukia_sealed_saya": {
+  "src_verts": 368,
+  "src_faces": 380,
+  "src_quads": 352,
+  "imp_verts": 368,
+  "imp_faces": 380,
+  "obj_lines": {
+   "v": 368,
+   "vt": 308,
+   "vn": 312,
+   "f": 380,
+   "tris": 28,
+   "quads": 352,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 1.862645149230957e-07,
+  "src_bbox": [
+   [
+    -0.014,
+    -0.021,
+    0.256
+   ],
+   [
+    0.014,
+    0.1147,
+    1.0028
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
  }
 }
