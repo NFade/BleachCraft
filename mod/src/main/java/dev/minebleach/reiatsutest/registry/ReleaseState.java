@@ -21,6 +21,11 @@ public enum ReleaseState implements StringIdentifiable {
 		this.id = id;
 	}
 
+	/** Same order as ZanpakutoState (SEALED, SHIKAI, BANKAI). */
+	public static ReleaseState of(dev.minebleach.reiatsutest.core.state.ZanpakutoState state) {
+		return values()[state.ordinal()];
+	}
+
 	@Override
 	public String asString() {
 		return id;

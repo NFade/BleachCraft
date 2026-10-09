@@ -1,1 +1,37 @@
-{ "item.reiatsu_test.spike_item": "Spike Item (reiatsu_test)" }
+{
+  "item.reiatsu_test.spike_item": "Spike Item (reiatsu_test)",
+  "item.reiatsu_test.sode_no_shirayuki": "Sode no Shirayuki",
+  "item.reiatsu_test.senbonzakura": "Senbonzakura",
+
+  "key.categories.reiatsu_test": "Reiatsu Test",
+  "key.reiatsu_test.release": "Release (shikai)",
+  "key.reiatsu_test.bankai": "Bankai",
+  "key.reiatsu_test.seal": "Seal",
+  "key.reiatsu_test.ability_1": "Ability 1",
+  "key.reiatsu_test.ability_2": "Ability 2",
+  "key.reiatsu_test.ability_3": "Ability 3",
+
+  "hud.reiatsu_test.reiatsu": "Reiatsu",
+  "hud.reiatsu_test.state.sealed": "Sealed",
+  "hud.reiatsu_test.state.shikai": "Shikai",
+  "hud.reiatsu_test.state.bankai": "Bankai",
+  "hud.reiatsu_test.hint.release": "[%s] Release",
+  "hud.reiatsu_test.bankai_time": "%ss left",
+  "hud.reiatsu_test.no_ability": "-",
+
+  "message.reiatsu_test.denied.state": "Not possible in this state",
+  "message.reiatsu_test.denied.item": "Hold the matching zanpakuto in your main hand",
+  "message.reiatsu_test.denied.reiatsu": "Not enough reiatsu",
+  "message.reiatsu_test.denied.cooldown": "Not ready yet",
+  "message.reiatsu_test.sealed.hand": "The zanpakuto returned to its sealed form",
+
+  "ability.reiatsu_test.rukia.shikai.tsukishiro": "Tsukishiro",
+  "ability.reiatsu_test.rukia.shikai.hakuren": "Hakuren",
+  "ability.reiatsu_test.rukia.shikai.shirafune": "Shirafune",
+  "ability.reiatsu_test.rukia.bankai.absolute_zero": "Absolute Zero",
+  "ability.reiatsu_test.byakuya.shikai.mode_attack": "Attack mode",
+  "ability.reiatsu_test.byakuya.shikai.mode_barrier": "Barrier mode",
+  "ability.reiatsu_test.byakuya.bankai.scatter": "Scatter",
+  "ability.reiatsu_test.byakuya.bankai.hakuteiken": "Hakuteiken",
+  "ability.reiatsu_test.byakuya.bankai.senkei": "Senkei"
+}

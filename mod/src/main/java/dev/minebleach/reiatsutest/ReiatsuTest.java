@@ -1,7 +1,11 @@
 package dev.minebleach.reiatsutest;
 
+import dev.minebleach.reiatsutest.net.ModNetworking;
+import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ModItems;
+import dev.minebleach.reiatsutest.server.ReiatsuCommand;
+import dev.minebleach.reiatsutest.server.ZanpakutoManager;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
@@ -19,7 +23,11 @@ public class ReiatsuTest implements ModInitializer {
 	public void onInitialize() {
 		ModComponents.init();
 		ModItems.init();
-		LOGGER.info("[spike] registered item {} with component {}", ModItems.SPIKE_ITEM,
-				ModComponents.RELEASE_STATE);
+		ModAttachments.init();
+		ModNetworking.registerPayloads();
+		ZanpakutoManager.init();
+		ReiatsuCommand.register();
+		LOGGER.info("registered items {}, {}, {} (component {}), attachments and payloads",
+				ModItems.SODE_NO_SHIRAYUKI, ModItems.SENBONZAKURA, ModItems.SPIKE_ITEM, ModComponents.RELEASE_STATE);
 	}
 }
