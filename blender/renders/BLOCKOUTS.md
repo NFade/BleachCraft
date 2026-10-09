@@ -129,3 +129,44 @@ Open questions for Gate B:
 - Petal spindle with only one widest ring reads as a diamond; accept 16 tris or spend the remaining 4 tris on a second taper ring for a leaf-like belly?
 - Should the shard also carry a tiny tang so it matches the petal outline (as a broken piece of one)?
 
+## rukia_bankai
+
+Scene: `blender/scenes/rukia_bankai.blend`. Render: `blender/renders/rukia_bankai_blockout.png`.
+
+| object | tris (evaluated, triangulated) | bbox min (m) | bbox max (m) | size (m) | origin (m) |
+|---|---|---|---|---|---|
+| `rukia_bankai_sword` | 586 | (-0.0163, -0.042, 0.0) | (0.0163, 0.042, 1.0659) | (0.0326, 0.084, 1.0659) | (0.0, 0.0, 0.0) |
+| `rukia_bankai_ribbon_seg` | 12 | (0.265, -0.001, 0.05) | (0.335, 0.001, 0.4) | (0.07, 0.002, 0.35) | (0.3, 0.0, 0.4) |
+| `rukia_bankai_ribbon_tip` | 12 | (0.415, -0.001, 0.05) | (0.485, 0.001, 0.4) | (0.07, 0.002, 0.35) | (0.45, 0.0, 0.4) |
+| `rukia_bankai_crystal_a` | 46 | (0.775, -0.0217, 0.0) | (0.825, 0.0217, 0.15) | (0.05, 0.0434, 0.15) | (0.8, 0.0, 0.0) |
+| `rukia_bankai_crystal_b` | 46 | (0.95, -0.0433, 0.0) | (1.05, 0.0433, 0.3) | (0.1, 0.0866, 0.3) | (1.0, 0.0, 0.0) |
+| `rukia_bankai_crystal_c` | 46 | (1.2, -0.0866, 0.0) | (1.4, 0.1027, 0.6) | (0.2, 0.1893, 0.6) | (1.3, 0.0, 0.0) |
+| `rukia_bankai_crystal_d` | 34 | (1.6, -0.1732, 0.0) | (2.0, 0.1732, 1.2) | (0.4, 0.3464, 1.2) | (1.8, 0.0, 0.0) |
+| `rukia_bankai_shard_a` | 8 | (2.1985, -0.0162, 0.0167) | (2.2015, 0.0138, 0.1367) | (0.003, 0.03, 0.12) | (2.2, 0.0, 0.06) |
+| `rukia_bankai_shard_b` | 8 | (2.3485, -0.0135, 0.01) | (2.3515, 0.0115, 0.09) | (0.003, 0.025, 0.08) | (2.35, 0.0, 0.04) |
+| `rukia_bankai_ice_shell` | 96 | (2.5252, -0.4845, 0.0) | (3.4875, 0.4878, 2.0) | (0.9623, 0.9723, 2.0) | (3.0, 0.0, 0.0) |
+
+Empties: `grip_hand` (0, 0, 0.22); `tip` (0, 0.014, 1.0659); `ribbon_root` (0, 0.12, 0.9)
+
+Notes:
+- Required pieces only: sword, ribbon segment/tip, crystals a-d, shards a-b, ice shell. Layout in the scene (objects keep their own origins): sword at the origin, ribbon seg/tip at x 0.30 / 0.45 (hinge z 0.40), crystals at x 0.80 / 1.00 / 1.30 / 1.80, shards at x 2.20 / 2.35, ice shell at x 3.00.
+- Sword: tsuka 0.28 m (z 0 to 0.28), oblong stadium bar tsuba 84 (Y) x 22 (X) x 6 mm (rim 4 mm, centre bridge 44 mm, two stadium windows about 16 x 14 mm), habaki z 0.286 to 0.314, blade 0.752 m to z 1.066 (0.78 m from the habaki start), 12 mm spine, edge bevel `#CFEFFF`, core `#7FB8DF`, spine `#2E6FA8` (face-material split so the ice layers read).
+- Ribbon segment 0.35 x 0.07 m, 2 mm thick, 12 tris; tip piece tapers from 70 mm to 8 mm over 0.35 m (12 tris). Hinge at the origin, mesh runs along -Z (same convention as rukia_shikai ribbons).
+- Crystals: 6-sided pyramid-tipped prisms, base radius = height/6, 46 tris (a, b, c) and 34 tris (d); crystal_c leans 0.10 x height toward +Y (the bent variant); tips use `#D9E8F5`.
+- Shards: 3 mm triangular prisms, 120 x 30 mm and 80 x 25 mm, 8 tris each. Ice shell: 10-sided, 3 body rings + 2 end rings with seeded irregular radii, 96 tris, X/Y about 1.0 m, Z 2.0 m, translucent preview colour.
+- `ribbon_root` is a player-space point (feet at the player origin, back = +Y, obi height about 0.9 m), kept at (0, 0.12, 0.90) because the player/costume is not modelled yet.
+
+Deviations from the art bible:
+- Costume set (collar, both pauldrons, crown, chest flower) NOT built: art bible E10 and Gate A decision 6 say it is modelled last, after the required pieces pass Gate B. A reference player and the five pieces can be added by a short script once Gate B passes.
+- Habaki is 32 x 14 mm (bible: BASE 32 x 10): the 12 mm spine of the bankai blade does not fit inside a 10 mm collar.
+- Sori 8 mm is the tip deflection from the base axis (see rukia_sealed note on `bb.SORI_K`).
+- Tsuba blade hole not cut (enclosed pocket); wrap diamonds `#7FA5C8` are texture-only; transparency is only previewed on the shell, everything else is flat colour.
+- Ribbon segment/tip run along -Z with rotation 0 (same open question as rukia_shikai); no 10 mm overlap added (the bankai spec gives none).
+- Ice shell is 96 tris for 3 body rings + 2 end rings (bible says 3 rings); facet irregularity is a fixed random seed.
+
+Open questions for Gate B:
+- Costume pieces are deferred as the bible says; confirm they should be blocked out right after Gate B (and which player model dimensions to use).
+- Ribbon local axis (-Z, as built) vs +Z for the chain code, see rukia_shikai.
+- Is the 3-way ice material split on the blade (bevel / core / deep spine) the right basis for the later UV layout, or should the blade stay a single ice colour with the layering painted in?
+- ribbon_root: its position relative to the sword origin is meaningless until the player rig is chosen; keep it as a player-space point?
+

@@ -236,7 +236,7 @@ def lerp(a, b, t):
     return a + (b - a) * t
 
 
-def blade(name, z0, length, root_w, yok_w, root_t, tip_t, kissaki, sori_chord, mat_name, n_mid=5):
+def blade(name, z0, length, root_w, yok_w, root_t, tip_t, kissaki, sori_chord, mat_name, n_mid=5, mat_names=None, pattern=None):
     """Katana blade from z0 (after the habaki) to z0+length. The base tangent runs along +Z and the centreline is a parabola
     whose tip is offset toward +Y by sori * SORI_K (SORI_K = 1: sori = tip deflection from the base axis, the same
     convention as the giant bankai blade; SORI_K = 4 would make sori the chord deviation)."""
@@ -254,7 +254,11 @@ def blade(name, z0, length, root_w, yok_w, root_t, tip_t, kissaki, sori_chord, m
     prof = [(x, y + 0.10 * yok_w) for x, y in shinogi_profile(wk, tk)]
     rings.append(ring_pts(prof, zk, sori_off(zk, z0, length, tip_off), sori_phi(zk, z0, length, tip_off)))
     apex = ring_pts([(0.0, 0.30 * yok_w)], z_tip, sori_off(z_tip, z0, length, tip_off), sori_phi(z_tip, z0, length, tip_off))[0]
-    o = loft(name, rings, mat_name, apex=apex)
+    if pattern:  # per-face material index for the 6 faces of a ring gap: edge bevel / flat / spine / flat / bevel / edge flat
+        fm = list(pattern) * (len(rings) - 1) + [0] + list(pattern)
+        o = loft(name, rings, mat_name, apex=apex, face_mats=fm, mat_names=mat_names)
+    else:
+        o = loft(name, rings, mat_name, apex=apex)
     o["tip_pos"] = tuple(apex)
     return o, apex
 
