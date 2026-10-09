@@ -12,18 +12,19 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 - Design for Phase 6 (`design/VFX_STORYBOARD.md`, final, Opus): all effects, quality tiers, HUD/UI spec, implementation order, test plan.
 
 ## In progress (branches, unfinished)
-- `worktree-agent-a0b75de1ae9866b58` (step B3, done, awaiting merge into `main`; also contains the WIP commit of `step-b-rukia-models`): first-person pose, scabbard hold, draw/sheathe animation. Open: user visual review (tilt/scale), Byakuya hilt small, no Fabulous check.
-- `phase6-fx` (WIP commit, may not build): Phase 6 steps 0-2 (FX scaffolding: config/tiers, particle types, glow batch, ScreenFx, anchor entity, texture generators; then new HUD; then release/aura/seal effects).
-- `phase5-voice`: already merged into `main` (kept for history).
+- `phase6-fx` (WIP commit, may not build; branch point is older than step B3, rebase or merge `main` first): Phase 6 steps 0-2 (FX scaffolding: config/tiers, particle types, glow batch, ScreenFx, anchor entity, texture generators; then new HUD; then release/aura/seal effects).
+- Step B3 (first-person pose, scabbard, draw/sheathe animation) is DONE and merged into `main` (open: user visual review of tilt/scale via `first_person_scale_multiplier` / display json, Byakuya hilt small, no Fabulous check).
 
 ## To do
-1. Review and merge step B3 into `main`; phase 6 listens to `DrawEvents.EVENT` (DRAW_RELEASE = release flash).
+1. Phase 6 listens to `DrawEvents.EVENT` (DRAW_START / DRAW_RELEASE = release flash, SHEATHE_START / SHEATHE_END); the model swap happens in the DRAW_RELEASE tick.
 2. Phase 6 steps 3-9 per `design/VFX_STORYBOARD.md` section 10: Byakuya swarm and bankai rows/storm, Rukia shikai and bankai (absolute zero, freeze_desat), Hakuteiken, polish (FOV kick, speed lines, custom sounds optional). Load tests: 1000 blades / 3000 petals.
 3. Rukia costume set (deferred), Senkei (deferred, disabled).
 4. Phase 7: dedicated server and second-client smoke test, balance play test, real microphone test for voice, README, `gradlew build` jar, Gate D (last Opus call: 1 left).
 5. Known UNVERIFIED: mixin refmap in a production launcher, jdk.httpserver in the production runtime (socket fallback exists), Fabulous graphics with the translucent blade and glow layers, camera shake hook, Byakuya hand poses on a real player (tuned on armor stand).
 
 ## Notes
+- Last update: `main` builds, 192 tests green (`mod/gradlew build`). Pushed to https://github.com/NFade/BleachCraft.
+- Handoff tip for a new account: read this file and `LOG.md` tail, `git fetch`, then continue with To do item 1 (phase 6 steps 3-9). Local dev_monitor is per machine: put `dev_monitor=x,y` into `%GRADLE_USER_HOME%\gradle.properties` to override the repo value.
 - Opus calls used: 5 of 6 (Gate A, ADR, Gate B, Gate C, VFX design). One left for Gate D.
 - `refs/` (private reference images) is gitignored; re-download with `tools/fetch_refs.py`.
 - Dev windows open on the second monitor (`dev_monitor` in `mod/gradle.properties`).
