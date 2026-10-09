@@ -13,7 +13,8 @@ OUT = os.path.join(r"D:\MineBleach\blender\export", MODEL)
 WHITE, BASE, SHADE, SHADE2, HI = rgb("#FFFFFF"), rgb("#EAF2FB"), rgb("#C9D6EA"), rgb("#B3C3DC"), rgb("#F8FBFF")
 WRAP, WRAP_GAP = rgb("#F2F4FA"), rgb("#C9D6EA")
 RIB, RIB_EDGE = rgb("#F4F8FF"), rgb("#B9D4F0")
-EMIT_BLADE, EMIT_TSUBA, EMIT_RIM, EMIT_RIB = 0.35, 0.35, 0.20, 0.25
+EMIT_BLADE, EMIT_TSUBA, EMIT_RIM, EMIT_RIB = 0.60, 0.55, 0.40, 0.45     # Gate C C1 (was 0.35 / 0.35 / 0.20 / 0.25)
+EMIT_BLADE_BODY, EMIT_SPINE, EMIT_RIB_BODY = 0.18, 0.15, 0.15           # Gate C C1: faint flat body glow
 
 cv = Canvas()
 em = np.zeros((al.ATLAS, al.ATLAS))     # emissive intensity 0..1
@@ -47,7 +48,8 @@ def blade_strip(isl, side):
         a[r, 0] = WHITE
         a[r, min(w - 1, int(ridge_u * w))] = WHITE if side == "a" else HI
         a[r, w - 1] = SHADE2
-        e[r, 0] = EMIT_BLADE                            # emissive blade edge strip
+        e[r, :] = EMIT_BLADE_BODY                       # Gate C C1: whole flat faint body glow
+        e[r, 0] = e[r, 1] = EMIT_BLADE                  # emissive blade edge line, 2 px
     ry = int(round((1.0 - yok) * h))
     a[ry, :] = WHITE
     a[ry + 1, :] = HI
@@ -57,6 +59,7 @@ def blade_strip(isl, side):
 blade_strip(L["blade_a"], "a")
 blade_strip(L["blade_b"], "b")
 a = cv.view(L["blade_s"]); fill(a, SHADE); a[:, 1] = BASE
+put_em(L["blade_s"], np.full((L["blade_s"].h, L["blade_s"].w), EMIT_SPINE))
 a = cv.view(L["blade_e"]); fill(a, WHITE); put_em(L["blade_e"], np.full((L["blade_e"].h, L["blade_e"].w), EMIT_BLADE))
 
 # ---- snowflake tsuba (planar, 636 px/m): spokes glow, rim a little
@@ -149,7 +152,7 @@ for n in range(1, 11):
     for c in range(isl.w):
         if (c + 12 * (n - 1)) % 19 == 0:                    # faint cross-fold marks along the ribbon
             a[2:6, c] = shade(body, 0.975)
-    e = np.zeros((isl.h, isl.w))
+    e = np.full((isl.h, isl.w), EMIT_RIB_BODY)
     e[0, :] = EMIT_RIB
     e[-1, :] = EMIT_RIB
     put_em(isl, e)

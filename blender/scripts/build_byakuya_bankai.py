@@ -230,7 +230,7 @@ mb = dc.MB()
 nh = 24
 HL = L["halo"]
 ho = [mb.v(Vector((1.10 * math.cos(2 * math.pi * k / nh), 0.0, 1.10 * math.sin(2 * math.pi * k / nh)))) for k in range(nh)]
-hi_ = [mb.v(Vector((1.00 * math.cos(2 * math.pi * k / nh), 0.0, 1.00 * math.sin(2 * math.pi * k / nh)))) for k in range(nh)]
+hi_ = [mb.v(Vector((0.94 * math.cos(2 * math.pi * k / nh), 0.0, 0.94 * math.sin(2 * math.pi * k / nh)))) for k in range(nh)]   # Gate C C4: inner radius 1.00 -> 0.94
 for k in range(nh):
     k1 = (k + 1) % nh
     mb.face([ho[k], hi_[k], hi_[k1], ho[k1]], [HL.uv(k / nh, 1.0), HL.uv(k / nh, 0.0), HL.uv((k + 1) / nh, 0.0), HL.uv((k + 1) / nh, 1.0)])

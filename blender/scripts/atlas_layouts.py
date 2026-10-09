@@ -99,8 +99,8 @@ BYAKUYA_SEALED = _mk({
     "blade_s":     (86, 2, 4, 140),
     "blade_e":     (92, 2, 2, 140),
     "saya":        (98, 2, 32, 214),
-    "tsuba_front": (134, 2, 44, 72),
-    "tsuba_back":  (182, 2, 44, 72),
+    "tsuba_front": (134, 2, 50, 74),
+    "tsuba_back":  (188, 2, 50, 74),
     "tsuba_rim":   (134, 78, 120, 8),   # three bands: bottom chamfer / wall / top chamfer
     "tsuba_win":   (134, 88, 12, 4),    # window inner walls (flat shade)
     "kashira_side": (134, 96, 42, 8),
@@ -116,7 +116,7 @@ BYAKUYA_WRAP_RINGS = 24
 BYAKUYA_WRAP_PX_PER_GAP = 6
 BYAKUYA_WRAP_DIAMOND_W = 12
 BYAKUYA_BLADE_PX_PER_M = 200.0
-BYAKUYA_TSUBA_PX_PER_M = 740.0
+BYAKUYA_TSUBA_PX_PER_M = 660.0     # Gate C C2: 76 x 112 mm -> 50 x 74 px islands
 
 
 LAYOUTS = {"rukia_sealed": RUKIA_SEALED, "rukia_shikai": RUKIA_SHIKAI, "byakuya_sealed": BYAKUYA_SEALED}
@@ -171,13 +171,13 @@ def rounded_rect(hx, hy, r, n=4):
 
 
 def byakuya_tsuba_shapes():
-    """ART_BIBLE 1.3: 56 (X) x 92 (Y) mm window frame, corner radius 5 mm (n = 4 per corner); frame bar 8, centre bar (along Y) 10,
+    """Gate C C2 (was ART_BIBLE 1.3 56 x 92 mm): 76 (X) x 112 (Y) mm window frame, corner radius 6 mm (n = 4 per corner); frame bar 8, centre bar (along Y) 10,
     transverse bar 8, hub plate 18 (X) x 40 (Y). Four stepped L windows (4 mm step at the hub); windows are clockwise holes."""
-    outline = rounded_rect(0.028, 0.046, 0.005, 4)
+    outline = rounded_rect(0.038, 0.056, 0.006, 4)
     holes = []
     for sx in (-1, 1):
         for sy in (-1, 1):
-            pts = [(9, 4), (20, 4), (20, 38), (5, 38), (5, 20), (9, 20)]
+            pts = [(9, 4), (30, 4), (30, 48), (5, 48), (5, 20), (9, 20)]
             pts = [(sx * x * 0.001, sy * y * 0.001) for x, y in pts]
             if sx * sy > 0:
                 pts = pts[::-1]
@@ -256,8 +256,8 @@ def snowflake_shapes(r_out=0.044, r_rim=0.037, r_hub=0.018, outline_n=48, corner
 # saya islands are dropped; petal 40 x 24 cell, shard 16 x 16 cell (8 x 16 face + 6 x 16 side strips) in the freed area.
 BYAKUYA_SHIKAI = _mk({
     "wrap":        (2, 2, 60, 138),
-    "tsuba_front": (134, 2, 44, 72),
-    "tsuba_back":  (182, 2, 44, 72),
+    "tsuba_front": (134, 2, 50, 74),
+    "tsuba_back":  (188, 2, 50, 74),
     "tsuba_rim":   (134, 78, 120, 8),
     "tsuba_win":   (134, 88, 12, 4),
     "kashira_side": (134, 96, 42, 8),
@@ -420,8 +420,8 @@ BYAKUYA_BANKAI = _mk({
     "blade_e":      (54, 2, 2, 252),       # edge flat (4 mm)
     "ripple":       (2, 262, 128, 16),     # u = around (16 segments x 8 px), v = across (inner -> outer edge)
     "wrap":         (164, 2, 60, 138),
-    "tsuba_front":  (228, 2, 44, 72),
-    "tsuba_back":   (276, 2, 44, 72),
+    "tsuba_front":  (228, 2, 50, 74),
+    "tsuba_back":   (282, 2, 50, 74),
     "tsuba_rim":    (228, 78, 120, 8),
     "tsuba_win":    (228, 88, 12, 4),
     "kashira_side": (228, 96, 42, 8),

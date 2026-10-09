@@ -24,8 +24,8 @@ SPECS = {
         objects=dict(
             [("rukia_shikai_blade", dict(budget=3000, target=2000, bbox_min=(-0.044, -0.044, -0.010), bbox_max=(0.044, 0.044, 1.0355), tol=0.003, origin=(0, 0, 0)))] +
             [("rukia_shikai_ribbon_%02d" % n, dict(budget=12, target=12, origin=(0, 0, -0.010 - 0.25 * (n - 1)),
-                                                   bbox_min=(-(0.040 - 0.012 * (n - 1) / 10) / 2, -0.001, -0.010 - 0.25 * n),
-                                                   bbox_max=((0.040 - 0.012 * (n - 1) / 10) / 2, 0.001, -0.010 - 0.25 * (n - 1)), tol=0.0006))
+                                                   bbox_min=(-(0.060 - 0.016 * (n - 1) / 10) / 2, -0.001, -0.010 - 0.25 * n),
+                                                   bbox_max=((0.060 - 0.016 * (n - 1) / 10) / 2, 0.001, -0.010 - 0.25 * (n - 1)), tol=0.0006))
              for n in range(1, 11)]),
         empties={"grip_hand": (0, 0, 0.19), "ribbon_root": (0, 0, -0.010), "tip": (0, 0.038, 1.0355)},
         export_objects=["rukia_shikai_blade"] + ["rukia_shikai_ribbon_%02d" % n for n in range(1, 11)],
@@ -41,8 +41,8 @@ SPECS = {
         layout=al.BYAKUYA_SEALED,
         material="byakuya_sealed_atlas",
         objects={
-            "byakuya_sealed_drawn": dict(budget=3200, target=1900, bbox_min=(-0.028, -0.046, 0.0), bbox_max=(0.028, 0.0864, 0.9785), tol=0.003, origin=(0, 0, 0)),
-            "byakuya_sealed_sheathed": dict(budget=2800, target=2300, bbox_min=(-0.028, -0.046, 0.0), bbox_max=(0.028, 0.1131, 1.0024), tol=0.003, origin=(0, 0, 0)),
+            "byakuya_sealed_drawn": dict(budget=3200, target=1900, bbox_min=(-0.038, -0.056, 0.0), bbox_max=(0.038, 0.0864, 0.9785), tol=0.003, origin=(0, 0, 0)),
+            "byakuya_sealed_sheathed": dict(budget=2800, target=2300, bbox_min=(-0.038, -0.056, 0.0), bbox_max=(0.038, 0.1131, 1.0024), tol=0.003, origin=(0, 0, 0)),
         },
         empties={"grip_hand": (0, 0, 0.19), "tip": (0, 0.0864, 0.9785)},
         export_objects=["byakuya_sealed_sheathed", "byakuya_sealed_drawn"],
@@ -57,7 +57,7 @@ SPECS = {
         layout=al.BYAKUYA_SHIKAI,
         material="byakuya_shikai_atlas",
         objects={
-            "byakuya_shikai_hilt": dict(budget=2000, target=1400, bbox_min=(-0.028, -0.046, 0.0), bbox_max=(0.028, 0.046, 0.285), tol=0.001, origin=(0, 0, 0)),
+            "byakuya_shikai_hilt": dict(budget=2000, target=1400, bbox_min=(-0.038, -0.056, 0.0), bbox_max=(0.038, 0.056, 0.285), tol=0.001, origin=(0, 0, 0)),
             "byakuya_shikai_petal": dict(budget=20, target=16, bbox_min=(0.198, -0.009, 0.0), bbox_max=(0.202, 0.017, 0.120), tol=0.0006, origin=(0.20, 0, 0)),
             "byakuya_shikai_shard": dict(budget=12, target=8, bbox_min=(0.2985, -0.011, 0.0303), bbox_max=(0.3015, 0.009, 0.0833), tol=0.0006, origin=(0.30, 0, 0.05)),
         },
@@ -112,7 +112,7 @@ SPECS = {
         objects={
             "byakuya_bankai_blade": dict(budget=300, target=190, origin=(0, 0, 0), bbox_min=(-0.07, -0.275, 0.0), bbox_max=(0.07, 0.8558, 8.0), tol=0.003),
             "byakuya_bankai_blade_lod": dict(budget=24, target=24, origin=(1.5, 0, 0), bbox_min=(1.43, -0.275, 0.0), bbox_max=(1.57, 0.826, 8.0), tol=0.003),
-            "byakuya_bankai_hilt_ground": dict(budget=1500, target=1400, origin=(3.0, 0, 0), bbox_min=(2.972, -0.046, 0.0), bbox_max=(3.028, 0.046, 0.52), tol=0.001),
+            "byakuya_bankai_hilt_ground": dict(budget=1500, target=1400, origin=(3.0, 0, 0), bbox_min=(2.962, -0.056, 0.0), bbox_max=(3.038, 0.056, 0.52), tol=0.001),
             "byakuya_bankai_ripple": dict(budget=32, target=32, origin=(5.0, 0, 0), bbox_min=(4.0, -1.0, 0.02), bbox_max=(6.0, 1.0, 0.02), tol=0.001, sheet_normal=(0, 0, 1)),
             "hakuteiken_blade_body": dict(budget=40, target=20, origin=(8.0, 0, 0), bbox_min=(7.985, -0.05, 0.0), bbox_max=(8.015, 0.05, 1.0), tol=0.0006),
             "hakuteiken_blade_tip": dict(budget=40, target=30, origin=(8.0, 0, 1.0), bbox_min=(7.985, -0.05, 1.0), bbox_max=(8.015, 0.05, 1.2), tol=0.0006),

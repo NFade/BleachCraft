@@ -34,8 +34,8 @@ dc.cprism(mb, 0.005, 0.016, 0.001, 0.256, 0.284, 0.0, L["habaki_side"], L["habak
 apex = dc.blade_mesh(mb, L, 0.284, 1.036 - 0.284, 0.028, 0.020, 0.009, 0.004, 0.070, 0.008, al.BLADE_RINGS_BODY, al.SHIKAI_BLADE_PX_PER_M)
 sword = mb.finish("rukia_shikai_blade", mat, exp)
 
-# ---- ribbon: 10 segments of exactly 0.25 m (Gate B B6: no overlap), 40 -> 28 mm wide, 2 mm thick, 12 tris each (B7)
-SEG, W0, W1, T, ROOT = 0.25, 0.040, 0.028, 0.002, -0.010
+# ---- ribbon: 10 segments of exactly 0.25 m (Gate B B6: no overlap), 60 -> 44 mm wide (Gate C C3), 2 mm thick, 12 tris each (B7)
+SEG, W0, W1, T, ROOT = 0.25, 0.060, 0.044, 0.002, -0.010    # Gate C C3: 60 -> 44 mm (was 40 -> 28)
 width = lambda d: W0 + (W1 - W0) * d / (10 * SEG)
 ribbons = []
 for n in range(1, 11):
