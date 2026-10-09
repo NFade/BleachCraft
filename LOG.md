@@ -494,3 +494,22 @@ Branch `worktree-agent-a0b75de1ae9866b58` (worktree of the step B3 agent). `step
 - With the hand on the saya the hilt and tsuba are hidden under the fist when sealed (they appear during the re-grip).
 - Byakuya shikai hilt (28 cm) looks small at the fist and in third person (pre-existing). Byakuya shikai grip is not forced to equal the sealed 0.19 (checked visually, no visible jump).
 - Fabulous graphics and the production refmap (new @Shadow) UNVERIFIED. Draw animation in third person on a second real player not tested (armor stands and the local third person view only).
+
+## 2026-10-09: B4 step 1 (first person: edge toward the camera, near vertical)
+
+Only the first-person display transform changed (`sode_no_shirayuki_display.json`, `senbonzakura_display.json`, fp right = left). Third person, ground, fixed, gui, head untouched (ry=180 sori fix intact), arm mixin, manifests and sizes untouched. No Blender. Screenshots: `blender/renders/inhand_all/pose_candidates.png` (Rukia shikai and sealed, hand-frame roll 82/90/96/104), `blender/renders/inhand_all/final_all_states.png` (rukia/byakuya x sealed, shikai, bankai x right and left hand, from the shipped display json, sets `h3r`/`h3b`).
+
+### Final values
+- rotation [-8.0, -1.0, 6.9] (B3: [-90, 78.1, 78.4]), translation [2.14, -0.29, -5] (unchanged: the pivot is on the blade axis, so rolling about it keeps the fist on the hilt; the vanilla arm needs no change), scale 2.4 (unchanged), `first_person_scale_multiplier` default unchanged.
+- Blade axis in the hand frame b = (-0.12, 0.98, -0.14): 11.5 degrees from vertical (B3: 18). About 10 degrees measured on screen (Rukia shikai); the tip leaves the top of the screen.
+- Roll about the blade axis: 90 degrees in the hand frame from the B3 pose (flat toward the camera), edge side (model +Z, the thin side; OBJ cross section: x = +-0.0005 at z = +0.0086, +-0.0043 at the spine z = -0.02) turned to the camera. Apparent roll against the real camera ray to the fist (ray (0.694, -0.538, -1.03) blocks) = 62.6 degrees (the ray hits the blade from the left, so hand-frame 90 is not edge-on; the other sign at hand-frame 61 is a hairline). Hand-frame roll -> apparent roll: 82 -> 55, 90 -> 63, 96 -> 68, 104 -> 75. 90 chosen: the edge dominates, a narrow strip of one flat stays visible, tsuba disc seen from above. Sealed (scabbard in hand) rolls with it and works in all views.
+- Derivation: `tools/spike_tune_gen.py` `roll_n`/`roll_view` (flat normal rotated about b toward the edge, then `euler_xyz`); sets h0 (sign probe), h1/h2 (roll candidates), h3r/h3b (read the shipped json). Sign fixed by math (z toward the camera in hand space, edge = model +Z) and checked in h0.
+
+### Checks
+`gradlew build` green, `runPhase4` 64/64 CHECK PASS (RESULT ALL PASS).
+
+### UNVERIFIED / open
+- The user's reference screenshots were not available: roll and tilt judged from the written description only (tune via the display json rotation; hand-frame roll 82..96 is the sensible range).
+- Edge vs spine identification relies on the OBJ cross section and the sign math; h0 `*_r90m` shows the other way round but was not compared against a known edge photo.
+- Byakuya shikai shows only the hilt and bankai nothing in the hand (as in B3), so the pose is only visible for his sealed state.
+- Left-hand third person, Fabulous graphics, a slim skin, a first-person swing with the new roll: not screenshotted.
