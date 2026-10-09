@@ -55,6 +55,15 @@ loom {
 			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
 			programArgs "--width", "1280", "--height", "720"
 		}
+		// Dev-only automated verification of phase 5 (voice bridge, matcher in game, latency): gradlew runPhase5
+		phase5 {
+			client()
+			name = "Phase 5 Harness"
+			ideConfigGenerated(false)
+			vmArg "-Dreiatsu.phase5=true"
+			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
+			programArgs "--width", "1280", "--height", "720"
+		}
 	}
 }
 
@@ -100,7 +109,7 @@ java {
 
 // Dev harnesses: make sure the first run does not stop at the accessibility onboarding screen and is silent.
 afterEvaluate {
-	["runSpike", "runPhase4"].each { taskName ->
+	["runSpike", "runPhase4", "runPhase5"].each { taskName ->
 		tasks.named(taskName) {
 			doFirst {
 				def opts = file("run/options.txt")

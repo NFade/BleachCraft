@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.client;
 
 import dev.minebleach.reiatsutest.client.dev.DevWindowPlacement;
 import dev.minebleach.reiatsutest.client.dev.Phase4Harness;
+import dev.minebleach.reiatsutest.client.dev.Phase5Harness;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
 import dev.minebleach.reiatsutest.client.input.ReiatsuKeys;
 import dev.minebleach.reiatsutest.client.model.ObjModelPlugin;
@@ -28,6 +29,9 @@ public class ReiatsuTestClient implements ClientModInitializer {
 		}
 		if (Boolean.getBoolean("reiatsu.phase4")) {
 			Phase4Harness.init();
+		}
+		if (Boolean.getBoolean("reiatsu.phase5")) {
+			Phase5Harness.init();
 		}
 	}
 }
