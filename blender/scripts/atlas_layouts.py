@@ -264,7 +264,7 @@ BYAKUYA_SHIKAI = _mk({
     "kashira_cap": (180, 96, 12, 16),
     "fuchi_side":  (134, 108, 48, 8),
     "habaki_side": (134, 120, 34, 12),
-    "habaki_top":  (172, 120, 14, 6),
+    "habaki_top":  (172, 120, 6, 14),    # cap is 10 (X) x 32 (Y) mm at 430 px/m = 4.3 x 13.8 px: Y is the long axis (was 14 x 6, spilled ~4 px)
     "petal":       (66, 2, 40, 24),     # leaf outline, length along u; +X and -X faces share the texels (mirrored UV)
     "shard_face":  (66, 30, 8, 16),     # the two triangular end faces (shared texels)
     "shard_side":  (76, 30, 6, 16),     # three 2 px wide strips, one per rectangular side face
