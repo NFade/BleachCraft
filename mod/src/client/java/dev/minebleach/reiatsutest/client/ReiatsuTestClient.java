@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.client;
 
 import dev.minebleach.reiatsutest.client.dev.DevWindowPlacement;
+import dev.minebleach.reiatsutest.client.fx.FxClient;
 import dev.minebleach.reiatsutest.client.dev.Phase4Harness;
 import dev.minebleach.reiatsutest.client.dev.Phase5Harness;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
@@ -16,6 +17,7 @@ public class ReiatsuTestClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ClientOptions.load();
+		FxClient.init();
 		DevWindowPlacement.init();
 		ObjModelPlugin.register();
 		ClientNet.register();

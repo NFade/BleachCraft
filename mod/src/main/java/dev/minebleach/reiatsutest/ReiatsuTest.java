@@ -3,6 +3,8 @@ package dev.minebleach.reiatsutest;
 import dev.minebleach.reiatsutest.net.ModNetworking;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.ModComponents;
+import dev.minebleach.reiatsutest.registry.ModEntities;
+import dev.minebleach.reiatsutest.registry.ModParticles;
 import dev.minebleach.reiatsutest.registry.ModItems;
 import dev.minebleach.reiatsutest.server.ReiatsuCommand;
 import dev.minebleach.reiatsutest.server.VoiceControl;
@@ -25,6 +27,8 @@ public class ReiatsuTest implements ModInitializer {
 		ModComponents.init();
 		ModItems.init();
 		ModAttachments.init();
+		ModParticles.init();
+		ModEntities.init();
 		ModNetworking.registerPayloads();
 		ZanpakutoManager.init();
 		ReiatsuCommand.register();

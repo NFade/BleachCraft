@@ -64,6 +64,33 @@ loom {
 			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
 			programArgs "--width", "1280", "--height", "720"
 		}
+		// Dev-only automated visual verification of phase 6 (FX, HUD): gradlew runPhase6 [-Phold=<scenario>] [-PfreezeAt=<ms>]
+		// [-Pfx=key=value,key=value] (any FxConfig key, e.g. -Pfx=fxTier=LOW,reduceMotion=true)
+		phase6 {
+			client()
+			name = "Phase 6 Harness"
+			ideConfigGenerated(false)
+			vmArg "-Dreiatsu.phase6=true"
+			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
+			programArgs "--width", "1280", "--height", "720"
+			if (project.hasProperty("hold")) {
+				vmArg "-Dreiatsu.fx.hold=${project.property('hold')}"
+			}
+			if (project.hasProperty("freezeAt")) {
+				vmArg "-Dreiatsu.fx.freezeAt=${project.property('freezeAt')}"
+			}
+			if (project.hasProperty("fx")) {
+				project.property("fx").toString().split(",").each { kv ->
+					def parts = kv.split("=", 2)
+					if (parts.length == 2) {
+						vmArg "-Dreiatsu.fx.${parts[0]}=${parts[1]}"
+					}
+				}
+			}
+			if (project.hasProperty("remote")) {
+				vmArg "-Dreiatsu.fx.remote=${project.property('remote')}"
+			}
+		}
 	}
 }
 
@@ -109,7 +136,7 @@ java {
 
 // Dev harnesses: make sure the first run does not stop at the accessibility onboarding screen and is silent.
 afterEvaluate {
-	["runSpike", "runPhase4", "runPhase5"].each { taskName ->
+	["runSpike", "runPhase4", "runPhase5", "runPhase6"].each { taskName ->
 		tasks.named(taskName) {
 			doFirst {
 				def opts = file("run/options.txt")
