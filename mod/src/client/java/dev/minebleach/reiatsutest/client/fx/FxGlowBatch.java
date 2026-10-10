@@ -304,6 +304,166 @@ public final class FxGlowBatch {
 		}
 	}
 
+
+	// ------------------------------------------------------------------------------------------ per frame sources (swarm glints, blade tips, ...)
+
+	/** A renderer that adds its own glow quads to the frame's batch (called inside {@link #draw}, camera relative maths in the emitter). */
+	public interface Source {
+		void emit(Emitter e);
+	}
+
+	private static final java.util.List<Source> SOURCES = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+	public static void addSource(Source s) {
+		if (!SOURCES.contains(s)) {
+			SOURCES.add(s);
+		}
+	}
+
+	/** Writes camera facing, streak and ground quads of the glow atlas; world (absolute) coordinates, culling and intensity boost inside. */
+	public static final class Emitter {
+		final BufferBuilder buf;
+		final Vector3f right;
+		final Vector3f up;
+		final double fx;
+		final double fy;
+		final double fz;
+		final double cx;
+		final double cy;
+		final double cz;
+		final double pxPerUnit;
+		final double boost;
+		public double maxDistance = 160.0;
+		public int count;
+
+		Emitter(BufferBuilder buf, Vector3f right, Vector3f up, double fx, double fy, double fz, double cx, double cy, double cz, double pxPerUnit, double boost) {
+			this.buf = buf;
+			this.right = right;
+			this.up = up;
+			this.fx = fx;
+			this.fy = fy;
+			this.fz = fz;
+			this.cx = cx;
+			this.cy = cy;
+			this.cz = cz;
+			this.pxPerUnit = pxPerUnit;
+			this.boost = boost;
+		}
+
+		/** Camera facing sprite of the given width in blocks. Returns false when culled. */
+		public boolean sprite(GlowSprite sp, double wx, double wy, double wz, double size, double rot, float r, float g, float b, double inten) {
+			double rx = wx - cx;
+			double ry = wy - cy;
+			double rz = wz - cz;
+			double dist = Math.sqrt(rx * rx + ry * ry + rz * rz);
+			if (dist > maxDistance || rx * fx + ry * fy + rz * fz <= 0 || size * pxPerUnit / Math.max(dist, 0.1) < 0.5) {
+				return false;
+			}
+			double k = inten * boost;
+			if (k < 0.004) {
+				return false;
+			}
+			float cr = (float) Math.min(1.0, r * k);
+			float cg = (float) Math.min(1.0, g * k);
+			float cb = (float) Math.min(1.0, b * k);
+			double hw = size * 0.5;
+			double hh = size * sp.aspect * 0.5;
+			double c = Math.cos(rot);
+			double s = Math.sin(rot);
+			double ur = c * hw;
+			double uu = s * hw;
+			double vr = -s * hh;
+			double vu = c * hh;
+			float ax = (float) (right.x * ur + up.x * uu);
+			float ay = (float) (right.y * ur + up.y * uu);
+			float az = (float) (right.z * ur + up.z * uu);
+			float bx = (float) (right.x * vr + up.x * vu);
+			float by = (float) (right.y * vr + up.y * vu);
+			float bz = (float) (right.z * vr + up.z * vu);
+			quad((float) rx, (float) ry, (float) rz, ax, ay, az, bx, by, bz, sp, cr, cg, cb);
+			return true;
+		}
+
+		/**
+		 * A streak (the atlas STREAK cell: head bright at +u) from the tail point to the head point (world), {@code width} blocks across,
+		 * turned to face the camera around its own axis.
+		 */
+		public boolean streak(GlowSprite sp, double hx, double hy, double hz, double tx, double ty, double tz, double width, float r, float g, float b, double inten) {
+			double mx = (hx + tx) * 0.5 - cx;
+			double my = (hy + ty) * 0.5 - cy;
+			double mz = (hz + tz) * 0.5 - cz;
+			double dist = Math.sqrt(mx * mx + my * my + mz * mz);
+			if (dist > maxDistance || mx * fx + my * fy + mz * fz <= 0) {
+				return false;
+			}
+			double k = inten * boost;
+			if (k < 0.004) {
+				return false;
+			}
+			double dx = hx - tx;
+			double dy = hy - ty;
+			double dz = hz - tz;
+			double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if (len < 1e-4 || len * pxPerUnit / Math.max(dist, 0.1) < 0.5) {
+				return false;
+			}
+			dx /= len;
+			dy /= len;
+			dz /= len;
+			// across = direction x view vector (camera facing ribbon)
+			double ex = dy * mz - dz * my;
+			double ey = dz * mx - dx * mz;
+			double ez = dx * my - dy * mx;
+			double el = Math.sqrt(ex * ex + ey * ey + ez * ez);
+			if (el < 1e-6) {
+				return false;
+			}
+			ex = ex / el * width * 0.5;
+			ey = ey / el * width * 0.5;
+			ez = ez / el * width * 0.5;
+			float cr = (float) Math.min(1.0, r * k);
+			float cg = (float) Math.min(1.0, g * k);
+			float cb = (float) Math.min(1.0, b * k);
+			float ux = (float) (dx * len * 0.5);
+			float uy = (float) (dy * len * 0.5);
+			float uz = (float) (dz * len * 0.5);
+			quad((float) (mx - 0), (float) my, (float) mz, ux, uy, uz, (float) ex, (float) ey, (float) ez, sp, cr, cg, cb);
+			return true;
+		}
+
+		/** Horizontal quad of the given width at a world point (ground rings, fault lines, scars), rotated about the vertical axis. */
+		public boolean ground(GlowSprite sp, double wx, double wy, double wz, double sizeX, double sizeZ, double rot, float r, float g, float b, double inten) {
+			double rx = wx - cx;
+			double ry = wy - cy;
+			double rz = wz - cz;
+			double dist = Math.sqrt(rx * rx + ry * ry + rz * rz);
+			if (dist > maxDistance || rx * fx + ry * fy + rz * fz <= -Math.max(sizeX, sizeZ)) {
+				return false;
+			}
+			double k = inten * boost;
+			if (k < 0.004) {
+				return false;
+			}
+			float cr = (float) Math.min(1.0, r * k);
+			float cg = (float) Math.min(1.0, g * k);
+			float cb = (float) Math.min(1.0, b * k);
+			double c = Math.cos(rot);
+			double s = Math.sin(rot);
+			double hw = sizeX * 0.5;
+			double hh = sizeZ * 0.5;
+			quad((float) rx, (float) ry, (float) rz, (float) (c * hw), 0f, (float) (s * hw), (float) (-s * hh), 0f, (float) (c * hh), sp, cr, cg, cb);
+			return true;
+		}
+
+		private void quad(float cx0, float cy0, float cz0, float ax, float ay, float az, float bx, float by, float bz, GlowSprite sp, float cr, float cg, float cb) {
+			buf.vertex(cx0 - ax - bx, cy0 - ay - by, cz0 - az - bz).texture(sp.u0, sp.v1).color(cr, cg, cb, 1f);
+			buf.vertex(cx0 + ax - bx, cy0 + ay - by, cz0 + az - bz).texture(sp.u1, sp.v1).color(cr, cg, cb, 1f);
+			buf.vertex(cx0 + ax + bx, cy0 + ay + by, cz0 + az + bz).texture(sp.u1, sp.v0).color(cr, cg, cb, 1f);
+			buf.vertex(cx0 - ax + bx, cy0 - ay + by, cz0 - az + bz).texture(sp.u0, sp.v0).color(cr, cg, cb, 1f);
+			count++;
+		}
+	}
+
 	private static final Spec SPEC = new Spec();
 
 	/** Starts a new sprite description (single threaded, render thread only). */
@@ -370,7 +530,7 @@ public final class FxGlowBatch {
 
 	/** WorldRenderEvents.LAST (after the GRADE quad). */
 	public static void draw(WorldRenderContext ctx) {
-		if (liveCount <= 0) {
+		if (liveCount <= 0 && SOURCES.isEmpty()) {
 			lastDrawn = 0;
 			lastMs = 0;
 			return;
@@ -567,6 +727,17 @@ public final class FxGlowBatch {
 			buf.vertex(cx + ax + bx, cy + ay + by, cz + az + bz).texture(sp.u1, sp.v0).color(cr, cg, cb, 1f);
 			buf.vertex(cx - ax + bx, cy - ay + by, cz - az + bz).texture(sp.u0, sp.v0).color(cr, cg, cb, 1f);
 			drawn++;
+		}
+		if (!SOURCES.isEmpty()) {
+			Emitter em = new Emitter(buf, right, up, fx, fy, fz, cp.x, cp.y, cp.z, pxPerUnit, boost);
+			for (Source src : SOURCES) {
+				try {
+					src.emit(em);
+				} catch (RuntimeException ex) {
+					ReiatsuTest.LOGGER.error("[fx] glow source failed", ex);
+				}
+			}
+			drawn += em.count;
 		}
 		lastDrawn = drawn;
 		net.minecraft.client.render.BuiltBuffer built = buf.endNullable();

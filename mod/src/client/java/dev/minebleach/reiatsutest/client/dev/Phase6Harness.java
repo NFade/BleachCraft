@@ -121,7 +121,7 @@ public final class Phase6Harness {
 	private static void tick(MinecraftClient client) {
 		mc = client;
 		totalTicks++;
-		if (!consoleMode && totalTicks > 20 * 60 * 25) {
+		if (!consoleMode && totalTicks > 20 * 60 * 60) {
 			ReiatsuTest.LOGGER.error(P + "global watchdog fired, stopping");
 			finish();
 			client.scheduleStop();
@@ -354,8 +354,26 @@ public final class Phase6Harness {
 			Phase6Hud.steps(true, false);
 		}
 		if (wants("release") || wants("relshots") || wants("relnight") || wants("relflash") || wants("aura") || wants("seal") || wants("draw")
-				|| wants("relfab") || wants("relperf") || explicit("console")) {
+				|| wants("relfab") || wants("relperf")) {
 			Phase6Release.steps();
+		}
+		if (wants("swarm")) {
+			Phase6Swarm.steps();
+		}
+		if (wants("rows")) {
+			Phase6Rows.steps();
+		}
+		if (wants("rowsfab")) {
+			Phase6Rows.fabulousSteps();
+		}
+		if (wants("swarmperf")) {
+			Phase6Swarm.perfSteps();
+		}
+		if (wants("rowsperf")) {
+			Phase6Rows.perfSteps();
+		}
+		if (explicit("console")) {
+			Phase6Release.consoleStart();
 		}
 		step("finish", 10, () -> {
 			finish();

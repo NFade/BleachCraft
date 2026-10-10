@@ -160,10 +160,21 @@ final class Phase6Release {
 		if (all || Phase6Harness.wants("relperf")) {
 			perfSteps();
 		}
-		if (Phase6Harness.explicit("console")) {
-			Phase6Harness.consoleMode = true;
-			consoleStep();
-		}
+	}
+
+	/** The live console as the LAST scenario (after any scripted ones): world set-up, then it waits for commands until {@code quit}. */
+	static void consoleStart() {
+		step("console: world setup", 30, () -> {
+			sampler();
+			cmd("gamemode creative @s", "time set noon", "tp @s 0.5 -60 0.5 0 12");
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			mc.options.hudHidden = true;
+			FxConfig.reduceMotion = false;
+			ScreenFx.clear();
+			FxTimelines.clear();
+		});
+		Phase6Harness.consoleMode = true;
+		consoleStep();
 	}
 
 	private static void nightSteps() {
@@ -588,7 +599,11 @@ final class Phase6Release {
 			case "quit" -> {
 				return true;
 			}
-			default -> ReiatsuTest.LOGGER.warn("[phase6] console: unknown command {}", w[0]);
+			default -> {
+				if (!Phase6Swarm.console(w)) {
+					ReiatsuTest.LOGGER.warn("[phase6] console: unknown command {}", w[0]);
+				}
+			}
 		}
 		return false;
 	}

@@ -164,9 +164,11 @@ final class AbilityExecutor {
 	// ------------------------------------------------------------------ Byakuya
 
 	private static void modeAttack(ServerPlayerEntity p, CastContext ctx) {
-		for (LivingEntity e : Targeting.sphere(p, ctx.aim, 1.5, 8)) {
+		List<LivingEntity> hit = Targeting.sphere(p, ctx.aim, 1.5, 8);
+		for (LivingEntity e : hit) {
 			Targeting.hurt(p, e, 2.0F, DamageTypes.INDIRECT_MAGIC, true);
 		}
+		ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit); // S5: hit sparks of the swarm envelope
 	}
 
 	private static void scatter(ServerPlayerEntity p, int phase, CastContext ctx) {

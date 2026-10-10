@@ -716,3 +716,5 @@ Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha a
 - `getSkyBrightness` day factor under rain / thunder (formula follows the vanilla value, which includes the rain darkening, not seen on screen).
 - Custom sounds still vanilla layers; first-person release view; draw effects with Byakuya.
 - The console mode is dev-only, not part of the mod runtime path.
+
+## 2026-10-10: STOP POINT (phase6-fx): Byakuya swarm (step 3) and bankai rows (step 4) written in part, a first harness run was in progress; nothing reviewed or committed as a closed step. Verify build/tests first. Continue per design/VFX_STORYBOARD.md section 10 steps 3-4.

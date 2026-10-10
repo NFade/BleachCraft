@@ -20,13 +20,30 @@ public final class FxEvents {
 		if (client.world == null) {
 			return;
 		}
+		if (id == 30 || id == 31) {
+			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={}", id, e.casterId(), e.seed());
+			handled++;
+			if (id == 30) {
+				SwarmFx.onAttack(e);
+			} else {
+				SwarmFx.onBarrier(e);
+			}
+			return;
+		}
 		if ((id >= 1 && id <= 4) || id == 10 || id == 11) {
 			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={} pos=({}, {}, {})", id, e.casterId(), e.seed(),
 					String.format(java.util.Locale.ROOT, "%.2f", e.x()), String.format(java.util.Locale.ROOT, "%.2f", e.y()),
 					String.format(java.util.Locale.ROOT, "%.2f", e.z()));
 			handled++;
-			if (id <= 4) {
+			if (id == 4) {
+				// the quiet drop (6.1): no flash, ring or burst; the ripples, the night and the rows are the release
+				SwarmFx.end(e.casterId());
+				RowsFx.onRelease(e);
+			} else if (id <= 4) {
 				ReleaseFx.play(e);
+				if (id == 3) {
+					SwarmFx.onRelease(e);
+				}
 			} else {
 				SealFx.play(e);
 			}

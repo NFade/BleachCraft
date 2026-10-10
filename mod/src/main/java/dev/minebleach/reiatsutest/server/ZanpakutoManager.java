@@ -155,6 +155,7 @@ public final class ZanpakutoManager {
 			s.sm.onLogout();
 		}
 		SCHEDULER.cancel(p.getUuid());
+		AnchorManager.reset(p);
 		if (p.getServer() != null) {
 			TempBlocks.rollback(p.getServer(), p.getUuid());
 		}
@@ -245,11 +246,18 @@ public final class ZanpakutoManager {
 		MinecraftServer srv = p.getServer();
 		for (StateEvent e : events) {
 			switch (e) {
-				case StateEvent.StateChanged c -> ReiatsuTest.LOGGER.info("[reiatsu] {} state {} -> {} ({})",
-						p.getName().getString(), c.from(), c.to(), c.trigger());
+				case StateEvent.StateChanged c -> {
+						ReiatsuTest.LOGGER.info("[reiatsu] {} state {} -> {} ({})", p.getName().getString(), c.from(), c.to(), c.trigger());
+						if (c.to() == ZanpakutoState.SEALED || c.to() == ZanpakutoState.BASE) {
+							AnchorManager.reset(p); // swarm and rows end with every return to the sheathed or base form (the seal event repeats it)
+						}
+					}
 				case StateEvent.ReiatsuSpent r -> { }
 				case StateEvent.CooldownStarted c -> { }
-				case StateEvent.BroadcastEffect b -> ServerFx.effect(p, b.effectId(), b.seed(), ctx);
+				case StateEvent.BroadcastEffect b -> {
+						ServerFx.effect(p, b.effectId(), b.seed(), ctx);
+						AnchorManager.onEffect(p, b.effectId(), b.seed());
+					}
 				case StateEvent.CancelEffects c -> SCHEDULER.cancel(p.getUuid());
 				case StateEvent.RollbackTempBlocks r -> TempBlocks.rollback(srv, p.getUuid());
 				case StateEvent.MirrorComponent m -> applyMirror(p, s.sm);
@@ -406,6 +414,11 @@ public final class ZanpakutoManager {
 	}
 
 	// ------------------------------------------------------------------ info for commands and the harness
+
+	/** Effect anchors (swarm, rows) alive for a player: harness and tests. */
+	public static int anchorCount(ServerPlayerEntity p) {
+		return AnchorManager.count(p);
+	}
 
 	public static int pendingPhases() {
 		return SCHEDULER.pending();

@@ -46,7 +46,11 @@ public final class ClientNet {
 		});
 		ClientPlayNetworking.registerGlobalReceiver(EntityFxS2C.ID, (payload, ctx) -> {
 			ENTITY_FX.incrementAndGet();
-			EffectPlaceholders.entities(ctx.client(), payload);
+			if (payload.kind() == EntityFxS2C.HIT) {
+				dev.minebleach.reiatsutest.client.fx.SwarmFx.onHit(payload.entityIds());
+			} else {
+				EffectPlaceholders.entities(ctx.client(), payload);
+			}
 		});
 	}
 
@@ -58,6 +62,8 @@ public final class ClientNet {
 		HudModel.resetAll();
 		dev.minebleach.reiatsutest.client.fx.FxTimelines.clear();
 		dev.minebleach.reiatsutest.client.fx.AuraFx.clear();
+		dev.minebleach.reiatsutest.client.fx.SwarmFx.clear();
+		dev.minebleach.reiatsutest.client.fx.RowsFx.clear();
 	}
 
 	public static int requestTransition(ZanpakutoState target, RequestSource source) {

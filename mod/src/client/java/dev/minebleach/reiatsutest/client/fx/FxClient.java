@@ -47,9 +47,15 @@ public final class FxClient {
 			long t0 = System.nanoTime();
 			FxTune.poll();
 			FxTimelines.beginFrame();
+			MinecraftClient mcf = MinecraftClient.getInstance();
+			FxScene.frame(mcf);
+			SwarmFx.frame(mcf);
+			RowsFx.frame(mcf);
 			startNanos = System.nanoTime() - t0;
 			p.pop();
 		});
+		PetalSwarmRenderer.init();
+		BankaiBladeRenderer.init();
 		WorldRenderEvents.BEFORE_DEBUG_RENDER.register(ctx -> FxDepth.capture());
 		WorldRenderEvents.LAST.register(ctx -> {
 			Profiler p = MinecraftClient.getInstance().getProfiler();
@@ -69,7 +75,10 @@ public final class FxClient {
 			}
 			p.pop();
 		});
-		ClientTickEvents.END_CLIENT_TICK.register(client -> AuraFx.tick(client));
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			AuraFx.tick(client);
+			SwarmFx.tick(client);
+		});
 		DrawFx.init();
 	}
 }

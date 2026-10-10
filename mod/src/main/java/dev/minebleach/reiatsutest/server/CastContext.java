@@ -66,6 +66,10 @@ final class CastContext {
 			case HAKUTEIKEN -> 20f;
 			default -> 0f;
 		};
+		if (ability == AbilityId.HAKUTEIKEN) {
+			// S4: the length of the server ray really used (the white line ends exactly at the server burst)
+			return new float[] {(float) aim.x, (float) aim.y, (float) aim.z, size, (float) Math.min(20.0, eye.distanceTo(aim))};
+		}
 		return new float[] {(float) aim.x, (float) aim.y, (float) aim.z, size};
 	}
 }
