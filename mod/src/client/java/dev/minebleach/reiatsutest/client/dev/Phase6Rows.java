@@ -68,6 +68,10 @@ final class Phase6Rows {
 				press(ReiatsuKeys.BANKAI);
 			}
 		});
+		if (view.equals("tower")) {
+			// the rows are static at the release point: the player flies to the tower after the release (the first shot is at 0.5 s or later)
+			step(prefix + " (to the tower)", 1, Phase6Rows::towerView);
+		}
 		stepUntil(prefix + " (frozen 0)", 2, 20 * 12, () -> { }, () -> FxClock.frozen);
 		step(prefix + " (shot 0)", 3, () -> shot(prefix + "_t" + ms[0]));
 		for (int k = 1; k < ms.length; k++) {
@@ -83,6 +87,43 @@ final class Phase6Rows {
 		step(prefix + " (release clock)", 2, () -> {
 			FxClock.unfreeze();
 			FxTimelines.setFreezeAt(-1);
+		});
+	}
+
+	/** Side tower 20 blocks up and 15 blocks to the side of the corridor, looking across it. */
+	static void towerView() {
+		mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+		mc.player.getAbilities().flying = true;
+		mc.player.sendAbilitiesUpdate();
+		cmd("tp @s -14.5 -41 -22.5 -90 32");
+	}
+
+	/** The storyboard's two other viewpoints of the release: 6 blocks behind (the corridor in front of the camera) and the side tower, N = 200 and 1000. */
+	static void viewSteps() {
+		step("rowsviews: setup (noon, creative)", 30, () -> {
+			cmd("gamemode creative @s", "time set noon", "tp @s 0.5 -60 0.5 0 12", "kill @e[type=pig]");
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			mc.options.hudHidden = true;
+			FxConfig.reduceMotion = false;
+			FxConfig.bankaiBladeCount = 200;
+			FxScene.requireAnchor = true;
+			resetWorldFx();
+		});
+		bankaiSeries("04_rows_back", new int[] {0, 600, 1500, 2200, 2800}, "back");
+		bankaiSeries("04_rows_tower", new int[] {500, 1000, 1500, 2200, 2800}, "tower");
+		step("rowsviews 1000: config", 10, () -> {
+			FxConfig.bankaiBladeCount = 1000;
+			mc.player.getAbilities().flying = false;
+			mc.player.sendAbilitiesUpdate();
+		});
+		bankaiSeries("04_rows1000_back", new int[] {1000, 1500, 2200, 2800}, "back");
+		bankaiSeries("04_rows1000_tower", new int[] {600, 1500, 2200, 2800}, "tower");
+		step("rowsviews: back to the player", 20, () -> {
+			FxConfig.bankaiBladeCount = 200;
+			mc.player.getAbilities().flying = false;
+			mc.player.sendAbilitiesUpdate();
+			cmd("tp @s 0.5 -60 0.5 0 12", "reiatsu state sealed");
+			resetWorldFx();
 		});
 	}
 

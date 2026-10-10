@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import dev.minebleach.reiatsutest.entity.FxAnchorEntity;
 import dev.minebleach.reiatsutest.entity.FxAnchorKind;
 import java.util.Iterator;
@@ -58,6 +59,16 @@ public final class FxScene {
 				}
 				st.anchorSeen = true;
 				st.lastSeen = now;
+				// S3: the rows were scattered (32) or consumed (33) at phaseTime; a late joiner (or a client that missed the event) reconstructs the phase
+				byte pk = a.phaseKind();
+				if (pk != RowsPhase.STANDING && a.phaseTime() != st.anchorPhaseTime) {
+					st.anchorPhaseTime = a.phaseTime();
+					double expected = now - RowsPhase.ageSeconds(w.getTime(), a.phaseTime(), 0);
+					if (!(st.phase == pk && Math.abs(st.phaseStart - expected) < 0.75)) {
+						RowsFx.setPhase(st, pk, expected);
+						lateJoins++;
+					}
+				}
 			}
 		}
 		swarmAnchors = swarms;

@@ -455,6 +455,62 @@ public final class FxGlowBatch {
 			return true;
 		}
 
+		/**
+		 * Quad on a fixed plane with the unit normal {@code (nx, ny, nz)} (rings around a halo or a line, per frame): {@code size} blocks wide,
+		 * rotated by {@code rot} about the normal. Same plane basis as the {@code PLANE} sprites of the batch (tangent = up x normal).
+		 */
+		public boolean plane(GlowSprite sp, double wx, double wy, double wz, double size, double nx, double ny, double nz, double rot, float r, float g, float b, double inten) {
+			double rx = wx - cx;
+			double ry = wy - cy;
+			double rz = wz - cz;
+			double dist = Math.sqrt(rx * rx + ry * ry + rz * rz);
+			if (dist > maxDistance || rx * fx + ry * fy + rz * fz <= -size) {
+				return false;
+			}
+			double k = inten * boost;
+			if (k < 0.004) {
+				return false;
+			}
+			double nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
+			if (nl < 1e-6) {
+				nx = 0;
+				ny = 1;
+				nz = 0;
+			} else {
+				nx /= nl;
+				ny /= nl;
+				nz /= nl;
+			}
+			double tx = -nz;
+			double tz = nx;
+			double tl = Math.hypot(tx, tz);
+			if (tl < 1e-4) {
+				tx = 1;
+				tz = 0;
+			} else {
+				tx /= tl;
+				tz /= tl;
+			}
+			double bx0 = ny * tz;
+			double by0 = nz * tx - nx * tz;
+			double bz0 = -ny * tx;
+			double c = Math.cos(rot);
+			double s = Math.sin(rot);
+			double hw = size * 0.5;
+			double hh = size * sp.aspect * 0.5;
+			float ax = (float) ((tx * c + bx0 * s) * hw);
+			float ay = (float) ((by0 * s) * hw);
+			float az = (float) ((tz * c + bz0 * s) * hw);
+			float bxx = (float) ((-tx * s + bx0 * c) * hh);
+			float byy = (float) ((by0 * c) * hh);
+			float bzz = (float) ((-tz * s + bz0 * c) * hh);
+			float cr = (float) Math.min(1.0, r * k);
+			float cg = (float) Math.min(1.0, g * k);
+			float cb = (float) Math.min(1.0, b * k);
+			quad((float) rx, (float) ry, (float) rz, ax, ay, az, bxx, byy, bzz, sp, cr, cg, cb);
+			return true;
+		}
+
 		private void quad(float cx0, float cy0, float cz0, float ax, float ay, float az, float bx, float by, float bz, GlowSprite sp, float cr, float cg, float cb) {
 			buf.vertex(cx0 - ax - bx, cy0 - ay - by, cz0 - az - bz).texture(sp.u0, sp.v1).color(cr, cg, cb, 1f);
 			buf.vertex(cx0 + ax - bx, cy0 + ay - by, cz0 + az - bz).texture(sp.u1, sp.v1).color(cr, cg, cb, 1f);

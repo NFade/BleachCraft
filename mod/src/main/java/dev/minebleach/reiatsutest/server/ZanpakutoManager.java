@@ -445,6 +445,11 @@ public final class ZanpakutoManager {
 		return AnchorManager.count(p);
 	}
 
+	/** Phase kind (S3: 0 standing, 32 scattered, 33 consumed) of the rows anchor of a player, -1 without rows: harness and tests. */
+	public static int rowsPhase(ServerPlayerEntity p) {
+		return AnchorManager.rowsPhase(p);
+	}
+
 	public static int pendingPhases() {
 		return SCHEDULER.pending();
 	}

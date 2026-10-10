@@ -114,6 +114,8 @@ public final class ScreenFx {
 	private static float speedY = 0.5f;
 	/** Dev/stat: number of FLASH requests refused or downgraded by the photosensitivity limiter. */
 	public static int limiterDowngrades;
+	/** Dev/stat: number of real impact frames (white then ink) started since the start (the harness checks it is 0 with reduce motion). */
+	public static int impactFrames;
 	/** Dev/stat: peak alpha of the last drawn flash (harness frame log). */
 	public static double lastFlashAlpha;
 
@@ -149,6 +151,33 @@ public final class ScreenFx {
 			fade = 0.04;
 		}
 		// photosensitivity (1.4): at most 3 flashes above 0.25 per second per client
+		if (p > 0.25) {
+			BIG_FLASH_TIMES.removeIf(t -> FxClock.now - t > 1.0);
+			if (BIG_FLASH_TIMES.size() >= 3) {
+				p = 0.25;
+				limiterDowngrades++;
+			} else {
+				BIG_FLASH_TIMES.add(FxClock.now);
+			}
+		}
+		FLASHES.add(new Flash(FxClock.now, rise, hold, fade, p, tint));
+	}
+
+	/**
+	 * FLASH with an explicit envelope (the Hakuteiken burst: 0.80 fading over 0.4 s): rise, hold and fade in seconds. Same limiter and reduce
+	 * motion rules as {@link #flash}.
+	 */
+	public static void flashCustom(double peak, float[] tint, double rise, double hold, double fade, double strength) {
+		double p = peak * strength * FxConfig.screenFxScale;
+		if (p <= 0.001) {
+			return;
+		}
+		if (FxConfig.reduceMotion || FxConfig.photosensitiveSafe) {
+			p = Math.min(p, 0.40);
+			rise = 0.02;
+			hold = 0.01;
+			fade = 0.04;
+		}
 		if (p > 0.25) {
 			BIG_FLASH_TIMES.removeIf(t -> FxClock.now - t > 1.0);
 			if (BIG_FLASH_TIMES.size() >= 3) {
@@ -203,6 +232,7 @@ public final class ScreenFx {
 		lastImpactFrame = FxClock.now;
 		impactStart = FxClock.now;
 		impactActive = true;
+		impactFrames++;
 	}
 
 	/** SPEEDLINES(L, T) at a screen point (0..1); off with reduce motion. */

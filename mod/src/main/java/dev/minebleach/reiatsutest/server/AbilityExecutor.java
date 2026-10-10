@@ -194,14 +194,18 @@ final class AbilityExecutor {
 		int max = sp.intNum(AbilityParams.MAX_TARGETS);
 		if (phase < 2) {
 			// tornado around the caster (caster safe by Targeting.valid)
-			for (LivingEntity e : Targeting.sphere(p, p.getPos().add(0, 1.0, 0), sp.num(AbilityParams.TORNADO_RADIUS), max)) {
+			List<LivingEntity> hit = Targeting.sphere(p, p.getPos().add(0, 1.0, 0), sp.num(AbilityParams.TORNADO_RADIUS), max);
+			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE2), DamageTypes.INDIRECT_MAGIC, true);
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks on the tornado ticks
 		} else {
-			for (LivingEntity e : Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max)) {
+			List<LivingEntity> hit = Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max);
+			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 				Targeting.knockback(e, ctx.aim, sp.num(AbilityParams.KNOCKBACK));
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks at the impact
 		}
 	}
 
@@ -210,15 +214,19 @@ final class AbilityExecutor {
 		int max = sp.intNum(AbilityParams.MAX_TARGETS);
 		if (phase == 0) {
 			double length = ctx.eye.distanceTo(ctx.aim);
-			for (LivingEntity e : Targeting.segment(p, ctx.eye, ctx.dir, 0.0, length, sp.num(AbilityParams.HALF_WIDTH), max, null)) {
+			List<LivingEntity> hit = Targeting.segment(p, ctx.eye, ctx.dir, 0.0, length, sp.num(AbilityParams.HALF_WIDTH), max, null);
+			for (LivingEntity e : hit) {
 				ctx.hit.add(e.getId());
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE2), DamageTypes.INDIRECT_MAGIC, true);
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks along the line (t 1.5)
 		} else {
-			for (LivingEntity e : Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max)) {
+			List<LivingEntity> hit = Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max);
+			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 				Targeting.knockback(e, ctx.aim, sp.num(AbilityParams.KNOCKBACK));
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks at the burst (t 1.8)
 		}
 	}
 }

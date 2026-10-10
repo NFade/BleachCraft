@@ -4,6 +4,7 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.AnchorPlan;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
 import dev.minebleach.reiatsutest.core.fx.BladeRowLayout;
+import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -53,6 +54,17 @@ public final class RowsFx {
 		public double lastSeen = FxClock.now;
 		public boolean anchorSeen;
 		public final double created = FxClock.now;
+		/** Phase after a bankai ability (S3): {@link RowsPhase#STANDING}, {@link RowsPhase#SCATTERED} (id 32) or {@link RowsPhase#CONSUMED} (id 33). */
+		public byte phase;
+		/** FX clock value of the start of the phase. */
+		public double phaseStart;
+		public RowsPhase.Timing timing = RowsPhase.Timing.scatter();
+		/** Game time (ticks) of the last phase change seen on the tracked anchor (S3), to apply each change once. */
+		public int anchorPhaseTime = Integer.MIN_VALUE;
+		/** While a bankai ability drives the night grade colour, the slow 5 to 8 s ease to the playable night is paused. */
+		public boolean gradeLocked;
+		/** Farthest blade from the release point. */
+		public final double maxDist;
 		/** Time (seconds from the release) from which the rows are drawn from the static buffer. */
 		public final double settleAt;
 		ScreenFx.Layer grade;
@@ -62,6 +74,7 @@ public final class RowsFx {
 		boolean lateStarted;
 		int crumbs;
 		double nextHaze;
+		double nextHeartbeat;
 		double nextBeacon;
 		double nextRippleLoop;
 		// static buffer
@@ -100,16 +113,32 @@ public final class RowsFx {
 			for (int i = 0; i < n; i++) {
 				order[i] = idx[i];
 			}
-			double maxDist = 0;
+			double md = 0;
 			for (int i = 0; i < n; i++) {
-				maxDist = Math.max(maxDist, layout.dist[i]);
+				md = Math.max(md, layout.dist[i]);
 			}
-			settleAt = layout.completionTime() + Math.max(1.25, maxDist / BankaiCurves.SWEEP_SPEED + 0.4);
+			this.maxDist = md;
+			settleAt = layout.completionTime() + Math.max(1.25, md / BankaiCurves.SWEEP_SPEED + 0.4);
 			refreshLight(w);
 		}
 
 		public double time() {
 			return FxClock.now - epoch;
+		}
+
+		/** Seconds since the start of the current phase (negative or meaningless while STANDING). */
+		public double phaseTau() {
+			return FxClock.now - phaseStart;
+		}
+
+		/** True while a phase still changes blades (the static buffer must not be drawn). */
+		public boolean phaseBusy() {
+			return phase != RowsPhase.STANDING && RowsPhase.active(timing, phaseTau(), maxDist);
+		}
+
+		/** Remaining fraction of blade i (1 whole, 0 gone) in the current phase. */
+		public double fraction(int i) {
+			return phase == RowsPhase.STANDING ? 1.0 : RowsPhase.fraction(timing, phaseTau(), layout.dist[i]);
 		}
 
 		/** Hilt point on the ground: 0.6 ahead of the feet along the flat look. */
@@ -160,6 +189,27 @@ public final class RowsFx {
 		STATES.clear();
 	}
 
+	// ------------------------------------------------------------------------------------------ phases (S3, ids 32 and 33)
+
+	/** Timing of a phase with the tunable keys {@code storm.*} (scatter) and {@code hak.*} (Hakuteiken consumption). */
+	public static RowsPhase.Timing timingFor(byte kind) {
+		if (kind == RowsPhase.CONSUMED) {
+			return new RowsPhase.Timing(FxTune.d("hak.cutStart", 0.0), FxTune.d("hak.cutPerBlock", 0.002), FxTune.d("hak.cutSpan", 0.30), FxTune.d("hak.reformStart", 3.0),
+					FxTune.d("hak.reformPerBlock", 0.004), FxTune.d("hak.reformSpan", 0.6));
+		}
+		return new RowsPhase.Timing(FxTune.d("storm.cutStart", 0.30), FxTune.d("storm.cutPerBlock", 0.008), FxTune.d("storm.cutSpan", 0.40), FxTune.d("storm.reformStart", 4.5),
+				FxTune.d("storm.reformPerBlock", 0.004), FxTune.d("storm.reformSpan", 0.6));
+	}
+
+	/** Starts a phase of the standing rows {@code startFx} (FX clock); also called from the tracked anchor for late joiners. */
+	public static void setPhase(State st, byte kind, double startFx) {
+		st.phase = kind;
+		st.phaseStart = startFx;
+		st.timing = timingFor(kind);
+		ReiatsuTest.LOGGER.info("[fx] rows phase {} at fx {} (age {} s), {} blades, ends at {} s", kind, String.format(java.util.Locale.ROOT, "%.2f", startFx),
+				String.format(java.util.Locale.ROOT, "%.2f", FxClock.now - startFx), st.layout.n, String.format(java.util.Locale.ROOT, "%.2f", st.timing.end(st.maxDist)));
+	}
+
 	// ------------------------------------------------------------------------------------------ release (id 4)
 
 	public static void onRelease(EffectEventS2C e) {
@@ -187,8 +237,10 @@ public final class RowsFx {
 		});
 		// 0.30 to 0.90: night falls
 		t.at(0.30, x -> {
-			st.grade = x.grade(FxTune.s("bankai.night", NIGHT), FxTune.d("bankai.nightStrength", 1.0), 0.6);
-			st.vignette = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.32), 0.6);
+			// others: the night is graded by the distance to the NEAREST ROW POINT (standing in the corridor = full night), not to the caster (6.1)
+			double gs = st.owner ? 1.0 : FxMath.screenStrength(nearestRowDistance(st));
+			st.grade = x.screen ? ScreenFx.grade(FxMath.hex(FxTune.s("bankai.night", NIGHT)), FxTune.d("bankai.nightStrength", 1.0), 0.6, gs) : null;
+			st.vignette = x.screen ? ScreenFx.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.45), 0.6, gs) : null;
 			x.sound("ambient.cave", 0.8, 0.6);
 			x.sound("block.respawn_anchor.charge", 0.6, 0.6);
 		});
@@ -221,7 +273,7 @@ public final class RowsFx {
 			if (st.vignette != null) {
 				st.vignette.release(1.0);
 			}
-			st.vignette2 = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignetteHold", 0.24), 1.0);
+			st.vignette2 = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignetteHold", 0.30), 1.0);
 		});
 		t.lifetime(comp + 1.5);
 		// ripples twins and the fall of the hilt (glow rings), ripple k at 0.18, 0.40, 0.62
@@ -235,6 +287,31 @@ public final class RowsFx {
 		FxTimelines.start(t);
 		ReiatsuTest.LOGGER.info("[fx] rows: {} blades, {} ranks, completion {} s, settle {} s, length {}", l.n, l.ranks, String.format(java.util.Locale.ROOT, "%.2f", comp),
 				String.format(java.util.Locale.ROOT, "%.2f", st.settleAt), String.format(java.util.Locale.ROOT, "%.1f", l.length()));
+	}
+
+	/** Horizontal distance of the camera to the nearest blade of the rows (0 inside the corridor). */
+	static double nearestRowDistance(State st) {
+		Vec3d cam = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+		double best = Double.MAX_VALUE;
+		for (int i = 0; i < st.layout.n; i++) {
+			best = Math.min(best, Math.hypot(st.bx[i] - cam.x, st.bz[i] - cam.z));
+		}
+		// inside the corridor (between the two rows, along them) counts as 0
+		double yaw = Math.toRadians(st.yawDeg);
+		double fx = -Math.sin(yaw);
+		double fz = Math.cos(yaw);
+		double along = (cam.x - st.fx) * fx + (cam.z - st.fz) * fz;
+		double across = Math.abs((cam.x - st.fx) * -fz + (cam.z - st.fz) * fx);
+		double minAlong = Double.MAX_VALUE;
+		double maxAlong = -Double.MAX_VALUE;
+		for (int i = 0; i < st.layout.n; i++) {
+			minAlong = Math.min(minAlong, st.layout.along[i]);
+			maxAlong = Math.max(maxAlong, st.layout.along[i]);
+		}
+		if (along >= minAlong && along <= maxAlong && across <= BladeRowLayout.RANK_BASE) {
+			return 0;
+		}
+		return best;
 	}
 
 	private static State create(int owner, long seed, double epoch, double yawDeg, double x, double y, double z, ClientWorld w) {
@@ -339,7 +416,7 @@ public final class RowsFx {
 						glint(st, i, cam);
 					}
 				}
-				if (t > 5.0 && st.grade != null) {
+				if (t > 5.0 && st.grade != null && !st.gradeLocked) {
 					double k = FxMath.smoothstep(5.0, 8.0, t);
 					float[] a = FxMath.hex(NIGHT);
 					float[] b = FxMath.hex(NIGHT_PLAY);
@@ -349,7 +426,11 @@ public final class RowsFx {
 				}
 				// hold: petal haze in the corridor (10 per second), beacon hum every 3 s, small ripple at the hilt every 4 s
 				if (t > l.completionTime() && FxClock.dt > 0) {
-					if (FxClock.now >= st.nextHaze) {
+					if (FxClock.now >= st.nextHeartbeat && st.owner) {
+						st.nextHeartbeat = FxClock.now + 1.5;
+						FxSound.play(null, "entity.warden.heartbeat", st.fx, st.fy + 1, st.fz, 0.7, 0.15);
+					}
+					if (FxClock.now >= st.nextHaze && !st.phaseBusy()) {
 						st.nextHaze = FxClock.now + 0.1;
 						haze(st, cam, r);
 					}

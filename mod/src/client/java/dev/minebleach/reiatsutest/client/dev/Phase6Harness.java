@@ -363,6 +363,18 @@ public final class Phase6Harness {
 		if (wants("rows")) {
 			Phase6Rows.steps();
 		}
+		if (wants("rowsviews")) {
+			Phase6Rows.viewSteps();
+		}
+		if (wants("storm")) {
+			Phase6Storm.stormSteps();
+		}
+		if (wants("hakuteiken")) {
+			Phase6Storm.hakSteps();
+		}
+		if (wants("stormperf")) {
+			Phase6Storm.perfSteps();
+		}
 		if (wants("rowsfab")) {
 			Phase6Rows.fabulousSteps();
 		}

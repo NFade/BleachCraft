@@ -52,11 +52,15 @@ public final class FxClient {
 			FxScene.frame(mcf);
 			SwarmFx.frame(mcf);
 			RowsFx.frame(mcf);
+			StormFx.frame(mcf);
+			HakuteikenFx.frame(mcf);
 			startNanos = System.nanoTime() - t0;
 			p.pop();
 		});
 		PetalSwarmRenderer.init();
 		BankaiBladeRenderer.init();
+		StormRenderer.init();
+		WingHaloRenderer.init();
 		WorldRenderEvents.BEFORE_DEBUG_RENDER.register(ctx -> FxDepth.capture());
 		WorldRenderEvents.LAST.register(ctx -> {
 			Profiler p = MinecraftClient.getInstance().getProfiler();

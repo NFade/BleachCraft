@@ -34,6 +34,16 @@ public final class FxEvents {
 			}
 			return;
 		}
+		if (id == 32 || id == 33) {
+			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={} params={}", id, e.casterId(), e.seed(), java.util.Arrays.toString(e.params()));
+			handled++;
+			if (id == 32) {
+				StormFx.onEvent(e);
+			} else {
+				HakuteikenFx.onEvent(e);
+			}
+			return;
+		}
 		FxServerClock.sync(e.startTick());
 		if (RukiaFx.onEvent(e)) {
 			handled++;
