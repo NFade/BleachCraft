@@ -42,6 +42,30 @@ class RukiaFxParamsTest {
 	}
 
 	@Test
+	void hakurenCarriesTheServerHalfWidth() {
+		var spec = BalanceConfig.defaults().spec(AbilityId.HAKUREN);
+		float[] p = RukiaFxParams.extend(AbilityId.HAKUREN, base((float) spec.num("length")), 0, spec.phaseOffsets().size(), 26, spec.num("halfWidth"));
+		assertEquals(7, p.length);
+		assertEquals((float) spec.num("halfWidth"), p[6], 1e-4);
+		assertEquals(spec.num("length"), p[4] * p[5], 1e-3);
+		// without a width the old six numbers stay
+		assertEquals(6, RukiaFxParams.extend(AbilityId.HAKUREN, base(12f), 0, 5, 26, Double.NaN).length);
+		assertEquals(2.0, RukiaFxParams.param(new float[] {1f, 2f, 3f, 4f, 5f, 6f}, 6, RukiaFxParams.HAKUREN_HALF_WIDTH), 0);
+	}
+
+	@Test
+	void effectsScaleWithTheServerRadius() {
+		// the balance numbers (radius 12 for absolute zero, 7 for Tsukishiro) are what the client scales to
+		var az = BalanceConfig.defaults().spec(AbilityId.ABSOLUTE_ZERO);
+		double k = RukiaFxParams.radiusScale(az.num("radius"), RukiaFxParams.REF_ABSOLUTE_ZERO_RADIUS, 0.3);
+		assertEquals(1.2, k, 1e-9);
+		assertEquals(1.44, RukiaFxParams.areaScale(az.num("radius"), RukiaFxParams.REF_ABSOLUTE_ZERO_RADIUS, 0.2, 3.0), 1e-9);
+		assertEquals(3.0, RukiaFxParams.areaScale(40, 10, 0.2, 3.0), 0);
+		assertEquals(0.3, RukiaFxParams.radiusScale(0.5, 10, 0.3), 0);
+		assertEquals(0.2, RukiaFxParams.areaScale(0.1, 10, 0.2, 3.0), 0);
+	}
+
+	@Test
 	void shirafuneUsedLengthIsClampedToTheReach() {
 		assertEquals(5.5f, RukiaFxParams.extend(AbilityId.SHIRAFUNE, base(8f), 5.5)[4], 1e-4);
 		assertEquals(8f, RukiaFxParams.extend(AbilityId.SHIRAFUNE, base(8f), 30.0)[4], 1e-4);

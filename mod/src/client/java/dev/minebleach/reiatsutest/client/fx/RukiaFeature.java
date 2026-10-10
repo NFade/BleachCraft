@@ -25,10 +25,11 @@ import org.joml.Vector3f;
  * {@link RukiaBankaiClient}; players further than 48 blocks are skipped.
  */
 public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> {
-	private static final float[] SHEEN = FxMath.hex("#9ED3F0");
+	private static final float[] SHEEN_DEFAULT = FxMath.hex("#9ED3F0");
 	/** Statistics for the harness. */
 	public static int drawn;
 	public static int lastSegments;
+	private static boolean warned;
 
 	public RukiaFeature(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> context) {
 		super(context);
@@ -49,12 +50,24 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 		if (!RukiaBankaiClient.visible(id) || entity.isInvisible()) {
 			return;
 		}
+		try {
+			draw(matrices, vcp, light, entity, tickDelta, id);
+		} catch (RuntimeException ex) {
+			if (!warned) {
+				warned = true;
+				dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.error("[fx] rukia feature renderer failed (further errors are not logged)", ex);
+			}
+		}
+	}
+
+	private void draw(MatrixStack matrices, VertexConsumerProvider vcp, int light, AbstractClientPlayerEntity entity, float tickDelta, int id) {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		Vec3d cam = mc.gameRenderer.getCamera().getPos();
 		if (cam.squaredDistanceTo(entity.getPos()) > 48 * 48) {
 			return;
 		}
 		drawn++;
+		float[] SHEEN = FxTune.s("rbankai.colSheen", "#9ED3F0").equals("#9ED3F0") ? SHEEN_DEFAULT : FxMath.hex(FxTune.s("rbankai.colSheen", "#9ED3F0"));
 		double sheen = RukiaBankaiClient.sheen(id) * FxTune.d("rbankai.sheen", 1.9) * FxConfig.emissiveMultiplier;
 		if (sheen > 0.01) {
 			double ticks = FxClock.now * 20.0;
@@ -63,7 +76,8 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 			VertexConsumer vc = vcp.getBuffer(RenderLayer.getEnergySwirl(FxMeshes.SWIRL, u, v));
 			matrices.push();
 			matrices.translate(0f, 0.75f, 0f);
-			matrices.scale(1.04f, 1.04f, 1.04f);
+			float sh = (float) FxTune.d("rbankai.sheenScale", 1.04);
+			matrices.scale(sh, sh, sh);
 			matrices.translate(0f, -0.75f, 0f);
 			getContextModel().render(matrices, vc, 0xF000F0, OverlayTexture.DEFAULT_UV, FxMeshes.argb(SHEEN[0] * sheen, SHEEN[1] * sheen, SHEEN[2] * sheen, 1.0));
 			matrices.pop();
@@ -80,7 +94,9 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 		double now = FxClock.now;
 		matrices.push();
 		// back to the entity frame (feet origin, +z forward, body yaw applied): the inverse of the renderer's scale(-1,-1,1) and translate(0,-1.501,0)
+		// (the player renderer also scales by 0.9375 between the flip and the translate: undone here, so the ribbons are in block units)
 		matrices.translate(0f, 1.501f, 0f);
+		matrices.scale(1f / 0.9375f, 1f / 0.9375f, 1f / 0.9375f);
 		matrices.scale(-1f, -1f, 1f);
 		Matrix4f base = new Matrix4f(matrices.peek().getPositionMatrix());
 		FxMeshes.Mesh seg = FxMeshes.get(FxMeshes.RIBBON_SEG);
@@ -95,18 +111,18 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 			VertexConsumer vc = pass == 0 ? vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.DIFFUSE)) : vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.EMISSIVE));
 			for (int k = 0; k < 3; k++) {
 				double side = k - 1;
-				p.set((float) (side * 0.10), 0.90f, -0.14f);
+				p.set((float) (side * FxTune.d("rbankai.ribbonSpread", 0.10)), (float) FxTune.d("rbankai.ribbonRootY", 0.90), (float) -FxTune.d("rbankai.ribbonRootBack", 0.14));
 				double theta = Math.toRadians(FxTune.d("rbankai.ribbonStart", 22));
 				double curve = Math.toRadians(FxTune.d("rbankai.ribbonCurve", 18));
 				int count = (int) Math.min(maxSeg + 1, Math.ceil(segs));
 				for (int j = 0; j < count; j++) {
 					boolean isTip = j >= maxSeg;
 					// segment direction: up and back, outward by the chain side, S-loop curvature, sway, spring flick of a new segment
-					double sway = Math.toRadians(6.0) * Math.sin(2 * Math.PI * 0.35 * now - 0.6 * j + k);
+					double sway = Math.toRadians(FxTune.d("rbankai.ribbonSway", 6.0)) * Math.sin(2 * Math.PI * 0.35 * now - 0.6 * j + k);
 					double tau = RukiaBankaiClient.segmentAge(id, j);
 					double flick = tau < 0 ? 0 : Math.toRadians(15) * Math.exp(-tau / 0.2) * Math.cos(2 * Math.PI * tau / 0.28);
 					double th = theta + sway + flick;
-					double out = side * (0.35 + 0.05 * j);
+					double out = side * (FxTune.d("rbankai.ribbonOut", 0.35) + 0.05 * j);
 					d.set((float) (out * Math.sin(th)), (float) Math.cos(th), (float) -Math.sin(th)).normalize();
 					// orientation: mesh -Y along the direction, width axis along the lateral axis
 					xAxis.set(1f, 0f, 0f).fma(-d.x, d).normalize();
@@ -119,7 +135,7 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 					} else {
 						FxMeshes.draw(vc, isTip ? tip : seg, m, FxMeshes.argb(0.85, 0.95, 1.0, FxTune.d("rbankai.ribbonGlow", 0.85) * FxConfig.glowIntensity), 0xF000F0);
 					}
-					p.fma((float) (0.35 * grow), d);
+					p.fma((float) (FxTune.d("rbankai.ribbonSegLen", 0.35) * grow), d);
 					theta += j < 5 ? curve : -curve;
 				}
 				lastSegments = count;
