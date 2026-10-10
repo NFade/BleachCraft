@@ -1,4 +1,4 @@
-# STATUS (2026-10-09)
+# STATUS (2026-10-10, pause)
 
 Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Details: `LOG.md`, design contracts in `design/`.
 
@@ -14,6 +14,11 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 ## B4 branch b4-steps2-3-wip (2026-10-10)
 - Step 1 (first person pose, yawed 180 degrees on the user request), step 3 (BASE state, J key, right click) and step 2 (client side scabbard in the left hand, right hand draws along the sori arc, hip scabbard in third person) are committed locally, not merged, not pushed. 212 tests, runPhase4 89/89, runPhase5 62/62. Details: LOG B4 step 2. Steps 4 (bankai) and 5 (shunpo) not started.
 - B4 polish (branch b4-polish, WIP, local): sword raised and hand lowered, scabbard leaves the first person screen after the draw, right forearm rolled in from the right edge; tests green, runPhase4 NOT clean (B2-B4 failed with another game open), runPhase5 not run. LOG: "B4 polish: stop point".
+
+## Stop point 2026-10-10 (details and next actions: `HANDOFF_PROMPT.md`)
+- `main`: B4 steps 1-3 and `b4-polish` merged (pose, scabbard left hand, BASE state, scabbard leaves the first-person screen after the draw). 214 tests; runPhase4/5 not rerun on this exact commit.
+- `phase6-fx`: Phase 6 step 0 (scaffolding) and step 1 (HUD) done; step 2 (release/auras/seal) written in WIP commit `c84265f`, its screenshots must be regenerated (see LOG on that branch). Steps 3-9 not started.
+- Not started: B4 step 4 (bankai timer and bigger radii) and step 5 (shunpo).
 
 ## In progress (branches, unfinished)
 - `phase6-fx` (WIP commit, may not build; branch point is older than step B3, rebase or merge `main` first): Phase 6 steps 0-2 (FX scaffolding: config/tiers, particle types, glow batch, ScreenFx, anchor entity, texture generators; then new HUD; then release/aura/seal effects).
