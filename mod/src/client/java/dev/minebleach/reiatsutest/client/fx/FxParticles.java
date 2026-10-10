@@ -44,6 +44,8 @@ public final class FxParticles {
 	public static int spawned;
 	public static int refused;
 	private static final Random LOD_RNG = new Random(99);
+	/** The particle created by the last successful {@link Spec#spawn()} (callers that need a handle, e.g. the aura). */
+	static FxParticle lastSpawned;
 
 	private FxParticles() {
 	}
@@ -254,6 +256,7 @@ public final class FxParticles {
 			}
 			mc.particleManager.addParticle(p);
 			LIVE.add(p);
+			lastSpawned = p;
 			spawned++;
 			return true;
 		}
@@ -331,6 +334,11 @@ public final class FxParticles {
 				int count = kind == Kind.SNOWFLAKE ? 3 : 4;
 				setSprite(sprites.getSprite(Math.min(f, count - 1), count - 1));
 			}
+		}
+
+		/** Lets the particle fade out within the given ticks (the aura of a sealed sword). */
+		void fadeOutWithin(int ticks) {
+			this.age = Math.max(this.age, this.maxAge - ticks);
 		}
 
 		boolean frozen() {

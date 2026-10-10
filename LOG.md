@@ -635,3 +635,23 @@ No Blender, no generate_3d. Screenshots: `blender/renders/p6/p6_01_*.png` (68 fi
 - Voice indicator is exercised through injected `VoiceHudState` values; the real bridge path (page -> `/status?mic=` -> HUD) is covered by the unit test of the parsing and by phase 5 (no regression) but the mic icon was not seen with a real microphone.
 - The release title card is fed by `effect_event` 1 to 4 in `ClientNet`; the real events were not captured on screen in this step (step 2 does that).
 - `HudModel.update` is called from the HUD callback only (the HUD must be drawn for animations to advance): with F1 the animations are paused, which is intended.
+
+## 2026-10-10: Phase 6: stop point (WIP commit, stopped on request)
+
+**Done and checked**
+- Step 0 (commit 6626886): scaffolding, harness `runPhase6`, Fabulous glow depth fix, atlas / GRADE / SHAKE / glow cost. Details in its section above.
+- Step 1 (commit 829a624): HUD complete (plate, strip, titles, denied feedback, voice indicator, 5 layouts), 0.13 ms, build 215 tests, runPhase4 89/89, runPhase5 62/62.
+- Step 2 code (this WIP commit): `FxEvents` (entry of effect_event), `ReleaseFx` (2.1, ids 1 to 4), `AuraFx` (2.2, per-player spawner, caps 120 / 400, dissolve at seal), `SealFx` (2.3, ids 10 / 11), `DrawFx` (DrawEvents mapping, see below), `FxTune` (dev hot reload of numbers from `mod/run/fx_override.json`, FxConfig keys too, verified by a harness check), harness scenarios `relshots, relnight, relflash, aura, seal, draw` (one `runPhase6` run does everything: default hold = all; use a comma list for a subset).
+- Verified in single runs (all CHECK PASS): flash 0.60 peak / 0.19 s, reduce motion flash 0.05 s and peak 0.40, release sounds, peak 84 particles / 44 glow sprites per shikai release, auras live 22 to 60 per player (cap 120), seal / draw / sheathe sounds, real server events handled, hot reload. Screenshots were viewed and judged (release, aura, seal looked good at noon and night).
+
+**Mapping of the B4 states to effects (DrawFx):** SEALED -> BASE (draw): DRAW_START scabbard rattle, DRAW_RELEASE steel glint + "shing", no flash. BASE -> SHIKAI: effect_event 1 / 3, release flash hides the model swap. SHIKAI / BANKAI -> SEALED: effect_event 10 / 11 (SealFx), SHEATHE_START / END sounds + glint. Forced SEALED -> SHIKAI (dev) plays only the draw.
+
+**In progress / not clean**
+- The last full run (all scenarios in one session) had the game PAUSED (`mc.isPaused()` true, FX clock stuck) during the release shots, so `p6_02_release_*` shots timed out (a second agent was running a game on the same machine); an earlier full run timed out in the first three aura shots for a similar reason. Single scenario runs pass. The step 2 screenshots in `mod/run/screenshots` of that run are NOT valid and none were copied to `blender/renders/p6/`; regenerate with `runPhase6 -Phold=release` when no other game window is running (check `tasklist`), then copy `p6_02_*`. Step 2 is therefore not committed as a finished step: `gradlew build test` (215) and runPhase4 (89/89 on rerun; one earlier timing flake A3) / runPhase5 (62/62) were green before the last small edits (FxTune, harness).
+- Tuning ideas: aura on a bright noon sky is subtle, Rukia bankai aura is a placeholder (5.2 later), burst motes at noon.
+
+**Not started:** steps 3 to 10 of section 10 (swarm, rows, storm, Rukia shikai abilities, Rukia bankai, Hakuteiken, polish), server work S1 to S5, custom sounds.
+
+**UNVERIFIED of 12.1 resolved** (see step 0): glow depth under Fabulous (fixed with `FxDepth`), model view matrix at LAST (world matrix is in force), VertexBuffer API names (verified; uniform setup to copy from `WorldRenderer#renderLayer`), freeze_desat post (program names are not namespaced: files go under `assets/minecraft/shaders/program/`), BossBarHud field `bossBars` (done, accessor mixin works).
+
+**Next:** regenerate and review the step 2 screenshots, run build + both regressions once, commit step 2, then step 3 with the batch rule (write several steps of code, then one game launch).

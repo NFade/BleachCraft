@@ -134,7 +134,8 @@ public final class Phase6Harness {
 		boolean cond = s.until() == null || safe(s.until());
 		boolean timedOut = s.until() != null && s.timeout() > 0 && ticksInStep >= s.timeout();
 		if (timedOut && !cond) {
-			ReiatsuTest.LOGGER.error(P + "step '{}' timed out waiting for its condition", s.name());
+			ReiatsuTest.LOGGER.error(P + "step '{}' timed out waiting for its condition (fx clock now={} frozen={} target={} dt={} frame={} paused={})", s.name(),
+					FxClock.now, FxClock.frozen, FxClock.freezeTargetForDebug(), FxClock.dt, FxClock.frame, mc.isPaused());
 			FAILS.add("timeout: " + s.name());
 		}
 		if ((timeUp && cond) || timedOut) {
@@ -317,7 +318,7 @@ public final class Phase6Harness {
 		} else if (wants("hudlayouts")) {
 			Phase6Hud.steps(true, false);
 		}
-		if (wants("release")) {
+		if (wants("release") || wants("relshots") || wants("relnight") || wants("relflash") || wants("aura") || wants("seal") || wants("draw")) {
 			Phase6Release.steps();
 		}
 		step("finish", 10, () -> {

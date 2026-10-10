@@ -152,6 +152,34 @@ public final class FxConfig {
 				maxFxParticles, maxGlowSprites, reduceMotion, hud);
 	}
 
+	/** Dev hot reload ({@link FxTune}): applies the known numeric / boolean keys of an override file. */
+	static void applyDev(JsonObject o) {
+		for (String key : defaults().keySet()) {
+			if (!o.has(key) || key.equals("fxTier")) {
+				continue;
+			}
+			try {
+				switch (key) {
+					case "effectQuality" -> effectQuality = o.get(key).getAsFloat();
+					case "reduceMotion" -> reduceMotion = o.get(key).getAsBoolean();
+					case "emissiveMultiplier" -> emissiveMultiplier = o.get(key).getAsDouble();
+					case "screenFxScale" -> screenFxScale = o.get(key).getAsDouble();
+					case "shakeScale" -> shakeScale = o.get(key).getAsDouble();
+					case "fxSoundVolume" -> fxSoundVolume = o.get(key).getAsDouble();
+					case "glowIntensity" -> glowIntensity = o.get(key).getAsDouble();
+					case "gradeStrength" -> gradeStrength = o.get(key).getAsDouble();
+					case "photosensitiveSafe" -> photosensitiveSafe = o.get(key).getAsBoolean();
+					case "hudCompact" -> hudCompact = o.get(key).getAsBoolean();
+					case "titleCards" -> titleCards = o.get(key).getAsBoolean();
+					case "crosshairPips" -> crosshairPips = o.get(key).getAsBoolean();
+					default -> { }
+				}
+			} catch (RuntimeException e) {
+				ReiatsuTest.LOGGER.warn("[fxconfig] bad dev override {}", key);
+			}
+		}
+	}
+
 	private static Map<String, Object> defaults() {
 		Map<String, Object> m = new LinkedHashMap<>();
 		m.put("fxTier", "HIGH");

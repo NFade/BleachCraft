@@ -409,12 +409,14 @@ def sp_line():
 def sp_ring_thin():
     x, y = grid(64, 64)
     r = np.hypot(x, y)
-    return clamp(np.exp(-((r - 28) / 1.2) ** 2) + 0.35 * np.exp(-((r - 28) / 4.0) ** 2))
+    # radial window: the halo of the ring must be zero at the cell border (a square edge showed at saturation)
+    return clamp(np.exp(-((r - 28) / 1.2) ** 2) + 0.35 * np.exp(-((r - 28) / 4.0) ** 2)) * (1 - smoothstep(29.5, 32.0, r))
 
 
 def sp_ring_soft():
     x, y = grid(64, 64)
-    return np.exp(-((np.hypot(x, y) - 24) / 6.0) ** 2)
+    r = np.hypot(x, y)
+    return np.exp(-((r - 24) / 6.0) ** 2) * (1 - smoothstep(27.0, 32.0, r))
 
 
 def sp_frost_sigil():

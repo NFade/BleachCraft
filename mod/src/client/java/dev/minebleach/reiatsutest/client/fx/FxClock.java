@@ -48,6 +48,10 @@ public final class FxClock {
 		lastNanos = System.nanoTime();
 	}
 
+	public static double freezeTargetForDebug() {
+		return freezeTarget;
+	}
+
 	public static void freeze() {
 		frozen = true;
 	}

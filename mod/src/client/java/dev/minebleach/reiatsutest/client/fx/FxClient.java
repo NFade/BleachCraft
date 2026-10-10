@@ -32,6 +32,11 @@ public final class FxClient {
 	private FxClient() {
 	}
 
+	/** Dev: treat the local caster as a remote one ({@code -Dreiatsu.fx.remote=true}): distance rules, no title card. */
+	public static boolean forceRemote() {
+		return Boolean.getBoolean("reiatsu.fx.remote");
+	}
+
 	public static void init() {
 		FxConfig.load();
 		FxParticles.register();
@@ -40,6 +45,7 @@ public final class FxClient {
 			Profiler p = MinecraftClient.getInstance().getProfiler();
 			p.push("reiatsu_fx");
 			long t0 = System.nanoTime();
+			FxTune.poll();
 			FxTimelines.beginFrame();
 			startNanos = System.nanoTime() - t0;
 			p.pop();
@@ -64,5 +70,6 @@ public final class FxClient {
 			p.pop();
 		});
 		ClientTickEvents.END_CLIENT_TICK.register(client -> AuraFx.tick(client));
+		DrawFx.init();
 	}
 }

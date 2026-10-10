@@ -42,7 +42,7 @@ public final class ClientNet {
 			var mcl = ctx.client();
 			boolean local = mcl.player != null && mcl.player.getId() == payload.casterId();
 			HudModel.onEffectEvent(payload.effectId(), local, dev.minebleach.reiatsutest.core.state.CharacterId.NONE);
-			EffectPlaceholders.play(mcl, payload);
+			dev.minebleach.reiatsutest.client.fx.FxEvents.onEffectEvent(mcl, payload);
 		});
 		ClientPlayNetworking.registerGlobalReceiver(EntityFxS2C.ID, (payload, ctx) -> {
 			ENTITY_FX.incrementAndGet();
@@ -56,6 +56,8 @@ public final class ClientNet {
 		RESULTS.clear();
 		REQUESTS.clear();
 		HudModel.resetAll();
+		dev.minebleach.reiatsutest.client.fx.FxTimelines.clear();
+		dev.minebleach.reiatsutest.client.fx.AuraFx.clear();
 	}
 
 	public static int requestTransition(ZanpakutoState target, RequestSource source) {
