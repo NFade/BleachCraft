@@ -584,3 +584,5 @@ Branch `b4-polish`. No Blender. Screenshots: `blender/renders/b4_polish/` (fp_al
 - Left-hand `al_base` shot in sweep `sw2` showed a wrong camera (harness artefact, final k5 shots are fine).
 ### Next
 Rerun runPhase4/5; user to judge fist height (`held.arm` y) and roll in game; bake any new numbers into `zanpakuto/*.json`.
+
+## 2026-10-11: STOP POINT (tp3): agent stopped before finishing; one replace failed mid-edit. Next: build, finish per design/TASKS_BACKLOG.md T2-T4.

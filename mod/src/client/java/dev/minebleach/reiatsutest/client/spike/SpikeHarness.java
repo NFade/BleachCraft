@@ -79,6 +79,7 @@ public final class SpikeHarness {
 	public static void init() {
 		ReiatsuTest.LOGGER.info(P + "ENABLED (-Dreiatsu.spike=true)");
 		ClientTickEvents.END_CLIENT_TICK.register(SpikeHarness::tick);
+		net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.START.register(ctx -> extFrame());
 		HudRenderCallback.EVENT.register((ctx, tc) -> onFrame());
 		String tune = System.getProperty("reiatsu.spike.tune");
 		if (tune != null && !tune.isBlank()) {
@@ -101,6 +102,7 @@ public final class SpikeHarness {
 	private static void tick(MinecraftClient client) {
 		mc = client;
 		totalTicks++;
+		extTick();
 		if (totalTicks > 20 * 60 * 14) {
 			ReiatsuTest.LOGGER.error(P + "global watchdog fired, stopping");
 			client.scheduleStop();
@@ -597,6 +599,10 @@ public final class SpikeHarness {
 					}
 				});
 			}
+			if (view.equals("ext")) { // T2/T3/T4: free camera around the own player or a client side other player
+				extSteps(c, name);
+				continue;
+			}
 			if (!poseOnly) step("tune " + name + ": write display + reload", 2, () -> {
 				if (view.startsWith("dark")) {
 					cmd("tp @s 100.5 -60 0.5 0 15"); // let the chunks around the dark room load during the reload
@@ -702,6 +708,228 @@ public final class SpikeHarness {
 			}
 		});
 		step("tune: finish", 5, () -> mc.scheduleStop());
+	}
+
+	// ---------------------------------------------------------------- third person scenes (T2, T3, T4)
+
+	/** A client side "other player" that moves by itself (position steps inside its own tick, so limb animation and interpolation work). */
+	private static final class Drive extends net.minecraft.client.network.OtherClientPlayerEntity {
+		double vx;
+		double vz;
+
+		Drive(net.minecraft.client.world.ClientWorld w, String name, long id) {
+			super(w, new com.mojang.authlib.GameProfile(new java.util.UUID(0xAB00L, id), name));
+		}
+
+		@Override
+		public void tick() {
+			if (vx != 0 || vz != 0) {
+				setPosition(getX() + vx, getY(), getZ() + vz);
+			}
+			super.tick();
+		}
+	}
+
+	private static Drive extSubject;
+	private static Drive extCam;
+	private static net.minecraft.entity.LivingEntity extEntity;
+	private static int extFreezeSwing = -1;
+	private static boolean extSneakKey;
+	/** Own player scenes: the third person camera sits behind the view direction, the BODY is turned so that the camera sees it from this azimuth (NaN = off). */
+	private static double extSelfAngle = Double.NaN;
+	private static int extOldFov = -1;
+
+	/** Every tick: freezes the vanilla hand swing of the subject at k ticks (progress k/6) while a swing frame is wanted. */
+	/** Every frame before the world renders: turns the own body (and head) to the wanted azimuth against the camera. */
+	private static void extFrame() {
+		if (!Double.isNaN(extSelfAngle) && mc != null && mc.player != null) {
+			float b = (float) (extSelfAngle - 180.0);
+			mc.player.bodyYaw = b;
+			mc.player.prevBodyYaw = b;
+			mc.player.headYaw = b;
+			mc.player.prevHeadYaw = b;
+		}
+	}
+
+	private static void extTick() {
+		if (extFreezeSwing >= 0 && extEntity != null) {
+			extEntity.handSwinging = true;
+			extEntity.preferredHand = net.minecraft.util.Hand.MAIN_HAND;
+			extEntity.handSwingTicks = Math.max(0, extFreezeSwing - 1);
+			extEntity.handSwingProgress = extFreezeSwing / 6f;
+		}
+	}
+
+	private static void setupExt(com.google.gson.JsonObject c) {
+		String who = c.has("who") ? c.get("who").getAsString() : "self";
+		String stateName = c.has("state") ? c.get("state").getAsString() : "sealed";
+		String motion = c.has("motion") ? c.get("motion").getAsString() : "idle";
+		Arm arm = c.has("arm") && c.get("arm").getAsString().equals("left") ? Arm.LEFT : Arm.RIGHT;
+		cleanupExt();
+		mc.options.hudHidden = true;
+		if (mc.options.getGuiScale().getValue() != 0) {
+			mc.options.getGuiScale().setValue(0);
+			mc.onResolutionChanged();
+		}
+		mc.options.setPerspective(Perspective.FIRST_PERSON);
+		dev.minebleach.reiatsutest.client.model.DrawTracker.debugProgress = c.has("draw_p") ? c.get("draw_p").getAsFloat() : Float.NaN;
+		if (who.equals("self")) {
+			selectSlot(0);
+			mc.options.getMainArm().setValue(arm);
+			cmd("time set noon", "tp @s 0.5 -60 0.5 0 8", "reiatsu state " + stateName + " " + (ITEM.equals("senbonzakura") ? "byakuya" : "rukia"));
+			extEntity = mc.player;
+			extSelfAngle = c.has("angle") ? c.get("angle").getAsDouble() : 90.0;
+			if (extOldFov < 0) {
+				extOldFov = mc.options.getFov().getValue();
+			}
+			mc.options.getFov().setValue(40);
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			if (motion.equals("sneak")) {
+				mc.options.sneakKey.setPressed(true);
+				extSneakKey = true;
+			}
+		} else {
+			// the other character's item, the state as a component on the stack (no server involved)
+			String otherItem = ITEM.equals("senbonzakura") ? "sode_no_shirayuki" : "senbonzakura";
+			if (c.has("item")) {
+				otherItem = c.get("item").getAsString();
+			}
+			cmd("time set noon", "tp @s 150.5 -60 24.5 180 0");
+			boolean slim = c.has("slim") && c.get("slim").getAsBoolean();
+			Drive d = null;
+			for (long id = 1; id < 60; id++) {
+				d = new Drive(mc.world, "Subject", id);
+				if ((d.getSkinTextures().model() == net.minecraft.client.util.SkinTextures.Model.SLIM) == slim) {
+					break;
+				}
+			}
+			net.minecraft.item.Item item = net.minecraft.registry.Registries.ITEM.get(net.minecraft.util.Identifier.of("reiatsu_test", otherItem));
+			net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(item);
+			stack.set(dev.minebleach.reiatsutest.registry.ModComponents.RELEASE_STATE, dev.minebleach.reiatsutest.registry.ReleaseState.valueOf(stateName.toUpperCase(java.util.Locale.ROOT)));
+			d.equipStack(net.minecraft.entity.EquipmentSlot.MAINHAND, stack);
+			d.setMainArm(arm);
+			d.setPosition(150.5, -60, -30.5);
+			d.setYaw(0f);
+			d.setBodyYaw(0f);
+			d.setHeadYaw(0f);
+			d.prevYaw = 0f;
+			d.prevBodyYaw = 0f;
+			d.prevHeadYaw = 0f;
+			d.resetPosition();
+			if (motion.equals("sneak") || motion.equals("sneakwalk")) {
+				d.setPose(net.minecraft.entity.EntityPose.CROUCHING);
+			} else if (motion.equals("swim")) {
+				d.setPose(net.minecraft.entity.EntityPose.SWIMMING);
+			}
+			if (motion.equals("walk") || motion.equals("swim")) {
+				d.vz = 0.2159;
+			} else if (motion.equals("sprint")) {
+				d.vz = 0.2806;
+				d.setSprinting(true);
+			} else if (motion.equals("sneakwalk")) {
+				d.vz = 0.0655;
+			}
+			mc.world.addEntity(d);
+			extSubject = d;
+			extEntity = d;
+		}
+	}
+
+	private static void camExt(com.google.gson.JsonObject c) {
+		if (extEntity == null || extEntity == mc.player) {
+			return; // own player: the vanilla third person camera is the camera (see setupExt)
+		}
+		double angle = c.has("angle") ? c.get("angle").getAsDouble() : 90.0; // 0 front, 90 wearer's left, 180 back, 270 wearer's right
+		double dist = c.has("dist") ? c.get("dist").getAsDouble() : 2.6;
+		double eye = c.has("eye") ? c.get("eye").getAsDouble() : 1.0;
+		float pitch = c.has("pitch") ? c.get("pitch").getAsFloat() : 0f;
+		double a = Math.toRadians(angle);
+		Drive cam = new Drive(mc.world, "Camera", 999);
+		cam.setInvisible(true);
+		cam.setPosition(extEntity.getX() + dist * Math.sin(a), extEntity.getY() + eye - 1.62, extEntity.getZ() + dist * Math.cos(a));
+		float yaw = (float) (180.0 - angle);
+		cam.setYaw(yaw);
+		cam.setBodyYaw(yaw);
+		cam.setHeadYaw(yaw);
+		cam.setPitch(pitch);
+		cam.prevYaw = yaw;
+		cam.prevPitch = pitch;
+		cam.prevBodyYaw = yaw;
+		cam.prevHeadYaw = yaw;
+		cam.resetPosition();
+		if (extSubject != null) {
+			cam.vx = extSubject.vx;
+			cam.vz = extSubject.vz;
+		}
+		mc.world.addEntity(cam);
+		extCam = cam;
+		mc.setCameraEntity(cam);
+	}
+
+	private static void cleanupExt() {
+		extFreezeSwing = -1;
+		extSelfAngle = Double.NaN;
+		if (extOldFov >= 0) {
+			mc.options.getFov().setValue(extOldFov);
+			extOldFov = -1;
+		}
+		if (extSneakKey) {
+			mc.options.sneakKey.setPressed(false);
+			extSneakKey = false;
+		}
+		if (mc.player != null) {
+			mc.setCameraEntity(mc.player);
+		}
+		if (extSubject != null) {
+			extSubject.discard();
+			extSubject = null;
+		}
+		if (extCam != null) {
+			extCam.discard();
+			extCam = null;
+		}
+		extEntity = null;
+		dev.minebleach.reiatsutest.client.model.DrawTracker.debugProgress = Float.NaN;
+	}
+
+	/**
+	 * Candidate with {@code "view": "ext"}: {@code who} self|other, {@code state}, {@code motion} idle|walk|sprint|sneak|sneakwalk|swim,
+	 * {@code arm}, {@code angle} (camera azimuth around the subject), {@code dist}, {@code eye}, {@code pitch}, {@code draw_p},
+	 * {@code swings} [k..] (frozen vanilla swing ticks 1..5 of 6, one shot each) or {@code ps} [p..] (draw progress, one shot each),
+	 * {@code shots} n with {@code gap} ticks (several shots in a row), {@code ticks} (settle ticks before the shot, default 25),
+	 * {@code slim}, {@code item} (other).
+	 */
+	private static void extSteps(com.google.gson.JsonObject c, String name) {
+		step("ext " + name + ": setup", 30, () -> setupExt(c));
+		step("ext " + name + ": camera", 4, () -> camExt(c));
+		int settle = c.has("ticks") ? c.get("ticks").getAsInt() : 25;
+		if (c.has("swings")) {
+			step("ext " + name + ": settle", settle, () -> { });
+			for (com.google.gson.JsonElement el : c.getAsJsonArray("swings")) {
+				int k = el.getAsInt();
+				step("ext " + name + ": swing " + k, 4, () -> extFreezeSwing = k);
+				step("ext " + name + ": shot swing " + k, 2, () -> shot("tune_" + name + "_s" + k));
+			}
+		} else if (c.has("ps")) {
+			step("ext " + name + ": settle", settle, () -> { });
+			for (com.google.gson.JsonElement el : c.getAsJsonArray("ps")) {
+				float pr = el.getAsFloat();
+				step("ext " + name + ": p " + pr, 3, () -> dev.minebleach.reiatsutest.client.model.DrawTracker.debugProgress = pr);
+				step("ext " + name + ": shot p " + pr, 2, () -> shot("tune_" + name + "_p" + Math.round(pr * 100)));
+			}
+		} else if (c.has("shots")) {
+			int n = c.get("shots").getAsInt();
+			int gap = c.has("gap") ? c.get("gap").getAsInt() : 3;
+			step("ext " + name + ": settle", settle, () -> { });
+			for (int i = 0; i < n; i++) {
+				final int k = i;
+				step("ext " + name + ": shot " + k, gap, () -> shot("tune_" + name + "_" + k));
+			}
+		} else {
+			step("ext " + name + ": settle", settle, () -> { });
+			step("ext " + name + ": shot", 2, () -> shot("tune_" + name));
+		}
+		step("ext " + name + ": cleanup", 2, SpikeHarness::cleanupExt);
 	}
 
 	/** Command item string of the item under test in a release state. */

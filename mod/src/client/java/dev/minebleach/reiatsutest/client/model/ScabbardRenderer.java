@@ -19,6 +19,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Arm;
+import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -164,6 +165,8 @@ public final class ScabbardRenderer {
 		ItemManifest.Hip hip = man.hip != null ? man.hip : new ItemManifest.Hip(new float[] {6.2f, 9f, -1f}, DEFAULT_DIR, 1f);
 		DrawRig rig = om.rig(false);
 
+		Matrix4f base = new Matrix4f(m.peek().getPositionMatrix());
+		VertexConsumer vc = vcp.getBuffer(TexturedRenderLayers.getEntityCutout());
 		m.push();
 		model.body.rotate(m);
 		float side = e.getMainArm() == Arm.RIGHT ? 1f : -1f; // the scabbard hangs opposite the sword hand
@@ -171,17 +174,124 @@ public final class ScabbardRenderer {
 		m.multiply(basis(hip.dir()));
 		m.scale(hip.scale(), hip.scale(), hip.scale());
 		m.translate(-0.5f, -0.5f, -0.5f);
-		VertexConsumer vc = vcp.getBuffer(TexturedRenderLayers.getEntityCutout());
 		drawMesh(om.sayaMesh(), m.peek(), vc, light);
+		DrawRig.Rigid arc = rig.arc(rig.clearAngle() * Math.min(1f, p / rig.slideEnd));
 		if (p < rig.slideEnd) {
-			DrawRig.Rigid arc = rig.arc(rig.clearAngle() * (p / rig.slideEnd));
 			m.push();
 			m.translate(arc.t()[0], arc.t()[1], arc.t()[2]);
 			m.multiply(new Quaternionf(arc.q()[0], arc.q()[1], arc.q()[2], arc.q()[3]));
 			drawMesh(om.swordMesh(), m.peek(), vc, light);
 			m.pop();
 		}
+		debugCompare(m, e, om, model, p);
+		Matrix4f hipFrame = null;
+		if (p >= rig.slideEnd && p < 1f) {
+			// T3: the blade is clear of the mouth (end of the slide pose, in the frame of the hip)
+			m.push();
+			m.translate(arc.t()[0], arc.t()[1], arc.t()[2]);
+			m.multiply(new Quaternionf(arc.q()[0], arc.q()[1], arc.q()[2], arc.q()[3]));
+			hipFrame = new Matrix4f(m.peek().getPositionMatrix());
+			m.pop();
+		}
 		m.pop();
+		if (hipFrame != null) {
+			// the blade travels from the hip to the hand; at p = 1 it is exactly where the hand item draws it
+			Matrix4f handFrame = handFrame(m, e, om, model);
+			float u = DrawRig.smooth((p - rig.slideEnd) / (1f - rig.slideEnd));
+			blendFrames(m, base, hipFrame, handFrame, u);
+			drawMesh(om.swordMesh(), m.peek(), vc, light);
+			m.pop();
+		}
+	}
+
+	/** Dev check (-Dreiatsu.spike): the model space frame the hand item really got, captured in the held item mixin, against {@link #handFrame}. */
+	private static Matrix4f realHand;
+	private static int realHandId = -1;
+
+	public static void captureHand(LivingEntity e, MatrixStack m, boolean leftHanded, ObjItemBakedModel om) {
+		if (!DEBUG) {
+			return;
+		}
+		m.push();
+		ModelTransformationMode mode = leftHanded ? ModelTransformationMode.THIRD_PERSON_LEFT_HAND : ModelTransformationMode.THIRD_PERSON_RIGHT_HAND;
+		om.getTransformation().getTransformation(mode).apply(leftHanded, m);
+		m.translate(-0.5f, -0.5f, -0.5f);
+		realHand = new Matrix4f(m.peek().getPositionMatrix());
+		realHandId = e.getId();
+		m.pop();
+	}
+
+	private static void debugCompare(MatrixStack m, LivingEntity e, ObjItemBakedModel om, BipedEntityModel<?> model, float p) {
+		if (!DEBUG || realHand == null || realHandId != e.getId() || p < 1f || (System.nanoTime() / 500_000_000L) % 4 != 0) {
+			return;
+		}
+		Matrix4f mine = handFrame(m, e, om, model);
+		float d = 0f;
+		for (int c = 0; c < 4; c++) {
+			for (int r = 0; r < 4; r++) {
+				d = Math.max(d, Math.abs(mine.get(c, r) - realHand.get(c, r)));
+			}
+		}
+		Vector3f s1 = mine.getScale(new Vector3f());
+		Vector3f s2 = realHand.getScale(new Vector3f());
+		dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[handframe] maxdiff={} predictedScale={} realScale={} mineT={} realT={}", d, s1, s2,
+				mine.getTranslation(new Vector3f()), realHand.getTranslation(new Vector3f()));
+	}
+
+	/**
+	 * Model space frame of the sword when it is in the hand at the end of the draw: exactly the chain the vanilla held item
+	 * feature renderer builds (arm angle, the -90 / 180 turn, the hand offset, child scale) followed by the display transform
+	 * of the third person hand mode and the model centre shift, as {@code ItemRenderer} applies it. Leaves {@code m} unchanged.
+	 */
+	private static Matrix4f handFrame(MatrixStack m, LivingEntity e, ObjItemBakedModel om, BipedEntityModel<?> model) {
+		Arm arm = e.getMainArm();
+		boolean left = arm == Arm.LEFT;
+		m.push();
+		if (model.child) {
+			m.translate(0f, 0.75f, 0f);
+			m.scale(0.5f, 0.5f, 0.5f);
+		}
+		model.setArmAngle(arm, m);
+		m.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-90f));
+		m.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180f));
+		m.translate((left ? -1 : 1) / 16f, 0.125f, -0.625f);
+		ModelTransformationMode mode = left ? ModelTransformationMode.THIRD_PERSON_LEFT_HAND : ModelTransformationMode.THIRD_PERSON_RIGHT_HAND;
+		om.getTransformation().getTransformation(mode).apply(left, m);
+		m.translate(-0.5f, -0.5f, -0.5f);
+		Matrix4f f = new Matrix4f(m.peek().getPositionMatrix());
+		m.pop();
+		return f;
+	}
+
+	/**
+	 * Pushes onto {@code m} the model space frame blended between two frames (given in the same space as {@code base}, the matrix
+	 * at the start of the feature): decomposed about the grip (model point 0.5, 0.5, 0.5) into position, rotation (slerp) and
+	 * uniform scale (lerp), so the hilt moves on a straight line and the blade turns about it.
+	 */
+	static void blendFrames(MatrixStack m, Matrix4f base, Matrix4f a, Matrix4f b, float u) {
+		Matrix4f inv = new Matrix4f(base).invert();
+		Vector3f pa = new Vector3f();
+		Vector3f pb = new Vector3f();
+		Vector3f sa = new Vector3f();
+		Vector3f sb = new Vector3f();
+		Quaternionf qa = new Quaternionf();
+		Quaternionf qb = new Quaternionf();
+		Matrix4f ga = new Matrix4f(inv).mul(a).translate(0.5f, 0.5f, 0.5f);
+		Matrix4f gb = new Matrix4f(inv).mul(b).translate(0.5f, 0.5f, 0.5f);
+		ga.getTranslation(pa);
+		gb.getTranslation(pb);
+		ga.getScale(sa);
+		gb.getScale(sb);
+		ga.getNormalizedRotation(qa);
+		gb.getNormalizedRotation(qb);
+		Vector3f p = pa.lerp(pb, u);
+		float sc = sa.x + (sb.x - sa.x) * u;
+		Quaternionf q = qa.slerp(qb, u);
+		m.push();
+		m.translate(p.x, p.y, p.z);
+		m.multiply(q);
+		m.scale(sc, sc, sc);
+		m.translate(-0.5f, -0.5f, -0.5f);
 	}
 
 	/**
