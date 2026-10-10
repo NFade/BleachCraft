@@ -38,6 +38,10 @@ public final class RukiaBankaiClient {
 		boolean fieldMade;
 		Vec3d fieldPos;
 		ScreenFx.Layer vignette;
+		ScreenFx.Layer vignetteHostile;
+		boolean hostileInside;
+		double nextHum;
+		double nextSnow;
 		double nextBreath;
 		boolean seenBefore;
 		int lastSegments;
@@ -46,6 +50,7 @@ public final class RukiaBankaiClient {
 	private static final class MobFrost {
 		FxDecals.Decal decal;
 		double lastSeen;
+		double nextBreath;
 	}
 
 	private static final Map<Integer, P> PLAYERS = new HashMap<>();
@@ -206,7 +211,26 @@ public final class RukiaBankaiClient {
 			}
 			// ---- owner screen: the release frost edge settles to 0.06
 			if (local && age >= 2.0 && p.vignette == null) {
-				p.vignette = ScreenFx.vignette(ScreenFx.Kind.FROST, 0.06, 1.0, 1.0);
+				p.vignette = ScreenFx.vignette(ScreenFx.Kind.FROST, FxTune.d("rbankai.vignette", 0.06), 1.0, 1.0);
+			}
+			if (local && age >= 2.0 && p.vignette != null) {
+				if (p.hostileInside && p.vignetteHostile == null) {
+					p.vignetteHostile = ScreenFx.vignette(ScreenFx.Kind.FROST, FxTune.d("rbankai.vignetteHostile", 0.06), 0.5, 1.0);
+				} else if (!p.hostileInside && p.vignetteHostile != null) {
+					p.vignetteHostile.release(0.8);
+					p.vignetteHostile = null;
+				}
+			}
+			// ---- the cold hum (resonate every 4 s) and the soft snow steps (every 2 to 4 s)
+			if (age >= 2.0 && dist <= 24) {
+				if (now >= p.nextHum) {
+					p.nextHum = now + 4.0;
+					FxSound.play(null, "block.amethyst_block.resonate", pl.getX(), pl.getY() + 1.0, pl.getZ(), FxTune.d("rbankai.humPitch", 0.6), FxTune.d("rbankai.humVolume", 0.15));
+				}
+				if (now >= p.nextSnow) {
+					p.nextSnow = now + 2.0 + RNG.nextDouble() * 2.0;
+					FxSound.play(null, "block.powder_snow.step", pl.getX() + (RNG.nextDouble() - 0.5) * 3, pl.getY(), pl.getZ() + (RNG.nextDouble() - 0.5) * 3, 1.3, FxTune.d("rbankai.snowVolume", 0.2));
+				}
 			}
 			// ---- glints on the crystals
 			if (tickCounter % 2 == 0) {
@@ -242,6 +266,11 @@ public final class RukiaBankaiClient {
 			p.vignette.release(1.0);
 			p.vignette = null;
 		}
+		if (p.vignetteHostile != null) {
+			p.vignetteHostile.release(1.0);
+			p.vignetteHostile = null;
+		}
+		p.hostileInside = false;
 		p.fieldMade = false;
 	}
 
@@ -249,9 +278,11 @@ public final class RukiaBankaiClient {
 	private static void makeField(int ownerId, Vec3d at, double age) {
 		Random r = new Random(ownerId * 7919L + 13);
 		double sc = FxTune.d("rbankai.crystalScale", 1.0);
+		double relR = FxTune.d("rbankai.releaseCrystalRadius", 1.2);
+		double rimR = FxTune.d("rbankai.rimCrystalRadius", 2.6);
 		for (int i = 0; i < 6; i++) {
 			double a = Math.PI * 2 * (i + r.nextDouble() * 0.6) / 6;
-			double rad = 1.2 + r.nextDouble() * 0.4;
+			double rad = relR + r.nextDouble() * 0.4;
 			double px = at.x + Math.cos(a) * rad;
 			double pz = at.z + Math.sin(a) * rad;
 			double py = FxGround.sample(px, pz, at.y);
@@ -259,13 +290,13 @@ public final class RukiaBankaiClient {
 			boolean small = i % 2 == 0;
 			double delay = Math.max(0.0, 0.6 + 0.06 * i - age);
 			FxMeshPass.Crystal c = FxMeshPass.crystal(small ? FxMeshes.CRYSTAL_A : FxMeshes.CRYSTAL_B, px, py - 0.03, pz, Math.cos(a) * lean, 1, Math.sin(a) * lean, r.nextDouble() * 6.28,
-					(small ? 4.6 : 2.5) * sc * (0.85 + 0.3 * r.nextDouble()), delay);
+					(small ? FxTune.d("rbankai.relScaleA", 4.6) : FxTune.d("rbankai.relScaleB", 2.5)) * sc * (0.85 + 0.3 * r.nextDouble()), delay);
 			c.field = ownerId;
 			c.pulsePhase = i * 0.17;
 		}
 		for (int j = 0; j < 8; j++) {
 			double a = Math.PI * 2 * (j + r.nextDouble() * 0.7) / 8;
-			double rad = 2.6 + r.nextDouble() * 0.4;
+			double rad = rimR + r.nextDouble() * 0.4;
 			double px = at.x + Math.cos(a) * rad;
 			double pz = at.z + Math.sin(a) * rad;
 			double py = FxGround.sample(px, pz, at.y);
@@ -273,8 +304,9 @@ public final class RukiaBankaiClient {
 			boolean small = j % 2 == 1;
 			double delay = Math.max(0.0, 1.4 + 0.22 * j - age);
 			FxMeshPass.Crystal c = FxMeshPass.crystal(small ? FxMeshes.CRYSTAL_A : FxMeshes.CRYSTAL_B, px, py - 0.03, pz, Math.cos(a) * lean, 1, Math.sin(a) * lean, r.nextDouble() * 6.28,
-					(small ? 5.2 : 3.0) * sc * (0.85 + 0.3 * r.nextDouble()), delay);
+					(small ? FxTune.d("rbankai.rimScaleA", 5.2) : FxTune.d("rbankai.rimScaleB", 3.0)) * sc * (0.85 + 0.3 * r.nextDouble()), delay);
 			c.field = ownerId;
+			c.rim = true;
 			c.pulsePhase = j * 0.31 + 0.5;
 		}
 		fieldsMade++;
@@ -287,10 +319,13 @@ public final class RukiaBankaiClient {
 				continue;
 			}
 			boolean first = !c.glinted && c.grown(now);
+			if (first && c.rim) {
+				FxSound.play(null, "block.amethyst_block.chime", c.x, c.y + 0.5, c.z, FxTune.d("rbankai.chimePitch", 1.2), FxTune.d("rbankai.chimeVolume", 0.3));
+			}
 			if (first || RNG.nextInt(60) == 0) {
 				c.glinted = true;
 				Vec3d tip = c.tip();
-				FxGlowBatch.sprite(GlowSprite.STAR4).at(tip.x, tip.y, tip.z).lifeTicks(first ? 10 : 8).size(first ? 1.0 : 0.8).color("#FFFFFF").peak(0.95).twinkle()
+				FxGlowBatch.sprite(GlowSprite.STAR4).at(tip.x, tip.y, tip.z).lifeTicks(first ? 10 : 8).size(first ? 1.0 : 0.8).color("#FFFFFF").peak(RukiaKit.glow(0.95)).twinkle()
 						.rot(RNG.nextDouble() * 6, 1).spawn();
 			}
 		}
@@ -299,6 +334,7 @@ public final class RukiaBankaiClient {
 	/** Frost under hostile mobs inside the aura (every 5 ticks, at most 24 mobs): a small decal, motes at the feet, glints on the body. */
 	private static void mobs(MinecraftClient mc, AbstractClientPlayerEntity pl, P p, double dist) {
 		if (dist > 24) {
+			p.hostileInside = false;
 			return;
 		}
 		double r = FxTune.d("rbankai.mobRadius", 3.2);
@@ -316,14 +352,26 @@ public final class RukiaBankaiClient {
 				FxSound.play(null, "entity.player.hurt_freeze", m.getX(), m.getY() + 1, m.getZ(), 1.2, 0.4);
 			}
 			mf.lastSeen = FxClock.now;
+			if (FxClock.now >= mf.nextBreath) {
+				// a breath puff at the head every 2 s
+				mf.nextBreath = FxClock.now + 2.0;
+				Vec3d eye = m.getEyePos();
+				Vec3d fwd = m.getRotationVector();
+				for (int i = 0; i < RukiaKit.count(4); i++) {
+					FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(eye.x + fwd.x * 0.3, eye.y - 0.1, eye.z + fwd.z * 0.3)
+							.vel(fwd.x * (0.5 + RNG.nextDouble() * 0.5) + (RNG.nextDouble() - 0.5) * 0.3, 0.1 + RNG.nextDouble() * 0.2, fwd.z * (0.5 + RNG.nextDouble() * 0.5) + (RNG.nextDouble() - 0.5) * 0.3)
+							.drag(0.94).life(18).size(0.2).color("#EAF8FF").alpha(0.45).seed(i).spawn();
+				}
+			}
 			if (RNG.nextDouble() < 0.7) {
 				FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(m.getX() + (RNG.nextDouble() - 0.5) * m.getWidth(), m.getY() + 0.1, m.getZ() + (RNG.nextDouble() - 0.5) * m.getWidth())
 						.vel(0, 0.7, 0).drag(0.96).life(16).size(0.3).color("#EAF8FF").colorTo("#BFE4FF").seed(n).fade(0.5).spawn();
 			}
 			if (RNG.nextDouble() < 0.4) {
 				FxGlowBatch.sprite(GlowSprite.STAR6).at(m.getX() + (RNG.nextDouble() - 0.5) * m.getWidth(), m.getY() + RNG.nextDouble() * m.getHeight(),
-						m.getZ() + (RNG.nextDouble() - 0.5) * m.getWidth()).lifeTicks(9).size(0.4).color("#FFFFFF").peak(0.8).twinkle().rot(RNG.nextDouble() * 6, 1).spawn();
+						m.getZ() + (RNG.nextDouble() - 0.5) * m.getWidth()).lifeTicks(9).size(RukiaKit.size(0.4)).color("#FFFFFF").peak(RukiaKit.glow(0.8)).twinkle().rot(RNG.nextDouble() * 6, 1).spawn();
 			}
 		}
+		p.hostileInside = n > 0;
 	}
 }

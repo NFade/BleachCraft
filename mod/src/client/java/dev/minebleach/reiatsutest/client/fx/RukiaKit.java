@@ -8,6 +8,34 @@ final class RukiaKit {
 	private RukiaKit() {
 	}
 
+	/** Global tuning of every Rukia effect (fx_override.json): {@code rk.count} scales particle counts, {@code rk.glow} the glow intensities, {@code rk.size} the glow and particle sizes. */
+	static int count(int n) {
+		return Math.max(0, (int) Math.round(n * FxTune.d("rk.count", 1.0)));
+	}
+
+	static double glow(double peak) {
+		return peak * FxTune.d("rk.glow", 1.0);
+	}
+
+	static double size(double s) {
+		return s * FxTune.d("rk.size", 1.0);
+	}
+
+	/** Tunable number: key, default. */
+	static double d(String key, double def) {
+		return FxTune.d(key, def);
+	}
+
+	/** Tunable colour: key, default. */
+	static String c(String key, String def) {
+		return FxTune.s(key, def);
+	}
+
+	/** Count of an area effect for server radius {@code radius} against the storyboard reference radius (area law, clamped so huge radii stay inside the budget); {@link #count} is applied by the spawn helpers. */
+	static int areaCount(int n, double radius, double reference) {
+		return (int) Math.round(n * dev.minebleach.reiatsutest.core.fx.RukiaFxParams.areaScale(radius, reference, 0.5, 2.2));
+	}
+
 	/** Horizontal unit forward of an event (falls back to +z). */
 	static double[] flat(Vec3d dir) {
 		double l = Math.hypot(dir.x, dir.z);
@@ -28,8 +56,10 @@ final class RukiaKit {
 		return hand.add(d.multiply(reach));
 	}
 
-	static void frostMotes(EffectTimeline t, Random r, int n, double cx, double cy, double cz, double spreadXZ, double spreadY, double up, double outward, int life,
+	static void frostMotes(EffectTimeline t, Random r, int n0, double cx, double cy, double cz, double spreadXZ, double spreadY, double up, double outward, int life,
 			double size, String color, String colorTo, double alpha) {
+		int n = count(n0);
+		size = size(size);
 		for (int i = 0; i < n; i++) {
 			double a = r.nextDouble() * Math.PI * 2;
 			double rad = Math.sqrt(r.nextDouble()) * spreadXZ;
@@ -44,7 +74,9 @@ final class RukiaKit {
 		}
 	}
 
-	static void iceShards(EffectTimeline t, Random r, int n, double cx, double cy, double cz, double spreadXZ, double speed, double up, double gravity, int life, double size) {
+	static void iceShards(EffectTimeline t, Random r, int n0, double cx, double cy, double cz, double spreadXZ, double speed, double up, double gravity, int life, double size0) {
+		int n = count(n0);
+		double size = size(size0);
 		for (int i = 0; i < n; i++) {
 			double a = r.nextDouble() * Math.PI * 2;
 			double rad = Math.sqrt(r.nextDouble()) * spreadXZ;
@@ -55,8 +87,11 @@ final class RukiaKit {
 		}
 	}
 
-	static void stars(EffectTimeline t, Random r, GlowSprite sprite, int n, double cx, double cy, double cz, double spreadXZ, double spreadY, double up, double outward, double life,
-			double size, String color, double peak) {
+	static void stars(EffectTimeline t, Random r, GlowSprite sprite, int n0, double cx, double cy, double cz, double spreadXZ, double spreadY, double up, double outward, double life,
+			double size0, String color, double peak0) {
+		int n = count(n0);
+		double size = size(size0);
+		double peak = glow(peak0);
 		for (int i = 0; i < n; i++) {
 			double a = r.nextDouble() * Math.PI * 2;
 			double rad = Math.sqrt(r.nextDouble()) * spreadXZ;
@@ -70,6 +105,6 @@ final class RukiaKit {
 	static void ring(EffectTimeline t, double x, double y, double z, double fromR, double toR, double life, String color, double peak, boolean thin) {
 		double k = thin ? 0.4375 : 0.375;
 		FxGlowBatch.sprite(thin ? GlowSprite.RING_THIN : GlowSprite.RING_SOFT).at(x, y, z).ground().size(Math.max(0.05, fromR) / k * 1.0, toR / k).sizeEase(FxMath.OC).life(life)
-				.curve(0.02, 0.8).color(color).peak(peak).owner(t).spawn();
+				.curve(0.02, 0.8).color(color).peak(glow(peak)).owner(t).spawn();
 	}
 }

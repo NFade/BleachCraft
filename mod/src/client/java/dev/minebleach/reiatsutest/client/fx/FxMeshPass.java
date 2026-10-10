@@ -50,6 +50,8 @@ public final class FxMeshPass {
 		public double emissive = 1.0;
 		/** Entity id of the owner of a standing field (-1 for one shot effects). */
 		public long field = -1;
+		/** A rim crystal of the passive: plays its chime when it has grown (5.2). */
+		public boolean rim;
 		boolean dead;
 		boolean glinted;
 
@@ -113,6 +115,9 @@ public final class FxMeshPass {
 	public static void shatter(Crystal c, int shards, double speed, long seed) {
 		if (c == null || c.dead) {
 			return;
+		}
+		if (!CRYSTALS.contains(c)) {
+			return; // already dropped by the maxCrystals cap
 		}
 		c.dead = true;
 		Vec3d m = c.mid();
@@ -213,6 +218,8 @@ public final class FxMeshPass {
 		public final boolean encased;
 		public final double birth;
 		public double endAt;
+		/** Seconds the shell takes to grow bottom up (0.25 ENCASED, 0.4 FROZEN, 0.12 when Absolute zero snaps them on). */
+		public double grow = 0.25;
 		double lastX;
 		double lastY;
 		double lastZ;
@@ -329,10 +336,10 @@ public final class FxMeshPass {
 			if (age < 0) {
 				continue;
 			}
-			double grow = FxMath.oc(age / (s.encased ? 0.25 : 0.4));
-			double alpha = (s.encased ? 0.6 : 0.35) * FxMath.clamp(grow * 3);
-			double sx = s.w * 1.2;
-			double sy = s.h * 1.06 / 2.0 * Math.max(0.05, grow);
+			double grow = FxMath.oc(age / Math.max(0.02, s.grow));
+			double alpha = (s.encased ? FxTune.d("shell.alphaEncased", 0.6) : FxTune.d("shell.alphaFrozen", 0.35)) * FxMath.clamp(grow * 3);
+			double sx = s.w * FxTune.d("shell.scaleXZ", 1.2);
+			double sy = s.h * FxTune.d("shell.scaleY", 1.06) / 2.0 * Math.max(0.05, grow);
 			m.identity().translate((float) (s.lastX - cam.x), (float) (s.lastY - cam.y), (float) (s.lastZ - cam.z)).scale((float) sx, (float) sy, (float) sx);
 			lastVertices += FxMeshes.draw(vc, FxMeshes.get(FxMeshes.SHELL), m, FxMeshes.argb(1, 1, 1, alpha), light(world, s.lastX, s.lastY + s.h * 0.5, s.lastZ, 8));
 		}
@@ -362,11 +369,11 @@ public final class FxMeshPass {
 			}
 			float angle = sh.restAt < 0 ? sh.rot0 + sh.spin * (float) age : sh.rot0 + sh.spin * (float) (sh.restAt - sh.birth);
 			m.identity().translate((float) (p[0] - cam.x), (float) (p[1] - cam.y), (float) (p[2] - cam.z)).rotate(angle, sh.ax, sh.ay, sh.az).scale(sh.scale);
-			lastVertices += FxMeshes.draw(vc, FxMeshes.get(sh.b ? FxMeshes.SHARD_B : FxMeshes.SHARD_A), m, FxMeshes.argb(1, 1, 1, 0.92 * fade), 0xF000F0);
+			lastVertices += FxMeshes.draw(vc, FxMeshes.get(sh.b ? FxMeshes.SHARD_B : FxMeshes.SHARD_A), m, FxMeshes.argb(1, 1, 1, FxTune.d("shard.alpha", 0.92) * fade), 0xF000F0);
 		}
 		// ---- pass 2: emissive overlay (crystals pulse, shells glow a little)
 		VertexConsumer ve = vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.EMISSIVE));
-		float[] tint = FxMath.hex("#DFF3FF");
+		float[] tint = FxMath.hex(FxTune.s("crystal.colEmissive", "#DFF3FF"));
 		for (Crystal c : CRYSTALS) {
 			double age = now - c.birth;
 			if (age < 0 || c.dead || cam.squaredDistanceTo(c.x, c.y, c.z) > 48 * 48) {
@@ -375,7 +382,7 @@ public final class FxMeshPass {
 			double pulse = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(2 * Math.PI * (c.pulseHz * now + c.pulsePhase)));
 			double s = c.scale * FxMath.ob(age / c.grow);
 			m.identity().translate((float) (c.x - cam.x), (float) (c.y - cam.y), (float) (c.z - cam.z)).rotate(c.orient).scale((float) (s * 1.01));
-			lastVertices += FxMeshes.draw(ve, FxMeshes.get(c.mesh), m, FxMeshes.argb(tint, c.emissive * pulse * glow), 0xF000F0);
+			lastVertices += FxMeshes.draw(ve, FxMeshes.get(c.mesh), m, FxMeshes.argb(tint, c.emissive * pulse * glow * FxTune.d("crystal.emissive", 1.0)), 0xF000F0);
 		}
 		for (Shard sh : SHARDS) {
 			double age = now - sh.birth;
@@ -386,16 +393,16 @@ public final class FxMeshPass {
 			double[] p = shardPos(sh, age);
 			float angle = sh.restAt < 0 ? sh.rot0 + sh.spin * (float) age : sh.rot0 + sh.spin * (float) (sh.restAt - sh.birth);
 			m.identity().translate((float) (p[0] - cam.x), (float) (p[1] - cam.y), (float) (p[2] - cam.z)).rotate(angle, sh.ax, sh.ay, sh.az).scale(sh.scale * 1.02f);
-			lastVertices += FxMeshes.draw(ve, FxMeshes.get(sh.b ? FxMeshes.SHARD_B : FxMeshes.SHARD_A), m, FxMeshes.argb(tint, 0.55 * fade * glow), 0xF000F0);
+			lastVertices += FxMeshes.draw(ve, FxMeshes.get(sh.b ? FxMeshes.SHARD_B : FxMeshes.SHARD_A), m, FxMeshes.argb(tint, FxTune.d("shard.emissive", 0.55) * fade * glow), 0xF000F0);
 		}
 		for (Shell s : SHELLS) {
 			if (s.dead || now - s.birth < 0 || cam.squaredDistanceTo(s.lastX, s.lastY, s.lastZ) > 48 * 48) {
 				continue;
 			}
-			double grow = FxMath.oc((now - s.birth) / 0.25);
+			double grow = FxMath.oc((now - s.birth) / Math.max(0.02, s.grow));
 			m.identity().translate((float) (s.lastX - cam.x), (float) (s.lastY - cam.y), (float) (s.lastZ - cam.z))
-					.scale((float) (s.w * 1.2), (float) (s.h * 1.06 / 2.0 * Math.max(0.05, grow)), (float) (s.w * 1.2));
-			lastVertices += FxMeshes.draw(ve, FxMeshes.get(FxMeshes.SHELL), m, FxMeshes.argb(tint, 0.30 * glow * FxMath.clamp(grow * 3)), 0xF000F0);
+					.scale((float) (s.w * FxTune.d("shell.scaleXZ", 1.2)), (float) (s.h * FxTune.d("shell.scaleY", 1.06) / 2.0 * Math.max(0.05, grow)), (float) (s.w * FxTune.d("shell.scaleXZ", 1.2)));
+			lastVertices += FxMeshes.draw(ve, FxMeshes.get(FxMeshes.SHELL), m, FxMeshes.argb(tint, FxTune.d("shell.emissive", 0.30) * glow * FxMath.clamp(grow * 3)), 0xF000F0);
 		}
 	}
 

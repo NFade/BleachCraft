@@ -28,6 +28,24 @@ public final class RukiaEntityFx {
 	private RukiaEntityFx() {
 	}
 
+	/** True while an Absolute zero timeline (effect id 23) runs: its shells snap on in 0.12 s and burst into 12 shards at 8 b/s (5.4), the others use 0.25 s and 8 shards at 5 b/s (5.3). */
+	static boolean azActive() {
+		for (EffectTimeline t : FxTimelines.active()) {
+			if (t.effectId == 23 && !t.isEnded()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Shards per ENCASED shell on a burst: 12 for Absolute zero, 8 otherwise, fewer when many shells would exceed {@code maxShardMeshes}. */
+	static int azShellShards() {
+		int per = azActive() ? (int) FxTune.d("shell.shardsAz", 12) : (int) FxTune.d("shell.shards", 8);
+		int shells = Math.max(1, FxMeshPass.shells().size());
+		int cap = Math.max(1, FxConfig.maxShardMeshes);
+		return Math.max(3, Math.min(per, cap / shells));
+	}
+
 	public static void onEntityFx(MinecraftClient client, EntityFxS2C fx) {
 		ReiatsuTest.LOGGER.info("[fx] entity_fx kind={} until={} entities={}", fx.kind(), fx.untilTick(), fx.entityIds().length);
 		ClientWorld w = client.world;
@@ -49,10 +67,16 @@ public final class RukiaEntityFx {
 						continue;
 					}
 					boolean enc = fx.kind() == EntityFxS2C.ENCASED;
-					FxMeshPass.shell(id, enc, FxServerClock.fxTimeOf(fx.untilTick(), enc ? 1.5 : 4.0));
+					FxMeshPass.Shell sh = FxMeshPass.shell(id, enc, FxServerClock.fxTimeOf(fx.untilTick(), enc ? 1.5 : 4.0));
+					sh.grow = azActive() ? FxTune.d("shell.growAz", 0.12) : FxTune.d("shell.grow", enc ? 0.25 : 0.4);
 					shellsMade++;
 					FxSound.play(null, "block.amethyst_cluster.place", c.x, c.y, c.z, enc ? 1.4 : 1.2, 0.5);
-					puff(en, lod, enc ? 10 : 8, "#EAF8FF");
+					puff(en, lod, RukiaKit.count(enc ? 10 : 8), "#EAF8FF");
+					// the shell catches the light: 8 glints over its surface at the moment it snaps on
+					for (int i = 0; i < RukiaKit.count(8); i++) {
+						FxGlowBatch.sprite(GlowSprite.STAR4).at(c.x + (RNG.nextDouble() - 0.5) * en.getWidth() * 1.2, en.getY() + RNG.nextDouble() * en.getHeight(), c.z + (RNG.nextDouble() - 0.5) * en.getWidth() * 1.2)
+								.lifeTicks(9 + RNG.nextInt(5)).size(RukiaKit.size(0.4 + RNG.nextDouble() * 0.4)).color("#FFFFFF").peak(RukiaKit.glow(0.9)).twinkle().rot(RNG.nextDouble() * 6, 1).lod(lod).spawn();
+					}
 				}
 				case EntityFxS2C.SLOWED -> {
 					Double last = LAST_SLOW.get(id);
@@ -80,7 +104,7 @@ public final class RukiaEntityFx {
 		}
 		for (int i = 0; i < 3; i++) {
 			FxGlowBatch.sprite(GlowSprite.STAR4).at(p.x + (RNG.nextDouble() - 0.5) * w, p.y + RNG.nextDouble() * en.getHeight(), p.z + (RNG.nextDouble() - 0.5) * w).lifeTicks(9)
-					.size(0.4 + RNG.nextDouble() * 0.3).color("#FFFFFF").peak(0.9).twinkle().rot(RNG.nextDouble() * 6, 1).lod(lod).spawn();
+					.size(0.4 + RNG.nextDouble() * 0.3).color("#FFFFFF").peak(RukiaKit.glow(0.9)).twinkle().rot(RNG.nextDouble() * 6, 1).lod(lod).spawn();
 		}
 	}
 
@@ -89,20 +113,21 @@ public final class RukiaEntityFx {
 		hitsSeen++;
 		for (FxMeshPass.Shell s : FxMeshPass.shells()) {
 			if (s.entityId == en.getId() && s.encased) {
-				if (FxMeshPass.breakShell(en.getId(), 10, 5.0) != null) {
+				boolean az = azActive();
+				if (FxMeshPass.breakShell(en.getId(), azShellShards(), az ? FxTune.d("shell.speedAz", 8.0) : FxTune.d("shell.speed", 5.0)) != null) {
 					shellsBroken++;
 					FxSound.play(null, "block.glass.break", c.x, c.y, c.z, 1.2, 0.6);
 				}
 				break;
 			}
 		}
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < RukiaKit.count(6); i++) {
 			double a = RNG.nextDouble() * Math.PI * 2;
 			double s = 1.5 + RNG.nextDouble() * 3.0;
 			FxGlowBatch.sprite(GlowSprite.STAR4).at(c.x, c.y, c.z).vel(Math.cos(a) * s, (RNG.nextDouble() - 0.2) * 2.5, Math.sin(a) * s).drag(0.9).lifeTicks(10)
-					.size(0.4 + RNG.nextDouble() * 0.4).color("#EAF8FF").peak(0.95).twinkle().rot(RNG.nextDouble() * 6, 2).lod(lod).spawn();
+					.size(0.4 + RNG.nextDouble() * 0.4).color("#EAF8FF").peak(RukiaKit.glow(0.95)).twinkle().rot(RNG.nextDouble() * 6, 2).lod(lod).spawn();
 		}
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < RukiaKit.count(6); i++) {
 			double a = RNG.nextDouble() * Math.PI * 2;
 			double s = 2.0 + RNG.nextDouble() * 3.0;
 			FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(c.x, c.y, c.z).vel(Math.cos(a) * s, (RNG.nextDouble() - 0.3) * 3, Math.sin(a) * s).drag(0.92).life(14).size(0.4)
@@ -125,7 +150,7 @@ public final class RukiaEntityFx {
 			double h = s.height();
 			if (tickCounter % 10 == 0) {
 				FxGlowBatch.sprite(GlowSprite.STAR6).at(c.x + (RNG.nextDouble() - 0.5) * 0.7, c.y + (RNG.nextDouble() - 0.5) * h * 0.9, c.z + (RNG.nextDouble() - 0.5) * 0.7)
-						.lifeTicks(10).size(0.45 + RNG.nextDouble() * 0.3).color("#FFFFFF").peak(0.85).twinkle().rot(RNG.nextDouble() * 6, 1).spawn();
+						.lifeTicks(10).size(0.45 + RNG.nextDouble() * 0.3).color("#FFFFFF").peak(RukiaKit.glow(0.85)).twinkle().rot(RNG.nextDouble() * 6, 1).spawn();
 			}
 			if (!s.encased && tickCounter % 2 == 0) {
 				FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(c.x + (RNG.nextDouble() - 0.5) * 0.8, c.y + (RNG.nextDouble() - 0.5) * h, c.z + (RNG.nextDouble() - 0.5) * 0.8)
