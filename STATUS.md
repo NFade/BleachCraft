@@ -53,3 +53,16 @@ Four worktree branches were running in parallel, all stopped and pushed. None is
 
 Merge order recommendation: `srvdocs` -> `b4game` -> `phase6-fx` -> `p6rukia` (expect conflicts only in LOG.md/STATUS.md and shared FX scaffolding; resolve keeping both sides). Then Phase 6 steps 5, 8, 9, then third-person defects (hip-to-hand jump, swing animation seen from outside), then Phase 7 QA and Gate D (last Opus call).
 Rules for parallel agents (kept): one game window at a time via `bash /d/MineBleach-locks/game_lock.sh acquire|release <name>` (lock dir is outside the repo, on the machine of whoever runs; on another machine create an equivalent), batch code first then one harness run, 16 GB RAM means at most ~4 agents.
+
+## STOP POINT 2026-10-11 (user request: stop all, commit, push)
+All agents stopped, game closed, lock released. Uncommitted work saved as WIP commits on each branch (each branch LOG.md has a "STOP POINT" section). Nothing merged into `main` except the notes.
+
+| Branch | Last commit | State | Next |
+|---|---|---|---|
+| `srvdocs` | f52f169 | DONE: dedicated-server smoke test, README (EN+RU), QA checklist, credits | review and merge first |
+| `b4game` | 0cf6c9e | WIP: bankai 45 s timer, shunpo; tests being updated | build, finish B4 steps 4-5 |
+| `phase6-fx` | 4cc0c4c | WIP: Byakuya swarm + bankai rows (steps 3-4) | build, finish steps 3-4, then storm (5), Hakuteiken (8) |
+| `p6rukia` | d41d9e8 | WIP: Rukia shikai + bankai + Absolute zero (steps 6-7) | build, finish steps 6-7 |
+| `tp3` | f306d70 | WIP: third-person scabbard, draw transition, swing animation (T2-T4) | build, finish T2-T4 per design/TASKS_BACKLOG.md |
+
+Merge order: srvdocs -> b4game -> phase6-fx -> p6rukia -> tp3 (LOG.md / STATUS.md conflicts: keep both sides). Voice task T1 (vox-arcana ideas) is not started, see design/TASKS_BACKLOG.md.
