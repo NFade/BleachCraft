@@ -513,3 +513,7 @@ Only the first-person display transform changed (`sode_no_shirayuki_display.json
 - Edge vs spine identification relies on the OBJ cross section and the sign math; h0 `*_r90m` shows the other way round but was not compared against a known edge photo.
 - Byakuya shikai shows only the hilt and bankai nothing in the hand (as in B3), so the pose is only visible for his sealed state.
 - Left-hand third person, Fabulous graphics, a slim skin, a first-person swing with the new roll: not screenshotted.
+
+## 2026-10-10: Stop point (user paused the session)
+- `b4-fixes`: step 1 done (`1288362`). `b4-steps2-3-wip`: step 3 done (`c612dc7`), step 2 scabbard WIP (`110821d`, may not build). Steps 4 and 5 not started. Details and next actions: STATUS.md "In progress: fixes B4".
+- Orchestration so far this round: one sonnet agent per step in its own worktree, merged into `b4-fixes` after review. Leftover agent worktree folders under `.claude/worktrees/` are safe to delete (long paths: use `cmd /c rd /s /q "\?\<path>"`).
