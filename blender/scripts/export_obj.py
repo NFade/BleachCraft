@@ -65,6 +65,22 @@ def export_model(model, spec, out_dir=None):
     meta = {"format": 1, "units": "m", "space": "blender_zup",
             "empties": {e: [round(c, 6) for c in bpy.data.objects[e].matrix_world.translation] for e in spec["export_empties"]},
             "objects": {n: [round(c, 6) for c in bpy.data.objects[n].matrix_world.translation] for n in names}}
+    ba = spec.get("blade_axis")
+    if ba:
+        # Draw-from-scabbard note (Blender z-up space like the rest of the meta): the blade axis is +Z at the saya mouth (the sori parabola has its
+        # vertex there), the drawn sword is pulled out toward -Z. Exact draw = rotation about the centre of curvature of the BLADE's sori (R = blade length^2 / (2 x blade
+        # tip offset 0.080); measured: with this R the drawn blade stays inside the saya mesh for every pull-out (tested on the mesh up to 0.7 m; the blade sori is 80 mm, the saya's 92 mm, so the saya object is
+        # 1.6 mm wider in Y near the tip); a straight pull clips at 0.1 m, the saya's own R = 2.85 pokes out by up to 2.1 mm).
+        mo, tp = meta["empties"][ba["mouth"]], meta["empties"][ba["tip"]]
+        R = ba["arc_len"] ** 2 / (2.0 * ba["arc_tip_off"])
+        meta["blade_axis"] = {
+            "origin": mo, "direction": [0.0, 0.0, 1.0], "draw_direction": [0.0, 0.0, -1.0],
+            "blade_length": round(tp[2] - mo[2], 6), "clear_travel": round(tp[2] - mo[2], 6),
+            "note": "origin = centre of the saya mouth (tsuba touches it when sheathed); direction = tip direction of the sheathed blade; "
+                    "blade_length = distance from the mouth plane to the tip along the axis = the pull-out travel after which the whole blade has left the saya. "
+                    "A straight pull along draw_direction already clips the blade through the curved saya wall at 0.1 m (fine at 0.02 m); for the exact draw rotate the drawn sword "
+                    "about sori_arc.center around +X by +d / radius radians (d = travel along the blade), 0.5 m = 9.5 degrees.",
+            "sori_arc": {"center": [0.0, round(R, 6), mo[2]], "radius": round(R, 6), "rotation_axis": [1.0, 0.0, 0.0]}}
     with open(os.path.join(out, model + "_meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
     return reimport_check(model, names, out, meta)

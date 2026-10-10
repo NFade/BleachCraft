@@ -121,6 +121,14 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			}
 			states.byState[rs.ordinal()] = sm;
 		}
+		if (man.draw != null) {
+			// B4 step 2: the scabbard is its own mesh (drawn by the scabbard renderer in the left hand / on the hip); the sealed
+			// hand mesh is the bare sword. No shift: both share the model space of the grip.
+			List<String> sayaObjs = List.of(man.draw.saya());
+			states.saya = buildBase(mb, sayaObjs, sprite, cutout, translucent, NO_SHIFT, quadCount);
+			states.sayaGlow = buildGlow(mb, sayaObjs, sprite, glow, NO_SHIFT, quadCount);
+			states.sayaMeta = data.metaOf(man.draw.saya());
+		}
 
 		ModelTransformation transformation = display instanceof JsonUnbakedModel j ? j.getTransformations() : ModelTransformation.NONE;
 		Sprite particle = sprite.apply(man.objects.values().iterator().next().diffuse());
@@ -238,5 +246,9 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 
 	static final class BakedStates {
 		final StateMeshes[] byState = new StateMeshes[ReleaseState.values().length];
+		/** Scabbard (item with a {@code draw} manifest entry) in model space, null otherwise. */
+		Mesh saya;
+		Mesh sayaGlow;
+		dev.minebleach.reiatsutest.core.obj.ObjMeta sayaMeta;
 	}
 }

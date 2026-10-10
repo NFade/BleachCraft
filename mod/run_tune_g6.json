@@ -1,0 +1,1720 @@
+{
+ "candidates": [
+  {
+   "name": "g6_sealed_fp",
+   "view": "fp",
+   "state": "sealed",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_sealed_fp_left",
+   "view": "fp_left",
+   "state": "sealed",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_sealed_tp_front",
+   "view": "tp_front",
+   "state": "sealed",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_sealed_tp_back",
+   "view": "tp_back",
+   "state": "sealed",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_shikai_fp",
+   "view": "fp",
+   "state": "shikai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_shikai_fp_left",
+   "view": "fp_left",
+   "state": "shikai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_shikai_tp_front",
+   "view": "tp_front",
+   "state": "shikai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_shikai_tp_back",
+   "view": "tp_back",
+   "state": "shikai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_bankai_fp",
+   "view": "fp",
+   "state": "bankai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_bankai_fp_left",
+   "view": "fp_left",
+   "state": "bankai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_bankai_tp_front",
+   "view": "tp_front",
+   "state": "bankai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  },
+  {
+   "name": "g6_bankai_tp_back",
+   "view": "tp_back",
+   "state": "bankai",
+   "display": {
+    "thirdperson_righthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "thirdperson_lefthand": {
+     "rotation": [
+      45,
+      180,
+      0
+     ],
+     "translation": [
+      0,
+      -2,
+      1.75
+     ],
+     "scale": [
+      1.5,
+      1.5,
+      1.5
+     ]
+    },
+    "firstperson_righthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "firstperson_lefthand": {
+     "rotation": [
+      -90.0,
+      78.1,
+      78.4
+     ],
+     "translation": [
+      2.14,
+      -0.29,
+      -5
+     ],
+     "scale": [
+      2.4,
+      2.4,
+      2.4
+     ]
+    },
+    "ground": {
+     "rotation": [
+      90,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      3,
+      -4.5
+     ],
+     "scale": [
+      0.9,
+      0.9,
+      0.9
+     ]
+    },
+    "fixed": {
+     "rotation": [
+      0,
+      0,
+      45
+     ],
+     "translation": [
+      5.6,
+      -5.6,
+      0
+     ],
+     "scale": [
+      1.6,
+      1.6,
+      1.6
+     ]
+    },
+    "head": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      0.6,
+      0.6,
+      0.6
+     ]
+    },
+    "gui": {
+     "rotation": [
+      0,
+      0,
+      0
+     ],
+     "translation": [
+      0,
+      0,
+      0
+     ],
+     "scale": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    }
+   }
+  }
+ ]
+}

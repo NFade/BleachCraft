@@ -89,8 +89,11 @@ public final class ReiatsuHud {
 			ctx.drawText(font, t, x + BAR_W - font.getWidth(t), y - 10, 0xFFFFCC66, true);
 		}
 
-		if (state == ZanpakutoState.SEALED) {
-			Text hint = Text.translatable("hud.reiatsu_test.hint.release", ReiatsuKeys.RELEASE.getBoundKeyLocalizedText());
+		if (state == ZanpakutoState.SEALED || state == ZanpakutoState.BASE) {
+			// sheathed: the draw key (or a right click); drawn base form: the release key (no abilities before shikai)
+			Text hint = state == ZanpakutoState.SEALED
+					? Text.translatable("hud.reiatsu_test.hint.draw", ReiatsuKeys.DRAW.getBoundKeyLocalizedText())
+					: Text.translatable("hud.reiatsu_test.hint.release", ReiatsuKeys.RELEASE.getBoundKeyLocalizedText());
 			ctx.drawText(font, hint, x, y + BAR_H + 3, 0xFFCCCCCC, true);
 			return;
 		}

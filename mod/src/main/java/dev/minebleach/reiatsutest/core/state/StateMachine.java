@@ -71,7 +71,9 @@ public final class StateMachine {
 		long now = clock.nowTick();
 		ZanpakutoState target = r.target();
 		if (!legal(state, target)) {
-			return reject(RejectReason.NOT_IN_STATE);
+			// the one rejection with its own message: a release while the sword is still in the scabbard
+			return reject(state == ZanpakutoState.SEALED && target == ZanpakutoState.SHIKAI
+					? RejectReason.NOT_DRAWN : RejectReason.NOT_IN_STATE);
 		}
 		if (state == ZanpakutoState.SEALED) {
 			if (r.held() == CharacterId.NONE) {
@@ -96,9 +98,22 @@ public final class StateMachine {
 		ZanpakutoState from = state;
 		List<StateEvent> ev = new ArrayList<>();
 		switch (target) {
+			case BASE -> {
+				// T0: draw. Free; the character is locked here, the release effect waits for the shikai request
+				character = r.held();
+				state = ZanpakutoState.BASE;
+				stateSince = now;
+				mode = ShikaiMode.IDLE;
+				bankaiEnd = 0;
+				lastCast = now;
+				handLostSince = -1;
+				transitionLockEnd = now + cfg.transitionLockTicks();
+				castSerial++;
+				ev.add(new StateEvent.StateChanged(from, state, Trigger.REQUEST));
+				ev.add(new StateEvent.MirrorComponent(state));
+			}
 			case SHIKAI -> {
 				spend(cfg.shikaiReleaseCost(), ev);
-				character = r.held();
 				state = ZanpakutoState.SHIKAI;
 				stateSince = now;
 				mode = ShikaiMode.IDLE;
@@ -124,7 +139,12 @@ public final class StateMachine {
 				ev.add(new StateEvent.MirrorComponent(state));
 				ev.add(new StateEvent.BroadcastEffect(EffectIds.bankaiRelease(character), nextSeed(now, EffectIds.bankaiRelease(character))));
 			}
-			case SEALED -> revertToSealed(now, Trigger.REQUEST, EffectIds.SEAL, cfg.sealLockTicks(), true, ev);
+			case SEALED -> {
+				// T3: seal from SHIKAI / BANKAI keeps the 2 s release lock; sheathing the base form is free of it
+				int lock = from == ZanpakutoState.BASE ? cfg.sheatheLockTicks() : cfg.sealLockTicks();
+				int effect = from == ZanpakutoState.BASE ? 0 : EffectIds.SEAL;
+				revertToSealed(now, Trigger.REQUEST, effect, lock, true, ev);
+			}
 		}
 		return new TransitionResult(ResultCode.OK, null, from, state, ev);
 	}
@@ -411,7 +431,8 @@ public final class StateMachine {
 
 	private static boolean legal(ZanpakutoState from, ZanpakutoState to) {
 		return switch (from) {
-			case SEALED -> to == ZanpakutoState.SHIKAI;
+			case SEALED -> to == ZanpakutoState.BASE;
+			case BASE -> to == ZanpakutoState.SHIKAI || to == ZanpakutoState.SEALED;
 			case SHIKAI -> to == ZanpakutoState.BANKAI || to == ZanpakutoState.SEALED;
 			case BANKAI -> to == ZanpakutoState.SEALED;
 		};

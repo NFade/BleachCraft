@@ -28,3 +28,4 @@ mod/*.log
 
 # Claude Code agent worktrees
 .claude/worktrees/
+mod/tune_tmp/

@@ -12,6 +12,11 @@
       0.0,
       0.086432,
       0.978521
+    ],
+    "saya_mouth": [
+      0.0,
+      0.0,
+      0.256
     ]
   },
   "objects": {
@@ -24,6 +29,44 @@
       0.0,
       0.0,
       0.0
+    ],
+    "rukia_sealed_saya": [
+      0.0,
+      0.0,
+      0.0
     ]
+  },
+  "blade_axis": {
+    "origin": [
+      0.0,
+      0.0,
+      0.256
+    ],
+    "direction": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "draw_direction": [
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "blade_length": 0.722521,
+    "clear_travel": 0.722521,
+    "note": "origin = centre of the saya mouth (tsuba touches it when sheathed); direction = tip direction of the sheathed blade; blade_length = distance from the mouth plane to the tip along the axis = the pull-out travel after which the whole blade has left the saya. A straight pull along draw_direction already clips the blade through the curved saya wall at 0.1 m (fine at 0.02 m); for the exact draw rotate the drawn sword about sori_arc.center around +X by +d / radius radians (d = travel along the blade), 0.5 m = 9.5 degrees.",
+    "sori_arc": {
+      "center": [
+        0.0,
+        3.0276,
+        0.256
+      ],
+      "radius": 3.0276,
+      "rotation_axis": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    }
   }
 }

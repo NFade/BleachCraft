@@ -40,13 +40,45 @@ public final class ItemManifest {
 	/**
 	 * First person arm pose, in the item's model space (blocks, origin = grip_hand): {@code axis} = direction from the
 	 * shoulder toward the fist (the arm's long axis), {@code roll} = degrees about it, {@code grip} = where the fist centre
-	 * sits relative to the grip (blocks), {@code anchorPx} = extra shift in arm-local pixels, {@code scale} = arm size factor. Right-hand values;
+	 * sits relative to the grip (blocks), {@code anchorPx} = extra shift in arm-local pixels, {@code scale} = arm size factor; {@code vanilla} = ignore axis/roll/grip/scale and draw the arm exactly like the vanilla empty hand (only {@code anchorPx} nudges it). Right-hand values;
 	 * the left hand mirrors x and the roll.
 	 */
-	public record ArmPose(float[] axis, float roll, float[] grip, float[] anchorPx, float scale) {
+	public record ArmPose(float[] axis, float roll, float[] grip, float[] anchorPx, float scale, boolean vanilla) {
+	}
+
+	/**
+	 * Draw-from-scabbard animation of the SEALED hand mesh. {@code saya} and {@code blade} are objects of the sealed hand
+	 * list (the scabbard alone, and the sword = hilt + blade); {@code hold} = the point of the sealed model the player holds
+	 * (Blender coordinates, on the saya just above the tsuba: the model is shifted so this point sits where the shikai hilt
+	 * grip sits), {@code regrip} = fraction of the draw in which the hand slides from
+	 * {@code hold} to the hilt grip, {@code overshoot} = the saya travels this many times the clearing travel.
+	 */
+	public record DrawDef(String saya, String blade, float[] hold, float regrip, float overshoot) {
+	}
+
+	/**
+	 * First person stow pose of the sheathed sword and its scabbard (B4 step 2), in the HAND frame of the right-handed
+	 * display transform (x right, y up, z toward the camera): {@code rot} = degrees about hand x, y, z (applied z after y after
+	 * x) about the grip, {@code move} = blocks, {@code slideEnd} = part of the draw in which the blade slides out of the saya
+	 * (the rest is the swing to the held pose), {@code pull} = share of the blade travel done by the left hand pulling the
+	 * scabbard back, {@code retract} = metres of arc travel the scabbard stays pulled back in the drawn states. The left hand
+	 * mirrors y/z rotation and x.
+	 */
+	public record Stow(float[] rot, float[] move, float slideEnd, float pull, float retract) {
+	}
+
+	/**
+	 * Third person hip pose of the scabbard (body model space, pixels, +x = the wearer's left, +y down, -z forward):
+	 * {@code posPx} = where the grip point of the sealed model sits, {@code dir} = direction of the blade axis (hilt toward
+	 * the kojiri) in that space, {@code scale} = model scale (blocks per metre).
+	 */
+	public record Hip(float[] posPx, float[] dir, float scale) {
 	}
 
 	public String model;
+	public Stow stow; // null = defaults of the loader
+	public Hip hip;
+	public DrawDef draw; // null = no draw animation
 	public ArmPose firstPersonArm; // null = the item draws no first person arm
 	public final Map<String, Chain> chains = new LinkedHashMap<>();
 	public String displayModel;
@@ -64,6 +96,23 @@ public final class ItemManifest {
 		}
 		if (root.has("first_person_arm")) {
 			m.firstPersonArm = arm(root.getAsJsonObject("first_person_arm"));
+		}
+		if (root.has("draw")) {
+			JsonObject d = root.getAsJsonObject("draw");
+			m.draw = new DrawDef(d.get("saya").getAsString(), d.get("blade").getAsString(), vec(d, "hold", new float[3]),
+					d.has("regrip") ? d.get("regrip").getAsFloat() : 0.3f,
+					d.has("overshoot") ? d.get("overshoot").getAsFloat() : 1.12f);
+			if (d.has("stow")) {
+				JsonObject o = d.getAsJsonObject("stow");
+				m.stow = new Stow(vec(o, "rot", new float[3]), vec(o, "move", new float[3]),
+						o.has("slide_end") ? o.get("slide_end").getAsFloat() : 0.55f,
+						o.has("pull") ? o.get("pull").getAsFloat() : 0.6f, o.has("retract") ? o.get("retract").getAsFloat() : 0.3f);
+			}
+			if (d.has("hip")) {
+				JsonObject o = d.getAsJsonObject("hip");
+				m.hip = new Hip(vec(o, "pos_px", new float[3]), vec(o, "dir", new float[] {0, 0.35f, 0.94f}),
+						o.has("scale") ? o.get("scale").getAsFloat() : 1f);
+			}
 		}
 		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("objects").entrySet()) {
 			JsonObject o = e.getValue().getAsJsonObject();
@@ -91,7 +140,8 @@ public final class ItemManifest {
 
 	private static ArmPose arm(JsonObject a) {
 		return new ArmPose(vec(a, "axis", new float[] {-1, 0, 0}), a.has("roll") ? a.get("roll").getAsFloat() : 0f,
-				vec(a, "grip", new float[3]), vec(a, "anchor_px", new float[3]), a.has("scale") ? a.get("scale").getAsFloat() : 1f);
+				vec(a, "grip", new float[3]), vec(a, "anchor_px", new float[3]), a.has("scale") ? a.get("scale").getAsFloat() : 1f,
+				a.has("vanilla") && a.get("vanilla").getAsBoolean());
 	}
 
 	/** Arm pose of a state: its own {@code arm} override, else the item default (may be null = no arm). */

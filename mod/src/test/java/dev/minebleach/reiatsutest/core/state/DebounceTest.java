@@ -14,7 +14,7 @@ class DebounceTest {
 
 	@Test
 	void D1_duplicateReleaseOneTickApart() {
-		Fx f = new Fx();
+		Fx f = new Fx().toBase(R);
 		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
 		f.adv(1);
 		TransitionResult second = f.tr(ZanpakutoState.SHIKAI, R);
@@ -25,7 +25,7 @@ class DebounceTest {
 
 	@Test
 	void D2_releaseThenSealWithinTenTicks() {
-		Fx f = new Fx();
+		Fx f = new Fx().toBase(R);
 		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
 		f.adv(9);
 		assertEquals(RejectReason.TRANSITION_LOCK, f.tr(ZanpakutoState.SEALED, R).reason());
@@ -50,15 +50,29 @@ class DebounceTest {
 	@Test
 	void D4_replayedOrLowerSequenceIsIgnored() {
 		Fx f = new Fx();
-		assertTrue(f.sm.request(new TransitionRequest(ZanpakutoState.SHIKAI, RequestSource.VOICE, 5, R)).ok());
+		assertTrue(f.sm.request(new TransitionRequest(ZanpakutoState.BASE, RequestSource.VOICE, 5, R)).ok());
 		f.adv(11);
-		TransitionResult same = f.sm.request(new TransitionRequest(ZanpakutoState.SEALED, RequestSource.VOICE, 5, R));
+		TransitionResult same = f.sm.request(new TransitionRequest(ZanpakutoState.SHIKAI, RequestSource.VOICE, 5, R));
 		assertEquals(RejectReason.STALE_SEQ, same.reason());
-		TransitionResult lower = f.sm.request(new TransitionRequest(ZanpakutoState.SEALED, RequestSource.VOICE, 3, R));
+		TransitionResult lower = f.sm.request(new TransitionRequest(ZanpakutoState.SHIKAI, RequestSource.VOICE, 3, R));
 		assertEquals(RejectReason.STALE_SEQ, lower.reason());
 		assertEquals(ResultCode.RATE_LIMIT, lower.code());
-		assertEquals(ZanpakutoState.SHIKAI, f.sm.state());
-		assertTrue(f.sm.request(new TransitionRequest(ZanpakutoState.SEALED, RequestSource.VOICE, 6, R)).ok());
+		assertEquals(ZanpakutoState.BASE, f.sm.state());
+		assertTrue(f.sm.request(new TransitionRequest(ZanpakutoState.SHIKAI, RequestSource.VOICE, 6, R)).ok());
+	}
+
+	@Test
+	void D2b_releaseRightAfterTheDrawIsHeldBackByTheTransitionLock() {
+		Fx f = new Fx();
+		assertTrue(f.tr(ZanpakutoState.BASE, R).ok());
+		f.adv(3);
+		TransitionResult early = f.tr(ZanpakutoState.SHIKAI, R);
+		assertEquals(RejectReason.TRANSITION_LOCK, early.reason());
+		assertEquals(ResultCode.COOLDOWN, early.code());
+		assertEquals(ZanpakutoState.BASE, f.sm.state());
+		assertEquals(1000, f.sm.reiatsu().value(), "a held back release costs nothing");
+		f.adv(7);
+		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
 	}
 
 	@Test

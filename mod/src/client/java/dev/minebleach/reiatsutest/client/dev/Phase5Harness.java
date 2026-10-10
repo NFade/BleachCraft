@@ -6,6 +6,7 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.ClientState;
 import dev.minebleach.reiatsutest.client.net.ClientNet;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.RequestSource;
 import dev.minebleach.reiatsutest.core.state.StateMachine;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.server.VoiceControl;
@@ -184,6 +185,12 @@ public final class Phase5Harness {
 		return onServer(p -> sm(p).state());
 	}
 
+	/** The draw (SEALED to BASE) through the same server path as the J key and the right click, then waits out the transition lock. */
+	private static void drawSword() throws Exception {
+		onServer(p -> ZanpakutoManager.performTransition(p, ZanpakutoState.BASE, RequestSource.KEY, StateMachine.SERVER_SEQ));
+		Thread.sleep(700);
+	}
+
 	private static ZanpakutoState clientState() {
 		return ClientState.zanpakuto().zanpakutoState();
 	}
@@ -254,14 +261,25 @@ public final class Phase5Harness {
 		JsonObject st = get("/status");
 		check("V1 GET /status", st.get("_http").getAsInt() == 200 && "SEALED".equals(str(st, "state")) && "rukia".equals(str(st, "held")),
 				st.toString());
-		check("V1 status lists the phrases for this context", st.has("say") && st.getAsJsonArray("say").toString().contains("rukia.shikai.release"),
-				st.toString());
+		check("V1 status lists no phrase while the sword is sheathed", st.has("say") && st.getAsJsonArray("say").isEmpty(), st.toString());
 		JsonObject page = get("/");
 		check("V1 GET / serves the bridge page", page.get("_http").getAsInt() == 200 && str(page, "raw") != null && str(page, "raw").contains("Reiatsu Voice Bridge"),
 				page.toString().substring(0, Math.min(200, page.toString().length())));
 
-		// ---- V2 a misheard release phrase (ASR error) in SEALED with Rukia's sword
-		JsonObject r = post("my sode no shirayuki", "en-US", true);
+		// ---- V1b B4 step 3: with the sword still in the scabbard the release phrase is gated out (draw first)
+		JsonObject r = post("sode no shirayuki", "en-US", true);
+		check("V1b release phrase while SEALED: gated out, nothing happens", !matched(r) && "gated_out".equals(str(r, "reason")), r.toString());
+		check("V1b state still SEALED", serverState() == ZanpakutoState.SEALED, "server " + serverState());
+		drawSword();
+		check("V1b draw: server BASE", serverState() == ZanpakutoState.BASE, "server " + serverState());
+		check("V1b draw: client BASE", waitUntil(() -> clientState() == ZanpakutoState.BASE, 1000), "client " + clientState());
+		st = get("/status");
+		check("V1b status says BASE", "BASE".equals(str(st, "state")), st.toString());
+		check("V1b status lists the release phrase for the drawn base form", st.has("say") && st.getAsJsonArray("say").toString().contains("rukia.shikai.release"),
+				st.toString());
+
+		// ---- V2 a misheard release phrase (ASR error) in BASE with Rukia's sword
+		r = post("my sode no shirayuki", "en-US", true);
 		check("V2 release by voice: matched + accepted", matched(r) && "rukia.shikai.release".equals(str(r, "command")) && "OK".equals(str(r, "result")), r.toString());
 		check("V2 server state SHIKAI", serverState() == ZanpakutoState.SHIKAI, "server " + serverState());
 		check("V2 client state SHIKAI (attachment sync)", waitUntil(() -> clientState() == ZanpakutoState.SHIKAI, 1000), "client " + clientState());
@@ -274,7 +292,7 @@ public final class Phase5Harness {
 		check("V3 state unchanged", serverState() == ZanpakutoState.SHIKAI, "server " + serverState());
 
 		// ---- V4 voice cannot bypass the reiatsu rule: bankai needs a full bar, the bar is at 85
-		Thread.sleep(400);
+		Thread.sleep(700); // past the 10 tick transition lock of the release
 		r = post("Bankai, Hakka no Togame", "en-US", true);
 		check("V4 bankai without a full bar is denied by the server", matched(r) && "DENIED_REIATSU".equals(str(r, "result")), r.toString());
 		check("V4 state still SHIKAI", serverState() == ZanpakutoState.SHIKAI, "server " + serverState());
@@ -315,8 +333,9 @@ public final class Phase5Harness {
 		selectSlot(1);
 		serverCommands("reiatsu full");
 		Thread.sleep(2500); // release lock of the seal above
+		drawSword();
 		r = post("Chire, Senbonzakura", "ru-RU", true);
-		check("V8 Chire Senbonzakura releases (sealed)", matched(r) && "byakuya.shikai.release".equals(str(r, "command")) && "OK".equals(str(r, "result")), r.toString());
+		check("V8 Chire Senbonzakura releases (drawn base form)", matched(r) && "byakuya.shikai.release".equals(str(r, "command")) && "OK".equals(str(r, "result")), r.toString());
 		Thread.sleep(400);
 		r = post("bank eye", "en-US", true);
 		check("V8 'bank eye' with a bar below full is NOT bankai", !matched(r), r.toString());
@@ -365,13 +384,13 @@ public final class Phase5Harness {
 		for (int i = 0; i < RUNS; i++) {
 			onServer(p -> {
 				StateMachine m = sm(p);
-				ZanpakutoManager.applyExternal(p, m.devSetState(ZanpakutoState.SEALED, CharacterId.NONE));
+				ZanpakutoManager.applyExternal(p, m.devSetState(ZanpakutoState.BASE, CharacterId.RUKIA));
 				m.devSetReiatsu(1000);
 				ZanpakutoManager.applyExternal(p, List.of());
 				return null;
 			});
-			if (!waitUntil(() -> clientState() == ZanpakutoState.SEALED, 1000)) {
-				ReiatsuTest.LOGGER.warn(P + "client did not see SEALED before run {}", i);
+			if (!waitUntil(() -> clientState() == ZanpakutoState.BASE, 1000)) {
+				ReiatsuTest.LOGGER.warn(P + "client did not see BASE before run {}", i);
 			}
 			Thread.sleep(1650); // clears the per-command debounce of the previous run
 			int ev = ClientNet.EFFECT_EVENTS.get();

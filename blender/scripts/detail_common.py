@@ -366,3 +366,47 @@ def set_empties(coll, items):
         bb.link_only(e, coll)
         out[n] = tuple(loc)
     return out
+
+
+# ------------------------------------------------------------------ saya alone (draw animation)
+LINER_TEXEL = (99.0, 110.0)    # atlas px (99 = border between the two dark edge columns of the island `saya`, rows 109/110 dark)
+
+
+def build_saya(mb, L, z_mouth, z_s0, z_s1, length, tip_off, sa=0.013, sb=0.020, n_rings=12, liner_inset=0.002, liner_rings=6,
+               widen_y=0.0016, widen_z=(0.70, 0.91)):
+    """Scabbard alone, same outer rings / UVs as the saya + koiguchi + kojiri of `<model>_sheathed`, but ONE closed shell with an open mouth:
+    outer koiguchi (z_mouth .. z_s0, +1 mm) -> 1 mm step -> saya (z_s0 .. z_s1) -> 0.5 mm step -> kojiri + cap; a mouth lip at z_mouth joins the
+    koiguchi to a dark inner liner (normals toward the axis) that runs to z_s1 and is capped there. Liner UVs are collapsed on a dark texel of the
+    `saya` island (no new texture). Shared vertices everywhere, so finish() recalculates all normals outward from the solid wall.
+    widen_y: the drawn blade (sori tip offset 80 mm) lies against the -Y wall of the saya (sori tip offset 92 mm) and pokes 1.2 mm through it at z 0.91 (yokote),
+    so the Y semi axis of every ring grows linearly by widen_y between widen_z[0] and widen_z[1] (0 below, widen_y above); 1.6 mm = 0.8 px at 500 px/m."""
+    def ex(z):
+        u = min(1.0, max(0.0, (z - widen_z[0]) / (widen_z[1] - widen_z[0])))
+        return widen_y * u
+
+    def sr(a, b, z):
+        return bb.ring_pts(bb.oval(a, b + ex(z), 16), z, bb.sori_off(z, z_mouth, length, tip_off), bb.sori_phi(z, z_mouth, length, tip_off))
+
+    def ring_quads(va, vb, uv):
+        n = len(va)
+        for k in range(n):
+            mb.face([va[k], va[(k + 1) % n], vb[(k + 1) % n], vb[k]], [uv] * 4, False)
+
+    saya = [sr(sa, sb, z_s0 + (z_s1 - z_s0) * i / (n_rings - 1)) for i in range(n_rings)]
+    v_saya = tube(mb, saya, 4, L["saya"], [i / (n_rings - 1) for i in range(n_rings)], True)
+    v_koi = tube(mb, [sr(sa + 0.001, sb + 0.001, z_mouth), sr(sa + 0.001, sb + 0.001, z_s0)], 4, L["koiguchi"], [0.0, 1.0], False)
+    ring_quads(v_koi[1], v_saya[0], L["koiguchi"].uv(0.5, 0.5))          # 1 mm step koiguchi -> saya, flat, collapsed on one koiguchi texel
+    kz = [(z_s1, 1.0), (z_s1 + 0.012, 0.88), (z_s1 + 0.018, 0.45)]
+    v_koj = tube(mb, [sr(sa * k + 0.0005, sb * k + 0.0005, z) for z, k in kz], 4, L["kojiri"], [0.0, 0.7, 1.0], False,
+                 cap1=(L["kojiri_cap"], 450.0, False))
+    ring_quads(v_saya[-1], v_koj[0], L["kojiri"].uv(0.5, 0.5))           # 0.5 mm step saya -> kojiri
+    # inner liner: the same sori centre line, inset by liner_inset on both axes; rings spread evenly between the mouth and z_s1
+    ls = [z_mouth + (z_s1 - z_mouth) * i / (liner_rings - 1) for i in range(liner_rings)]
+    lu, lv = LINER_TEXEL
+    dark = ((lu) / L["saya"].atlas, 1.0 - lv / L["saya"].atlas)
+    v_lin = [[mb.v(p) for p in sr(sa - liner_inset, sb - liner_inset, z)] for z in ls]
+    ring_quads(v_koi[0], v_lin[0], L["koiguchi"].uv(0.5, 0.5))           # mouth lip (wall thickness), faces the mouth
+    for i in range(liner_rings - 1):
+        ring_quads(v_lin[i], v_lin[i + 1], dark)
+    mb.face(v_lin[-1], [dark] * 16, False)                               # liner end cap
+    return {"liner_inset": liner_inset, "liner_z": ls}

@@ -51,16 +51,16 @@ class AutoRevertTest {
 		cap.adv(900);
 		assertEquals(ZanpakutoState.SEALED, cap.sm.state());
 		cap.adv(159);
-		assertEquals(RejectReason.RELEASE_LOCK, cap.tr(ZanpakutoState.SHIKAI, R).reason());
+		assertEquals(RejectReason.RELEASE_LOCK, cap.tr(ZanpakutoState.BASE, R).reason());
 		cap.adv(1);
-		assertTrue(cap.tr(ZanpakutoState.SHIKAI, R).ok());
+		assertTrue(cap.tr(ZanpakutoState.BASE, R).ok());
 
 		Fx seal = new Fx().toShikai(R);
 		assertTrue(seal.tr(ZanpakutoState.SEALED, R).ok());
 		seal.adv(39);
-		assertEquals(RejectReason.RELEASE_LOCK, seal.tr(ZanpakutoState.SHIKAI, R).reason());
+		assertEquals(RejectReason.RELEASE_LOCK, seal.tr(ZanpakutoState.BASE, R).reason());
 		seal.adv(1);
-		assertTrue(seal.tr(ZanpakutoState.SHIKAI, R).ok());
+		assertTrue(seal.tr(ZanpakutoState.BASE, R).ok());
 	}
 
 	@Test
@@ -103,7 +103,38 @@ class AutoRevertTest {
 		assertEquals(ZanpakutoState.SEALED, gone.sm.state());
 		assertEquals(Trigger.HAND_LOST, Fx.lastChange(ev).trigger());
 		// release lock is 0 after a hand loss
-		assertTrue(gone.tr(ZanpakutoState.SHIKAI, R).ok());
+		assertTrue(gone.tr(ZanpakutoState.BASE, R).ok());
+	}
+
+	@Test
+	void A5b_handGraceAlsoAppliesToTheBaseForm() {
+		Fx back = new Fx().toBase(R);
+		back.sm.onHandChanged(CharacterId.NONE);
+		back.adv(19);
+		assertEquals(ZanpakutoState.BASE, back.sm.state());
+		assertEquals(RejectReason.WRONG_ITEM, back.tr(ZanpakutoState.SHIKAI, R).reason(), "no release during the grace");
+		back.sm.onHandChanged(R);
+		back.adv(5);
+		assertEquals(ZanpakutoState.BASE, back.sm.state());
+		assertTrue(back.tr(ZanpakutoState.SHIKAI, R).ok());
+
+		Fx gone = new Fx().toBase(R);
+		gone.sm.onHandChanged(CharacterId.NONE);
+		gone.adv(19);
+		assertEquals(ZanpakutoState.BASE, gone.sm.state());
+		List<StateEvent> ev = gone.adv(1);
+		assertEquals(ZanpakutoState.SEALED, gone.sm.state());
+		assertEquals(Trigger.HAND_LOST, Fx.lastChange(ev).trigger());
+		assertEquals(ZanpakutoState.SEALED, Fx.events(ev, StateEvent.MirrorComponent.class).get(0).state());
+		assertEquals(CharacterId.NONE, gone.sm.character());
+	}
+
+	@Test
+	void A5c_swappingTheHandToAnotherZanpakutoLosesTheBaseForm() {
+		Fx f = new Fx().toBase(R);
+		f.sm.onHandChanged(B);
+		f.adv(20);
+		assertEquals(ZanpakutoState.SEALED, f.sm.state());
 	}
 
 	@Test
@@ -114,6 +145,11 @@ class AutoRevertTest {
 		assertEquals(Trigger.ITEM_DROPPED, Fx.lastChange(ev).trigger());
 		assertTrue(Fx.has(ev, StateEvent.CancelEffects.class));
 		assertTrue(f.sm.onItemDropped().isEmpty(), "dropping while sealed does nothing");
+
+		Fx base = new Fx().toBase(B);
+		List<StateEvent> ev2 = base.sm.onItemDropped();
+		assertEquals(ZanpakutoState.SEALED, base.sm.state());
+		assertEquals(Trigger.ITEM_DROPPED, Fx.lastChange(ev2).trigger());
 	}
 
 	@Test
@@ -140,6 +176,31 @@ class AutoRevertTest {
 	}
 
 	@Test
+	void A7b_deathLogoutDimensionAlsoResetTheBaseForm() {
+		for (Trigger t : new Trigger[] {Trigger.DEATH, Trigger.LOGOUT, Trigger.DIMENSION_CHANGE}) {
+			Fx f = new Fx().toBase(R);
+			List<StateEvent> ev = switch (t) {
+				case DEATH -> f.sm.onDeath();
+				case LOGOUT -> f.sm.onLogout();
+				default -> f.sm.onDimensionChange();
+			};
+			assertEquals(ZanpakutoState.SEALED, f.sm.state(), t.name());
+			assertEquals(CharacterId.NONE, f.sm.character(), t.name());
+			assertEquals(t, Fx.lastChange(ev).trigger());
+			assertEquals(ZanpakutoState.BASE, Fx.lastChange(ev).from());
+			assertEquals(ZanpakutoState.SEALED, Fx.events(ev, StateEvent.MirrorComponent.class).get(0).state(), t.name());
+		}
+	}
+
+	@Test
+	void A7c_spectatorModeResetsTheBaseForm() {
+		Fx f = new Fx().toBase(B);
+		f.sm.setSpectator(true);
+		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+		assertEquals(RejectReason.DEAD_OR_SPECTATOR, f.tr(ZanpakutoState.BASE, B).reason());
+	}
+
+	@Test
 	void A8_respawnGivesHalfABar() {
 		Fx f = new Fx();
 		f.sm.onDeath();
@@ -158,6 +219,6 @@ class AutoRevertTest {
 		assertEquals(RejectReason.DEAD_OR_SPECTATOR, f.tr(ZanpakutoState.SHIKAI, R).reason());
 		f.sm.setSpectator(false);
 		f.adv(60);
-		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
+		assertTrue(f.tr(ZanpakutoState.BASE, R).ok());
 	}
 }
