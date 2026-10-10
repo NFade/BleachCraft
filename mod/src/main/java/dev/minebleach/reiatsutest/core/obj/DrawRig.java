@@ -45,9 +45,17 @@ public final class DrawRig {
 	/** Travel along the blade after which the whole blade has left the saya (with a small margin). */
 	public final float slideTravel;
 	public final Rigid stow;
+	/** Share (0..1) of the blade travel that is done by the left hand pulling the scabbard back (saya-biki); the rest is the sword. */
+	public final float pull;
+	/** Travel along the arc (metres) by which the scabbard is pulled back in the drawn state (the left hand carries it there). */
+	public final float retract;
 	public final float[] origin = {0.5f, 0.5f, 0.5f};
 
 	public DrawRig(ObjMeta saya, Rigid stow, float slideEnd) {
+		this(saya, stow, slideEnd, 0f, 0f);
+	}
+
+	public DrawRig(ObjMeta saya, Rigid stow, float slideEnd, float pull, float retract) {
 		if (saya.bladeAxis == null) {
 			throw new IllegalArgumentException("draw rig needs blade_axis in the saya model meta");
 		}
@@ -63,10 +71,18 @@ public final class DrawRig {
 		this.slideTravel = b.clearTravel() * 1.04f; // 4 percent margin: the kissaki is clear of the mouth at the end of the slide
 		this.stow = stow;
 		this.slideEnd = slideEnd;
+		this.pull = pull;
+		this.retract = retract;
 	}
 
 	/** Test constructor with explicit arc numbers. */
 	public DrawRig(float centreY, float centreZ, float radius, float slideTravel, Rigid stow, float slideEnd) {
+		this(centreY, centreZ, radius, slideTravel, stow, slideEnd, 0f, 0f);
+	}
+
+	public DrawRig(float centreY, float centreZ, float radius, float slideTravel, Rigid stow, float slideEnd, float pull, float retract) {
+		this.pull = pull;
+		this.retract = retract;
 		this.centreY = centreY;
 		this.centreZ = centreZ;
 		this.radius = radius;
@@ -104,13 +120,34 @@ public final class DrawRig {
 			return Rigid.IDENTITY;
 		}
 		if (p <= slideEnd) {
-			return stow.after(arc(clearAngle() * (p / slideEnd)));
+			return stow.after(arc(clearAngle() * (1f - pull) * (p / slideEnd)));
 		}
-		Rigid clear = stow.after(arc(clearAngle()));
+		Rigid clear = stow.after(arc(clearAngle() * (1f - pull)));
 		float s = smooth((p - slideEnd) / (1f - slideEnd));
 		float[] q = slerp(clear.q, Rigid.IDENTITY.q, s);
 		float[] t = {clear.t[0] * (1 - s), clear.t[1] * (1 - s), clear.t[2] * (1 - s)};
 		return new Rigid(q, t);
+	}
+
+	/**
+	 * Pose of the scabbard at draw progress p (the saya mesh shares the model space of the sword): at the stow pose when
+	 * sheathed; while the blade slides out the scabbard is pulled back along the same arc by {@code pull} of the travel (the
+	 * sword is {@code saya after arc(travel)}, so blade and saya wall stay in contact exactly as with a fixed saya); after
+	 * the slide it settles at the carry pose (retracted by {@code retract} metres of travel), where it stays.
+	 */
+	public Rigid sayaAt(float p) {
+		float a;
+		if (p <= 0f) {
+			a = 0f;
+		} else if (p <= slideEnd) {
+			a = -clearAngle() * pull * (p / slideEnd);
+		} else {
+			float s = smooth((p - slideEnd) / (1f - slideEnd));
+			float from = -clearAngle() * pull;
+			float to = -retract / radius;
+			a = from + (to - from) * s;
+		}
+		return stow.after(arc(a));
 	}
 
 	/** Where the grip point (the fist) is at progress p, model space; the held pose has it at the origin (0.5, 0.5, 0.5). */

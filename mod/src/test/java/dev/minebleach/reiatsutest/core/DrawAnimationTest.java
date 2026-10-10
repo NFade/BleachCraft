@@ -42,6 +42,8 @@ class DrawAnimationTest {
 			assertNotNull(m.hip, c.item() + ": hip pose");
 			assertTrue(m.stow.slideEnd() > 0.2f && m.stow.slideEnd() < 0.9f);
 			assertEquals(3, m.hip.dir().length);
+			assertTrue(m.stow.pull() > 0f && m.stow.pull() < 1f, c.item() + ": the left hand pulls the scabbard back");
+			assertTrue(m.stow.retract() >= 0f && m.stow.retract() < 0.5f);
 			assertTrue(m.objects.containsKey(m.draw.saya()));
 			ObjMeta meta = ObjMeta.parse(text("models/obj/" + c.model() + "/" + c.model() + "_meta.json"));
 			assertNotNull(meta.bladeAxis, "blade_axis in " + c.model());

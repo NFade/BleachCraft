@@ -651,6 +651,10 @@ public final class SpikeHarness {
 					case "frame" -> view(60.5 + dx, -60, 0.5, 0, 0);
 					default -> view(0.5, -60, 0.5, 0, 20);
 				}
+				if (c.has("cam")) { // explicit camera: [x, y, z, yaw, pitch] (y is the feet level, eye is 1.62 above)
+					com.google.gson.JsonArray cam = c.getAsJsonArray("cam");
+					view(cam.get(0).getAsDouble(), cam.get(1).getAsDouble(), cam.get(2).getAsDouble(), cam.get(3).getAsFloat(), cam.get(4).getAsFloat());
+				}
 			});
 			if (view.equals("fp_swing")) {
 				step("tune " + name + ": swing", c.has("swing_ticks") ? c.get("swing_ticks").getAsInt() : 3, () -> mc.player.swingHand(net.minecraft.util.Hand.MAIN_HAND));

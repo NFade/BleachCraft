@@ -77,15 +77,19 @@ public final class ScabbardRenderer {
 	// ------------------------------------------------------------------ first person
 
 	/** Called at the end of {@code HeldItemRenderer#renderItem(F,...)}: matrices are in the camera frame (sway applied). */
-	public static void renderFirstPerson(MatrixStack m, VertexConsumerProvider vcp, ClientPlayerEntity player, int light) {
+	public static void renderFirstPerson(MatrixStack m, VertexConsumerProvider vcp, ClientPlayerEntity player, int light,
+			ItemStack shown, float equip) {
 		if (player.isInvisible() || player.isUsingSpyglass()) {
 			return;
 		}
-		ItemStack main = player.getMainHandStack();
+		// the stack the first person renderer shows (the cached one: during an equip animation it is the old item); equip 0..1
+		// is the vanilla raise progress of the main hand, the scabbard rises with it
+		ItemStack main = shown;
 		ObjItemBakedModel om = modelOf(player, main);
 		if (om == null) {
 			return;
 		}
+		float eqY = -0.6f * (1f - Math.max(0f, Math.min(1f, equip)));
 		boolean left = player.getMainArm() == Arm.LEFT;
 		ModelTransformationMode mode = left ? ModelTransformationMode.FIRST_PERSON_LEFT_HAND : ModelTransformationMode.FIRST_PERSON_RIGHT_HAND;
 		int i = left ? -1 : 1;
@@ -95,11 +99,12 @@ public final class ScabbardRenderer {
 		Matrix4f baseInv = new Matrix4f(m.peek().getPositionMatrix()).invert();
 
 		m.push();
-		m.translate(i * 0.56f, -0.52f, -0.72f); // the resting main hand frame (equip and swing do not move the left hand)
+		m.translate(i * 0.56f, -0.52f + eqY, -0.72f); // the resting main hand frame (swing does not move the scabbard)
 		tr.apply(left, m);
 		m.translate(-0.5f, -0.5f, -0.5f);
-		m.translate(rig.stow.t()[0], rig.stow.t()[1], rig.stow.t()[2]);
-		m.multiply(new Quaternionf(rig.stow.q()[0], rig.stow.q()[1], rig.stow.q()[2], rig.stow.q()[3]));
+		DrawRig.Rigid sp = rig.sayaAt(DrawTracker.effectiveProgress(player, main)); // pulled back while the blade leaves it
+		m.translate(sp.t()[0], sp.t()[1], sp.t()[2]);
+		m.multiply(new Quaternionf(sp.q()[0], sp.q()[1], sp.q()[2], sp.q()[3]));
 		VertexConsumer vc = vcp.getBuffer(TexturedRenderLayers.getEntityCutout());
 		drawMesh(om.sayaMesh(), m.peek(), vc, light);
 
@@ -113,7 +118,7 @@ public final class ScabbardRenderer {
 			d.div(unit);
 			Vector3f fist = new Vector3f(-i * FIST_X, FIST_Y, FIST_Z);
 			float s = new Vector3f(fist).sub(g).dot(d) / unit; // metres from the grip along the blade
-			s = Math.max(0.30f, Math.min(0.66f, s));
+			s = Math.max(0.12f, Math.min(0.70f, s));
 			Vector3f hold = new Vector3f(g).fma(s * unit, d);
 			Vector3f delta = hold.sub(fist);
 			if (DEBUG && (System.nanoTime() / 1_000_000_000L) % 2 == 0) {
@@ -121,7 +126,7 @@ public final class ScabbardRenderer {
 			}
 			m.pop();
 			m.push();
-			m.translate(-i * 0.56f, -0.52f, -0.72f);
+			m.translate(-i * 0.56f, -0.52f + eqY, -0.72f);
 			m.translate(delta.x, delta.y, delta.z);
 			FirstPersonHand.renderVanillaArmAt(MinecraftClient.getInstance(), player, !left, m, vcp, light);
 		}

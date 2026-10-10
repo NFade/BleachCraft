@@ -106,6 +106,51 @@ class DrawRigTest {
 		assertVec(a.apply(b.apply(v)), a.after(b).apply(v), 1e-5f, "after()");
 	}
 
+	private static DrawRig pulled() {
+		return new DrawRig(CY, CZ, R, 0.7225f * 1.04f, stow(), 0.55f, 0.55f, 0.15f);
+	}
+
+	@Test
+	void theScabbardIsPulledBackWhileTheBladeStaysOnTheSayaWall() {
+		DrawRig r = pulled();
+		float[] v = {0.5f, 0.9f, 0.5f};
+		assertVec(stow().apply(v), r.sayaAt(0f).apply(v), 1e-5f, "saya starts at the stow pose");
+		assertVec(stow().apply(v), r.at(0f).apply(v), 1e-5f, "sword starts at the stow pose");
+		for (int i = 1; i <= 20; i++) {
+			float p = r.slideEnd * i / 20f;
+			// relative pose sword = saya after arc(travel): the blade rides the saya wall exactly as with a fixed saya
+			float travelAngle = r.clearAngle() * (p / r.slideEnd);
+			DrawRig.Rigid want = r.sayaAt(p).after(r.arc(travelAngle));
+			assertVec(want.apply(v), r.at(p).apply(v), 1e-4f, "sword = saya o arc at p=" + p);
+		}
+		// the left hand's share: the saya moved by pull * travel, the sword by the rest
+		float[] g0 = r.origin;
+		float[] sword = r.at(r.slideEnd).apply(g0);
+		float[] sword0 = stow().apply(g0);
+		assertEquals(r.slideTravel * (1f - r.pull), dist(sword, sword0), 0.002f);
+		float[] saya = r.sayaAt(r.slideEnd).apply(g0);
+		assertEquals(r.slideTravel * r.pull, dist(saya, sword0), 0.002f);
+	}
+
+	@Test
+	void theScabbardEndsAtTheCarryPoseAndStaysThere() {
+		DrawRig r = pulled();
+		float[] v = {0.5f, 0.8f, 0.5f};
+		DrawRig.Rigid carry = stow().after(r.arc(-r.retract / R));
+		assertVec(carry.apply(v), r.sayaAt(1f).apply(v), 1e-5f, "p=1");
+		assertVec(carry.apply(v), r.sayaAt(3f).apply(v), 1e-5f, "above 1 clamps");
+		float[] prev = r.sayaAt(0f).apply(v);
+		for (int i = 1; i <= 400; i++) {
+			float[] cur = r.sayaAt(i / 400f).apply(v);
+			assertTrue(dist(prev, cur) < 0.05f, "saya moves smoothly");
+			prev = cur;
+		}
+		// no pull and no retract: the scabbard never moves (the old rig)
+		DrawRig fixed = rig();
+		assertVec(stow().apply(v), fixed.sayaAt(0.3f).apply(v), 1e-6f, "fixed saya");
+		assertVec(stow().apply(v), fixed.sayaAt(1f).apply(v), 1e-6f, "fixed saya, carry");
+	}
+
 	private static float dist(float[] a, float[] b) {
 		float x = a[0] - b[0];
 		float y = a[1] - b[1];

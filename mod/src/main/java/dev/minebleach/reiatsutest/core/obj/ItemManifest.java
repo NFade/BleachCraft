@@ -60,9 +60,11 @@ public final class ItemManifest {
 	 * First person stow pose of the sheathed sword and its scabbard (B4 step 2), in the HAND frame of the right-handed
 	 * display transform (x right, y up, z toward the camera): {@code rot} = degrees about hand x, y, z (applied z after y after
 	 * x) about the grip, {@code move} = blocks, {@code slideEnd} = part of the draw in which the blade slides out of the saya
-	 * (the rest is the swing to the held pose). The left hand mirrors y/z rotation and x.
+	 * (the rest is the swing to the held pose), {@code pull} = share of the blade travel done by the left hand pulling the
+	 * scabbard back, {@code retract} = metres of arc travel the scabbard stays pulled back in the drawn states. The left hand
+	 * mirrors y/z rotation and x.
 	 */
-	public record Stow(float[] rot, float[] move, float slideEnd) {
+	public record Stow(float[] rot, float[] move, float slideEnd, float pull, float retract) {
 	}
 
 	/**
@@ -103,7 +105,8 @@ public final class ItemManifest {
 			if (d.has("stow")) {
 				JsonObject o = d.getAsJsonObject("stow");
 				m.stow = new Stow(vec(o, "rot", new float[3]), vec(o, "move", new float[3]),
-						o.has("slide_end") ? o.get("slide_end").getAsFloat() : 0.55f);
+						o.has("slide_end") ? o.get("slide_end").getAsFloat() : 0.55f,
+						o.has("pull") ? o.get("pull").getAsFloat() : 0.6f, o.has("retract") ? o.get("retract").getAsFloat() : 0.3f);
 			}
 			if (d.has("hip")) {
 				JsonObject o = d.getAsJsonObject("hip");

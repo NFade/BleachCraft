@@ -4,8 +4,8 @@
   "emissive_tint": "FFBFE4FF",
   "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
   "draw": {"saya": "rukia_sealed_saya", "blade": "rukia_sealed_drawn", "hold": [0, 0, 0.33], "regrip": 0.3, "overshoot": 1.12,
-    "stow": {"rot": [0, 0, 75], "move": [-0.5, 0.22, 0], "slide_end": 0.55},
-    "hip": {"pos_px": [6.4, 9.5, -0.5], "dir": [0, 0.42, 0.9], "scale": 0.9}},
+    "stow": {"rot": [0, 0, 104], "move": [-0.4, 0.24, 0], "slide_end": 0.55, "pull": 0.55, "retract": 0.15},
+    "hip": {"pos_px": [8.6, 9.5, 0.5], "dir": [0, 0.6, 0.8], "scale": 1.0}},
   "objects": {
     "rukia_sealed_drawn": {"diffuse": "rukia_sealed_diffuse"},
     "rukia_sealed_sheathed": {"diffuse": "rukia_sealed_diffuse"},

@@ -189,9 +189,9 @@ public final class ObjItemBakedModel implements BakedModel {
 		DrawRig r = left ? rigLeft : rigRight;
 		if (r == null) {
 			ItemManifest.Stow st = manifest.stow != null ? manifest.stow
-					: new ItemManifest.Stow(new float[3], new float[3], 0.55f);
+					: new ItemManifest.Stow(new float[3], new float[3], 0.55f, 0.6f, 0.3f);
 			ModelTransformationMode mode = left ? ModelTransformationMode.FIRST_PERSON_LEFT_HAND : ModelTransformationMode.FIRST_PERSON_RIGHT_HAND;
-			r = new DrawRig(states.sayaMeta, HandMath.stowToModel(getTransformation().getTransformation(mode), left, st), st.slideEnd());
+			r = new DrawRig(states.sayaMeta, HandMath.stowToModel(getTransformation().getTransformation(mode), left, st), st.slideEnd(), st.pull(), st.retract());
 			if (left) {
 				rigLeft = r;
 			} else {
