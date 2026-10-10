@@ -18,6 +18,8 @@ public final class SealFx {
 	public static void play(EffectEventS2C e) {
 		int id = e.effectId();
 		boolean end = id == 11;
+		SwarmFx.end(e.casterId());
+		RowsFx.end(e.casterId());
 		CharacterId ch = AuraFx.lastCharacter(e.casterId());
 		boolean rukia = ch != CharacterId.BYAKUYA;
 		Vec3d pos = new Vec3d(e.x(), e.y(), e.z());

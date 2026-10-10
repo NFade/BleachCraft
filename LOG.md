@@ -810,3 +810,6 @@ Real shunpo 9.00 blocks along +z, reiatsu cost 5.0, the second press is COOLDOWN
 - Anti-cheat plugins that flag teleports were not considered.
 
 ## 2026-10-11: STOP POINT (b4game): tests being updated; not reviewed. Next: build, finish per FIXES_B4 steps 4-5.
+## 2026-10-10: STOP POINT (phase6-fx): Byakuya swarm (step 3) and bankai rows (step 4) written in part, a first harness run was in progress; nothing reviewed or committed as a closed step. Verify build/tests first. Continue per design/VFX_STORYBOARD.md section 10 steps 3-4.
+
+## 2026-10-11: STOP POINT (phase6-fx): steps 3-4 in progress; not reviewed. Next: build, finish per VFX_STORYBOARD section 10.

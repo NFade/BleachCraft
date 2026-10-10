@@ -77,7 +77,8 @@ final class CastContext {
 			}
 			case HAKUTEIKEN -> {
 				size = spec.floatNum(AbilityParams.LENGTH);
-				size2 = spec.floatNum(AbilityParams.RADIUS);
+				// S4: the length of the server ray really used (the white line ends exactly at the server burst)
+				size2 = (float) Math.min(size, eye.distanceTo(aim));
 			}
 			default -> size = 0f;
 		}

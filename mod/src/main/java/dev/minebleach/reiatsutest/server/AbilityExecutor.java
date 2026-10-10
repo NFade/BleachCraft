@@ -176,9 +176,11 @@ final class AbilityExecutor {
 
 	private static void modeAttack(ServerPlayerEntity p, CastContext ctx) {
 		AbilitySpec sp = ctx.spec;
-		for (LivingEntity e : Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS))) {
+		List<LivingEntity> hit = Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
+		for (LivingEntity e : hit) {
 			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 		}
+		ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit); // S5: hit sparks of the swarm envelope
 	}
 
 	private static void scatter(ServerPlayerEntity p, int phase, CastContext ctx) {

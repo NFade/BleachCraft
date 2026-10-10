@@ -273,7 +273,11 @@ public final class ScreenFx {
 				scale = (float) (1.15 - 0.15 * FxMath.ios((FxClock.now - v.start) / v.ramp));
 			}
 			RenderSystem.defaultBlendFunc();
-			quadTex(m, v.kind == Kind.DARK ? VIGNETTE_DARK : FROST_EDGE, w, h, scale, v.rgb, (float) Math.min(1.0, a));
+			if (v.kind == Kind.DARK) {
+				radialVignette(m, w, h, v.rgb, (float) Math.min(1.0, a));
+			} else {
+				quadTex(m, FROST_EDGE, w, h, scale, v.rgb, (float) Math.min(1.0, a));
+			}
 		}
 		double flashTotal = 0;
 		float fr = 0;
@@ -385,6 +389,37 @@ public final class ScreenFx {
 		RenderSystem.setProjectionMatrix(proj, sorter);
 		mv.popMatrix();
 		RenderSystem.applyModelViewMatrix();
+	}
+
+	/**
+	 * Dark vignette as a vertex coloured radial mesh (10 rings x 48 segments): the texture version showed a visible step where the
+	 * alpha leaves zero, the mesh falls off smoothly (alpha = level x smoothstep(0.30, 1.25, r)^1.5, r = 1 at the middle of each screen edge).
+	 */
+	private static void radialVignette(Matrix4f m, int w, int h, float[] rgb, float level) {
+		RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+		RenderSystem.disableCull();
+		BufferBuilder bb = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+		int rings = 10;
+		int segs = 48;
+		double rmax = 1.5;
+		for (int i = 0; i < rings; i++) {
+			double r0 = rmax * i / rings;
+			double r1 = rmax * (i + 1) / rings;
+			float a0 = level * (float) Math.pow(FxMath.smoothstep(0.30, 1.25, r0), 1.5);
+			float a1 = level * (float) Math.pow(FxMath.smoothstep(0.30, 1.25, r1), 1.5);
+			for (int k = 0; k < segs; k++) {
+				double t0 = 2 * Math.PI * k / segs;
+				double t1 = 2 * Math.PI * (k + 1) / segs;
+				float cx = w * 0.5f;
+				float cy = h * 0.5f;
+				bb.vertex(m, cx + (float) (Math.cos(t0) * r0 * cx), cy + (float) (Math.sin(t0) * r0 * cy), 0).color(rgb[0], rgb[1], rgb[2], a0);
+				bb.vertex(m, cx + (float) (Math.cos(t0) * r1 * cx), cy + (float) (Math.sin(t0) * r1 * cy), 0).color(rgb[0], rgb[1], rgb[2], a1);
+				bb.vertex(m, cx + (float) (Math.cos(t1) * r1 * cx), cy + (float) (Math.sin(t1) * r1 * cy), 0).color(rgb[0], rgb[1], rgb[2], a1);
+				bb.vertex(m, cx + (float) (Math.cos(t1) * r0 * cx), cy + (float) (Math.sin(t1) * r0 * cy), 0).color(rgb[0], rgb[1], rgb[2], a0);
+			}
+		}
+		BufferRenderer.drawWithGlobalProgram(bb.end());
+		RenderSystem.enableCull();
 	}
 
 	private static void quadColor(Matrix4f m, int w, int h, float r, float g, float b, float a) {
