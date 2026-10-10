@@ -11,6 +11,9 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 - Phase 5: voice. `voice-bridge/index.html` (Web Speech API), loopback HTTP server in the mod, fuzzy matcher with state/item gating. Fixture: 202/202 positives, 0/153 false positives, bridge latency about 1 ms in game.
 - Design for Phase 6 (`design/VFX_STORYBOARD.md`, final, Opus): all effects, quality tiers, HUD/UI spec, implementation order, test plan.
 
+## B4 branch b4-steps2-3-wip (2026-10-10)
+- Step 1 (first person pose, yawed 180 degrees on the user request), step 3 (BASE state, J key, right click) and step 2 (client side scabbard in the left hand, right hand draws along the sori arc, hip scabbard in third person) are committed locally, not merged, not pushed. 212 tests, runPhase4 89/89, runPhase5 62/62. Details: LOG B4 step 2. Steps 4 (bankai) and 5 (shunpo) not started.
+
 ## In progress (branches, unfinished)
 - `phase6-fx` (WIP commit, may not build; branch point is older than step B3, rebase or merge `main` first): Phase 6 steps 0-2 (FX scaffolding: config/tiers, particle types, glow batch, ScreenFx, anchor entity, texture generators; then new HUD; then release/aura/seal effects).
 - Step B3 (first-person pose, scabbard, draw/sheathe animation) is DONE and merged into `main` (open: user visual review of tilt/scale via `first_person_scale_multiplier` / display json, Byakuya hilt small, no Fabulous check).
@@ -23,6 +26,7 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 5. Known UNVERIFIED: mixin refmap in a production launcher, jdk.httpserver in the production runtime (socket fallback exists), Fabulous graphics with the translucent blade and glow layers, camera shake hook, Byakuya hand poses on a real player (tuned on armor stand).
 
 ## Notes
+- Branches pushed to origin on 2026-10-10: `b4-fixes`, `b4-steps2-3-wip`. `main` is stable (step B3, 192 tests green) and was NOT changed by B4.
 - Last update: `main` builds, 192 tests green (`mod/gradlew build`). Pushed to https://github.com/NFade/BleachCraft.
 - Handoff tip for a new account: read this file and `LOG.md` tail, `git fetch`, then continue with To do item 1 (phase 6 steps 3-9). Local dev_monitor is per machine: put `dev_monitor=x,y` into `%GRADLE_USER_HOME%\gradle.properties` to override the repo value.
 - Opus calls used: 5 of 6 (Gate A, ADR, Gate B, Gate C, VFX design). One left for Gate D.

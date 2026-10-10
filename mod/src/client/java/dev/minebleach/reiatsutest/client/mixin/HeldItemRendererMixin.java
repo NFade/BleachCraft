@@ -26,6 +26,12 @@ public abstract class HeldItemRendererMixin {
 	@Shadow
 	private ItemStack mainHand;
 
+	@Shadow
+	private float equipProgressMainHand;
+
+	@Shadow
+	private float prevEquipProgressMainHand;
+
 	/**
 	 * A release state change (release_state component) makes the stack unequal to the cached one, which vanilla answers with
 	 * the lower-and-raise equip animation: it would hide the draw animation. For the same zanpakuto item the cached stack is
@@ -48,6 +54,15 @@ public abstract class HeldItemRendererMixin {
 			MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
 		DrawTracker.beginRender(entity);
 		FirstPersonHand.render(entity, stack, mode, leftHanded, matrices, vertexConsumers, light);
+	}
+
+	/** B4 step 2: the scabbard in the other hand, drawn with the hands, before the buffer is flushed (no item, no inventory slot). */
+	@Inject(method = "renderItem(FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/network/ClientPlayerEntity;I)V",
+			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;draw()V"))
+	private void reiatsu$scabbard(float tickDelta, MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers,
+			net.minecraft.client.network.ClientPlayerEntity player, int light, CallbackInfo ci) {
+		float equip = net.minecraft.util.math.MathHelper.lerp(tickDelta, prevEquipProgressMainHand, equipProgressMainHand);
+		dev.minebleach.reiatsutest.client.model.ScabbardRenderer.renderFirstPerson(matrices, vertexConsumers, player, light, mainHand, equip);
 	}
 
 	/** The item model asks the DrawTracker which entity it is drawn for (draw / sheathe animation of the sealed sword). */

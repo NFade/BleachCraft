@@ -15,13 +15,15 @@ import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Key bindings (STATE_MACHINE section 4): R release, G bankai, V seal, Z / H / B ability slots 1 to 3. None of them is a
+ * Key bindings (STATE_MACHINE section 4): J draw / sheathe, R release (BASE to SHIKAI), G bankai, V seal, Z / H / B ability slots 1 to 3. None of them is a
  * vanilla 1.21.1 default (checked against GameOptions: W A S D, Space, E, F, Q, T, Tab, /, P, L, 1-9, C, X, F2, F5, F11,
  * Ctrl, Shift and the mouse buttons). All are rebindable in Options > Controls.
  */
 public final class ReiatsuKeys {
 	public static final String CATEGORY = "key.categories.reiatsu_test";
 
+	/** Draw / sheathe toggle (B4 step 3). J is free in vanilla 1.21.1 (X and C are the creative hotbar keys). */
+	public static final KeyBinding DRAW = register("key.reiatsu_test.draw", GLFW.GLFW_KEY_J);
 	public static final KeyBinding RELEASE = register("key.reiatsu_test.release", GLFW.GLFW_KEY_R);
 	public static final KeyBinding BANKAI = register("key.reiatsu_test.bankai", GLFW.GLFW_KEY_G);
 	public static final KeyBinding SEAL = register("key.reiatsu_test.seal", GLFW.GLFW_KEY_V);
@@ -50,6 +52,11 @@ public final class ReiatsuKeys {
 			drain(); // keys typed into a screen never trigger abilities
 			return;
 		}
+		while (DRAW.wasPressed()) {
+			// toggle: SEALED draws the sword, any drawn state sheathes it (V seals as well)
+			ClientNet.requestTransition(ClientState.zanpakuto().zanpakutoState() == ZanpakutoState.SEALED
+					? ZanpakutoState.BASE : ZanpakutoState.SEALED, RequestSource.KEY);
+		}
 		while (RELEASE.wasPressed()) {
 			ClientNet.requestTransition(ZanpakutoState.SHIKAI, RequestSource.KEY);
 		}
@@ -71,7 +78,7 @@ public final class ReiatsuKeys {
 		var z = ClientState.zanpakuto();
 		CharacterId character = z.zanpakutoState() == ZanpakutoState.SEALED ? ClientState.heldCharacter() : z.characterId();
 		AbilityId ability = AbilityId.forSlot(character, z.zanpakutoState(), slot);
-		if (ability == null || z.zanpakutoState() == ZanpakutoState.SEALED) {
+		if (ability == null || z.zanpakutoState() == ZanpakutoState.SEALED || z.zanpakutoState() == ZanpakutoState.BASE) {
 			ClientNet.feedback(client, ResultCode.DENIED_STATE);
 			return;
 		}
@@ -79,6 +86,7 @@ public final class ReiatsuKeys {
 	}
 
 	private static void drain() {
+		while (DRAW.wasPressed()) { }
 		while (RELEASE.wasPressed()) { }
 		while (BANKAI.wasPressed()) { }
 		while (SEAL.wasPressed()) { }

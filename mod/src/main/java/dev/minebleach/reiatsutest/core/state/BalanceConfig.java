@@ -21,6 +21,7 @@ public record BalanceConfig(
 		int gcdTicks,
 		int settleTicks,
 		int sealLockTicks,
+		int sheatheLockTicks,
 		int recoveryLockTicks,
 		int rateLimitPerSecond,
 		int respawnTenths,
@@ -36,7 +37,8 @@ public record BalanceConfig(
 	}
 
 	public Rate rate(ZanpakutoState s) {
-		return rates.get(s);
+		Rate r = rates.get(s);
+		return r != null ? r : rates.get(ZanpakutoState.SEALED); // a custom config without a BASE entry regenerates like SEALED
 	}
 
 	public AbilitySpec spec(AbilityId id) {
@@ -46,6 +48,7 @@ public record BalanceConfig(
 	public static BalanceConfig defaults() {
 		EnumMap<ZanpakutoState, Rate> rates = new EnumMap<>(ZanpakutoState.class);
 		rates.put(ZanpakutoState.SEALED, new Rate(10, 0)); // +4.0 / s
+		rates.put(ZanpakutoState.BASE, new Rate(10, 0)); // drawn base form: same regeneration as sealed, no upkeep
 		rates.put(ZanpakutoState.SHIKAI, new Rate(8, 3)); // +3.2 gross, -1.2 upkeep
 		rates.put(ZanpakutoState.BANKAI, new Rate(2, 6)); // +0.8 gross, -2.4 upkeep
 
@@ -63,7 +66,7 @@ public record BalanceConfig(
 		return new BalanceConfig(
 				1000, 5, rates,
 				150, 200, 900, 2400, 20,
-				10, 12, 44, 40, 160,
+				10, 12, 44, 40, 0, 160,
 				10, 500, 30, 100, 200, 80, a);
 	}
 }

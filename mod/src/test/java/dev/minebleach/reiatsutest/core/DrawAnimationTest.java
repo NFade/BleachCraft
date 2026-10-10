@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,8 +35,15 @@ class DrawAnimationTest {
 		for (Case c : CASES) {
 			ItemManifest m = ItemManifest.parse(text("zanpakuto/" + c.item() + ".json"));
 			assertNotNull(m.draw, c.item());
-			assertTrue(m.states.get("sealed").hand().contains(m.draw.saya()), "saya in the sealed hand list");
-			assertTrue(m.states.get("sealed").hand().contains(m.draw.blade()), "sword in the sealed hand list");
+			// B4 step 2: the scabbard is drawn client side by ScabbardRenderer, so it is NOT in the item's sealed hand list
+			assertFalse(m.states.get("sealed").hand().contains(m.draw.saya()), "saya is no longer baked into the sealed hand mesh");
+			assertTrue(m.states.get("sealed").hand().contains(m.draw.blade()), "the bare sword is the sealed hand mesh");
+			assertNotNull(m.stow, c.item() + ": stow pose");
+			assertNotNull(m.hip, c.item() + ": hip pose");
+			assertTrue(m.stow.slideEnd() > 0.2f && m.stow.slideEnd() < 0.9f);
+			assertEquals(3, m.hip.dir().length);
+			assertTrue(m.stow.pull() > 0f && m.stow.pull() < 1f, c.item() + ": the left hand pulls the scabbard back");
+			assertTrue(m.stow.retract() >= 0f && m.stow.retract() < 0.5f);
 			assertTrue(m.objects.containsKey(m.draw.saya()));
 			ObjMeta meta = ObjMeta.parse(text("models/obj/" + c.model() + "/" + c.model() + "_meta.json"));
 			assertNotNull(meta.bladeAxis, "blade_axis in " + c.model());

@@ -55,8 +55,19 @@ public final class Fx {
 		return sm.cast(new AbilityRequest(a, RequestSource.KEY, ++seq, held));
 	}
 
-	/** SEALED -> SHIKAI through the real request, then waits out the transition lock. */
+	/** SEALED -> BASE (the draw) through the real request, then waits out the transition lock. */
+	public Fx toBase(CharacterId c) {
+		TransitionResult r = tr(ZanpakutoState.BASE, c);
+		if (!r.ok()) {
+			throw new AssertionError("toBase rejected: " + r.reason());
+		}
+		adv(cfg.transitionLockTicks() + 1);
+		return this;
+	}
+
+	/** SEALED -> BASE -> SHIKAI through the real requests (draw, then release), then waits out the transition lock. */
 	public Fx toShikai(CharacterId c) {
+		toBase(c);
 		TransitionResult r = tr(ZanpakutoState.SHIKAI, c);
 		if (!r.ok()) {
 			throw new AssertionError("toShikai rejected: " + r.reason());

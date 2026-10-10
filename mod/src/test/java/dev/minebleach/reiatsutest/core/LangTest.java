@@ -44,7 +44,9 @@ class LangTest {
 		}
 		for (String k : new String[] {"item.reiatsu_test.sode_no_shirayuki", "item.reiatsu_test.senbonzakura",
 				"key.categories.reiatsu_test", "key.reiatsu_test.release", "key.reiatsu_test.bankai", "key.reiatsu_test.seal",
-				"key.reiatsu_test.ability_1", "key.reiatsu_test.ability_2", "key.reiatsu_test.ability_3",
+				"key.reiatsu_test.ability_1", "key.reiatsu_test.ability_2", "key.reiatsu_test.ability_3", "key.reiatsu_test.draw",
+				"message.reiatsu_test.denied.not_drawn", "hud.reiatsu_test.state.base", "hud.reiatsu_test.hint.draw",
+				"hud.reiatsu_test.hint.release",
 				"message.reiatsu_test.denied.state", "message.reiatsu_test.denied.item", "message.reiatsu_test.denied.reiatsu",
 				"hud.reiatsu_test.reiatsu", "hud.reiatsu_test.state.sealed", "hud.reiatsu_test.state.shikai",
 				"hud.reiatsu_test.state.bankai"}) {

@@ -222,8 +222,8 @@ sets["r10"] = c
 B2 = {
     "thirdperson_righthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
     "thirdperson_lefthand": ([45, 180, 0], [0, -2, 1.75], 1.5),
-    "firstperson_righthand": ([-90.0, 78.1, 78.4], [2.14, -0.29, -5], 2.4),
-    "firstperson_lefthand": ([-90.0, 78.1, 78.4], [2.14, -0.29, -5], 2.4),
+    "firstperson_righthand": ([-8.0, -1.0, 6.9], [2.14, -0.29, -5], 2.4),  # B4 step 1 (B3: [-90, 78.1, 78.4])
+    "firstperson_lefthand": ([-8.0, -1.0, 6.9], [2.14, -0.29, -5], 2.4),
     "ground": ([90, 0, 0], [0, 3, -4.5], 0.9),
     "fixed": ([0, 0, 45], [5.6, -5.6, 0], 1.6),
 }
@@ -342,6 +342,133 @@ sets["g5"] = [
 # g6: all three states still, fp right, both items (state shows the final display)
 sets["g6"] = [{"name": "g6_%s_%s" % (st, v), "view": v, "state": st, "display": disp(**B2)}
               for st in ("sealed", "shikai", "bankai") for v in ("fp", "fp_left", "tp_front", "tp_back")]
+
+# ---- B4 step 1: edge toward the camera. roll r = angle of the flat normal from the camera axis, rotated about the blade
+# axis b toward the edge (r = 0: flat to the camera as in B3, r = 90: edge on). sgn picks which way round.
+N0 = (0.0, 0.0, -1.0)  # B3: the flat face normal (model X) toward the camera
+
+
+def roll_n(b, r, sgn=1.0):
+    b = _norm(b)
+    d = sum(N0[i] * b[i] for i in range(3))
+    n0 = _norm([N0[i] - d * b[i] for i in range(3)])
+    e = _cross(n0, b)
+    a = math.radians(r)
+    return [math.cos(a) * n0[i] + sgn * math.sin(a) * e[i] for i in range(3)]
+
+
+def roll_view(name, view, state, b, r, sgn, scale=2.4, shift=(0, 0, 0), **extra):
+    d = {"name": name, "view": view, "state": state,
+         "display": disp(**fpd(*fp_pose(b=b, n=roll_n(b, r, sgn), scale=scale, shift=shift)))}
+    d.update(extra)
+    return d
+
+
+B_NEW = (-0.15, 0.97, -0.15)  # about 12 degrees from vertical
+# h0: which sign puts the edge toward the camera (flat reference, both signs at 65 degrees, shikai and sealed)
+c = []
+for st in ("shikai", "sealed"):
+    c.append(roll_view("h0_%s_r0" % st, "fp", st, B_NEW, 0, 1))
+    c.append(roll_view("h0_%s_r65p" % st, "fp", st, B_NEW, 65, 1))
+    c.append(roll_view("h0_%s_r65m" % st, "fp", st, B_NEW, 65, -1))
+    c.append(roll_view("h0_%s_r90p" % st, "fp", st, B_NEW, 90, 1))
+    c.append(roll_view("h0_%s_r90m" % st, "fp", st, B_NEW, 90, -1))
+sets["h0"] = c
+
+# h1: roll candidates (sgn +1 = edge toward the camera; the camera ray hits the blade from the left, so the apparent roll
+# against the ray is smaller than the hand-frame roll: see LOG "B4 step 1")
+c = []
+for r in (78, 86, 94, 102):
+    c.append(roll_view("h1_shikai_r%d" % r, "fp", "shikai", B_NEW, r, 1))
+    c.append(roll_view("h1_sealed_r%d" % r, "fp", "sealed", B_NEW, r, 1))
+sets["h1"] = c
+
+# h2: roll candidates with the final blade axis; hand-frame roll for an apparent roll (against the camera ray to the fist
+# at (0.694, -0.538, -1.03) blocks) of about 55 / 62 / 68 / 75 degrees = 82 / 90 / 96 / 104
+B_FIN = (-0.12, 0.98, -0.14)  # 11.5 degrees from vertical
+c = []
+for r in (82, 90, 96, 104):
+    for st in ("shikai", "sealed"):
+        c.append(roll_view("h2_%s_r%d" % (st, r), "fp", st, B_FIN, r, 1))
+sets["h2"] = c
+
+# h3: the SHIPPED display json of the item under test (item given by -Pitem), all three states, both hands + third person
+import os
+def shipped(item):
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mod", "src", "main", "resources", "assets",
+                     "reiatsu_test", "models", "item", item + "_display.json")
+    return json.load(open(p))["display"]
+
+
+def shipped_set(item):
+    d = shipped(item)
+    return [{"name": "h3_%s_%s" % (st, v), "view": v, "state": st, "display": d}
+            for st in ("sealed", "shikai", "bankai") for v in ("fp", "fp_left", "tp_front")]
+
+
+sets["h3r"] = shipped_set("sode_no_shirayuki")
+sets["h3b"] = shipped_set("senbonzakura")
+
+# ---- B4 step 2: scabbard in the left hand, draw driven by SEALED -> BASE, hip scabbard in third person.
+# Everything uses the shipped display json of the item under test; `cfg` overrides keys of the manifest "draw" block
+# (stow / hip) so the stow and hip poses can be tuned without editing the manifest.
+def k_view(name, view, state, item, p=None, cfg=None, **extra):
+    d = {"name": name, "view": view, "state": state, "display": shipped(item)}
+    if p is not None:
+        d["draw_p"] = p
+    if cfg:
+        d["draw_cfg"] = cfg
+    d.update(extra)
+    return d
+
+
+def k_sets(item, cfg=None, tag="k"):
+    out = {}
+    out[tag + "1"] = [k_view("%s1_%s_fp" % (tag, st), "fp", st, item, cfg=cfg) for st in ("sealed", "base", "shikai", "bankai")]
+    out[tag + "2"] = [k_view("%s2_draw_%02d" % (tag, round(pr * 100)), "fp", "base", item, p=pr, cfg=cfg)
+                      for pr in (0.0, 0.1, 0.2, 0.3, 0.45, 0.55, 0.7, 0.85, 1.0)]
+    out[tag + "3"] = [k_view("%s3_%s_%s" % (tag, st, v), v, st, item, cfg=cfg)
+                      for st in ("sealed", "base") for v in ("side_r", "side_l", "front", "back", "tp_front", "tp_back")]
+    out[tag + "4"] = [k_view("%s4_p%02d_%s" % (tag, round(pr * 100), v), v, "sealed", item, p=pr, cfg=cfg)
+                      for pr in (0.15, 0.4, 0.8) for v in ("side_r", "front")]
+    out[tag + "5"] = [k_view("%s5_fpleft_%s" % (tag, st), "fp_left", st, item, cfg=cfg) for st in ("sealed", "base", "shikai")]
+    return out
+
+
+for _it, _tag in (("sode_no_shirayuki", "k"), ("senbonzakura", "q")):
+    sets.update(k_sets(_it, tag=_tag))
+
+# stow pose candidates (hand frame: rot about x, y, z in degrees, move in blocks, pull = left hand share of the travel)
+def stow_cfg(rot, move, slide_end=0.55, pull=0.6, retract=0.3):
+    return {"stow": {"rot": list(rot), "move": list(move), "slide_end": slide_end, "pull": pull, "retract": retract}}
+
+
+STOWS = {
+    "A": stow_cfg((0, 0, 104), (-0.4, 0.24, 0), 0.55, 0.55, 0.15),
+    "B": stow_cfg((0, 0, 100), (-0.45, 0.30, 0), 0.5, 0.55, 0.15),
+}
+for _it, _tag in (("sode_no_shirayuki", "ks"), ("senbonzakura", "qs")):
+    sets[_tag] = [k_view("%s_%s_%s" % (_tag, n, lab), "fp", "base" if pr is not None else "sealed", _it, p=pr, cfg=cfg)
+                  for n, cfg in STOWS.items() for lab, pr in (("sealed", None), ("p25", 0.25), ("p50", 0.5), ("p75", 0.75))]
+
+# close third person shots of the stands (hip scabbard): cam = [x, feet y, z, yaw, pitch]
+def hip_sets(item, tag):
+    out = []
+    for st, dx, bx in (("sealed", 0, 0), ("base", 56, 4), ("shikai", 4, 8)):
+        for v, x in (("side_r", 20.5 + dx), ("side_l", 30.5 + dx), ("front", 40.5 + dx), ("back", 110.5 + bx)):
+            out.append(k_view("%s_%s_%s" % (tag, st, v), v, st, item, cam=[x, -60, 2.35, 0, 26]))
+    return out
+
+
+sets["kh"] = hip_sets("sode_no_shirayuki", "kh")
+sets["qh"] = hip_sets("senbonzakura", "qh")
+
+HIPS = {
+    "H1": {"hip": {"pos_px": [8.0, 10.5, -0.5], "dir": [0, 0.5, 0.87], "scale": 0.9}},
+    "H2": {"hip": {"pos_px": [8.6, 9.5, 0.5], "dir": [0, 0.6, 0.8], "scale": 1.0}},
+}
+sets["kt"] = [k_view("kt_%s_%s" % (n, v), v, "sealed", "sode_no_shirayuki", cfg=cfg, cam=[x, -60, 2.35, 0, 26])
+              for n, cfg in HIPS.items() for v, x in (("side_l", 30.5), ("side_r", 20.5), ("front", 40.5), ("back", 110.5))]
 
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]

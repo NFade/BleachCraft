@@ -96,9 +96,10 @@ class PhraseBookTest {
 				assertEquals(a.character, c.item(), c.id());
 			}
 		}
-		assertEquals(Set.of(ZanpakutoState.SEALED), book.command("rukia.shikai.release").states());
+		assertEquals(Set.of(ZanpakutoState.BASE), book.command("rukia.shikai.release").states());
+		assertEquals(Set.of(ZanpakutoState.BASE), book.command("byakuya.shikai.release").states());
 		assertEquals(Set.of(ZanpakutoState.SHIKAI), book.command("rukia.bankai.release").states());
-		assertEquals(Set.of(ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command("common.seal").states());
+		assertEquals(Set.of(ZanpakutoState.BASE, ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command("common.seal").states());
 		assertEquals(CharacterId.NONE, book.command("common.seal").item());
 		assertEquals(CharacterId.RUKIA, book.command("rukia.bankai.release").item());
 		assertEquals(CharacterId.BYAKUYA, book.command("byakuya.shikai.release").item());
