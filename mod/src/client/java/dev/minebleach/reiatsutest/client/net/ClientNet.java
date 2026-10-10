@@ -2,6 +2,8 @@ package dev.minebleach.reiatsutest.client.net;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.fx.EffectPlaceholders;
+import dev.minebleach.reiatsutest.client.fx.FxConfig;
+import dev.minebleach.reiatsutest.client.hud.HudModel;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
@@ -27,6 +29,8 @@ public final class ClientNet {
 	public static final List<String> RESULTS = new ArrayList<>();
 	public static final AtomicInteger EFFECT_EVENTS = new AtomicInteger();
 	public static final AtomicInteger ENTITY_FX = new AtomicInteger();
+	/** Requests by sequence number, so a denied answer can be attached to its slot (HUD 7.7). */
+	private static final java.util.Map<Integer, HudModel.Request> REQUESTS = new java.util.concurrent.ConcurrentHashMap<>();
 
 	private ClientNet() {
 	}
@@ -35,7 +39,10 @@ public final class ClientNet {
 		ClientPlayNetworking.registerGlobalReceiver(ActionResultS2C.ID, (payload, ctx) -> onResult(ctx.client(), payload));
 		ClientPlayNetworking.registerGlobalReceiver(EffectEventS2C.ID, (payload, ctx) -> {
 			EFFECT_EVENTS.incrementAndGet();
-			EffectPlaceholders.play(ctx.client(), payload);
+			var mcl = ctx.client();
+			boolean local = mcl.player != null && mcl.player.getId() == payload.casterId();
+			HudModel.onEffectEvent(payload.effectId(), local, dev.minebleach.reiatsutest.core.state.CharacterId.NONE);
+			EffectPlaceholders.play(mcl, payload);
 		});
 		ClientPlayNetworking.registerGlobalReceiver(EntityFxS2C.ID, (payload, ctx) -> {
 			ENTITY_FX.incrementAndGet();
@@ -47,10 +54,13 @@ public final class ClientNet {
 	public static void onJoin() {
 		SEQ.set(0);
 		RESULTS.clear();
+		REQUESTS.clear();
+		HudModel.resetAll();
 	}
 
 	public static int requestTransition(ZanpakutoState target, RequestSource source) {
 		int seq = SEQ.incrementAndGet();
+		remember(seq, new HudModel.Request(true, target, null));
 		ClientPlayNetworking.send(new RequestTransitionC2S(target.code(), source.code(), seq));
 		ReiatsuTest.LOGGER.info("[client] request_transition {} seq={} ({})", target, seq, source);
 		return seq;
@@ -58,9 +68,17 @@ public final class ClientNet {
 
 	public static int castAbility(AbilityId ability, RequestSource source) {
 		int seq = SEQ.incrementAndGet();
+		remember(seq, new HudModel.Request(false, null, ability));
 		ClientPlayNetworking.send(new CastAbilityC2S(ability.code, source.code(), seq));
 		ReiatsuTest.LOGGER.info("[client] cast_ability {} seq={} ({})", ability.commandId, seq, source);
 		return seq;
+	}
+
+	private static void remember(int seq, HudModel.Request req) {
+		REQUESTS.put(seq, req);
+		if (REQUESTS.size() > 64) {
+			REQUESTS.keySet().removeIf(k -> k < seq - 32);
+		}
 	}
 
 	private static void onResult(MinecraftClient client, ActionResultS2C r) {
@@ -69,11 +87,24 @@ public final class ClientNet {
 		synchronized (RESULTS) {
 			RESULTS.add(r.clientSeq() + ":" + code);
 		}
+		HudModel.Request req = REQUESTS.remove(r.clientSeq());
+		if (req == null && r.clientSeq() < 0) {
+			req = HudModel.requestFromVoice();
+		}
+		if (FxConfig.hud) {
+			HudModel.onResult(code, req);
+			return;
+		}
 		feedback(client, code);
 	}
 
 	/** Action bar message, bar flash and a low note for denied requests (STATE_MACHINE section 2). */
 	public static void feedback(MinecraftClient client, ResultCode code) {
+		if (FxConfig.hud) {
+			// a local refusal (no server round trip): the HUD shows it
+			HudModel.onResult(code, null);
+			return;
+		}
 		String key = switch (code) {
 			case DENIED_STATE -> "message.reiatsu_test.denied.state";
 			case DENIED_ITEM -> "message.reiatsu_test.denied.item";

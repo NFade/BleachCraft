@@ -10,6 +10,10 @@ public interface VoiceBackend {
 	 */
 	String onVoice(VoiceMessage message, long receivedNanos);
 
+	/** The bridge page was reached ({@code mic}: the page's own microphone state from {@code /status?mic=}, may be null). */
+	default void contact(String mic) {
+	}
+
 	/** JSON for {@code GET /status}. */
 	String status();
 }

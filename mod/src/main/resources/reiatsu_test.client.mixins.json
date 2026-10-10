@@ -3,6 +3,6 @@
 	"minVersion": "0.8",
 	"package": "dev.minebleach.reiatsutest.client.mixin",
 	"compatibilityLevel": "JAVA_21",
-	"client": ["HeldItemRendererMixin", "GameRendererMixin", "InGameHudMixin"],
+	"client": ["HeldItemRendererMixin", "GameRendererMixin", "InGameHudMixin", "BossBarHudAccessor"],
 	"injectors": { "defaultRequire": 1 }
 }

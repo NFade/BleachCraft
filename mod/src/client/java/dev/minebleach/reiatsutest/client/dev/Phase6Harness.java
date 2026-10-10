@@ -255,6 +255,21 @@ public final class Phase6Harness {
 		ReiatsuTest.LOGGER.info(P + "RESULT {}", FAILS.isEmpty() ? "ALL PASS" : "FAILURES");
 	}
 
+	/**
+	 * Screenshot at an exact FX time: {@code arm} triggers the effect, then the FX clock freezes {@code afterSeconds} of FX time later; the
+	 * shot is taken once the clock is really frozen, then the clock is released.
+	 */
+	static void shotAt(String name, double afterSeconds, Runnable arm) {
+		step(name + " (arm)", 1, () -> {
+			FxClock.unfreeze();
+			arm.run();
+			FxClock.freezeIn(afterSeconds);
+		});
+		stepUntil(name + " (frozen)", 2, 20 * 20, () -> { }, () -> FxClock.frozen);
+		step(name + " (shot)", 3, () -> shot(name));
+		step(name + " (release)", 2, FxClock::unfreeze);
+	}
+
 	static boolean wants(String scenario) {
 		String hold = System.getProperty("reiatsu.fx.hold", "all");
 		if (hold.isBlank() || hold.equals("all")) {
@@ -294,7 +309,13 @@ public final class Phase6Harness {
 			Phase6Fx.perfSteps();
 		}
 		if (wants("hud")) {
-			Phase6Hud.steps();
+			Phase6Hud.steps(true, true);
+		} else if (wants("huddetail")) {
+			Phase6Hud.steps(false, true);
+		} else if (wants("hudperf")) {
+			Phase6Hud.setupPerf();
+		} else if (wants("hudlayouts")) {
+			Phase6Hud.steps(true, false);
 		}
 		if (wants("release")) {
 			Phase6Release.steps();
