@@ -68,10 +68,32 @@ public abstract class HeldItemRendererMixin {
 				reiatsu$lifted = true;
 			}
 		}
+		if (!mode.isFirstPerson() && stack.getItem() instanceof ZanpakutoItem && entity.getMainHandStack() == stack
+				&& MinecraftClient.getInstance().getItemRenderer().getModel(stack, entity.getWorld(), entity, 0)
+						instanceof dev.minebleach.reiatsutest.client.model.ObjItemBakedModel obj3) {
+			dev.minebleach.reiatsutest.client.model.ScabbardRenderer.captureHand(entity, matrices, leftHanded, obj3);
+		}
+		// T4: third person (own player and other players): the wrist cocks and snaps the sword during the slash, about the fist
+		reiatsu$swung = false;
+		if (!mode.isFirstPerson() && stack.getItem() instanceof ZanpakutoItem && entity.getMainHandStack() == stack
+				&& leftHanded == (entity.getMainArm() == net.minecraft.util.Arm.LEFT)
+				&& dev.minebleach.reiatsutest.client.model.SwingPose.active(entity)) {
+			float s = entity.getHandSwingProgress(MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false));
+			if (s > 0f) {
+				float[] w = dev.minebleach.reiatsutest.client.model.SwingPose.wrist(s, leftHanded ? -1f : 1f);
+				matrices.push();
+				matrices.multiply(new org.joml.Quaternionf().rotateX((float) Math.toRadians(w[0])).rotateZ((float) Math.toRadians(w[1]))
+						.rotateY((float) Math.toRadians(w[2])));
+				reiatsu$swung = true;
+			}
+		}
 	}
 
 	@org.spongepowered.asm.mixin.Unique
 	private boolean reiatsu$lifted;
+
+	@org.spongepowered.asm.mixin.Unique
+	private boolean reiatsu$swung;
 
 	/** B4 step 2: the scabbard in the other hand, drawn with the hands, before the buffer is flushed (no item, no inventory slot). */
 	@Inject(method = "renderItem(FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/network/ClientPlayerEntity;I)V",
@@ -90,6 +112,10 @@ public abstract class HeldItemRendererMixin {
 		if (reiatsu$lifted) {
 			matrices.pop();
 			reiatsu$lifted = false;
+		}
+		if (reiatsu$swung) {
+			matrices.pop();
+			reiatsu$swung = false;
 		}
 		DrawTracker.endRender();
 	}

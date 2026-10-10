@@ -57,6 +57,11 @@ public final class HeldPose {
 		}
 	}
 
+	/** The dev override object (null in production or when there is no file); lets other client pose code share the one hot tuning file. */
+	static JsonObject overrideObject() {
+		return override;
+	}
+
 	private static float[] vec(JsonObject o, String key, float[] def) {
 		if (o == null || !o.has(key)) {
 			return def;

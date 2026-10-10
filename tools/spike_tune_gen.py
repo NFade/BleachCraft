@@ -496,6 +496,54 @@ POSEB = {"lift": [0, 0.08, 0], "arm": [0, -0.15, 0], "roll_stow": 80, "roll_held
 sets["sw2"] = sweep_draw("a", POSEA, frames=(0.0, 0.3, 0.55, 0.7, 0.85, 1.0)) + sweep_draw("b", POSEB, frames=(0.0, 0.3, 0.55, 0.7, 0.85, 1.0)) +     [pv("al_shikai", "shikai", POSEA, "fp_left"), pv("bl_shikai", "shikai", POSEB, "fp_left"),
      pv("al_base", "base", POSEA, "fp_left"), pv("al_sealed", "sealed", POSEA, "fp_left")]
 
+
+# ---- T2 / T3 / T4 (branch tp3): third person scabbard, draw transition, slash. "ext" views (see SpikeHarness.extSteps): who self|other,
+# angle = camera azimuth around the subject (0 front, 90 wearer's left, 180 back, 270 wearer's right). Self carries the item under
+# test, the "other" client side player the other character. Everything with "pose" so no resource reload happens.
+def ext(name, who="self", state="sealed", angle=90, pose=None, **kw):
+    c = {"name": name, "view": "ext", "who": who, "state": state, "angle": angle, "pose": pose or {}}
+    c.update(kw)
+    return c
+
+
+T2 = []
+for who in ("self", "other"):
+    for st in ("sealed", "base"):
+        for ang, an in ((0, "front"), (90, "left"), (180, "back"), (270, "right")):
+            T2.append(ext("t2_%s_%s_%s" % (who, st, an), who, st, ang))
+T2.append(ext("t2_self_shikai_left", "self", "shikai", 90))
+T2.append(ext("t2_other_shikai_left", "other", "shikai", 90))
+for mo in ("walk", "sprint", "sneakwalk", "swim"):
+    for ang, an in ((90, "left"), (270, "right")):
+        T2.append(ext("t2_mv_%s_%s" % (mo, an), "other", "sealed", ang, motion=mo, ticks=40, shots=2, gap=4))
+T2.append(ext("t2_self_sneak_left", "self", "sealed", 90, motion="sneak", ticks=30))
+T2.append(ext("t2_self_sneak_right", "self", "sealed", 270, motion="sneak", ticks=30))
+T2.append(ext("t2_slim_left", "other", "sealed", 90, slim=True))
+T2.append(ext("t2_slim_right", "other", "sealed", 270, slim=True))
+T2.append(ext("t2_lefty_left", "other", "sealed", 90, arm="left"))
+T2.append(ext("t2_lefty_right", "other", "sealed", 270, arm="left"))
+for st, dx, bx in (("sealed", 0, 0), ("base", 56, 4)):
+    for v, x in (("side_r", 20.5 + dx), ("side_l", 30.5 + dx)):
+        T2.append({"name": "t2_stand_%s_%s" % (st, v), "view": v, "state": st, "pose": {}, "cam": [x, -60, 2.35, 0, 26]})
+sets["t2"] = T2
+
+PS = (0.0, 0.3, 0.5, 0.56, 0.62, 0.7, 0.8, 0.9, 0.97, 1.0)
+T3 = []
+for who, st in (("self", "base"), ("other", "base")):
+    for ang, an in ((0, "front"), (90, "left"), (270, "right")):
+        T3.append(ext("t3_%s_%s" % (who, an), who, st, ang, ps=list(PS), dist=2.8))
+T3.append(ext("t3_other_lefty_front", "other", "base", 0, arm="left", ps=list(PS), dist=2.8))
+sets["t3"] = T3
+
+SW = [1, 2, 3, 4, 5]
+T4 = []
+for who, st in (("self", "base"), ("other", "base"), ("self", "shikai"), ("other", "shikai")):
+    for ang, an in ((270, "right"), (0, "front"), (90, "left")):
+        T4.append(ext("t4_%s_%s_%s" % (who, st, an), who, st, ang, swings=SW, dist=3.0))
+T4.append(ext("t4_other_lefty_front", "other", "base", 0, arm="left", swings=SW, dist=3.0))
+T4.append(ext("t4_other_sealed_right", "other", "sealed", 270, swings=SW, dist=3.0))
+sets["t4"] = T4
+
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]
     json.dump({"candidates": sets[name]}, open(out, "w"), indent=1)

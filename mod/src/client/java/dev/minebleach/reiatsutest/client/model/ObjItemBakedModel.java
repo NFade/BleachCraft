@@ -82,8 +82,8 @@ public final class ObjItemBakedModel implements BakedModel {
 						stats(t0);
 						return;
 					}
-					if (p < 1f && p < rig(false).slideEnd) {
-						stats(t0); // third person: the sword is still in the scabbard on the hip (ScabbardRenderer)
+					if (p < 1f) {
+						stats(t0); // third person: the sword is in the hip scabbard or travelling to the hand, ScabbardRenderer draws it (T3)
 						return;
 					}
 				}
