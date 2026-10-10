@@ -20,6 +20,10 @@ public final class FxEvents {
 		if (client.world == null) {
 			return;
 		}
+		if (id == dev.minebleach.reiatsutest.core.state.EffectIds.SHUNPO) {
+			ShunpoFx.play(client, e);
+			return;
+		}
 		if ((id >= 1 && id <= 4) || id == 10 || id == 11) {
 			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={} pos=({}, {}, {})", id, e.casterId(), e.seed(),
 					String.format(java.util.Locale.ROOT, "%.2f", e.x()), String.format(java.util.Locale.ROOT, "%.2f", e.y()),

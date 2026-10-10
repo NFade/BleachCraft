@@ -28,6 +28,20 @@ public final class Fx {
 		this.sm = new StateMachine(clock, cfg, new ReiatsuState(reiatsuTenths, cfg.maxTenths()));
 	}
 
+	/** A copy of the default config with one state's reiatsu rate replaced (drain scenarios). */
+	public static BalanceConfig withRate(ZanpakutoState state, dev.minebleach.reiatsutest.core.reiatsu.Rate rate) {
+		BalanceConfig d = BalanceConfig.defaults();
+		java.util.EnumMap<ZanpakutoState, dev.minebleach.reiatsutest.core.reiatsu.Rate> rates = new java.util.EnumMap<>(ZanpakutoState.class);
+		for (ZanpakutoState s : ZanpakutoState.values()) {
+			rates.put(s, d.rate(s));
+		}
+		rates.put(state, rate);
+		return new BalanceConfig(d.maxTenths(), d.regenBatchTicks(), rates, d.shikaiReleaseCost(), d.bankaiCost(), d.bankaiCapTicks(),
+				d.shikaiIdleTicks(), d.handGraceTicks(), d.transitionLockTicks(), d.gcdTicks(), d.settleTicks(), d.sealLockTicks(),
+				d.sheatheLockTicks(), d.bankaiReentryTicks(), d.rateLimitPerSecond(), d.respawnTenths(), d.attackModeTicks(), d.barrierTicks(),
+				d.barrierPoolTenths(), d.barrierReductionPercent(), d.shunpo(), d.abilities());
+	}
+
 	public long now() {
 		return clock.nowTick();
 	}

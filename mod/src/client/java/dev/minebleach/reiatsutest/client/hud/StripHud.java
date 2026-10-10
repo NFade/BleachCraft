@@ -164,7 +164,7 @@ final class StripHud {
 			g.text(font, t, 11 - font.getWidth(t) / 2f, 7, col | a << 24, true);
 		}
 		g.sprite(KEY_TAB, 9, 9, 13, 13, 0, 0, 9, 9, accent, alpha);
-		String key = ReiatsuKeys.SLOTS[s.index].getBoundKeyLocalizedText().getString();
+		String key = (s.bankaiKey ? ReiatsuKeys.BANKAI_SLOTS : ReiatsuKeys.SLOTS)[s.index].getBoundKeyLocalizedText().getString();
 		if (key.length() > 1) {
 			key = key.substring(0, 1);
 		}

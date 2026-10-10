@@ -140,7 +140,8 @@ class TransitionTest {
 			long t = f.now();
 			TransitionResult r = f.tr(ZanpakutoState.BANKAI, c);
 			assertTrue(r.ok(), c + " " + r.reason());
-			assertEquals(800, f.sm.reiatsu().value());
+			assertEquals(1000, f.sm.reiatsu().value(), "B4 step 4: bankai costs no reiatsu");
+			assertFalse(Fx.has(r.events(), StateEvent.ReiatsuSpent.class));
 			assertEquals(t + 900, f.sm.snapshot().bankaiEndTick());
 			assertEquals(ZanpakutoState.BANKAI, f.sm.state());
 			int expected = c == R ? 2 : 4;
@@ -186,9 +187,9 @@ class TransitionTest {
 		rates.put(ZanpakutoState.BANKAI, d.rate(ZanpakutoState.BANKAI));
 		BalanceConfig drain = new BalanceConfig(d.maxTenths(), d.regenBatchTicks(), rates, d.shikaiReleaseCost(),
 				d.bankaiCost(), d.bankaiCapTicks(), d.shikaiIdleTicks(), d.handGraceTicks(), d.transitionLockTicks(),
-				d.gcdTicks(), d.settleTicks(), d.sealLockTicks(), d.sheatheLockTicks(), d.recoveryLockTicks(), d.rateLimitPerSecond(),
+				d.gcdTicks(), d.settleTicks(), d.sealLockTicks(), d.sheatheLockTicks(), d.bankaiReentryTicks(), d.rateLimitPerSecond(),
 				d.respawnTenths(), d.attackModeTicks(), d.barrierTicks(), d.barrierPoolTenths(),
-				d.barrierReductionPercent(), d.abilities());
+				d.barrierReductionPercent(), d.shunpo(), d.abilities());
 		Fx f = new Fx(drain, 400);
 		f.toBase(R);
 		f.sm.devSetReiatsu(400);

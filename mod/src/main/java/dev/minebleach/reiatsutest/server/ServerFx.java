@@ -1,5 +1,8 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.EffectIds;
+import dev.minebleach.reiatsutest.core.state.StateEvent;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import dev.minebleach.reiatsutest.net.EntityFxS2C;
 import java.util.HashSet;
@@ -22,6 +25,15 @@ final class ServerFx {
 		float[] params = ctx != null ? ctx.effectParams() : new float[0];
 		EffectEventS2C payload = new EffectEventS2C(effectId, caster.getId(), seed, caster.getX(), caster.getY(), caster.getZ(),
 				(float) look.x, (float) look.y, (float) look.z, -1, caster.getServer().getTicks(), params);
+		sendToViewers(caster, payload);
+	}
+
+	/** Shunpo effect (id 40): x y z = start, d = vector to the end, params = {distance, character code, stopped by wall (0/1)}. */
+	static void shunpo(ServerPlayerEntity caster, StateEvent.ShunpoMove m, CharacterId who) {
+		int tick = caster.getServer().getTicks();
+		EffectEventS2C payload = new EffectEventS2C(EffectIds.SHUNPO, caster.getId(), tick, m.fromX(), m.fromY(), m.fromZ(),
+				(float) (m.toX() - m.fromX()), (float) (m.toY() - m.fromY()), (float) (m.toZ() - m.fromZ()), -1, tick,
+				new float[] {(float) m.distance(), who.code, m.stoppedByWall() ? 1f : 0f});
 		sendToViewers(caster, payload);
 	}
 

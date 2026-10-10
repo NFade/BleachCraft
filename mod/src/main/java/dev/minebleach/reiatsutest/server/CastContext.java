@@ -1,6 +1,8 @@
 package dev.minebleach.reiatsutest.server;
 
 import dev.minebleach.reiatsutest.core.state.AbilityId;
+import dev.minebleach.reiatsutest.core.state.AbilityParams;
+import dev.minebleach.reiatsutest.core.state.AbilitySpec;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -13,6 +15,8 @@ import net.minecraft.util.math.Vec3d;
  */
 final class CastContext {
 	final AbilityId ability;
+	/** The balance numbers of this ability (radii, damage, counts), captured with the cast. */
+	final AbilitySpec spec;
 	final int seed;
 	/** Feet position at cast time. */
 	final Vec3d origin;
@@ -28,8 +32,9 @@ final class CastContext {
 	final Set<Integer> frozen = new LinkedHashSet<>();
 	int tempBlocksPlaced;
 
-	private CastContext(AbilityId ability, int seed, Vec3d origin, Vec3d eye, Vec3d dir, Vec3d flatDir, Vec3d aim) {
+	private CastContext(AbilityId ability, AbilitySpec spec, int seed, Vec3d origin, Vec3d eye, Vec3d dir, Vec3d flatDir, Vec3d aim) {
 		this.ability = ability;
+		this.spec = spec;
 		this.seed = seed;
 		this.origin = origin;
 		this.eye = eye;
@@ -38,34 +43,44 @@ final class CastContext {
 		this.aim = aim;
 	}
 
-	static CastContext capture(ServerPlayerEntity p, AbilityId ability, int seed) {
+	static CastContext capture(ServerPlayerEntity p, AbilityId ability, AbilitySpec spec, int seed) {
 		Vec3d eye = p.getEyePos();
 		Vec3d dir = p.getRotationVec(1.0F).normalize();
 		Vec3d flat = new Vec3d(dir.x, 0, dir.z);
 		flat = flat.lengthSquared() < 1.0E-6 ? new Vec3d(0, 0, 1) : flat.normalize();
 		double range = switch (ability) {
-			case SHIRAFUNE -> 8.0;
-			case MODE_ATTACK -> 24.0;
-			case SCATTER -> 40.0;
-			case HAKUTEIKEN -> 20.0;
+			case SHIRAFUNE, HAKUTEIKEN -> spec.num(AbilityParams.LENGTH);
+			case MODE_ATTACK, SCATTER -> spec.num(AbilityParams.AIM_RANGE);
 			default -> 0.0;
 		};
 		Vec3d aim = range > 0 ? Targeting.rayPoint(p, eye, dir, range) : p.getPos();
-		return new CastContext(ability, seed, p.getPos(), eye, dir, flat, aim);
+		return new CastContext(ability, spec, seed, p.getPos(), eye, dir, flat, aim);
 	}
 
-	/** Parameters for the effect_event payload (aim point and a size). */
+	/**
+	 * Parameters for the effect_event payload: aim point, then size = the main radius / length, size2 = the secondary one
+	 * (scatter: tornado radius, lines: half width).
+	 */
 	float[] effectParams() {
-		float size = switch (ability) {
-			case TSUKISHIRO -> 4f;
-			case HAKUREN -> 12f;
-			case SHIRAFUNE -> 8f;
-			case ABSOLUTE_ZERO -> 10f;
-			case MODE_ATTACK -> 1.5f;
-			case SCATTER -> 5f;
-			case HAKUTEIKEN -> 20f;
-			default -> 0f;
-		};
-		return new float[] {(float) aim.x, (float) aim.y, (float) aim.z, size};
+		float size;
+		float size2 = 0f;
+		switch (ability) {
+			case TSUKISHIRO, ABSOLUTE_ZERO, MODE_ATTACK -> size = spec.floatNum(AbilityParams.RADIUS);
+			case HAKUREN -> {
+				size = spec.floatNum(AbilityParams.LENGTH);
+				size2 = spec.floatNum(AbilityParams.HALF_WIDTH);
+			}
+			case SHIRAFUNE -> size = spec.floatNum(AbilityParams.LENGTH);
+			case SCATTER -> {
+				size = spec.floatNum(AbilityParams.RADIUS);
+				size2 = spec.floatNum(AbilityParams.TORNADO_RADIUS);
+			}
+			case HAKUTEIKEN -> {
+				size = spec.floatNum(AbilityParams.LENGTH);
+				size2 = spec.floatNum(AbilityParams.RADIUS);
+			}
+			default -> size = 0f;
+		}
+		return new float[] {(float) aim.x, (float) aim.y, (float) aim.z, size, size2};
 	}
 }

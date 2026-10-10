@@ -716,3 +716,5 @@ Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha a
 - `getSkyBrightness` day factor under rain / thunder (formula follows the vanilla value, which includes the rain darkening, not seen on screen).
 - Custom sounds still vanilla layers; first-person release view; draw effects with Byakuya.
 - The console mode is dev-only, not part of the mod runtime path.
+
+## 2026-10-10: STOP POINT (b4game): bankai timer / balance numbers and shunpo in progress; existing tests were being updated to the new rules, no harness run yet. Continue per design/FIXES_B4.md steps 4-5 (defaults: shikai abilities cost reiatsu in bankai, 45 s bankai, shunpo shared).

@@ -339,8 +339,8 @@ final class PlateHud {
 		if (st == ZanpakutoState.SHIKAI || st == ZanpakutoState.BANKAI) {
 			for (int i = 0; i < HudModel.slotCount; i++) {
 				HudModel.Slot s = HudModel.SLOTS[i];
-				if (s.state == HudModel.SlotState.DISABLED) {
-					continue;
+				if (s.state == HudModel.SlotState.DISABLED || s.costTenths <= 0) {
+					continue; // free (bankai) abilities have no cost tick
 				}
 				float m = 1f - 0.2f * s.index;
 				int tx = fillLen(s.costTenths / max, span);

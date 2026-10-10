@@ -105,7 +105,7 @@ public final class LegacyHud {
 			boolean usable = a != null && CFG.spec(a).enabled();
 			ctx.fill(bx, by, bx + boxW, by + boxH, usable ? 0xCC10101A : 0x66000000);
 			ctx.drawBorder(bx, by, boxW, boxH, usable ? fillColor : 0xFF555555);
-			Text key = ReiatsuKeys.SLOTS[slot].getBoundKeyLocalizedText();
+			Text key = (state == ZanpakutoState.BANKAI ? ReiatsuKeys.BANKAI_SLOTS : ReiatsuKeys.SLOTS)[slot].getBoundKeyLocalizedText();
 			ctx.drawText(font, key, bx + 3, by + 3, 0xFFFFFF55, true);
 			if (!usable) {
 				ctx.drawText(font, Text.translatable("hud.reiatsu_test.no_ability"), bx + 3, by + 13, 0xFF777777, false);

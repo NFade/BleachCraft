@@ -30,7 +30,7 @@ class ReiatsuTest {
 		bankai.sm.devSetState(ZanpakutoState.BANKAI, R);
 		bankai.sm.devSetReiatsu(500);
 		bankai.adv(5);
-		assertEquals(496, bankai.sm.reiatsu().value());
+		assertEquals(505, bankai.sm.reiatsu().value(), "B4 step 4: bankai has no upkeep drain, +5 per batch like shikai");
 	}
 
 	@Test
@@ -56,12 +56,13 @@ class ReiatsuTest {
 		f.sm.tick(5_000_000);
 		assertEquals(1000, f.sm.reiatsu().value());
 
-		Fx b = new Fx();
+		Fx b = new Fx(Fx.withRate(ZanpakutoState.BANKAI, new Rate(0, 4)), 1000);
 		b.sm.devSetState(ZanpakutoState.BANKAI, R);
 		b.sm.devSetReiatsu(4);
 		b.adv(10);
-		// 4 - 4 = 0 at the first batch: bankai ends, and the bar never goes below zero
-		assertEquals(ZanpakutoState.SEALED, b.sm.state());
+		// a custom drain: 4 - 4 = 0 at the first batch; bankai only ends by its timer, and the bar never goes below zero
+		assertEquals(ZanpakutoState.BANKAI, b.sm.state());
+		assertEquals(0, b.sm.reiatsu().value());
 		assertTrue(b.sm.reiatsu().value() >= 0 && b.sm.reiatsu().value() <= 1000);
 	}
 
@@ -93,17 +94,19 @@ class ReiatsuTest {
 	}
 
 	@Test
-	void R6_idleBankaiAfter900TicksHasEightPoints() {
+	void R6_idleBankaiKeepsItsReiatsuAndEndsInShikaiAfter900Ticks() {
 		Fx f = new Fx().toShikai(R).toBankai(R);
 		long start = f.now();
-		assertEquals(800, f.sm.reiatsu().value());
-		f.adv(899);
+		assertEquals(1000, f.sm.reiatsu().value(), "entering bankai costs nothing");
+		for (int i = 0; i < 899; i++) {
+			f.adv(1);
+			assertEquals(1000, f.sm.reiatsu().value(), "no drain at tick " + i);
+		}
 		assertEquals(ZanpakutoState.BANKAI, f.sm.state());
 		f.adv(1);
-		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+		assertEquals(ZanpakutoState.SHIKAI, f.sm.state());
 		assertEquals(start + 900, f.now());
-		// 180 drain batches of -4 happened, then the revert stopped the drain: 800 - 720 = 80, plus 0 sealed batches
-		assertEquals(80, f.sm.reiatsu().value());
+		assertEquals(1000, f.sm.reiatsu().value());
 	}
 
 	@Test

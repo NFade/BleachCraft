@@ -30,6 +30,8 @@ public final class HudModel {
 	/** One ability slot as the strip shows it this frame. */
 	public static final class Slot {
 		public int index;
+		/** Bankai ability (own key row U I O) or shikai ability (Z H B); in bankai the strip shows both. */
+		public boolean bankaiKey;
 		public AbilityId ability;
 		public SlotState state;
 		public int remainingTicks;
@@ -91,7 +93,8 @@ public final class HudModel {
 	public static double plateAlpha;
 	public static int value;
 	public static int max = 1000;
-	public static final Slot[] SLOTS = {new Slot(), new Slot(), new Slot()};
+	/** Up to six: in bankai the bankai abilities first, then the shikai ones (B4 step 4). */
+	public static final Slot[] SLOTS = {new Slot(), new Slot(), new Slot(), new Slot(), new Slot(), new Slot()};
 	public static int slotCount;
 	/** Character and state shown by the strip (kept while the strip slides away). */
 	public static CharacterId stripChar = CharacterId.NONE;
@@ -143,8 +146,8 @@ public final class HudModel {
 	public static Technique technique;
 	public static final VoiceToast VOICE = new VoiceToast();
 	private static int lastTickSecond = -1;
-	private static final int[] LAST_REM = {0, 0, 0};
-	private static final boolean[] SEEN_REM = {false, false, false};
+	private static final int[] LAST_REM = new int[6];
+	private static final boolean[] SEEN_REM = new boolean[6];
 
 	// dev overrides (harness): remaining / total ticks per ability, forced
 	public static final int[][] COOLDOWN_OVERRIDE = new int[AbilityId.values().length][];
@@ -172,7 +175,7 @@ public final class HudModel {
 		barShakeUntil = hatchUntil = barFlashUntil = 0;
 		barRedFlashStart = -99;
 		gemReady = false;
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < SLOTS.length; i++) {
 			LAST_REM[i] = 0;
 			SEEN_REM[i] = false;
 			SLOTS[i].pingAge = 99;
@@ -268,7 +271,7 @@ public final class HudModel {
 		}
 
 		// bankai ready gem (SHIKAI at full reiatsu)
-		boolean ready = st == ZanpakutoState.SHIKAI && value >= max;
+		boolean ready = st == ZanpakutoState.SHIKAI && value >= max && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0);
 		if (ready && !gemReady) {
 			gemSparkAt = now;
 			if (FxConfig.cooldownReadySound && plateWanted) {
@@ -373,13 +376,26 @@ public final class HudModel {
 			return;
 		}
 		int n = 0;
-		for (int i = 0; i < 3; i++) {
-			AbilityId a = AbilityId.forSlot(ch, st, i);
-			if (a == null) {
-				continue;
+		// bankai: its own abilities first, then the shikai abilities that stay available (B4 step 4)
+		int tiers = st == ZanpakutoState.BANKAI ? 2 : 1;
+		for (int tier = 0; tier < tiers; tier++) {
+			ZanpakutoState tierState = tier == 0 ? st : ZanpakutoState.SHIKAI;
+			for (int i = 0; i < 3; i++) {
+				AbilityId a = AbilityId.forSlot(ch, tierState, i);
+				if (a == null) {
+					continue;
+				}
+				n = fillSlot(n, i, a, st == ZanpakutoState.BANKAI && tierState == ZanpakutoState.BANKAI, live);
 			}
+		}
+		slotCount = n;
+	}
+
+	private static int fillSlot(int n, int i, AbilityId a, boolean bankaiKey, boolean live) {
+		{
 			Slot s = SLOTS[n++];
 			s.index = i;
+			s.bankaiKey = bankaiKey;
 			s.ability = a;
 			AbilitySpec spec = CFG.spec(a);
 			s.costTenths = spec.costTenths();
@@ -415,7 +431,7 @@ public final class HudModel {
 			LAST_REM[idx] = rem;
 			s.shake = Math.max(0, s.shake);
 		}
-		slotCount = n;
+		return n;
 	}
 
 	private static int activeTicks(AbilityId a) {
@@ -529,8 +545,7 @@ public final class HudModel {
 				startLock(CFG.sealLockTicks() / 20.0);
 			}
 		} else if (effectId == 11) {
-			endedAt = now;
-			startLock(CFG.recoveryLockTicks() / 20.0);
+			endedAt = now; // bankai timer ran out: back to shikai, the HUD shows "Bankai ended" and holds the ready gem
 			barRedFlashStart = now;
 		} else if (effectId >= 20 && effectId <= 34) {
 			Technique t = new Technique();
@@ -638,6 +653,12 @@ public final class HudModel {
 				}
 				if (FxConfig.hud) {
 					FxSound.ui("ui.button.click", 0.5, 0.4);
+				}
+			}
+			case BLOCKED -> {
+				pushToast(Text.translatable("hud.reiatsu_test.denied.blocked"), HudAssets.DIM, ToastKind.GREY, 1.2);
+				if (FxConfig.hud) {
+					FxSound.ui("block.note_block.bass", 0.5, 0.3);
 				}
 			}
 			case DENIED_STATE, DENIED_NOT_DRAWN -> {

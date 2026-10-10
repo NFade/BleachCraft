@@ -23,6 +23,6 @@ public record ReiatsuState(int value, int max) {
 
 	/** Spending may never take the bar to zero (STATE_MACHINE rule R2): value - cost >= 1. */
 	public boolean canSpend(int cost) {
-		return (long) value - cost >= 1L;
+		return cost <= 0 || (long) value - cost >= 1L; // a free action is always possible, even at zero
 	}
 }
