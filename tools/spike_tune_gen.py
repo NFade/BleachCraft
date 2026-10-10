@@ -409,6 +409,49 @@ def shipped_set(item):
 sets["h3r"] = shipped_set("sode_no_shirayuki")
 sets["h3b"] = shipped_set("senbonzakura")
 
+# ---- B4 step 2: scabbard in the left hand, draw driven by SEALED -> BASE, hip scabbard in third person.
+# Everything uses the shipped display json of the item under test; `cfg` overrides keys of the manifest "draw" block
+# (stow / hip) so the stow and hip poses can be tuned without editing the manifest.
+def k_view(name, view, state, item, p=None, cfg=None, **extra):
+    d = {"name": name, "view": view, "state": state, "display": shipped(item)}
+    if p is not None:
+        d["draw_p"] = p
+    if cfg:
+        d["draw_cfg"] = cfg
+    d.update(extra)
+    return d
+
+
+def k_sets(item, cfg=None, tag="k"):
+    out = {}
+    out[tag + "1"] = [k_view("%s1_%s_fp" % (tag, st), "fp", st, item, cfg=cfg) for st in ("sealed", "base", "shikai", "bankai")]
+    out[tag + "2"] = [k_view("%s2_draw_%02d" % (tag, round(pr * 100)), "fp", "base", item, p=pr, cfg=cfg)
+                      for pr in (0.0, 0.1, 0.2, 0.3, 0.45, 0.55, 0.7, 0.85, 1.0)]
+    out[tag + "3"] = [k_view("%s3_%s_%s" % (tag, st, v), v, st, item, cfg=cfg)
+                      for st in ("sealed", "base") for v in ("side_r", "side_l", "front", "back", "tp_front", "tp_back")]
+    out[tag + "4"] = [k_view("%s4_p%02d_%s" % (tag, round(pr * 100), v), v, "sealed", item, p=pr, cfg=cfg)
+                      for pr in (0.15, 0.4, 0.8) for v in ("side_r", "front")]
+    out[tag + "5"] = [k_view("%s5_fpleft_%s" % (tag, st), "fp_left", st, item, cfg=cfg) for st in ("sealed", "base", "shikai")]
+    return out
+
+
+for _it, _tag in (("sode_no_shirayuki", "k"), ("senbonzakura", "q")):
+    sets.update(k_sets(_it, tag=_tag))
+
+# stow pose candidates (hand frame: rot about x, y, z in degrees, move in blocks)
+def stow_cfg(rot, move, slide_end=0.55):
+    return {"stow": {"rot": list(rot), "move": list(move), "slide_end": slide_end}}
+
+
+STOWS = {
+    "A": stow_cfg((0, 0, 90), (-0.45, 0.30, 0)),
+    "B": stow_cfg((0, 0, 70), (-0.50, 0.20, 0)),
+    "C": stow_cfg((0, 0, 110), (-0.40, 0.45, 0)),
+    "D": stow_cfg((0, 0, 80), (-0.60, 0.35, 0.1)),
+}
+for _it, _tag in (("sode_no_shirayuki", "ks"), ("senbonzakura", "qs")):
+    sets[_tag] = [k_view("%s_%s_%s" % (_tag, n, st), "fp", st, _it, cfg=cfg) for n, cfg in STOWS.items() for st in ("sealed", "base")]
+
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]
     json.dump({"candidates": sets[name]}, open(out, "w"), indent=1)

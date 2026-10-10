@@ -1,6 +1,8 @@
 package dev.minebleach.reiatsutest.client.model;
 
-import dev.minebleach.reiatsutest.core.obj.DrawAnimation;
+import dev.minebleach.reiatsutest.core.obj.DrawRig;
+import dev.minebleach.reiatsutest.core.obj.ItemManifest;
+import net.minecraft.entity.LivingEntity;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ReleaseState;
 import java.util.List;
@@ -67,21 +69,30 @@ public final class ObjItemBakedModel implements BakedModel {
 		ReleaseState state = stack.getOrDefault(ModComponents.RELEASE_STATE, ReleaseState.SEALED);
 		ModelTransformationMode mode = context.itemTransformationMode();
 		QuadEmitter em = context.getEmitter();
-		float drawP = -1f;
-		if (isHandMode(mode) && states.byState[ReleaseState.SEALED.ordinal()].draw != null) {
-			drawP = DrawTracker.progress(stack); // draw / sheathe animation: the sealed sword at this progress
-			if (drawP >= 0f) {
-				state = ReleaseState.SEALED;
-			}
-		}
 		ObjItemUnbakedModel.StateMeshes sm = states.byState[state.ordinal()];
-		if (drawP >= 0f) {
-			emitDraw(sm, drawP, context);
-			if (STATS) {
-				EMIT_NANOS.addAndGet(System.nanoTime() - t0);
-				EMIT_CALLS.incrementAndGet();
+		if (states.saya != null && isHandMode(mode)) {
+			// B4 step 2: the scabbard is drawn separately; the sword of the main hand follows the draw rig
+			LivingEntity holder = DrawTracker.renderEntity();
+			if (holder != null && holder.getMainHandStack() == stack) {
+				float p = DrawTracker.effectiveProgress(holder, stack);
+				if (state == ReleaseState.SEALED || state == ReleaseState.BASE || p < 1f) {
+					sm = states.byState[ReleaseState.SEALED.ordinal()]; // the bare drawn sword (BASE uses the same mesh)
+					if (p < 1f && mode.isFirstPerson()) {
+						emitRigged(sm, rig(mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND).at(p), context);
+						stats(t0);
+						return;
+					}
+					if (p < 1f && p < rig(false).slideEnd) {
+						stats(t0); // third person: the sword is still in the scabbard on the hip (ScabbardRenderer)
+						return;
+					}
+				}
+			} else if (state == ReleaseState.SEALED) {
+				sm = states.byState[ReleaseState.SEALED.ordinal()]; // an off hand or loose stack: the whole sheathed sword
+				sm.otherBase.outputTo(em);
+				stats(t0);
+				return;
 			}
-			return;
 		}
 		switch (mode) {
 			case GUI -> {
@@ -117,58 +128,77 @@ public final class ObjItemBakedModel implements BakedModel {
 		};
 	}
 
-	/**
-	 * The sealed sword at draw progress p (0 sheathed, 1 drawn): the sword (hilt + blade) only slides with the hand, the saya
-	 * swings away along the sori arc and shrinks at the end (see DrawAnimation). Per frame quad transforms, a few hundred quads.
-	 */
-	private static void emitDraw(ObjItemUnbakedModel.StateMeshes sm, float p, RenderContext context) {
-		DrawAnimation d = sm.draw;
-		float[] v = new float[3];
-		float[] n = new float[3];
+	private void stats(long t0) {
+		if (STATS) {
+			EMIT_NANOS.addAndGet(System.nanoTime() - t0);
+			EMIT_CALLS.incrementAndGet();
+		}
+	}
+
+	/** The bare sword (hilt + blade) transformed by a rigid transform of the model space, normals rotated with it. */
+	private static void emitRigged(ObjItemUnbakedModel.StateMeshes sm, DrawRig.Rigid rg, RenderContext context) {
 		Vector3f vv = new Vector3f();
 		context.pushTransform(q -> {
 			for (int c = 0; c < 4; c++) {
 				q.copyPos(c, vv);
-				v[0] = vv.x;
-				v[1] = vv.y;
-				v[2] = vv.z;
-				d.sword(v, p);
-				q.pos(c, v[0], v[1], v[2]);
-			}
-			return true;
-		});
-		sm.drawSword.outputTo(context.getEmitter());
-		if (sm.drawSwordGlow != null) {
-			sm.drawSwordGlow.outputTo(context.getEmitter());
-		}
-		context.popTransform();
-		if (d.sayaScale(p) <= 0.001f) {
-			return;
-		}
-		context.pushTransform(q -> {
-			for (int c = 0; c < 4; c++) {
-				q.copyPos(c, vv);
-				v[0] = vv.x;
-				v[1] = vv.y;
-				v[2] = vv.z;
-				d.saya(v, p);
+				float[] v = rg.apply(new float[] {vv.x, vv.y, vv.z});
 				q.pos(c, v[0], v[1], v[2]);
 				if (q.hasNormal(c)) {
 					q.copyNormal(c, vv);
-					n[0] = vv.x;
-					n[1] = vv.y;
-					n[2] = vv.z;
-					d.sayaNormal(n, p);
+					float[] n = rg.rotateNormal(new float[] {vv.x, vv.y, vv.z});
 					q.normal(c, n[0], n[1], n[2]);
 				}
 			}
 			return true;
 		});
-		sm.drawSaya.outputTo(context.getEmitter());
-		if (sm.drawSayaGlow != null) {
-			sm.drawSayaGlow.outputTo(context.getEmitter());
+		sm.handBase.outputTo(context.getEmitter());
+		if (sm.handGlow != null) {
+			sm.handGlow.outputTo(context.getEmitter());
 		}
 		context.popTransform();
+	}
+
+	// ------------------------------------------------------------------ scabbard access (ScabbardRenderer, FirstPersonHand)
+
+	/** The scabbard mesh (model space, grip at 0.5), or null when the item has none. */
+	public Mesh sayaMesh() {
+		return states.saya;
+	}
+
+	/** The bare sword of the sealed state (hilt + blade), model space. */
+	public Mesh swordMesh() {
+		return states.byState[ReleaseState.SEALED.ordinal()].handBase;
+	}
+
+	public ItemManifest manifest() {
+		return manifest;
+	}
+
+	private DrawRig rigRight;
+	private DrawRig rigLeft;
+	private float rigMult = -1f;
+
+	/** The draw rig for the right (main arm right) or left hand pose; rebuilt when the first person scale option changes. */
+	public DrawRig rig(boolean left) {
+		float m = dev.minebleach.reiatsutest.client.ClientOptions.firstPersonScaleMultiplier;
+		if (m != rigMult) {
+			rigMult = m;
+			rigRight = null;
+			rigLeft = null;
+		}
+		DrawRig r = left ? rigLeft : rigRight;
+		if (r == null) {
+			ItemManifest.Stow st = manifest.stow != null ? manifest.stow
+					: new ItemManifest.Stow(new float[3], new float[3], 0.55f);
+			ModelTransformationMode mode = left ? ModelTransformationMode.FIRST_PERSON_LEFT_HAND : ModelTransformationMode.FIRST_PERSON_RIGHT_HAND;
+			r = new DrawRig(states.sayaMeta, HandMath.stowToModel(getTransformation().getTransformation(mode), left, st), st.slideEnd());
+			if (left) {
+				rigLeft = r;
+			} else {
+				rigRight = r;
+			}
+		}
+		return r;
 	}
 
 	/** First person, ground and head draw only this many chain segments (ADR section 1: the full ribbon would fill the screen); fixed draws none, third person all. */

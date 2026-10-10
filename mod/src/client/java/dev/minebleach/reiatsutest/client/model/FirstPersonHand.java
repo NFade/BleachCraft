@@ -15,6 +15,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RotationAxis;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -56,6 +57,32 @@ public final class FirstPersonHand {
 		m.pop();
 	}
 
+	/** The vanilla arm of an empty hand in the hand frame of the current matrix stack (used for the hand that holds the scabbard). */
+	public static void renderVanillaArmAt(MinecraftClient mc, AbstractClientPlayerEntity player, boolean left, MatrixStack m,
+			VertexConsumerProvider vcp, int light) {
+		renderVanillaArm(mc, player, left, new ArmPose(new float[3], 0f, new float[3], new float[3], 1f, true), m, vcp, light);
+	}
+
+	/**
+	 * Offset (hand frame) of the sword grip from its held position at the current draw progress, or null when the sword is
+	 * held (or the item has no scabbard rig).
+	 */
+	private static Vector3f gripOffset(BakedModel model, ObjItemBakedModel obj, ItemStack stack, AbstractClientPlayerEntity player,
+			Transformation tr, boolean left, boolean leftHanded) {
+		if (obj.sayaMesh() == null || stack != player.getMainHandStack()) {
+			return null;
+		}
+		float p = DrawTracker.effectiveProgress(player, stack);
+		if (p >= 1f) {
+			return null;
+		}
+		float[] g = obj.rig(left).gripAt(p);
+		Matrix4f toHand = HandMath.modelToHand(tr, leftHanded);
+		Vector3f a = toHand.transformPosition(new Vector3f(g[0], g[1], g[2]));
+		Vector3f b = toHand.transformPosition(new Vector3f(0.5f, 0.5f, 0.5f));
+		return a.sub(b);
+	}
+
 	public static void render(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, boolean leftHanded,
 			MatrixStack m, VertexConsumerProvider vcp, int light) {
 		if (!ClientOptions.showFirstPersonHand || !mode.isFirstPerson() || !(stack.getItem() instanceof ZanpakutoItem)
@@ -74,7 +101,16 @@ public final class FirstPersonHand {
 		boolean slim = player.getSkinTextures().model() == SkinTextures.Model.SLIM;
 
 		if (pose.vanilla()) {
-			renderVanillaArm(mc, player, left, pose, m, vcp, light);
+			// B4 step 2: while the sword is drawn or sheathed the fist follows the grip of the sword (draw rig)
+			Vector3f follow = gripOffset(model, obj, stack, player, tr, left, leftHanded);
+			if (follow != null) {
+				m.push();
+				m.translate(follow.x, follow.y, follow.z);
+				renderVanillaArm(mc, player, left, pose, m, vcp, light);
+				m.pop();
+			} else {
+				renderVanillaArm(mc, player, left, pose, m, vcp, light);
+			}
 			return;
 		}
 		m.push();
