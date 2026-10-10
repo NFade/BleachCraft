@@ -171,13 +171,22 @@ public final class FxMesh {
 	 * (the moonlight sweep).
 	 */
 	public void writeBlade(BufferBuilder b, float[] m, double ox, double oy, double oz, int light, float tipY, int bodyColor, int tipColor, float emissive, float invScale) {
+		writeBlade(b, m, ox, oy, oz, light, tipY, bodyColor, tipColor, emissive, invScale, Float.MAX_VALUE);
+	}
+
+	/**
+	 * As above with a cut: every vertex above local height {@code cutY} collapses onto it (the burning dissolve and the regrowth of 6.2: the
+	 * tip quads become a flat, glowing cap at the cut; the glow test still uses the original height).
+	 */
+	public void writeBlade(BufferBuilder b, float[] m, double ox, double oy, double oz, int light, float tipY, int bodyColor, int tipColor, float emissive, float invScale, float cutY) {
 		int n = quads * 4;
 		int blockL = light & 0xFFFF;
 		int skyL = (light >> 16) & 0xFFFF;
 		int boosted = ((int) (skyL + (240 - skyL) * emissive) << 16) | (int) (blockL + (240 - blockL) * emissive);
 		for (int c = 0; c < n; c++) {
 			float x = pos[c * 3];
-			float y = pos[c * 3 + 1];
+			float y0 = pos[c * 3 + 1];
+			float y = Math.min(y0, cutY);
 			float z = pos[c * 3 + 2];
 			float wx = (float) (ox + m[0] * x + m[1] * y + m[2] * z);
 			float wy = (float) (oy + m[3] * x + m[4] * y + m[5] * z);
@@ -189,7 +198,7 @@ public final class FxMesh {
 			float nx = (m[0] * nx0 + m[1] * ny0 + m[2] * nz0) * invScale;
 			float ny = (m[3] * nx0 + m[4] * ny0 + m[5] * nz0) * invScale;
 			float nz = (m[6] * nx0 + m[7] * ny0 + m[8] * nz0) * invScale;
-			boolean tip = y >= tipY;
+			boolean tip = y0 >= tipY;
 			b.vertex(wx, wy, wz, tip ? tipColor : bodyColor, uv[c * 2], uv[c * 2 + 1], OverlayTexture.DEFAULT_UV, tip ? 0xF000F0 : boosted, nx, ny, nz);
 		}
 	}

@@ -22,7 +22,9 @@ import dev.minebleach.reiatsutest.client.fx.FxTimelines;
 import dev.minebleach.reiatsutest.client.fx.PetalSwarmRenderer;
 import dev.minebleach.reiatsutest.client.fx.RowsFx;
 import dev.minebleach.reiatsutest.client.fx.ScreenFx;
+import dev.minebleach.reiatsutest.client.fx.StormRenderer;
 import dev.minebleach.reiatsutest.client.fx.SwarmFx;
+import dev.minebleach.reiatsutest.client.fx.WingHaloRenderer;
 import dev.minebleach.reiatsutest.client.input.ReiatsuKeys;
 import dev.minebleach.reiatsutest.server.ZanpakutoManager;
 import java.util.ArrayList;
@@ -75,6 +77,8 @@ final class Phase6Swarm {
 			FxClient.Stats.reset();
 			PetalSwarmRenderer.resetStats();
 			BankaiBladeRenderer.resetStats();
+			StormRenderer.resetStats();
+			WingHaloRenderer.resetStats();
 		}
 
 		static int count() {
@@ -112,6 +116,10 @@ final class Phase6Swarm {
 			double[] r = Frames.result();
 			double petals = PetalSwarmRenderer.frames == 0 ? 0 : PetalSwarmRenderer.sumMs / PetalSwarmRenderer.frames;
 			double blades = BankaiBladeRenderer.frames == 0 ? 0 : BankaiBladeRenderer.sumMs / BankaiBladeRenderer.frames;
+			double storm = StormRenderer.frames == 0 ? 0 : StormRenderer.sumMs / StormRenderer.frames;
+			double wings = WingHaloRenderer.frames == 0 ? 0 : WingHaloRenderer.sumMs / WingHaloRenderer.frames;
+			ReiatsuTest.LOGGER.info("[phase6] FPS {} storm/hakuteiken: storm petals {} ms (verts {}, petals {}, condensed {}), wings {} ms (verts {})", name, f(storm), StormRenderer.lastVertices,
+					StormRenderer.lastPetals, StormRenderer.lastCondensed, f(wings), WingHaloRenderer.lastVertices);
 			ReiatsuTest.LOGGER.info("[phase6] FPS {}: mean {} ms ({} fps), p99 {} ms (1% low {} fps), reiatsu_fx glow {} ms, petals {} ms (verts {}, petals {}, near {}), blades {} ms (cpu verts {} blades {}, static verts {}, static {}), live particles {} glow {}",
 					name, f(r[0]), f(r[2]), f(r[1]), f(r[3]), f(FxClient.Stats.meanMs()), f(petals), PetalSwarmRenderer.lastVertices, PetalSwarmRenderer.lastPetals,
 					PetalSwarmRenderer.lastNear, f(blades), BankaiBladeRenderer.lastCpuVertices, BankaiBladeRenderer.lastCpuBlades, BankaiBladeRenderer.lastStaticVertices,
@@ -175,6 +183,19 @@ final class Phase6Swarm {
 			case "top" -> {
 				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
 				cmd("tp @s 0.5 -60 0.5 0 55");
+			}
+			case "far" -> {
+				// a flat look (pitch 4): the aim ray ends about 23 blocks ahead (storm stream, Hakuteiken line)
+				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+				cmd("tp @s 0.5 -60 0.5 0 4");
+			}
+			case "farside" -> {
+				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+				cmd("tp @s 0.5 -60 0.5 90 4");
+			}
+			case "fartop" -> {
+				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+				cmd("tp @s 0.5 -60 0.5 0 35");
 			}
 			default -> {
 				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
@@ -361,7 +382,7 @@ final class Phase6Swarm {
 				cmd("reiatsu state sealed");
 			});
 			default -> {
-				return false;
+				return Phase6Storm.console(w);
 			}
 		}
 		return true;

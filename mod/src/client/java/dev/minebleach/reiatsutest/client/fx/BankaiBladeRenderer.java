@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
 import dev.minebleach.reiatsutest.core.fx.BladeRowLayout;
+import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
@@ -134,13 +135,18 @@ public final class BankaiBladeRenderer {
 
 	/** World position of the glowing tip of blade i at row time t. */
 	static void tipPosition(RowsFx.State st, int i, double t, double[] out) {
+		tipPosition(st, i, t, 1.0, out);
+	}
+
+	/** As above for a blade cut to the fraction {@code f} of its length (the glowing edge of the dissolve and the regrowth). */
+	static void tipPosition(RowsFx.State st, int i, double t, double f, double[] out) {
 		double lean = Math.toRadians(st.layout.leanDeg(t, i));
 		basis(st, i, lean, M);
 		double off = offsetOf(st, i, t);
 		double by = st.ground[i] - 0.5 + off;
-		out[0] = st.bx[i] + M[1] * BladeRowLayout.BLADE_LENGTH + M[2] * TIP_Z;
-		out[1] = by + M[4] * BladeRowLayout.BLADE_LENGTH + M[5] * TIP_Z;
-		out[2] = st.bz[i] + M[7] * BladeRowLayout.BLADE_LENGTH + M[8] * TIP_Z;
+		out[0] = st.bx[i] + (M[1] * BladeRowLayout.BLADE_LENGTH + M[2] * TIP_Z) * f;
+		out[1] = by + (M[4] * BladeRowLayout.BLADE_LENGTH + M[5] * TIP_Z) * f;
+		out[2] = st.bz[i] + (M[7] * BladeRowLayout.BLADE_LENGTH + M[8] * TIP_Z) * f;
 	}
 
 	private static int lightOf(RowsFx.State st, int i) {
@@ -176,7 +182,7 @@ public final class BankaiBladeRenderer {
 		for (RowsFx.State st : states.values()) {
 			double t = st.time();
 			BladeRowLayout l = st.layout;
-			boolean staticOk = useVbo && st.endAt < 0 && t >= st.settleAt;
+			boolean staticOk = useVbo && st.endAt < 0 && t >= st.settleAt && !st.phaseBusy();
 			if (staticOk) {
 				if (!st.vboValid) {
 					buildStatic(st, world);
@@ -197,6 +203,12 @@ public final class BankaiBladeRenderer {
 					if (off < -7.6) {
 						continue;
 					}
+					double frac = st.fraction(i);
+					if (frac <= 0.003) {
+						continue;
+					}
+					float cutY = frac >= 0.999 ? Float.MAX_VALUE : (float) (BladeRowLayout.BLADE_LENGTH * frac);
+					double shiver = shiverOf(st, i);
 					double dx = st.bx[i] - cp.x;
 					double dz = st.bz[i] - cp.z;
 					double dy = st.ground[i] + 4 - cp.y;
@@ -223,7 +235,9 @@ public final class BankaiBladeRenderer {
 						emissive = (float) Math.min(1.0, BankaiCurves.sweepBoost(l.dist[i], t, comp) / 0.35 * 0.7);
 					}
 					FxMesh m = d < lodDist || lod == null ? blade : lod;
-					m.writeBlade(buf, M, st.bx[i] - cp.x, by - cp.y, st.bz[i] - cp.z, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, 1f / l.scale[i]);
+					double sx = shiver == 0 ? 0 : shiver * -Math.cos(Math.toRadians(st.yawDeg));
+					double sz = shiver == 0 ? 0 : shiver * -Math.sin(Math.toRadians(st.yawDeg));
+					m.writeBlade(buf, M, st.bx[i] - cp.x + sx, by - cp.y, st.bz[i] - cp.z + sz, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, 1f / l.scale[i], cutY);
 					cpuQuads += m.quads;
 					cpuBlades++;
 				}
@@ -245,12 +259,39 @@ public final class BankaiBladeRenderer {
 		frames++;
 	}
 
+	/** Command shiver of 6.2: blades tremble +-0.04 m at 18 Hz for 0.3 s before they are cut (sideways across the row). */
+	private static double shiverOf(RowsFx.State st, int i) {
+		if (st.phase == RowsPhase.STANDING) {
+			return 0;
+		}
+		double tau = st.phaseTau();
+		double dur = FxTune.d("storm.shiverTime", 0.3);
+		if (tau < 0 || tau >= dur || st.fraction(i) < 0.999) {
+			return 0;
+		}
+		return FxTune.d("storm.shiver", 0.04) * Math.sin(2 * Math.PI * 18 * tau + i * 1.3) * (1.0 - tau / dur);
+	}
+
+	/** 0..1 overdrive of the tips at the command: to a white core over 0.25 s. */
+	private static double overdrive(RowsFx.State st) {
+		if (st.phase == RowsPhase.STANDING) {
+			return 0;
+		}
+		return FxMath.smoothstep(0, FxTune.d("storm.overdriveTime", 0.25), st.phaseTau());
+	}
+
 	// ------------------------------------------------------------------------------------------ static buffer
+
+	/** Own allocator for the one-off static buffer build (it can happen while the CPU path buffer of another state is open). */
+	private static Tessellator staticTess;
 
 	private static void buildStatic(RowsFx.State st, ClientWorld world) {
 		long t0 = System.nanoTime();
 		BladeRowLayout l = st.layout;
-		BufferBuilder b = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+		if (staticTess == null) {
+			staticTess = new Tessellator(1 << 20);
+		}
+		BufferBuilder b = staticTess.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 		int quads = 0;
 		double t = 1.0e6; // the final pose
 		for (int i = 0; i < l.n; i++) {
@@ -296,6 +337,16 @@ public final class BankaiBladeRenderer {
 
 	// ------------------------------------------------------------------------------------------ hilt, ripples, decals
 
+	/** One Tessellator (own buffer allocator) per extra buffer: builders of one allocator must never be open at the same time (their vertices would interleave). */
+	private static final Tessellator[] EXTRA = new Tessellator[3];
+
+	private static BufferBuilder extraBuilder(int which) {
+		if (EXTRA[which] == null) {
+			EXTRA[which] = new Tessellator(1 << 17);
+		}
+		return EXTRA[which].begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+	}
+
 	private static void drawExtras(WorldRenderContext ctx, Vec3d cp) {
 		ClientWorld world = ctx.world();
 		BufferBuilder hb = null;
@@ -312,7 +363,7 @@ public final class BankaiBladeRenderer {
 			double hs = FxTune.d("bankai.hiltScale", 1.8);
 			if (hilt != null) {
 				if (hb == null) {
-					hb = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+					hb = extraBuilder(0);
 				}
 				double hy;
 				double yawDeg = st.yawDeg;
@@ -344,7 +395,7 @@ public final class BankaiBladeRenderer {
 			}
 			if (ripple != null && st.endAt < 0) {
 				if (rb == null) {
-					rb = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+					rb = extraBuilder(1);
 				}
 				for (int k = 0; k < 3; k++) {
 					double rad = BankaiCurves.rippleRadius(k, t);
@@ -377,7 +428,7 @@ public final class BankaiBladeRenderer {
 						continue;
 					}
 					if (cb == null) {
-						cb = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+						cb = extraBuilder(2);
 					}
 					scar(cb, dx, st.ground[i] + 0.02 - cp.y, dz, 1.7, i * 2.399, (int) (255 * reveal * fadeEnd), lightOf(st, i));
 				}
@@ -455,23 +506,41 @@ public final class BankaiBladeRenderer {
 			double breath = BankaiCurves.tipBreath(t);
 			double fade = st.endAt >= 0 ? 1.0 - FxMath.clamp((FxClock.now - st.endAt) / 0.5) : 1.0;
 			double lit = FxMath.smoothstep(l.completionTime() - 0.4, l.completionTime() + 0.2, t);
+			double over = overdrive(st);
+			boolean phased = st.phase != RowsPhase.STANDING;
+			double edgeMul = FxTune.d("storm.edgeGlow", 0.8);
 			for (int i = 0; i < l.n; i++) {
 				double off = offsetOf(st, i, t);
 				if (off < -7.0) {
 					continue;
 				}
-				tipPosition(st, i, t, tip);
+				double f = st.fraction(i);
+				if (f <= 0.004) {
+					continue;
+				}
+				tipPosition(st, i, t, f, tip);
 				double rise = FxMath.clamp((off + 7.0) / 3.0);
+				double edge = phased ? RowsPhase.edgeGlow(st.timing, st.phaseTau(), l.dist[i]) : 0;
 				double k = glow * breath * fade * (0.45 + 0.55 * Math.max(lit, rise * 0.6));
-				e.sprite(GlowSprite.GLOW_CORE, tip[0], tip[1], tip[2], size * l.scale[i], 0, 0.95f, 0.91f, 1f, k);
+				float cg = (float) (0.91 + 0.09 * over);
+				e.sprite(GlowSprite.GLOW_CORE, tip[0], tip[1], tip[2], size * l.scale[i] * (1.0 + 0.5 * over + 0.7 * edge), 0, 0.95f + 0.05f * (float) over, cg, 1f,
+						k * (1.0 + 1.1 * over + 1.6 * edge));
+				if (edge > 0.02) {
+					// the burning edge: a horizontal flare at the cut and a sparkle on every 3rd blade
+					e.sprite(GlowSprite.FLARE, tip[0], tip[1], tip[2], 2.4 * l.scale[i], 0, 1f, 0.91f, 0.98f, edgeMul * edge * fade);
+					if (i % 3 == 0) {
+						e.sprite(GlowSprite.STAR4, tip[0], tip[1], tip[2], 1.1 * l.scale[i], i * 0.7 + FxClock.now * 2.0, 1f, 0.95f, 1f, 0.7 * edge * fade);
+					}
+				}
 			}
 			// the sparkle running up: a faint lilac star at every 4th tip, twinkling
 			for (int i = 0; i < l.n; i += 4) {
 				double off = offsetOf(st, i, t);
-				if (off < -1.0 || st.endAt >= 0) {
+				double f = st.fraction(i);
+				if (off < -1.0 || st.endAt >= 0 || f < 0.5) {
 					continue;
 				}
-				tipPosition(st, i, t, tip);
+				tipPosition(st, i, t, f, tip);
 				double tw = 0.5 + 0.5 * Math.sin(FxClock.now * 3.0 + i * 1.7);
 				e.sprite(GlowSprite.STAR4, tip[0], tip[1], tip[2], 0.9 * l.scale[i], i * 0.3, 1f, 0.96f, 1f, 0.28 * tw * fade * lit);
 			}

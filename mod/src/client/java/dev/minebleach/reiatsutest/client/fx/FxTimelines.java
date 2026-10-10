@@ -151,6 +151,8 @@ public final class FxTimelines {
 		ScreenFx.clear();
 		FxParticles.clearAll();
 		RukiaFx.clearAll();
+		StormFx.clear();
+		HakuteikenFx.clear();
 	}
 
 	/** Position helper for effects that follow an entity. */

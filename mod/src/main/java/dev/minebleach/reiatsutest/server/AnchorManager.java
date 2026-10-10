@@ -107,6 +107,15 @@ final class AnchorManager {
 		return null;
 	}
 
+	/** Phase kind (S3) of the rows anchor of a player, or -1 when there is none (harness checks). */
+	static int rowsPhase(ServerPlayerEntity p) {
+		Anchors a = BY_OWNER.get(p.getUuid());
+		if (a == null || a.rows() == null) {
+			return -1;
+		}
+		return find(p.getServer(), a.rows()) instanceof FxAnchorEntity e ? e.phaseKind() : -1;
+	}
+
 	/** Number of anchors alive for a player (harness checks). */
 	static int count(ServerPlayerEntity p) {
 		Anchors a = BY_OWNER.get(p.getUuid());
