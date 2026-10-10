@@ -374,16 +374,24 @@ def sp_speck():
     return np.exp(-(np.hypot(x, y) / 1.2) ** 2)
 
 
+def edge_window(w, h, mx, my):
+    """0 at the cell border rising smoothly to 1 at mx / my pixels inside (additive cells must end at zero, else a box shows)."""
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    wx = smoothstep(0.0, mx, np.minimum(xs + 0.5, w - xs - 0.5)) if mx > 0 else 1.0
+    wy = smoothstep(0.0, my, np.minimum(ys + 0.5, h - ys - 0.5)) if my > 0 else 1.0
+    return wx * wy
+
+
 def sp_mist(rng):
     x, y = grid(48, 32)
     base = np.exp(-((x / 18.0) ** 2 + (y / 10.0) ** 2))
-    return clamp(base * (0.6 + 0.4 * fbm(48, 32, 12, 3, rng)))
+    return clamp(base * (0.6 + 0.4 * fbm(48, 32, 12, 3, rng))) * edge_window(48, 32, 10, 8)
 
 
 def sp_flare():
     x, y = grid(64, 32)
     r = np.hypot(x, y)
-    return clamp(np.exp(-(y / 2.2) ** 2) * np.exp(-(x / 20.0) ** 2) + 0.5 * np.exp(-(r / 4.0) ** 2))
+    return clamp(np.exp(-(y / 2.2) ** 2) * np.exp(-(x / 20.0) ** 2) + 0.5 * np.exp(-(r / 4.0) ** 2)) * edge_window(64, 32, 12, 3)
 
 
 def sp_streak():
@@ -475,7 +483,7 @@ def sp_crack(rng):
 def sp_pillar():
     ys, xs = np.mgrid[0:96, 0:32].astype(np.float32)
     i = (0.9 * np.exp(-((xs - 15.5) / 5.0) ** 2) + 0.3 * np.exp(-((xs - 15.5) / 12.0) ** 2)) * (0.85 + 0.15 * np.sin(2 * math.pi * ys / 32))
-    return clamp(i)
+    return clamp(i) * edge_window(32, 96, 6, 0)
 
 
 GLOW_RECTS = {

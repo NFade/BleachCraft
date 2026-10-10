@@ -44,11 +44,15 @@ public final class FxClient {
 			startNanos = System.nanoTime() - t0;
 			p.pop();
 		});
+		WorldRenderEvents.BEFORE_DEBUG_RENDER.register(ctx -> FxDepth.capture());
 		WorldRenderEvents.LAST.register(ctx -> {
 			Profiler p = MinecraftClient.getInstance().getProfiler();
 			p.push("reiatsu_fx");
 			long t0 = System.nanoTime();
+			FxProbe.run("LAST-before");
 			ScreenFx.renderGrade(ctx);
+			FxDepth.restore();
+			FxProbe.run("LAST-after-restore");
 			FxGlowBatch.draw(ctx);
 			double ms = (startNanos + System.nanoTime() - t0) / 1.0e6;
 			Stats.frameMs = ms;

@@ -567,3 +567,37 @@ Display rotation of the first-person hand changed from [-8, -1, 6.9] to [-172, 1
 - The Yarn sources jar is not in this checkout (`mod/.gradle/loom-cache/minecraftMaven` has only class jars): Java names are compile-checked; the new `@Shadow` fields `equipProgressMainHand` / `prevEquipProgressMainHand` were verified with `javap -p` and the harness (mixin applies, no crash); the vanilla equip offset `-0.52 + equip * -0.6` is from memory, not read from sources.
 - The user's red scabbard reference image was not available: the composition (saya across the lower screen, left fist on it) is my reading of "large scabbard lower left, guard above" and is flatter than that text suggests; the Rukia saya is dark navy, not red. A steep variant (rot 122) was tried and rejected: the translated arm floats and the saya leaves the screen.
 - Third person: pop at the end of the slide, no second real player, left-handed third person only on armor stands. Fabulous graphics, production refmap for the new mixin, slim skin, hotbar swap (equip) behaviour of the saya checked by code reading only. The sheathe (reverse) uses the same rig with the tracker reversed; not captured as a separate strip.
+
+## 2026-10-10: Phase 6 step 0 (FX scaffolding to the acceptance line), branch `phase6-fx`
+
+Worktree `D:\MineBleach\.claude\worktrees\phase6`, merged with main (SEALED -> BASE -> SHIKAI -> BANKAI, scabbard, `DrawEvents`). The WIP scaffolding compiled as it was; everything below was added or fixed on top. No Blender, no generate_3d. Screenshots: `blender/renders/p6/p6_00_*.png` (also `mod/run/screenshots`).
+
+### What was added
+- `Phase6Harness` (+ `Phase6Fx`, `Phase6Hud`, `Phase6Release` scenario files), `gradlew runPhase6 [-Phold=atlas,grade,perf,hud,release] [-PfreezeAt=ms] [-Pfx=key=value,..]`. Same engine as phase 4 (flat creative world, real key presses, server commands). Screenshots are taken at exact FX times: `FxClock.freezeIn(seconds)` (new) freezes the FX clock after an exact time slice, never by waiting.
+- `FxDepth` (new, see "Fabulous depth" below), `FxProbe` (dev GL state probe), `FxClock.freezeIn`.
+- `tools/gen_fx_textures.py`: `edge_window` for mist, flare and pillar (their recipe values were not 0 at the cell border, an additive box showed at saturation); only `fx_glow.png` changed, every other generated file is byte identical (deterministic seeds).
+- `.gitignore`: `mod/gradle-home/` (a stray 540 MB Gradle home was created inside the worktree by my first command, not committed).
+
+### Numbers and results
+| check | result |
+|---|---|
+| `p6_00_atlas_test.png` (all 17 G sprites, size 2, noon) + `_midnight`, `_fabulous`, `_fabulous_midnight`, `_s05` (size 0.5), `_s8`, `_s8_midnight` (size 8) | drawn 17/17 in all four modes; no 32 px steps at 8 blocks (linear filtering, `RenderPhase.Texture(id, true, false)`) |
+| depth behind a wall `p6_00_atlas_depth.png` (Fancy), `_depth_fabulous.png` | correct in both after the Fabulous fix; the ground clips the lower sigil row in `_s8` (terrain depth also works) |
+| 4096 sprites alive and drawn (`p6_00_glow_4096.png`) | `reiatsu_fx` mean 0.305 ms, max 0.487 ms; `FxGlowBatch` alone max 0.482 ms (< 1.0 ms line) |
+| GRADE (`p6_00_grade_off/on.png`) | world graded, hand and HUD not (multiply quad at LAST, hand is drawn after) |
+| SHAKE (`p6_00_shake_t0/peak.png`) | world and hand both move (pitch offset 10 px at t = 0, yaw peak 1.447 deg at 1/56 s = expected 1.5 x (1 - t/T)^2); reduce motion registers no shake |
+| `gradlew build test` | 212 tests, 0 failures |
+| `runPhase4` | 89/89 ALL PASS |
+| `runPhase5` | 62/62 ALL PASS |
+
+### UNVERIFIED render details of section 12.1, resolved
+1. **Glow depth testing at `WorldRenderEvents.LAST`**: Fancy: the main depth buffer is valid (probe: 0.994 at the wall, 1.0 at the sky). **Fabulous: the main depth buffer is 1.0 everywhere at LAST** (probe `FxProbe`), so the glow ignored walls. Cause (WorldRenderer source): `transparencyPostProcessor.render` -> `PostEffectPass.render` clears the output target (main) before the blit. Fix: `FxDepth.capture()` at `WorldRenderEvents.BEFORE_DEBUG_RENDER` (after the solid entity layers, before translucent) copies the depth into a private `SimpleFramebuffer` (`copyDepthFrom`), `FxDepth.restore()` copies it back into the main target at LAST right before the glow batch (only in Fabulous, only while sprites are alive). No carrier particle needed. In Fabulous the glow therefore shows through water (the translucent layer is drawn after the capture), in Fancy water occludes it: accepted.
+2. **Model view matrix at LAST**: the world position matrix is in force (sprites with camera-relative vertices land correctly in both modes); the GRADE quad pushes its own identity matrix and restores it.
+3. **`VertexBuffer` draw state for cached rows** (step 4): API verified in the Yarn sources: `VertexBuffer(Usage)`, `upload(BuiltBuffer)`, `bind()`, `draw(Matrix4f view, Matrix4f projection, ShaderProgram)`, `unbind()`. Uniform / fog set-up is still to be copied from `WorldRenderer#renderLayer` in step 4 (it initialises the uniforms with `shaderProgram.initializeUniforms(DrawMode.QUADS, matrix4f, positionMatrix, window)` + `bind()`, then `chunkOffset`).
+4. **`PostEffectProcessor` for `freeze_desat`** (step 7), from the sources: `PostEffectPass` -> `JsonEffectShaderProgram` loads `Identifier.ofVanilla("shaders/program/" + name + ".json")`, so program names can NOT be namespaced: the fallback of ADR R2.3 is the rule, files go to `assets/minecraft/shaders/program/reiatsu_test_freeze_desat.{json,fsh}`; the post JSON itself is addressed by an `Identifier` (our namespace is fine). The processor needs `new PostEffectProcessor(textureManager, resourceManager, mainFramebuffer, id)`, `setupDimensions(w, h)` on resize, `render(float)` and `client.getFramebuffer().beginWrite(false)` afterwards (WorldRenderer does the same).
+5. **BossBarHud accessor**: the field is package private `final Map<UUID, ClientBossBar> bossBars` in `BossBarHud` (Yarn 1.21.1), `@Accessor("bossBars")` works.
+
+### Notes / open
+- `options.hudHidden = true` hides the hand as well; the grade shots therefore keep the HUD on (that is the point of them).
+- `graphics()` helper in the harness calls `worldRenderer.reload()` after `setValue` (the vanilla cycling callback does that, a plain `setValue` does not and crashes with a null translucent framebuffer when Fabulous is set).
+- Fabulous at noon: additive glows saturate on a bright sky (design rule 5: alpha components are needed for daylight readability; handled per effect in step 2).

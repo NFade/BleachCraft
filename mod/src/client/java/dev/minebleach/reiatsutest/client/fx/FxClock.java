@@ -14,6 +14,8 @@ public final class FxClock {
 	public static boolean frozen;
 	public static long frame;
 	private static long lastNanos;
+	/** Dev: absolute FX time at which the clock freezes by itself (-1 = off), see {@link #freezeIn}. */
+	static double freezeTarget = -1;
 
 	private FxClock() {
 	}
@@ -37,6 +39,13 @@ public final class FxClock {
 		dt = d;
 		now += d;
 		frame++;
+	}
+
+	/** Dev/harness: freezes the clock exactly {@code seconds} of FX time from now (screenshots of HUD animations and effects). */
+	public static void freezeIn(double seconds) {
+		freezeTarget = now + Math.max(0, seconds);
+		frozen = false;
+		lastNanos = System.nanoTime();
 	}
 
 	public static void freeze() {

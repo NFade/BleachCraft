@@ -127,6 +127,11 @@ public final class FxTimelines {
 				freezeNow = true;
 			}
 		}
+		if (FxClock.freezeTarget >= 0 && FxClock.now + dt >= FxClock.freezeTarget) {
+			dt = Math.max(0, FxClock.freezeTarget - FxClock.now);
+			FxClock.freezeTarget = -1;
+			freezeNow = true;
+		}
 		FxClock.advance(dt);
 		for (int i = 0; i < ACTIVE.size(); i++) {
 			ACTIVE.get(i).advance(dt);
