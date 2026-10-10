@@ -354,7 +354,7 @@ public final class FxGlowBatch {
 		OWNER[i] = (short) s.owner;
 	}
 
-	private static RenderLayer layer() {
+	static RenderLayer layer() {
 		if (layer == null) {
 			layer = RenderLayer.of("reiatsu_glow", VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS, 1536, false, true,
 					RenderLayer.MultiPhaseParameters.builder()

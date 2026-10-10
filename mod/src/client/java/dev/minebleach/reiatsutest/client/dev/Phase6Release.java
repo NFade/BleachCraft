@@ -588,7 +588,11 @@ final class Phase6Release {
 			case "quit" -> {
 				return true;
 			}
-			default -> ReiatsuTest.LOGGER.warn("[phase6] console: unknown command {}", w[0]);
+			default -> {
+				if (!Phase6Rukia.console(w)) {
+					ReiatsuTest.LOGGER.warn("[phase6] console: unknown command {}", w[0]);
+				}
+			}
 		}
 		return false;
 	}

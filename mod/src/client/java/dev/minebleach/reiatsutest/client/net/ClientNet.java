@@ -46,7 +46,7 @@ public final class ClientNet {
 		});
 		ClientPlayNetworking.registerGlobalReceiver(EntityFxS2C.ID, (payload, ctx) -> {
 			ENTITY_FX.incrementAndGet();
-			EffectPlaceholders.entities(ctx.client(), payload);
+			dev.minebleach.reiatsutest.client.fx.RukiaEntityFx.onEntityFx(ctx.client(), payload);
 		});
 	}
 

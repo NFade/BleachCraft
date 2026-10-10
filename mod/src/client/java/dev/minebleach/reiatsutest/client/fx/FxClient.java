@@ -40,6 +40,7 @@ public final class FxClient {
 	public static void init() {
 		FxConfig.load();
 		FxParticles.register();
+		RukiaFx.init();
 		EntityRendererRegistry.register(ModEntities.FX_ANCHOR, FxAnchorRenderer::new);
 		WorldRenderEvents.START.register(ctx -> {
 			Profiler p = MinecraftClient.getInstance().getProfiler();
@@ -56,10 +57,12 @@ public final class FxClient {
 			p.push("reiatsu_fx");
 			long t0 = System.nanoTime();
 			FxProbe.run("LAST-before");
+			FreezeDesat.render(ctx);
 			ScreenFx.renderGrade(ctx);
 			FxDepth.restore();
 			FxProbe.run("LAST-after-restore");
 			FxGlowBatch.draw(ctx);
+			FxShapes.draw(ctx);
 			double ms = (startNanos + System.nanoTime() - t0) / 1.0e6;
 			Stats.frameMs = ms;
 			Stats.sumMs += ms;

@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.net.EntityFxS2C;
 import java.util.ArrayList;
@@ -55,17 +56,19 @@ final class AbilityExecutor {
 			}
 			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + 60, targets);
 		} else {
-			for (LivingEntity e : frozenStillNear(p, ctx)) {
+			List<LivingEntity> hit = frozenStillNear(p, ctx);
+			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, 6.0F, DamageTypes.FREEZE, false);
 				e.setFrozenTicks(0);
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit);
 		}
 	}
 
 	private static void hakuren(ServerPlayerEntity p, int phase, CastContext ctx) {
 		ServerWorld world = p.getServerWorld();
-		double d0 = phase * 2.4;
-		double d1 = (phase + 1) * 2.4;
+		double d0 = phase * RukiaFxParams.HAKUREN_STEP_LENGTH;
+		double d1 = (phase + 1) * RukiaFxParams.HAKUREN_STEP_LENGTH;
 		Vec3d start = ctx.origin.add(0, 0.9, 0);
 		int room = 12 - ctx.hit.size();
 		if (room > 0) {
@@ -76,6 +79,7 @@ final class AbilityExecutor {
 				Targeting.chill(p, e, 1, 60);
 			}
 			ServerFx.entities(p, EntityFxS2C.SLOWED, now(p) + 60, targets);
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), targets);
 		}
 		// frost layer on the path, rolled back after 3 s (at most 64 blocks per cast)
 		Vec3d side = new Vec3d(-ctx.flatDir.z, 0, ctx.flatDir.x);
@@ -101,6 +105,7 @@ final class AbilityExecutor {
 			Targeting.hurt(p, target, 8.0F, DamageTypes.FREEZE, false);
 			Targeting.chill(p, target, 2, 80);
 			ServerFx.entities(p, EntityFxS2C.FROZEN, now(p) + 80, List.of(target));
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), List.of(target));
 		}
 	}
 
@@ -109,10 +114,10 @@ final class AbilityExecutor {
 			Vec3d center = ctx.origin.add(0, 1.0, 0);
 			List<LivingEntity> targets = Targeting.sphere(p, center, 10.0, 32);
 			for (LivingEntity e : targets) {
-				Targeting.chill(p, e, 6, 26);
+				Targeting.chill(p, e, 6, RukiaFxParams.ABSOLUTE_ZERO_PAUSE_TICKS);
 				ctx.frozen.add(e.getId());
 			}
-			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + 26, targets);
+			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + RukiaFxParams.ABSOLUTE_ZERO_PAUSE_TICKS, targets);
 			// up to 64 temporary ice blocks around, rolled back 2.0 to 5.0 s later (4.0 to 7.0 s after the cast)
 			ServerWorld world = p.getServerWorld();
 			Random rnd = new Random(ctx.seed);
@@ -126,10 +131,12 @@ final class AbilityExecutor {
 				}
 			}
 		} else {
-			for (LivingEntity e : frozenStillNear(p, ctx)) {
+			List<LivingEntity> hit = frozenStillNear(p, ctx);
+			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, 14.0F, DamageTypes.FREEZE, false);
 				e.setFrozenTicks(0);
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit);
 		}
 	}
 

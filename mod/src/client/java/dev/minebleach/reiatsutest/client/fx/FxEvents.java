@@ -20,6 +20,14 @@ public final class FxEvents {
 		if (client.world == null) {
 			return;
 		}
+		FxServerClock.sync(e.startTick());
+		if (RukiaFx.onEvent(e)) {
+			handled++;
+			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={} pos=({}, {}, {}) params={}", id, e.casterId(), e.seed(),
+					String.format(java.util.Locale.ROOT, "%.2f", e.x()), String.format(java.util.Locale.ROOT, "%.2f", e.y()), String.format(java.util.Locale.ROOT, "%.2f", e.z()),
+					java.util.Arrays.toString(e.params()));
+			return;
+		}
 		if ((id >= 1 && id <= 4) || id == 10 || id == 11) {
 			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={} pos=({}, {}, {})", id, e.casterId(), e.seed(),
 					String.format(java.util.Locale.ROOT, "%.2f", e.x()), String.format(java.util.Locale.ROOT, "%.2f", e.y()),

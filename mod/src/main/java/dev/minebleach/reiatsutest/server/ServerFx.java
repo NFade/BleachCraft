@@ -20,9 +20,11 @@ final class ServerFx {
 	static void effect(ServerPlayerEntity caster, int effectId, int seed, CastContext ctx) {
 		Vec3d look = caster.getRotationVec(1.0F);
 		float[] params = ctx != null ? ctx.effectParams() : new float[0];
+		params = RukiaServerFx.params(effectId, params, ctx);
 		EffectEventS2C payload = new EffectEventS2C(effectId, caster.getId(), seed, caster.getX(), caster.getY(), caster.getZ(),
 				(float) look.x, (float) look.y, (float) look.z, -1, caster.getServer().getTicks(), params);
 		sendToViewers(caster, payload);
+		RukiaServerFx.onEffect(caster, effectId, seed);
 	}
 
 	static void entities(ServerPlayerEntity caster, byte kind, int untilTick, List<? extends LivingEntity> targets) {

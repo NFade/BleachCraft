@@ -716,3 +716,5 @@ Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha a
 - `getSkyBrightness` day factor under rain / thunder (formula follows the vanilla value, which includes the rain darkening, not seen on screen).
 - Custom sounds still vanilla layers; first-person release view; draw effects with Byakuya.
 - The console mode is dev-only, not part of the mod runtime path.
+
+## 2026-10-10: STOP POINT (p6rukia): Rukia shikai (step 6) and bankai (step 7) just started: core classes and tests were being written, no harness run yet. Continue per design/VFX_STORYBOARD.md section 10 steps 6-7.

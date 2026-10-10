@@ -5,11 +5,15 @@ import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
 
-/** S2C to players around an affected area: entities that are frozen, encased or slowed until a server tick. */
+/**
+ * S2C to players around an affected area: entities that are frozen, encased or slowed until a server tick; kind HIT (S5) names the
+ * entities a damage phase really hurt (hit sparks and shatter of their ice shells, {@code untilTick} = the server tick of the hit).
+ */
 public record EntityFxS2C(byte kind, int untilTick, int[] entityIds) implements CustomPayload {
 	public static final byte FROZEN = 0;
 	public static final byte ENCASED = 1;
 	public static final byte SLOWED = 2;
+	public static final byte HIT = 3;
 	public static final int MAX_ENTITIES = 64;
 
 	public static final CustomPayload.Id<EntityFxS2C> ID = new CustomPayload.Id<>(ReiatsuTest.id("entity_fx"));

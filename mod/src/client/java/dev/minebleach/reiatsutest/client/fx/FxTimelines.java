@@ -150,6 +150,7 @@ public final class FxTimelines {
 		FxGlowBatch.clear();
 		ScreenFx.clear();
 		FxParticles.clearAll();
+		RukiaFx.clearAll();
 	}
 
 	/** Position helper for effects that follow an entity. */

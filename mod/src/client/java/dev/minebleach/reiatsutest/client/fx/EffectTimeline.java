@@ -41,6 +41,8 @@ public final class EffectTimeline {
 	/** Local time in seconds. */
 	double time;
 	double holdRemaining;
+	/** True while a {@link #pause} is running: the held time still advances the clock. */
+	boolean clockContinues;
 	double endAt = 1.0;
 	boolean ended;
 	/** Screen effects allowed (the oldest timelines lose them first when more than maxConcurrentFx run). */
@@ -85,6 +87,15 @@ public final class EffectTimeline {
 		holdRemaining = Math.max(holdRemaining, ms / 1000.0);
 	}
 
+	/**
+	 * Absolute stop (5.4): like {@link #hitstop} the sprites and particles of this timeline stand still for the given milliseconds,
+	 * but the timeline clock keeps running, so its later actions (cracks, shatter) stay in step with the server.
+	 */
+	public void pause(double ms) {
+		holdRemaining = Math.max(holdRemaining, ms / 1000.0);
+		clockContinues = true;
+	}
+
 	/** Marks a DUCK window in local time: other FX sounds of the caster play at the factor meanwhile (0.5, or 0 for the pause). */
 	public EffectTimeline duck(double from, double to, double factor) {
 		duckFrom = from;
@@ -124,7 +135,11 @@ public final class EffectTimeline {
 			double h = Math.min(holdRemaining, dt);
 			holdRemaining -= h;
 			FxTimelines.addHeld(slot, h);
-			dt -= h;
+			if (!clockContinues) {
+				dt -= h;
+			} else if (holdRemaining <= 0) {
+				clockContinues = false;
+			}
 		}
 		time += dt;
 		while (nextEntry < entries.size() && entries.get(nextEntry).t <= time + 1e-9) {

@@ -33,6 +33,7 @@ public class ReiatsuTest implements ModInitializer {
 		ZanpakutoManager.init();
 		ReiatsuCommand.register();
 		VoiceControl.init();
+		dev.minebleach.reiatsutest.server.RukiaServerFx.init();
 		LOGGER.info("registered items {}, {}, {} (component {}), attachments and payloads",
 				ModItems.SODE_NO_SHIRAYUKI, ModItems.SENBONZAKURA, ModItems.SPIKE_ITEM, ModComponents.RELEASE_STATE);
 	}
