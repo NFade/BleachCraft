@@ -47,7 +47,7 @@ public final class FxMeshPass {
 		public double dieAt = Double.MAX_VALUE;
 		public double pulsePhase;
 		public double pulseHz = 0.3;
-		public double emissive = 0.7;
+		public double emissive = 1.0;
 		/** Entity id of the owner of a standing field (-1 for one shot effects). */
 		public long field = -1;
 		boolean dead;
@@ -194,7 +194,7 @@ public final class FxMeshPass {
 			s.az = ax.z;
 			s.spin = (float) (2.0 + r.nextDouble() * 6.0);
 			s.rot0 = (float) (r.nextDouble() * Math.PI * 2);
-			s.scale = (float) (scale * (0.7 + 0.7 * r.nextDouble()));
+			s.scale = (float) (scale * FxTune.d("shard.scale", 1.0) * (0.7 + 0.7 * r.nextDouble()));
 			s.birth = FxClock.now + delay;
 			s.groundY = Math.min(ground, cy);
 			s.b = r.nextBoolean();
@@ -319,20 +319,8 @@ public final class FxMeshPass {
 		}
 		double glow = FxConfig.glowIntensity;
 		Matrix4f m = new Matrix4f();
-		// ---- pass 1: diffuse (translucent entity layer of the bankai texture)
+		// ---- pass 1a: the shells (lit translucent entity layer of the bankai texture)
 		VertexConsumer vc = vcp.getBuffer(RenderLayer.getEntityTranslucent(FxMeshes.DIFFUSE));
-		for (Crystal c : CRYSTALS) {
-			double age = now - c.birth;
-			if (age < 0 || c.dead) {
-				continue;
-			}
-			if (cam.squaredDistanceTo(c.x, c.y, c.z) > 160 * 160) {
-				continue;
-			}
-			double s = c.scale * FxMath.ob(age / c.grow);
-			m.identity().translate((float) (c.x - cam.x), (float) (c.y - cam.y), (float) (c.z - cam.z)).rotate(c.orient).scale((float) s);
-			lastVertices += FxMeshes.draw(vc, FxMeshes.get(c.mesh), m, FxMeshes.argb(1, 1, 1, 0.86), light(world, c.x, c.y + 0.5, c.z, 10));
-		}
 		for (Shell s : SHELLS) {
 			if (s.dead) {
 				continue;
@@ -348,6 +336,20 @@ public final class FxMeshPass {
 			m.identity().translate((float) (s.lastX - cam.x), (float) (s.lastY - cam.y), (float) (s.lastZ - cam.z)).scale((float) sx, (float) sy, (float) sx);
 			lastVertices += FxMeshes.draw(vc, FxMeshes.get(FxMeshes.SHELL), m, FxMeshes.argb(1, 1, 1, alpha), light(world, s.lastX, s.lastY + s.h * 0.5, s.lastZ, 8));
 		}
+		// ---- pass 1b: crystals and shards through the unlit emissive layer with the diffuse texture: no face shading, so ice stays bright and glassy at any hour
+		vc = vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.DIFFUSE));
+		for (Crystal c : CRYSTALS) {
+			double age = now - c.birth;
+			if (age < 0 || c.dead) {
+				continue;
+			}
+			if (cam.squaredDistanceTo(c.x, c.y, c.z) > 160 * 160) {
+				continue;
+			}
+			double s = c.scale * FxMath.ob(age / c.grow);
+			m.identity().translate((float) (c.x - cam.x), (float) (c.y - cam.y), (float) (c.z - cam.z)).rotate(c.orient).scale((float) s);
+			lastVertices += FxMeshes.draw(vc, FxMeshes.get(c.mesh), m, FxMeshes.argb(1, 1, 1, FxTune.d("crystal.alpha", 0.88)), 0xF000F0);
+		}
 		for (Shard sh : SHARDS) {
 			double age = now - sh.birth;
 			if (age < 0) {
@@ -360,12 +362,11 @@ public final class FxMeshPass {
 			}
 			float angle = sh.restAt < 0 ? sh.rot0 + sh.spin * (float) age : sh.rot0 + sh.spin * (float) (sh.restAt - sh.birth);
 			m.identity().translate((float) (p[0] - cam.x), (float) (p[1] - cam.y), (float) (p[2] - cam.z)).rotate(angle, sh.ax, sh.ay, sh.az).scale(sh.scale);
-			lastVertices += FxMeshes.draw(vc, FxMeshes.get(sh.b ? FxMeshes.SHARD_B : FxMeshes.SHARD_A), m, FxMeshes.argb(1, 1, 1, 0.9 * fade),
-					light(world, p[0], p[1] + 0.3, p[2], 12));
+			lastVertices += FxMeshes.draw(vc, FxMeshes.get(sh.b ? FxMeshes.SHARD_B : FxMeshes.SHARD_A), m, FxMeshes.argb(1, 1, 1, 0.92 * fade), 0xF000F0);
 		}
 		// ---- pass 2: emissive overlay (crystals pulse, shells glow a little)
 		VertexConsumer ve = vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.EMISSIVE));
-		float[] tint = FxMath.hex("#BFE4FF");
+		float[] tint = FxMath.hex("#DFF3FF");
 		for (Crystal c : CRYSTALS) {
 			double age = now - c.birth;
 			if (age < 0 || c.dead || cam.squaredDistanceTo(c.x, c.y, c.z) > 48 * 48) {
@@ -375,6 +376,17 @@ public final class FxMeshPass {
 			double s = c.scale * FxMath.ob(age / c.grow);
 			m.identity().translate((float) (c.x - cam.x), (float) (c.y - cam.y), (float) (c.z - cam.z)).rotate(c.orient).scale((float) (s * 1.01));
 			lastVertices += FxMeshes.draw(ve, FxMeshes.get(c.mesh), m, FxMeshes.argb(tint, c.emissive * pulse * glow), 0xF000F0);
+		}
+		for (Shard sh : SHARDS) {
+			double age = now - sh.birth;
+			double fade = sh.restAt < 0 ? 1.0 : 1.0 - FxMath.clamp((now - sh.restAt - 1.0) / 0.3);
+			if (age < 0 || fade <= 0.01 || cam.squaredDistanceTo(sh.x, sh.y, sh.z) > 40 * 40) {
+				continue;
+			}
+			double[] p = shardPos(sh, age);
+			float angle = sh.restAt < 0 ? sh.rot0 + sh.spin * (float) age : sh.rot0 + sh.spin * (float) (sh.restAt - sh.birth);
+			m.identity().translate((float) (p[0] - cam.x), (float) (p[1] - cam.y), (float) (p[2] - cam.z)).rotate(angle, sh.ax, sh.ay, sh.az).scale(sh.scale * 1.02f);
+			lastVertices += FxMeshes.draw(ve, FxMeshes.get(sh.b ? FxMeshes.SHARD_B : FxMeshes.SHARD_A), m, FxMeshes.argb(tint, 0.55 * fade * glow), 0xF000F0);
 		}
 		for (Shell s : SHELLS) {
 			if (s.dead || now - s.birth < 0 || cam.squaredDistanceTo(s.lastX, s.lastY, s.lastZ) > 48 * 48) {

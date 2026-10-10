@@ -62,10 +62,10 @@ public final class RukiaBankaiFx {
 			// the pillar narrows to x0.2 and its bottom lifts away between 1.2 and 2.0 (ease in out sine), then it is gone
 			FxShapes.Wall core = FxShapes.wall(pos.x, pos.z, gy, 14, 0).radius(a -> 0.9 * pillarScale(a)).height(a -> (pillarH - lift(a)) * FxMath.oe(a / 0.18)).y0(a -> gy + lift(a))
 					.topFade(0.85).scroll(6.0, 0.12);
-			core.color("#FFFFFF").intensity(a -> d("rb.core", 1.0) * FxMath.clamp(a / 0.03) * pillarFade(a)).life(2.0).owner(x).cell(GlowSprite.PILLAR);
+			core.color("#FFFFFF").intensity(a -> d("rb.core", 0.8) * FxMath.clamp(a / 0.03) * pillarFade(a)).life(2.0).owner(x).cell(GlowSprite.PILLAR);
 			FxShapes.Wall outer = FxShapes.wall(pos.x, pos.z, gy, 14, 0).radius(a -> 2.2 * pillarScale(a)).height(a -> (pillarH - lift(a)) * FxMath.oe(a / 0.18)).y0(a -> gy + lift(a))
 					.topFade(0.5).scroll(4.0, 0.2);
-			outer.color("#CFEFFF").intensity(a -> d("rb.outer", 0.45) * FxMath.clamp(a / 0.03) * pillarFade(a)).life(2.0).owner(x).cell(GlowSprite.PILLAR);
+			outer.color("#CFEFFF").intensity(a -> d("rb.outer", 0.15) * FxMath.clamp(a / 0.03) * pillarFade(a)).life(2.0).owner(x).cell(GlowSprite.PILLAR);
 			// the hot core of the base: flare and soft disc
 			FxGlowBatch.sprite(GlowSprite.FLARE).at(pos.x, gy + 0.5, pos.z).size(d("rb.baseFlare", 9.0)).life(0.55).curve(0.02, 0.75).color("#FFFFFF").peak(0.95).owner(x).spawn();
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(pos.x, gy + 1.2, pos.z).axisY().size(3.0, 6.0).sizeEase(FxMath.OC).life(0.7).curve(0.03, 0.75).color("#EAF8FF").peak(0.85).owner(x).spawn();
@@ -78,7 +78,7 @@ public final class RukiaBankaiFx {
 				FxGlowBatch.sprite(GlowSprite.STAR4).at(pos.x, gy + 1.0 + r.nextDouble() * 0.8, pos.z).vel(Math.cos(a) * s, 0.5 + r.nextDouble() * 1.5, Math.sin(a) * s).drag(0.86)
 						.lifeTicks(14).size(0.35 + r.nextDouble() * 0.5).color("#FFFFFF").peak(0.95).twinkle().rot(r.nextDouble() * 6, 2).owner(x).spawn();
 			}
-			RukiaKit.iceShards(x, r, 30, pos.x, gy + 0.8, pos.z, 0.8, 8.0, 4.0, 0.5, 22, 0.48);
+			RukiaKit.iceShards(x, r, 30, pos.x, gy + 0.8, pos.z, 0.8, 8.0, 4.0, 0.5, 22, d("rb.shardSize", 0.30));
 			x.flash(1.00, "#FFFFFF", false);
 			x.shake(1.0, 0.45);
 			x.sound("block.end_portal.spawn", 1.2, 1.0);
@@ -94,14 +94,14 @@ public final class RukiaBankaiFx {
 			FxGlowBatch.sprite(GlowSprite.MIST).at(pos.x, capY + 0.1, pos.z).ground().size(4.0, 20).sizeEase(FxMath.OC).life(1.7).curve(0.12, 0.65).color("#FFFFFF").peak(0.5).owner(x).spawn();
 			for (int i = 0; i < 6; i++) {
 				FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(pos.x, gy + 0.5 + i, pos.z).ground().size(2.4 + 0.2 * i, 6.4).sizeEase(FxMath.OC).vel(0, 1.2, 0).life(1.4).curve(0.1, 0.6)
-						.rot(i * 0.7, (i % 2 == 0 ? 1 : -1) * 1.5).color("#EAF8FF").peak(0.45).owner(x).spawn();
+						.rot(i * 0.7, (i % 2 == 0 ? 1 : -1) * 1.5).color("#EAF8FF").peak(d("rb.column", 0.3)).owner(x).spawn();
 			}
 			Random r = x.rng(3);
 			for (int i = 0; i < 30; i++) {
 				double a = r.nextDouble() * Math.PI * 2;
 				double rad = 1.0 + r.nextDouble() * 1.8;
 				FxGlowBatch.sprite(GlowSprite.MIST).at(pos.x + Math.cos(a) * rad, gy + r.nextDouble() * 9.0, pos.z + Math.sin(a) * rad).axisY().size(2.5).vel(0, 0.4, 0).life(1.5)
-						.curve(0.2, 0.6).color("#EAF8FF").peak(0.2).owner(x).spawn();
+						.curve(0.2, 0.6).color("#EAF8FF").peak(d("rb.mist", 0.12)).owner(x).spawn();
 			}
 			x.sound("block.powder_snow.break", 0.8, 0.9);
 			x.sound("item.elytra.flying", 1.4, 0.3);
@@ -114,7 +114,7 @@ public final class RukiaBankaiFx {
 				double a = Math.PI * 2 * 1.5 * (0.016 * kk) + kk * 0.9;
 				double rad = 1.4 + 0.6 * ((kk * 37) % 10) / 10.0;
 				FxParticles.spec(FxParticles.Kind.SNOWFLAKE).at(pos.x + Math.cos(a) * rad, gy + 0.3, pos.z + Math.sin(a) * rad)
-						.vel(-Math.sin(a) * 1.2, 5.0, Math.cos(a) * 1.2).drag(0.98).life(30).size(0.3).seed(kk).spin(0.1).alpha(0.95).fade(0.3).owner(x).spawn();
+						.vel(-Math.sin(a) * 1.2, 5.0, Math.cos(a) * 1.2).drag(0.98).life(30).size(d("rb.flake", 0.2)).seed(kk).spin(0.1).alpha(0.95).fade(0.3).owner(x).spawn();
 			});
 		}
 		// 0.60 the ground freezes: the crystals and the decal belong to the passive (RukiaBankaiClient); the sounds and a spray of ice here

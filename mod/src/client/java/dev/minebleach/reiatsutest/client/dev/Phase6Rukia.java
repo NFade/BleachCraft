@@ -20,7 +20,9 @@ import dev.minebleach.reiatsutest.client.fx.FxMeshes;
 import dev.minebleach.reiatsutest.client.fx.FxParticles;
 import dev.minebleach.reiatsutest.client.fx.FxShapes;
 import dev.minebleach.reiatsutest.client.fx.FxTimelines;
+import dev.minebleach.reiatsutest.client.fx.RukiaBankaiClient;
 import dev.minebleach.reiatsutest.client.fx.RukiaEntityFx;
+import dev.minebleach.reiatsutest.client.fx.RukiaFeature;
 import dev.minebleach.reiatsutest.client.fx.ScreenFx;
 import dev.minebleach.reiatsutest.client.hud.HudModel;
 import dev.minebleach.reiatsutest.client.input.ReiatsuKeys;
@@ -98,7 +100,7 @@ final class Phase6Rukia {
 
 	private static final double[][] CIRCLE5 = {{-1.6, 1.6}, {1.6, 1.8}, {0, 3.0}, {-2.6, 0.2}, {2.6, 0.4}};
 	private static final double[][] PATH = {{0, 3.0}, {-1.0, 6.0}, {1.0, 6.5}, {0, 9.5}};
-	private static final double[][] ONE_AHEAD = {{0, 5.0}};
+	private static final double[][] ONE_AHEAD = {{-1.2, 5.0}};
 
 	private static double[][] ring32() {
 		double[][] r = new double[32][];
@@ -124,6 +126,10 @@ final class Phase6Rukia {
 				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
 				cmd("tp @s 0.5 -60 0.5 0 58");
 			}
+			case "mid" -> {
+				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+				cmd("tp @s 0.5 -60 0.5 0 30");
+			}
 			case "side" -> {
 				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
 				cmd("tp @s 0.5 -60 0.5 90 14");
@@ -148,7 +154,7 @@ final class Phase6Rukia {
 			mc.options.getFov().setValue(90);
 			view(view);
 			selectSlot(0);
-			cmd("difficulty easy", "gamerule doMobSpawning false", "gamerule mobGriefing false", "time set " + time, "kill @e[type=minecraft:zombie]",
+			cmd("difficulty easy", "gamerule doMobSpawning false", "gamerule mobGriefing false", "time set " + time, "kill @e[type=minecraft:zombie]", "kill @e[type=minecraft:item]",
 					"item replace entity @s hotbar.0 with " + Phase6Harness.RUKIA, "reiatsu cooldowns clear", "reiatsu state " + state + " rukia", "reiatsu full");
 			if (mobs.length > 0) {
 				cmd(mobs);
@@ -202,7 +208,13 @@ final class Phase6Rukia {
 		step(name + " (settle)", settleTicks, () -> { });
 		step(name + " (freeze)", 1, () -> FxClock.freezeIn(0.0));
 		stepUntil(name + " (frozen)", 2, 20 * 10, () -> { }, () -> FxClock.frozen);
-		step(name + " (shot)", 3, () -> shot(name));
+		step(name + " (shot)", 3, () -> {
+			shot(name);
+			int id = mc.player.getId();
+			ReiatsuTest.LOGGER.info("[phase6] PASSIVE {}: bankaiAge {} sheen {} ribbonSegments {} feature drawn {} lastSegments {} crystals {} decals {} fields {}", name,
+					RukiaBankaiClient.bankaiAge(id), RukiaBankaiClient.sheen(id), RukiaBankaiClient.ribbonSegments(id), RukiaFeature.drawn, RukiaFeature.lastSegments,
+					FxMeshPass.crystalCount(), FxDecals.count(), RukiaBankaiClient.fieldsMade);
+		});
 		step(name + " (release clock)", 2, FxClock::unfreeze);
 	}
 
@@ -247,10 +259,10 @@ final class Phase6Rukia {
 		abilityShot("06_hakuren_night_t1250", "hak", 1250, true, "back");
 		abilityShot("06_hakuren_side_t1250", "hak", 1250, false, "side");
 		for (int ms : new int[] {300, 500, 600, 1000}) {
-			abilityShot("06_shirafune_t" + ms, "shira", ms, false, "back");
+			abilityShot("06_shirafune_t" + ms, "shira", ms, false, "mid");
 		}
-		abilityShot("06_shirafune_night_t700", "shira", 700, true, "back");
-		abilityShot("06_shirafune_side_t800", "shira", 800, false, "side");
+		abilityShot("06_shirafune_night_t700", "shira", 700, true, "mid");
+		abilityShot("06_shirafune_down_t800", "shira", 800, false, "down");
 	}
 
 	private static void steps7() {
@@ -375,7 +387,7 @@ final class Phase6Rukia {
 			case "rk" -> {
 				List<String> opt = Arrays.asList(w);
 				boolean night = opt.contains("night");
-				String view = opt.contains("front") ? "front" : opt.contains("up") ? "up" : opt.contains("down") ? "down" : opt.contains("side") ? "side" : "back";
+				String view = opt.contains("front") ? "front" : opt.contains("up") ? "up" : opt.contains("down") ? "down" : opt.contains("mid") ? "mid" : opt.contains("side") ? "side" : "back";
 				int ms = Integer.parseInt(w[2]);
 				String name = w[3];
 				switch (w[1]) {

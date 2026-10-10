@@ -79,9 +79,9 @@ public final class RukiaShikaiFx {
 		// 0.5 the pillar: two walls of light (core 0.825 R, outer R), 0 to H in 0.35 s, scrolling up, collapsing at 2.0
 		t.at(0.5, x -> {
 			FxShapes.Wall core = FxShapes.wall(c.x, c.z, gy, 16, 0).radius(a -> R * 0.825).height(a -> H * FxMath.oc(a / 0.35) * collapse(a, 1.5)).topFade(0.55).scroll(2.0, 0.2);
-			core.color("#EAF8FF").intensity(a -> d("tsuki.core", 0.55) * FxMath.clamp(a / 0.05) * (1 - FxMath.clamp((a - 1.5) / 0.3))).life(1.9).owner(x).cell(GlowSprite.PILLAR);
+			core.color("#EAF8FF").intensity(a -> d("tsuki.core", 0.2) * FxMath.clamp(a / 0.05) * (1 - FxMath.clamp((a - 1.5) / 0.3))).life(1.9).owner(x).cell(GlowSprite.PILLAR);
 			FxShapes.Wall outer = FxShapes.wall(c.x, c.z, gy, 16, 0).radius(a -> R).height(a -> H * FxMath.oc(a / 0.35) * collapse(a, 1.5)).topFade(0.4).scroll(1.5, 0.25);
-			outer.color("#CFEFFF").intensity(a -> d("tsuki.outer", 0.30) * FxMath.clamp(a / 0.05) * (1 - FxMath.clamp((a - 1.5) / 0.3))).life(1.9).owner(x).cell(GlowSprite.PILLAR);
+			outer.color("#CFEFFF").intensity(a -> d("tsuki.outer", 0.10) * FxMath.clamp(a / 0.05) * (1 - FxMath.clamp((a - 1.5) / 0.3))).life(1.9).owner(x).cell(GlowSprite.PILLAR);
 			x.flash(0.30, "#EAF8FF", true);
 			x.sound("item.trident.thunder", 1.4, 0.3);
 			x.sound("block.beacon.power_select", 1.2, 0.5);
@@ -226,7 +226,7 @@ public final class RukiaShikaiFx {
 					double lean = Math.tan(Math.toRadians(25 + r.nextDouble() * 10));
 					boolean big = j % 3 == 2;
 					FxMeshPass.Crystal cr = FxMeshPass.crystal(big ? FxMeshes.CRYSTAL_D : FxMeshes.CRYSTAL_C, px, py - 0.04, pz, f[0] * lean + rg[0] * (r.nextDouble() - 0.5) * 0.3, 1,
-							f[1] * lean + rg[1] * (r.nextDouble() - 0.5) * 0.3, r.nextDouble() * 6.28, (big ? d("hak.bigScale", 1.5) : d("hak.smallScale", 1.5)) * sc * (0.75 + 0.5 * r.nextDouble()),
+							f[1] * lean + rg[1] * (r.nextDouble() - 0.5) * 0.3, r.nextDouble() * 6.28, (big ? d("hak.bigScale", 2.2) : d("hak.smallScale", 2.0)) * sc * (0.75 + 0.5 * r.nextDouble()),
 							0.01 * j);
 					cr.grow = 0.12;
 					mine.add(cr);
@@ -323,11 +323,20 @@ public final class RukiaShikaiFx {
 		});
 		// 0.3 the blade of ice grows along the aim in 0.2 s (easeOutExpo), a crystal rides the tip
 		t.at(0.3, x -> {
+			dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[fx] shirafune blade tip0={} end={} U={} dir={}", tip0, end, U, bd);
 			FxShapes.Strip glow = FxShapes.strip(tip0.x, tip0.y, tip0.z, bd.x, bd.y, bd.z, 0).length(a -> bladeLen(a, U)).width(a -> d("shira.glowWidth", 0.8) * FxMath.clamp(1.0 - (a - 1.7) / 0.2));
 			glow.color("#7FB8DF").intensity(a -> d("shira.glow", 0.55) * (0.85 + 0.15 * Math.sin(a * 20))).life(1.95).owner(x);
 			FxShapes.Strip core = FxShapes.strip(tip0.x, tip0.y, tip0.z, bd.x, bd.y, bd.z, 0).length(a -> bladeLen(a, U)).width(a -> d("shira.coreWidth", 0.28) * FxMath.clamp(1.0 - (a - 1.7) / 0.2));
 			core.color("#EAF8FF").intensity(a -> d("shira.core", 1.0)).life(1.95).owner(x);
 			Random r = x.rng(80);
+			// a string of soft lights along the blade: visible from every angle (the crossed quads vanish when seen end on)
+			for (int i = 0; i < 10; i++) {
+				double f = i / 9.0;
+				double dd = 1 + (U - 1) * f;
+				Vec3d p = tip0.add(bd.multiply(dd));
+				FxGlowBatch.sprite(GlowSprite.GLOW_CORE).at(p.x, p.y, p.z).size(d("shira.orb", 0.8)).life(1.7 - 0.2 * f * f).delay(0.2 * f * f * 0.5).curve(0.04, 0.15).color("#DFF3FF")
+						.peak(0.75).owner(x).spawn();
+			}
 			for (int i = 0; i < 40; i++) {
 				double f = r.nextDouble();
 				double dd = 1 + (U - 1) * FxMath.oe(f);

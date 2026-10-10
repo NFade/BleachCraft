@@ -55,7 +55,7 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 			return;
 		}
 		drawn++;
-		double sheen = RukiaBankaiClient.sheen(id) * FxTune.d("rbankai.sheen", 1.0) * FxConfig.emissiveMultiplier;
+		double sheen = RukiaBankaiClient.sheen(id) * FxTune.d("rbankai.sheen", 1.9) * FxConfig.emissiveMultiplier;
 		if (sheen > 0.01) {
 			double ticks = FxClock.now * 20.0;
 			float u = (float) ((0.004 * ticks) % 1.0);
@@ -92,7 +92,7 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 		Vector3f zAxis = new Vector3f();
 		// pass 1: diffuse; pass 2: the emissive edge. The geometry is built twice from the same function (cheap: 3 x 10 small meshes).
 		for (int pass = 0; pass < 2; pass++) {
-			VertexConsumer vc = pass == 0 ? vcp.getBuffer(RenderLayer.getEntityTranslucent(FxMeshes.DIFFUSE)) : vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.EMISSIVE));
+			VertexConsumer vc = pass == 0 ? vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.DIFFUSE)) : vcp.getBuffer(RenderLayer.getEntityTranslucentEmissive(FxMeshes.EMISSIVE));
 			for (int k = 0; k < 3; k++) {
 				double side = k - 1;
 				p.set((float) (side * 0.10), 0.90f, -0.14f);
@@ -113,11 +113,11 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 					zAxis.set(xAxis).cross(new Vector3f(d).negate());
 					Matrix3f rot = new Matrix3f(xAxis.x, xAxis.y, xAxis.z, -d.x, -d.y, -d.z, zAxis.x, zAxis.y, zAxis.z);
 					double grow = j + 1 <= segs ? 1.0 : segs - j;
-					m.set(base).translate(p).rotate(rot.getNormalizedRotation(new org.joml.Quaternionf())).scale(1f, (float) grow, 1f);
+					m.set(base).translate(p).rotate(rot.getNormalizedRotation(new org.joml.Quaternionf())).scale((float) FxTune.d("rbankai.ribbonWidth", 2.4), (float) grow, 1f);
 					if (pass == 0) {
-						FxMeshes.draw(vc, isTip ? tip : seg, m, FxMeshes.argb(1, 1, 1, 0.95), light);
+						FxMeshes.draw(vc, isTip ? tip : seg, m, FxMeshes.argb(1, 1, 1, 0.95), 0xF000F0);
 					} else {
-						FxMeshes.draw(vc, isTip ? tip : seg, m, FxMeshes.argb(0.75, 0.9, 1.0, 0.42 * FxConfig.glowIntensity), 0xF000F0);
+						FxMeshes.draw(vc, isTip ? tip : seg, m, FxMeshes.argb(0.85, 0.95, 1.0, FxTune.d("rbankai.ribbonGlow", 0.85) * FxConfig.glowIntensity), 0xF000F0);
 					}
 					p.fma((float) (0.35 * grow), d);
 					theta += j < 5 ? curve : -curve;

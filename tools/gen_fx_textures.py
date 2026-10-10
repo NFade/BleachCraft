@@ -530,7 +530,9 @@ def gen_frost_ground():
     x, y = grid(n, n)
     r = np.hypot(x, y)
     f = fbm(n, n, 32, 4, rng)
-    a = clamp(f * 1.6 - 0.5) * 200.0
+    # phase 6 step 6: the spec's floor (0.0) left 83 percent of the texels under the entity shader's 0.1 alpha discard, so the frost was only needles;
+    # a floor of 0.34 with the fbm on top makes the sheet itself readable at noon (needles stay at 230)
+    a = (0.34 + 0.66 * clamp(f * 1.6 - 0.35)) * 215.0
     needles = np.zeros((n, n), np.float32)
     for k in range(60):
         cx, cy = rng.uniform(8, n - 8, 2)
