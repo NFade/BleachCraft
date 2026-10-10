@@ -53,8 +53,25 @@ public abstract class HeldItemRendererMixin {
 	private void reiatsu$firstPersonHand(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, boolean leftHanded,
 			MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
 		DrawTracker.beginRender(entity);
+		dev.minebleach.reiatsutest.client.model.HeldPose.poll();
 		FirstPersonHand.render(entity, stack, mode, leftHanded, matrices, vertexConsumers, light);
+		// B4 polish: the sword is raised in the hand (the scabbard and the stow pose share the lift), after the arm was drawn
+		reiatsu$lifted = false;
+		if (mode.isFirstPerson() && stack.getItem() instanceof ZanpakutoItem
+				&& entity instanceof net.minecraft.client.network.AbstractClientPlayerEntity player
+				&& MinecraftClient.getInstance().getItemRenderer().getModel(stack, player.getWorld(), player, 0)
+						instanceof dev.minebleach.reiatsutest.client.model.ObjItemBakedModel obj) {
+			org.joml.Vector3f lift = FirstPersonHand.lift(obj, stack, player, mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND);
+			if (lift != null) {
+				matrices.push();
+				matrices.translate(lift.x, lift.y, lift.z);
+				reiatsu$lifted = true;
+			}
+		}
 	}
+
+	@org.spongepowered.asm.mixin.Unique
+	private boolean reiatsu$lifted;
 
 	/** B4 step 2: the scabbard in the other hand, drawn with the hands, before the buffer is flushed (no item, no inventory slot). */
 	@Inject(method = "renderItem(FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/network/ClientPlayerEntity;I)V",
@@ -70,6 +87,10 @@ public abstract class HeldItemRendererMixin {
 			at = @At("RETURN"))
 	private void reiatsu$endRender(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, boolean leftHanded,
 			MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
+		if (reiatsu$lifted) {
+			matrices.pop();
+			reiatsu$lifted = false;
+		}
 		DrawTracker.endRender();
 	}
 }

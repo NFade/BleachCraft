@@ -587,7 +587,17 @@ public final class SpikeHarness {
 			String stateName = c.has("state") ? c.get("state").getAsString() : "sealed";
 			boolean shikai = stateName.equals("shikai");
 			int dx = stateName.equals("shikai") ? 4 : stateName.equals("bankai") ? 8 : stateName.equals("base") ? 56 : 0;
-			step("tune " + name + ": write display + reload", 2, () -> {
+			boolean poseOnly = c.has("pose"); // B4 polish: hot pose candidate, no resource reload: the pose file is re-read by the renderer
+			if (poseOnly) {
+				step("tune " + name + ": write pose_override.json", 2, () -> {
+					try {
+						Files.writeString(FabricLoader.getInstance().getGameDir().resolve("pose_override.json"), c.getAsJsonObject("pose").toString());
+					} catch (IOException e) {
+						ReiatsuTest.LOGGER.error(P + "cannot write pose_override.json", e);
+					}
+				});
+			}
+			if (!poseOnly) step("tune " + name + ": write display + reload", 2, () -> {
 				if (view.startsWith("dark")) {
 					cmd("tp @s 100.5 -60 0.5 0 15"); // let the chunks around the dark room load during the reload
 				}
@@ -616,7 +626,7 @@ public final class SpikeHarness {
 				}
 				reloadFuture = mc.reloadResources();
 			});
-			stepUntil("tune " + name + ": wait reload", 10, 20 * 60, () -> { }, SpikeHarness::reloadFinished);
+			if (!poseOnly) stepUntil("tune " + name + ": wait reload", 10, 20 * 60, () -> { }, SpikeHarness::reloadFinished);
 			boolean dark = view.startsWith("dark");
 			step("tune " + name + ": view " + view, dark ? 90 : 25, () -> {
 				cmd(dark ? "fill 96 -61 -4 105 -53 5 minecraft:stone hollow" : "time set noon", dark ? "time set midnight" : "time set noon");
@@ -674,6 +684,11 @@ public final class SpikeHarness {
 			}
 		}
 		step("tune: restore display json", 2, () -> {
+			try {
+				Files.deleteIfExists(FabricLoader.getInstance().getGameDir().resolve("pose_override.json"));
+			} catch (IOException e) {
+				ReiatsuTest.LOGGER.error(P + "cannot delete pose_override.json", e);
+			}
 			dev.minebleach.reiatsutest.client.model.DrawTracker.debugProgress = Float.NaN;
 			try {
 				if (display[0] != null && original[0] != null) {

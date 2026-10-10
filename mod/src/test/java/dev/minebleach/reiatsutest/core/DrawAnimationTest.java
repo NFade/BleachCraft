@@ -44,6 +44,10 @@ class DrawAnimationTest {
 			assertEquals(3, m.hip.dir().length);
 			assertTrue(m.stow.pull() > 0f && m.stow.pull() < 1f, c.item() + ": the left hand pulls the scabbard back");
 			assertTrue(m.stow.retract() >= 0f && m.stow.retract() < 0.5f);
+			assertTrue(m.stow.armRollStow() > 45f && m.stow.armRollStow() <= 90f, c.item() + ": the right forearm comes in from the right edge");
+			assertTrue(m.stow.armRollHeld() >= 0f && m.stow.armRollHeld() < m.stow.armRollStow());
+			assertTrue(m.held.lift()[1] > 0f && m.held.lift()[1] < 0.3f, c.item() + ": the sword is raised in the hand so the tsuba clears the fist");
+			assertTrue(m.held.arm()[1] < 0f && m.held.arm()[1] > -0.4f, c.item() + ": the fist sits lower on the screen than the vanilla fist");
 			assertTrue(m.objects.containsKey(m.draw.saya()));
 			ObjMeta meta = ObjMeta.parse(text("models/obj/" + c.model() + "/" + c.model() + "_meta.json"));
 			assertNotNull(meta.bladeAxis, "blade_axis in " + c.model());

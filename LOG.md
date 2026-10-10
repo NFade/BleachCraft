@@ -567,3 +567,20 @@ Display rotation of the first-person hand changed from [-8, -1, 6.9] to [-172, 1
 - The Yarn sources jar is not in this checkout (`mod/.gradle/loom-cache/minecraftMaven` has only class jars): Java names are compile-checked; the new `@Shadow` fields `equipProgressMainHand` / `prevEquipProgressMainHand` were verified with `javap -p` and the harness (mixin applies, no crash); the vanilla equip offset `-0.52 + equip * -0.6` is from memory, not read from sources.
 - The user's red scabbard reference image was not available: the composition (saya across the lower screen, left fist on it) is my reading of "large scabbard lower left, guard above" and is flatter than that text suggests; the Rukia saya is dark navy, not red. A steep variant (rot 122) was tried and rejected: the translated arm floats and the saya leaves the screen.
 - Third person: pop at the end of the slide, no second real player, left-handed third person only on armor stands. Fabulous graphics, production refmap for the new mixin, slim skin, hotbar swap (equip) behaviour of the saya checked by code reading only. The sheathe (reverse) uses the same rig with the tracker reversed; not captured as a separate strip.
+
+## 2026-10-10: B4 polish: stop point (WIP, stopped on the user's request)
+
+Branch `b4-polish`. No Blender. Screenshots: `blender/renders/b4_polish/` (fp_all_states, draw_strip_rukia/byakuya, fp_left_handed_*, third_person_*).
+
+### Done (3 requested changes)
+1. **Sword higher, hand lower** (user clarification: keep the pre-B4 look, fist low, tsuba fully above it): manifest `draw.held` = `lift [0, 0.06, 0]` (sword and scabbard raised in the hand, stow compensated in `ObjItemBakedModel.rig`) and `arm [0, -0.12, 0]` (fist below the vanilla fist). The fist keeps its place along the hilt through the draw (`FirstPersonHand.gripOffset`). Tried (shikai, Rukia, one launch, hot): lift 0/0.06/0.12 x arm 0/-0.1/-0.2/-0.3; also display-translation lift +2.2/+3.2/+4.4 px (rejected: raises the hand, tsuba hidden by the tilted fist). 0.06/-0.10..-0.12 matches the pre-B4 composition.
+2. **Scabbard leaves the first person screen** after the draw (BASE/SHIKAI/BANKAI): `DrawRig.sayaOut(p)` from p 0.8 (about 0.2 s), saya and left arm lowered out; returns on sheathe and in SEALED. Third person hip scabbard unchanged (checked on stands).
+3. **Right forearm** rolled about the view axis through the fist: `arm_roll_stow` 80 degrees (elbow at the right edge, forearm toward the hilt on the left), eased to `arm_roll_held` 0 after the slide. Left-handed mirrors; checked in `fp_left_handed_*`: no regression.
+- Hot tuning: dev-only `run/pose_override.json` (keys lift, arm, roll_stow, roll_held) re-read by `HeldPose`; harness candidates with `"pose"` need no resource reload (`tools/spike_tune_gen.py` sets `sw1`, `sw2`, helper `tools/b4sheet.py`).
+
+### Not done / state
+- `gradlew build test`: green, 214 tests, 0 failures (before the last clean-up, nothing after).
+- `runPhase4`: NOT clean: 24 CHECK PASS, B2/B3/B4 failed in the one run, with another game/Gradle (phase 6 worktree) running; NOT rerun, not investigated (earlier B4-step runs flaked on B5/B6 the same way). `runPhase5` not run. Rerun both with no other window open.
+- Left-hand `al_base` shot in sweep `sw2` showed a wrong camera (harness artefact, final k5 shots are fine).
+### Next
+Rerun runPhase4/5; user to judge fist height (`held.arm` y) and roll in game; bake any new numbers into `zanpakuto/*.json`.
