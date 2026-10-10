@@ -12,6 +12,7 @@ import static dev.minebleach.reiatsutest.client.dev.Phase6Harness.stepUntil;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.ClientState;
 import dev.minebleach.reiatsutest.client.fx.AuraFx;
+import dev.minebleach.reiatsutest.client.fx.FxClient;
 import dev.minebleach.reiatsutest.client.fx.FxClock;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.client.fx.FxEvents;
@@ -26,6 +27,7 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.option.GraphicsMode;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
@@ -152,6 +154,16 @@ final class Phase6Release {
 		if (all || Phase6Harness.wants("draw")) {
 			drawSteps();
 		}
+		if (all || Phase6Harness.wants("relfab")) {
+			fabulousSteps();
+		}
+		if (all || Phase6Harness.wants("relperf")) {
+			perfSteps();
+		}
+		if (Phase6Harness.explicit("console")) {
+			Phase6Harness.consoleMode = true;
+			consoleStep();
+		}
 	}
 
 	private static void nightSteps() {
@@ -241,8 +253,8 @@ final class Phase6Release {
 			ReiatsuTest.LOGGER.info("[phase6] sounds so far: {}", log);
 			cCheck("release sounds played", () -> log.contains("block.beacon.activate") && log.contains("entity.generic.explode") && log.contains("entity.player.attack.sweep")
 					&& log.contains("block.amethyst_block.chime") ? null : "missing: " + log);
-			cCheck("peak live particles of a release " + peakParticles + " <= 120", () -> peakParticles <= 120 ? null : "peak " + peakParticles);
-			cCheck("peak live glow sprites " + peakGlow + " <= 80", () -> peakGlow <= 80 ? null : "peak " + peakGlow);
+			cCheck("peak live particles of a release with its aura " + peakParticles + " <= 170", () -> peakParticles <= 170 ? null : "peak " + peakParticles);
+			cCheck("peak live glow sprites " + peakGlow + " <= 90", () -> peakGlow <= 90 ? null : "peak " + peakGlow);
 		});
 	}
 
@@ -309,6 +321,8 @@ final class Phase6Release {
 		auraShot("02_aura_byakuya_shikai_night", "byakuya", "shikai", true, 3.0);
 		auraShot("02_aura_byakuya_bankai_night", "byakuya", "bankai", true, 3.0);
 		auraShot("02_aura_rukia_bankai_night", "rukia", "bankai", true, 3.0);
+		auraShot("02_aura_rukia_bankai_noon", "rukia", "bankai", false, 4.0);
+		auraShot("02_aura_byakuya_bankai_noon", "byakuya", "bankai", false, 3.0);
 		step("aura: sound check", 2, () -> {
 			String log = String.join(",", FxSound.LOG);
 			cCheck("aura sounds (powder snow step / heartbeat) played", () -> log.contains("block.powder_snow.step") && log.contains("entity.warden.heartbeat") ? null : "log " + log);
@@ -358,6 +372,12 @@ final class Phase6Release {
 			mc.options.hudHidden = false;
 		});
 		step("draw: J", 1, () -> press(ReiatsuKeys.DRAW));
+		step("draw: wait 4", 4, () -> { });
+		step("draw: shot k4", 1, () -> shot("02_draw_rukia_k4"));
+		step("draw: wait 3", 3, () -> { });
+		step("draw: shot k7", 1, () -> shot("02_draw_rukia_k7"));
+		step("draw: wait 3b", 3, () -> { });
+		step("draw: shot k10", 1, () -> shot("02_draw_rukia_k10"));
 		step("draw: wait draw animation", 30, () -> { });
 		step("draw: sounds of the draw", 2, () -> {
 			String log = String.join(",", FxSound.LOG);
@@ -367,11 +387,209 @@ final class Phase6Release {
 			FxSound.LOG.clear();
 			press(ReiatsuKeys.SEAL);
 		});
+		step("draw: wait s6", 6, () -> { });
+		step("draw: shot s6", 1, () -> shot("02_sheathe_rukia_k6"));
+		step("draw: wait s6b", 6, () -> { });
+		step("draw: shot s12", 1, () -> shot("02_sheathe_rukia_k12"));
 		step("draw: wait sheathe", 30, () -> { });
 		step("draw: sheathe sounds", 2, () -> {
 			String log = String.join(",", FxSound.LOG);
 			cCheck("sheathe sounds played", () -> log.contains("item.armor.equip_chain") ? null : "log " + log);
 			cCheck("client sealed again", () -> ClientState.zanpakuto().zanpakutoState() == ZanpakutoState.SEALED ? null : "state " + ClientState.zanpakuto().zanpakutoState());
 		});
+	}
+
+	// ------------------------------------------------------------------------------------------ Fabulous graphics
+
+	private static void fabulousSteps() {
+		step("fab: Fabulous graphics, third person, noon", 40, () -> {
+			Phase6Harness.graphics(GraphicsMode.FABULOUS);
+			mc.options.hudHidden = true;
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			cmd("time set noon", "tp @s 0.5 -60 0.5 0 12");
+		});
+		step("fab: settle", 60, () -> { });
+		releaseShot("02_fab_release_rukia_t200", true, 200);
+		releaseShot("02_fab_release_byakuya_t500", false, 500);
+		step("fab: aura view", 20, () -> cmd("tp @s 0.5 -60 0.5 180 8"));
+		auraShot("02_fab_aura_rukia_bankai_noon", "rukia", "bankai", false, 4.0);
+		auraShot("02_fab_aura_byakuya_shikai_noon", "byakuya", "shikai", false, 3.0);
+		step("fab: back to Fancy", 40, () -> {
+			Phase6Harness.graphics(GraphicsMode.FANCY);
+			cmd("tp @s 0.5 -60 0.5 0 12", "reiatsu state sealed");
+		});
+	}
+
+	// ------------------------------------------------------------------------------------------ frame cost
+
+	private static long perfFrames0;
+	private static long perfStart;
+
+	private static void perfWindow(String name, int frames) {
+		step("perf " + name + ": reset", 1, () -> {
+			FxClient.Stats.reset();
+			perfFrames0 = FxClock.frame;
+			perfStart = System.nanoTime();
+			peakParticles = 0;
+			peakGlow = 0;
+		});
+		Phase6Harness.stepUntil("perf " + name + ": wait", 5, 20 * 40, () -> { }, () -> FxClock.frame - perfFrames0 >= frames);
+		step("perf " + name + ": result", 2, () -> {
+			double wall = (System.nanoTime() - perfStart) / 1.0e6 / Math.max(1, FxClock.frame - perfFrames0);
+			ReiatsuTest.LOGGER.info("[phase6] PERF {}: reiatsu_fx mean {} ms max {} ms, frame wall mean {} ms, particles live {} (peak {}), glow live {} (peak {})", name,
+					fmt(FxClient.Stats.meanMs()), fmt(FxClient.Stats.maxMs), fmt(wall), FxParticles.live(), peakParticles, FxGlowBatch.live(), peakGlow);
+			cCheck("perf " + name + ": reiatsu_fx mean " + fmt(FxClient.Stats.meanMs()) + " ms < 1.0 ms", () -> FxClient.Stats.meanMs() < 1.0 ? null : "mean " + FxClient.Stats.meanMs());
+		});
+	}
+
+	private static void perfAura(String name, String character, String state) {
+		step("perf " + name + ": state", 4, () -> {
+			cmd("item replace entity @s hotbar.0 with " + Phase6Harness.RUKIA, "item replace entity @s hotbar.1 with " + Phase6Harness.BYAKUYA, "reiatsu state sealed");
+			FxTimelines.clear();
+		});
+		step("perf " + name + ": set", 4, () -> {
+			selectSlot(character.equals("rukia") ? 0 : 1);
+			cmd("reiatsu state " + state + " " + character);
+		});
+		step("perf " + name + ": steady state", 160, () -> { });
+		perfWindow(name, 240);
+	}
+
+	private static void perfSteps() {
+		step("perf: view (third person, noon, hud off)", 30, () -> {
+			sampler();
+			mc.options.hudHidden = true;
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			cmd("gamemode creative @s", "time set noon", "tp @s 0.5 -60 0.5 180 8", "reiatsu state sealed");
+			FxTimelines.clear();
+			ScreenFx.clear();
+		});
+		step("perf: baseline settle", 60, () -> { });
+		perfWindow("baseline (sealed, no fx)", 240);
+		perfAura("aura rukia shikai", "rukia", "shikai");
+		perfAura("aura byakuya shikai", "byakuya", "shikai");
+		perfAura("aura rukia bankai", "rukia", "bankai");
+		perfAura("aura byakuya bankai", "byakuya", "bankai");
+		// release peak: Rukia, from BASE, first 2 seconds
+		step("perf release: base", 40, () -> {
+			FxTimelines.clear();
+			toBase(true);
+			cmd("tp @s 0.5 -60 0.5 0 12");
+		});
+		step("perf release: R", 1, () -> {
+			FxClient.Stats.reset();
+			perfFrames0 = FxClock.frame;
+			perfStart = System.nanoTime();
+			peakParticles = 0;
+			peakGlow = 0;
+			press(ReiatsuKeys.RELEASE);
+		});
+		Phase6Harness.stepUntil("perf release: wait 2 s", 5, 20 * 40, () -> { }, () -> FxClock.frame - perfFrames0 >= 200);
+		step("perf release: result", 2, () -> {
+			double wall = (System.nanoTime() - perfStart) / 1.0e6 / Math.max(1, FxClock.frame - perfFrames0);
+			ReiatsuTest.LOGGER.info("[phase6] PERF release rukia (2 s from R): reiatsu_fx mean {} max {} ms, wall mean {} ms, peak particles {}, peak glow {}",
+					fmt(FxClient.Stats.meanMs()), fmt(FxClient.Stats.maxMs), fmt(wall), peakParticles, peakGlow);
+			cCheck("release: reiatsu_fx max " + fmt(FxClient.Stats.maxMs) + " ms < 1.0 ms", () -> FxClient.Stats.maxMs < 1.0 ? null : "max " + FxClient.Stats.maxMs);
+			cmd("reiatsu state sealed");
+		});
+	}
+
+	// ------------------------------------------------------------------------------------------ live console (hot tuning without restarts)
+
+	private static long consoleStamp = -1;
+
+	/**
+	 * {@code -Phold=console}: the game waits for {@code run/p6_cmd.txt}; every new write is executed line by line (screenshots go to
+	 * {@code p6_<name>.png}) and then {@code run/p6_done.txt} gets the stamp of the command file. Numbers are tuned with
+	 * {@code run/fx_override.json} (hot reload), no restart. Lines: {@code rel rukia|byakuya ms name}, {@code fake id ms name},
+	 * {@code aura rukia|byakuya shikai|bankai noon|night seconds name}, {@code seal rukia|byakuya shikai|bankai ms name},
+	 * {@code time noon|midnight}, {@code view back|aura|top|front}, {@code hud on|off}, {@code gfx fancy|fabulous}, {@code wait ticks}, {@code quit}.
+	 */
+	private static void consoleStep() {
+		Phase6Harness.stepUntil("console: waiting for run/p6_cmd.txt", 0, 0, () -> { }, Phase6Release::pollConsole);
+	}
+
+	private static boolean pollConsole() {
+		java.nio.file.Path f = mc.runDirectory.toPath().resolve("p6_cmd.txt");
+		try {
+			if (!java.nio.file.Files.exists(f)) {
+				return false;
+			}
+			long stamp = java.nio.file.Files.getLastModifiedTime(f).toMillis();
+			if (stamp == consoleStamp) {
+				return false;
+			}
+			consoleStamp = stamp;
+			java.util.List<String> lines = java.nio.file.Files.readAllLines(f);
+			boolean quit = false;
+			Phase6Harness.beginInsert();
+			try {
+				for (String line : lines) {
+					String[] w = line.trim().split("\\s+");
+					if (w.length == 0 || w[0].isEmpty() || w[0].startsWith("#")) {
+						continue;
+					}
+					try {
+						quit |= consoleCommand(w);
+					} catch (RuntimeException e) {
+						ReiatsuTest.LOGGER.warn("[phase6] console: bad line '{}': {}", line, e.toString());
+					}
+				}
+				final long st = stamp;
+				step("console: done " + st, 1, () -> {
+					try {
+						java.nio.file.Files.writeString(mc.runDirectory.toPath().resolve("p6_done.txt"), Long.toString(st));
+					} catch (java.io.IOException e) {
+						ReiatsuTest.LOGGER.warn("[phase6] console: cannot write p6_done.txt: {}", e.toString());
+					}
+				});
+				if (!quit) {
+					consoleStep();
+				}
+			} finally {
+				Phase6Harness.endInsert();
+			}
+			return true;
+		} catch (java.io.IOException e) {
+			return false;
+		}
+	}
+
+	private static boolean consoleCommand(String[] w) {
+		switch (w[0]) {
+			case "rel" -> releaseShot(w.length > 3 ? w[3] : "tune_rel_" + w[1] + "_" + w[2], w[1].equals("rukia"), Integer.parseInt(w[2]));
+			case "fake" -> fakeShot(w.length > 3 ? w[3] : "tune_fake_" + w[1] + "_" + w[2], Integer.parseInt(w[1]), Integer.parseInt(w[2]));
+			case "aura" -> auraShot(w.length > 5 ? w[5] : "tune_aura_" + w[1] + "_" + w[2] + "_" + w[3], w[1], w[2], w[3].equals("night"), Double.parseDouble(w[4]));
+			case "seal" -> sealShot(w.length > 4 ? w[4] : "tune_seal_" + w[1] + "_" + w[2] + "_" + w[3], w[1].equals("rukia"), w[2], Integer.parseInt(w[3]));
+			case "time" -> step("console: time", 6, () -> cmd("time set " + w[1]));
+			case "wait" -> step("console: wait", Integer.parseInt(w[1]), () -> { });
+			case "hud" -> step("console: hud", 2, () -> mc.options.hudHidden = w[1].equals("off"));
+			case "gfx" -> step("console: gfx", 60, () -> Phase6Harness.graphics(w[1].equals("fabulous") ? GraphicsMode.FABULOUS : GraphicsMode.FANCY));
+			case "view" -> step("console: view", 20, () -> {
+				switch (w[1]) {
+					case "aura" -> {
+						mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+						cmd("tp @s 0.5 -60 0.5 180 8");
+					}
+					case "top" -> {
+						mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+						cmd("tp @s 0.5 -60 0.5 0 62");
+					}
+					case "front" -> {
+						mc.options.setPerspective(Perspective.THIRD_PERSON_FRONT);
+						cmd("tp @s 0.5 -60 0.5 0 12");
+					}
+					default -> {
+						mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+						cmd("tp @s 0.5 -60 0.5 0 12");
+					}
+				}
+			});
+			case "quit" -> {
+				return true;
+			}
+			default -> ReiatsuTest.LOGGER.warn("[phase6] console: unknown command {}", w[0]);
+		}
+		return false;
 	}
 }

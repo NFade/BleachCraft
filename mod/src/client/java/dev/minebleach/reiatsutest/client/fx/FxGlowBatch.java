@@ -127,6 +127,7 @@ public final class FxGlowBatch {
 		float streakTime = 0.04f;
 		int owner = -1;
 		double lod = 1.0;
+		float delay;
 
 		private Spec reset(GlowSprite s) {
 			sprite = s;
@@ -150,6 +151,13 @@ public final class FxGlowBatch {
 			streakTime = 0.04f;
 			owner = -1;
 			lod = 1.0;
+			delay = 0;
+			return this;
+		}
+
+		/** Start of the sprite in seconds from now (it is invisible and does not age before that). */
+		public Spec delay(double seconds) {
+			delay = (float) seconds;
 			return this;
 		}
 
@@ -321,7 +329,7 @@ public final class FxGlowBatch {
 		VX[i] = s.vx;
 		VY[i] = s.vy;
 		VZ[i] = s.vz;
-		BIRTH[i] = FxClock.now - held;
+		BIRTH[i] = FxClock.now - held + s.delay;
 		LIFE[i] = Math.max(0.01f, s.life);
 		SIZE0[i] = s.size0;
 		SIZE1[i] = s.size1;

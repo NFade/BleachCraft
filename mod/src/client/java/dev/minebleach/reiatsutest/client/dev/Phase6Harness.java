@@ -89,18 +89,39 @@ public final class Phase6Harness {
 
 	// ---------------------------------------------------------------- engine
 
+	private static int insertAt = -1;
+	/** Console mode: no global watchdog, the script is fed from run/p6_cmd.txt. */
+	static boolean consoleMode;
+
+	private static void add(Step s) {
+		if (insertAt >= 0) {
+			STEPS.add(insertAt++, s);
+		} else {
+			STEPS.add(s);
+		}
+	}
+
+	/** Steps added until {@link #endInsert()} run right after the current step (used by the console). */
+	static void beginInsert() {
+		insertAt = stepIndex + 1;
+	}
+
+	static void endInsert() {
+		insertAt = -1;
+	}
+
 	static void step(String name, int minTicks, Runnable action) {
-		STEPS.add(new Step(name, minTicks, 0, action, null));
+		add(new Step(name, minTicks, 0, action, null));
 	}
 
 	static void stepUntil(String name, int minTicks, int timeout, Runnable action, BooleanSupplier until) {
-		STEPS.add(new Step(name, minTicks, timeout, action, until));
+		add(new Step(name, minTicks, timeout, action, until));
 	}
 
 	private static void tick(MinecraftClient client) {
 		mc = client;
 		totalTicks++;
-		if (totalTicks > 20 * 60 * 25) {
+		if (!consoleMode && totalTicks > 20 * 60 * 25) {
 			ReiatsuTest.LOGGER.error(P + "global watchdog fired, stopping");
 			finish();
 			client.scheduleStop();
@@ -271,6 +292,20 @@ public final class Phase6Harness {
 		step(name + " (release)", 2, FxClock::unfreeze);
 	}
 
+	static int stepIndexForConsole() {
+		return stepIndex;
+	}
+
+	/** True only when the scenario is named in the hold list ("all" does not count). */
+	static boolean explicit(String scenario) {
+		for (String s : System.getProperty("reiatsu.fx.hold", "all").split(",")) {
+			if (s.trim().equalsIgnoreCase(scenario)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	static boolean wants(String scenario) {
 		String hold = System.getProperty("reiatsu.fx.hold", "all");
 		if (hold.isBlank() || hold.equals("all")) {
@@ -318,7 +353,8 @@ public final class Phase6Harness {
 		} else if (wants("hudlayouts")) {
 			Phase6Hud.steps(true, false);
 		}
-		if (wants("release") || wants("relshots") || wants("relnight") || wants("relflash") || wants("aura") || wants("seal") || wants("draw")) {
+		if (wants("release") || wants("relshots") || wants("relnight") || wants("relflash") || wants("aura") || wants("seal") || wants("draw")
+				|| wants("relfab") || wants("relperf") || explicit("console")) {
 			Phase6Release.steps();
 		}
 		step("finish", 10, () -> {

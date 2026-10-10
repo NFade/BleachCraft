@@ -671,3 +671,48 @@ Branch `b4-polish`. No Blender. Screenshots: `blender/renders/b4_polish/` (fp_al
 - Left-hand `al_base` shot in sweep `sw2` showed a wrong camera (harness artefact, final k5 shots are fine).
 ### Next
 Rerun runPhase4/5; user to judge fist height (`held.arm` y) and roll in game; bake any new numbers into `zanpakuto/*.json`.
+
+## 2026-10-10: Phase 6 step 2 (closed): release 2.1, auras 2.2, seal 2.3, DrawFx, FxTune
+
+Branch `phase6-fx` (merged with `main` first). No Blender, no generate_3d. Screenshots: `blender/renders/p6/p6_02_*.png` (41 files, from the single full run `runPhase6 -Phold=release`, game never paused, one game window at a time).
+
+### Task A: verification of the merged branch (before any change)
+| check | result |
+|---|---|
+| `gradlew build test` | green, 217 tests, 0 failures |
+| `runPhase4` | 89/89 ALL PASS |
+| `runPhase5` | 62/62 ALL PASS |
+No red on the merge: the earlier B2-B4 / A3 reds were the second game window (as suspected in the stop point); with one window open everything is green.
+
+### What changed in this step (on top of WIP c84265f)
+- **Release (ReleaseFx)**: ring tinted more saturated than the flash (additive white on grass looks lime: Rukia `#8CCBF2`, Byakuya `#E8A0F0`, thin ring stays white), anamorphic FLARE across the chest, an upright light column (FLARE cell rotated 90 degrees, PLANE facing the camera; the PILLAR cell has hard top and bottom edges, it was tried first and rejected), burst 72 motes (was 56), motes 0.42 / 0.30 (were 0.32 / 0.26), Rukia gets 16 ICE_SHARD (lit alpha sprites, the part of the burst that stays visible on a bright sky), mote colour ends at `#CFEFFF` (the old end colour `#9ED3F0` was dark teal on grass).
+- **Auras (AuraFx, rewritten)**: three layers per aura (wisps = silhouette, glow layer = two stacked soft discs + ground ring, sparkle accents). Alpha FROST_MOTE sprites (0.40) that swirl up so the aura reads at noon. Wisps follow the sky light (`ClientWorld.getSkyBrightness`): alpha x0.55 and rate x0.8 at night (at x1.3 density the body was buried at night). Rukia shikai: blade star glints, shed snowflakes. Byakuya shikai: lilac glints, rising PETAL_GLOW. Byakuya bankai: heartbeat lub-dub (two delayed ground rings + body pulses in step with the warden heartbeat sound). **Rukia bankai (no longer a stub)**: interim of 5.2: snowfall disc (radius 3.5, 9 flakes/s, no flake right in front of the lens), breathing frost sigil under her (radius 3, 0.02 rev/s, +-10 percent at 0.25 Hz), ground mist sprites, ice glints, cold breath every 3 s, cold hum sound. Decal, rim crystals, ribbons and sheen stay with step 7.
+- **FxGlowBatch**: `Spec.delay(seconds)` (sprite is invisible and does not age before its start; used for the second heartbeat).
+- **SealFx**: ring uses the character ring tint (`seal.ringTint`).
+- **FxTune keys** (all hot, `run/fx_override.json`): `release.ringTint ringPeak flare pillar shards moteEnd moteSize burstSpeed burstCount flashRukiaShikai rukiaFlashColor ringRadius`, `aura.rate wispSize wispAlpha moteSize moteEnd glow nightWisp nightRate snowRate snowSize sigil mist byakShikaiColor byakBankaiColor`, `seal.ringTint`.
+- **Harness**: new scenarios `relfab` (Fabulous graphics: release + auras), `relperf` (frame cost), `console`. **`-Phold=console` is a live console**: the game waits for `run/p6_cmd.txt` (write it atomically, e.g. via a temp file and `mv`), executes the lines (`rel`, `fake`, `aura`, `seal`, `time`, `view`, `hud`, `gfx`, `wait`, `quit`), writes `run/p6_done.txt`. Together with `fx_override.json` this allowed colour, size and rate tuning with one game start (about 30 s for 8 shots instead of a 4 minute run). Draw shots (`p6_02_draw_rukia_k4/k7/k10`, `p6_02_sheathe_rukia_k6/k12`) added.
+
+### Numbers
+| check | result |
+|---|---|
+| `runPhase6 -Phold=release` | 49 CHECK PASS, 0 fail |
+| release flash | peak 0.600, 0.190 s; reduce motion peak 0.400, 0.051 s (frame log) |
+| `reiatsu_fx` CPU (FxClient.Stats, our world pass: glow batch + grade) | baseline 0.004 ms; aura Rukia shikai 0.052, Byakuya shikai 0.052, Rukia bankai 0.056 (max 0.31), Byakuya bankai 0.051 ms mean; release 2 s from R: mean 0.057, max 0.340 ms (line < 1.0 ms) |
+| live particles | aura Rukia shikai 69 (peak 75), Byakuya shikai 50, Rukia bankai 54 (peak 88), Byakuya bankai 70 (peak 83), cap 120 per player, 400 per client; release of Rukia plus its aura: peak 144 particles, 48 glow sprites (release alone about 96 particles: 72 motes, 16 shards, 8 flakes; storyboard budget was 80) |
+| glow sprites live | aura 7 to 19, release peak 48 (limit 90 in the harness) |
+| frame wall time | 8.45 to 8.51 ms in all cases = the harness frame cap (120 fps), so the effects do not move it; the real cost is the `reiatsu_fx` line plus the vanilla particle manager (not separately profiled) |
+| Fabulous | release and auras identical to Fancy (`p6_02_fab_*`), glow depth fix from step 0 holds |
+| `gradlew build test` | green (217 tests) |
+| `runPhase4` / `runPhase5` | 89/89 and 62/62 ALL PASS (run once at the end, after the last code change) |
+
+### Honest judgement against the storyboard
+Good: release at noon and night (flash, cyan or pink ring, column, ice shards / petals, the title card from step 1), the Rukia bankai aura (frost sigil, snowfall, wisps), aura readable at noon and night in both characters, seal and bankai end (rings contract, motes and petals collapse, wisps dissolve in 8 ticks), draw glint at the guard.
+Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha and look dim blue-grey on a dark background, the glow stars carry the night; (2) Byakuya bankai aura is plain until the blade rows (step 4) exist; (3) the aura wisps are the 8 x 32 pixel sprite: at 5 blocks they show square pixels (matches the pixel-art look of the sprites, not smoothed); (4) frames 50 and 100 ms are washed by the flash (0.6 peak, by design); (5) first-person release not screenshotted (the shots are third person plus HUD).
+
+### UNVERIFIED
+- Real multiplayer: another player's release and aura (the harness treats the local player as caster; `-Dreiatsu.fx.remote=true` exists but was not run for these shots).
+- Vanilla particle manager cost of 144 live particles (only our own `reiatsu_fx` section is measured; wall time is capped by the frame limit).
+- Aura distance LOD (x0.5 beyond 24 blocks) not screenshotted.
+- `getSkyBrightness` day factor under rain / thunder (formula follows the vanilla value, which includes the rain darkening, not seen on screen).
+- Custom sounds still vanilla layers; first-person release view; draw effects with Byakuya.
+- The console mode is dev-only, not part of the mod runtime path.

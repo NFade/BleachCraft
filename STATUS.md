@@ -1,4 +1,4 @@
-# STATUS (2026-10-10, pause)
+# STATUS (2026-10-10)
 
 Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Details: `LOG.md`, design contracts in `design/`.
 
@@ -15,9 +15,12 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 - Step 1 (first person pose, yawed 180 degrees on the user request), step 3 (BASE state, J key, right click) and step 2 (client side scabbard in the left hand, right hand draws along the sori arc, hip scabbard in third person) are committed locally, not merged, not pushed. 212 tests, runPhase4 89/89, runPhase5 62/62. Details: LOG B4 step 2. Steps 4 (bankai) and 5 (shunpo) not started.
 - B4 polish (branch b4-polish, WIP, local): sword raised and hand lowered, scabbard leaves the first person screen after the draw, right forearm rolled in from the right edge; tests green, runPhase4 NOT clean (B2-B4 failed with another game open), runPhase5 not run. LOG: "B4 polish: stop point".
 
+## Phase 6 step 2 closed (branch `phase6-fx`, local commit, not pushed)
+- Release 2.1, auras 2.2 (Rukia bankai interim, Byakuya heartbeat), seal 2.3, `DrawFx` mapping of the B4 states, `FxTune` hot reload (`mod/run/fx_override.json`) and the live harness console (`runPhase6 -Phold=console`, `run/p6_cmd.txt`) are done; 41 screenshots in `blender/renders/p6/p6_02_*`. Build 217 tests, runPhase4 89/89, runPhase5 62/62 on the merged branch, runPhase6 release set 49/49. Details and the UNVERIFIED list: `LOG.md` "Phase 6 step 2 (closed)". Next: step 3 (Byakuya swarm), batch the code, one `runPhase6`.
+
 ## Stop point 2026-10-10 (details and next actions: `HANDOFF_PROMPT.md`)
 - `main`: B4 steps 1-3 and `b4-polish` merged (pose, scabbard left hand, BASE state, scabbard leaves the first-person screen after the draw). 214 tests; runPhase4/5 not rerun on this exact commit.
-- `phase6-fx`: Phase 6 step 0 (scaffolding) and step 1 (HUD) done; step 2 (release/auras/seal) written in WIP commit `c84265f`, its screenshots must be regenerated (see LOG on that branch). Steps 3-9 not started.
+- `phase6-fx`: Phase 6 steps 0, 1 and 2 done (see the section above). Steps 3-9 not started.
 - Not started: B4 step 4 (bankai timer and bigger radii) and step 5 (shunpo).
 
 ## In progress (branches, unfinished)

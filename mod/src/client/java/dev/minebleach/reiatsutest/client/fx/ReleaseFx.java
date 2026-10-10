@@ -16,6 +16,9 @@ import net.minecraft.util.math.Vec3d;
 public final class ReleaseFx {
 	private static final String RUKIA_FLASH = "#DDF3FF";
 	private static final String BYAKUYA_FLASH = "#F3E4FF";
+	/** The ground rings are tinted more saturated than the flash: additive white on grass turns lime, a blue or pink body keeps the hue (the thin ring on top stays white). */
+	private static final String RUKIA_RING = "#8CCBF2";
+	private static final String BYAKUYA_RING = "#E8A0F0";
 
 	private ReleaseFx() {
 	}
@@ -30,7 +33,7 @@ public final class ReleaseFx {
 		String tint = rukia ? RUKIA_FLASH : BYAKUYA_FLASH;
 		double ringR = FxTune.d("release.ringRadius", bankai ? 10 : 5);
 		double speed = FxTune.d("release.burstSpeed", bankai ? 8 : 6);
-		int count = (int) FxTune.d("release.burstCount", (bankai ? 2 : 1) * 56);
+		int count = (int) FxTune.d("release.burstCount", (bankai ? 2 : 1) * 72);
 
 		// 0.00: flash, bell of the release
 		t.at(0.0, x -> {
@@ -53,7 +56,7 @@ public final class ReleaseFx {
 		});
 		// 0.05: the ground ring (two rings, the thin one a little behind), then a few streaks of light
 		t.at(0.05, x -> {
-			new Ring(x, tint, ringR, 0.0).soft();
+			new Ring(x, FxTune.s("release.ringTint", rukia ? RUKIA_RING : BYAKUYA_RING), ringR, 0.0).soft();
 			x.sound("entity.generic.explode", bankai ? 1.3 : 1.6, bankai ? 0.6 : 0.5);
 		});
 		t.at(0.11, x -> new Ring(x, tint, ringR * 0.85, 0.0).thin());
@@ -87,6 +90,13 @@ public final class ReleaseFx {
 
 	private static void bloom(EffectTimeline t, String tint, double size) {
 		Vec3d c = t.pos.add(0, 1.1, 0);
+		// anamorphic flare across the chest and a short column of light: the anime "something just happened" shape, readable on a bright sky too
+		FxGlowBatch.sprite(GlowSprite.FLARE).at(c.x, c.y, c.z).size(size * 2.4, size * 3.2).sizeEase(FxMath.OC).life(0.32).curve(0.02, 0.8).color(tint)
+				.peak(FxTune.d("release.flare", 0.8)).owner(t).spawn();
+		// the column: the flare cell turned upright and facing the camera (a soft ended beam, no hard pillar edges)
+		Vec3d cam = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+		FxGlowBatch.sprite(GlowSprite.FLARE).at(t.pos.x, t.pos.y + size * 1.1, t.pos.z).plane(cam.x - t.pos.x, 0, cam.z - t.pos.z).rot(Math.PI / 2, 0)
+				.size(size * 1.8, size * 2.4).sizeEase(FxMath.OC).life(0.45).curve(0.03, 0.75).color(tint).peak(FxTune.d("release.pillar", 0.75)).owner(t).spawn();
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(c.x, c.y, c.z).size(size * 0.6, size).sizeEase(FxMath.OC).life(0.5).curve(0.03, 0.8)
 				.color(tint).peak(0.9).owner(t).spawn();
 		FxGlowBatch.sprite(GlowSprite.GLOW_CORE).at(c.x, c.y, c.z).size(size * 0.3, size * 0.55).sizeEase(FxMath.OC).life(0.28).curve(0.02, 0.8)
@@ -131,16 +141,24 @@ public final class ReleaseFx {
 			double hx = Math.cos(a) * s;
 			double hz = Math.sin(a) * s;
 			FxParticles.Spec p = FxParticles.spec(kind).at(c.x + Math.cos(a) * 0.3, c.y + (r.nextDouble() - 0.5) * 0.5, c.z + Math.sin(a) * 0.3)
-					.vel(hx, up, hz).drag(0.9).life(20).size(FxTune.d("release.moteSize", rukia ? 0.32 : 0.26)).seed(r.nextInt(64)).owner(t);
+					.vel(hx, up, hz).drag(0.9).life(20).size(FxTune.d("release.moteSize", rukia ? 0.42 : 0.30)).seed(r.nextInt(64)).owner(t);
 			if (rukia) {
-				p.color(col).colorTo("#9ED3F0");
+				p.color(col).colorTo(FxTune.s("release.moteEnd", "#CFEFFF"));
 			} else {
 				p.color(col).colorTo("#F9C8F6").spin((r.nextDouble() - 0.5) * 0.4).gravity(0.02);
 			}
 			p.spawn();
 		}
-		// a few slow snowflakes (Rukia): they stay behind the burst and drift down
+		// Rukia: ice shards flying out (a lit alpha sprite: the part of the burst that stays visible on a bright sky) and a few slow snowflakes
 		if (rukia) {
+			int shards = (int) FxTune.d("release.shards", 16);
+			for (int i = 0; i < shards; i++) {
+				double a = r.nextDouble() * Math.PI * 2;
+				double s = speed * (0.55 + 0.5 * r.nextDouble());
+				FxParticles.spec(FxParticles.Kind.ICE_SHARD).at(c.x + Math.cos(a) * 0.3, c.y + (r.nextDouble() - 0.5) * 0.4, c.z + Math.sin(a) * 0.3)
+						.vel(Math.cos(a) * s, 1.0 + r.nextDouble() * 2.0, Math.sin(a) * s).drag(0.9).gravity(0.5).life(24).size(0.34 + r.nextDouble() * 0.2)
+						.spin((r.nextDouble() - 0.5) * 0.5).seed(r.nextInt(4)).fade(0.3).owner(t).spawn();
+			}
 			for (int i = 0; i < 8; i++) {
 				double a = r.nextDouble() * Math.PI * 2;
 				double s = 1.0 + r.nextDouble() * 2.5;

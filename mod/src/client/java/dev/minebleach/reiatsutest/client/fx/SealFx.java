@@ -23,9 +23,10 @@ public final class SealFx {
 		Vec3d pos = new Vec3d(e.x(), e.y(), e.z());
 		EffectTimeline t = FxTimelines.create(id, e.seed(), pos, new Vec3d(e.dx(), e.dy(), e.dz()), e.params(), e.casterId(), FxClient.forceRemote());
 		String tint = rukia ? "#CFEFFF" : "#F9C8F6";
+		String ringTint = FxTune.s("seal.ringTint", rukia ? "#8CCBF2" : "#E8A0F0");
 		t.at(0.0, x -> {
 			AuraFx.dissolve(e.casterId());
-			collapse(x, rukia, tint, end);
+			collapse(x, rukia, tint, ringTint, end);
 			if (end) {
 				x.sound("block.beacon.deactivate", 0.6, 0.7);
 				x.sound("block.bell.resonate", 0.8, 0.5);
@@ -43,7 +44,7 @@ public final class SealFx {
 		FxTimelines.start(t);
 	}
 
-	private static void collapse(EffectTimeline t, boolean rukia, String tint, boolean end) {
+	private static void collapse(EffectTimeline t, boolean rukia, String tint, String ringTint, boolean end) {
 		Random r = t.rng(3);
 		Vec3d c = t.pos.add(0, 1.1, 0);
 		int n = end ? 36 : 24;
@@ -78,7 +79,7 @@ public final class SealFx {
 		}
 		// ground ring contracting into the feet, then a soft flash of the blade being closed
 		FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(t.pos.x, t.pos.y + 0.05, t.pos.z).ground().size(end ? 12 : 8, 1.0).sizeEase(FxMath.IQ).life(0.5)
-				.curve(0.03, 0.4).color(tint).peak(0.8).owner(t).spawn();
+				.curve(0.03, 0.4).color(ringTint).peak(0.8).owner(t).spawn();
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(c.x, c.y, c.z).size(2.4, 0.4).sizeEase(FxMath.IQ).life(0.5).curve(0.1, 0.45).color(tint).peak(0.6)
 				.owner(t).spawn();
 	}
