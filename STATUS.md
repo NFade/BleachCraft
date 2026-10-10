@@ -20,6 +20,7 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 
 ## Phase 7 prep (branch `srvdocs`, local commits, not pushed)
 - Task 1 done: `python -I tools/server_smoke.py` = dedicated server smoke without a game window (43 checks PASS, two protocol-level bots, restart persistence). Details and the manual second-client list: `LOG.md` "Phase 7: dedicated server smoke".
+- Task 2 done: `README.md` (English plus short Russian section: requirements, build/install, controls, state flow, voice, config, known issues, credits) and a Credits section in `LICENSES.md`.
 
 ## Stop point 2026-10-10 (details and next actions: `HANDOFF_PROMPT.md`)
 - `main`: B4 steps 1-3 and `b4-polish` merged (pose, scabbard left hand, BASE state, scabbard leaves the first-person screen after the draw). 214 tests; runPhase4/5 not rerun on this exact commit.
