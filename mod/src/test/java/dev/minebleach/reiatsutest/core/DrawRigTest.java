@@ -151,6 +151,36 @@ class DrawRigTest {
 		assertVec(stow().apply(v), fixed.sayaAt(1f).apply(v), 1e-6f, "fixed saya, carry");
 	}
 
+	@Test
+	void theScabbardLeavesTheScreenAtTheEndOfTheDrawAndComesBackOnTheSheathe() {
+		assertEquals(0f, DrawRig.sayaOut(0f), 0f, "sheathed: in the left hand");
+		assertEquals(0f, DrawRig.sayaOut(DrawRig.SAYA_OUT_FROM), 0f, "still in the hand until the lowering starts");
+		assertEquals(1f, DrawRig.sayaOut(1f), 0f, "drawn: gone");
+		float prev = 0f;
+		for (int i = 0; i <= 100; i++) {
+			float v = DrawRig.sayaOut(i / 100f);
+			assertTrue(v >= prev, "monotonic in the progress, so the reversed sheathe lowers then raises it again");
+			prev = v;
+		}
+		// the eased draw progress p = 1 - (1 - t)^2 over 0.45 s: the lowering takes about 0.2 s
+		float tStart = 1f - (float) Math.sqrt(1f - DrawRig.SAYA_OUT_FROM);
+		assertEquals(0.2f, (1f - tStart) * 0.45f, 0.03f);
+	}
+
+	@Test
+	void theForearmRollEasesFromTheStowValueToTheHeldValue() {
+		DrawRig r = rig();
+		assertEquals(80f, r.armRoll(0f, 80f, 12f), 1e-5f);
+		assertEquals(80f, r.armRoll(0.55f, 80f, 12f), 1e-5f, "constant while the blade slides out");
+		assertEquals(12f, r.armRoll(1f, 80f, 12f), 1e-5f);
+		float prev = 80f;
+		for (int i = 55; i <= 100; i++) {
+			float v = r.armRoll(i / 100f, 80f, 12f);
+			assertTrue(v <= prev + 1e-4f, "never rolls back");
+			prev = v;
+		}
+	}
+
 	private static float dist(float[] a, float[] b) {
 		float x = a[0] - b[0];
 		float y = a[1] - b[1];

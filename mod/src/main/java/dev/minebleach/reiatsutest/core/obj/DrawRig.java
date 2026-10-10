@@ -49,6 +49,8 @@ public final class DrawRig {
 	public final float pull;
 	/** Travel along the arc (metres) by which the scabbard is pulled back in the drawn state (the left hand carries it there). */
 	public final float retract;
+	/** The scabbard leaves the first person screen over the last part of the draw: from this progress on it is lowered out. */
+	public static final float SAYA_OUT_FROM = 0.8f;
 	public final float[] origin = {0.5f, 0.5f, 0.5f};
 
 	public DrawRig(ObjMeta saya, Rigid stow, float slideEnd) {
@@ -148,6 +150,24 @@ public final class DrawRig {
 			a = from + (to - from) * s;
 		}
 		return stow.after(arc(a));
+	}
+
+	/**
+	 * 0 = scabbard in the left hand, 1 = fully lowered out of the screen (drawn states; B4 polish). Based on the (eased) draw
+	 * progress, so a sheathe, which runs the progress backwards, brings it up again. SAYA_OUT_FROM 0.8 of the eased progress is
+	 * 0.55 of the time, i.e. about 0.2 s of the 0.45 s draw.
+	 */
+	public static float sayaOut(float p) {
+		return smooth((p - SAYA_OUT_FROM) / (1f - SAYA_OUT_FROM));
+	}
+
+	/** Roll (degrees) of the right forearm about the view axis through the fist at draw progress p: stow value until the slide ends, then eased to the held value. */
+	public float armRoll(float p, float rollStow, float rollHeld) {
+		if (p <= slideEnd) {
+			return rollStow;
+		}
+		float s = smooth((p - slideEnd) / (1f - slideEnd));
+		return rollStow + (rollHeld - rollStow) * s;
 	}
 
 	/** Where the grip point (the fist) is at progress p, model space; the held pose has it at the origin (0.5, 0.5, 0.5). */

@@ -61,10 +61,13 @@ public final class ItemManifest {
 	 * display transform (x right, y up, z toward the camera): {@code rot} = degrees about hand x, y, z (applied z after y after
 	 * x) about the grip, {@code move} = blocks, {@code slideEnd} = part of the draw in which the blade slides out of the saya
 	 * (the rest is the swing to the held pose), {@code pull} = share of the blade travel done by the left hand pulling the
-	 * scabbard back, {@code retract} = metres of arc travel the scabbard stays pulled back in the drawn states. The left hand
+	 * scabbard back, {@code armRollStow} / {@code armRollHeld} = degrees the right forearm is rolled about the view axis through the fist (elbow toward the right edge, B4 polish) while the sword is in the saya / in the held pose, {@code retract} = metres of arc travel the scabbard stays pulled back in the drawn states. The left hand
 	 * mirrors y/z rotation and x.
 	 */
-	public record Stow(float[] rot, float[] move, float slideEnd, float pull, float retract) {
+	public record Stow(float[] rot, float[] move, float slideEnd, float pull, float retract, float armRollStow, float armRollHeld) {
+		public Stow(float[] rot, float[] move, float slideEnd, float pull, float retract) {
+			this(rot, move, slideEnd, pull, retract, 0f, 0f);
+		}
 	}
 
 	/**
@@ -75,7 +78,19 @@ public final class ItemManifest {
 	public record Hip(float[] posPx, float[] dir, float scale) {
 	}
 
+	/**
+	 * First person held pose (B4 polish), HAND frame blocks of the right-handed numbers (the left hand mirrors x):
+	 * {@code lift} = how far the sword and the scabbard are raised in the hand on top of the display transform (the stow pose
+	 * is compensated, so the sheathed sword stays where it was), {@code arm} = where the fist of the holding arm sits in the
+	 * held pose relative to the vanilla empty-hand fist (negative y = lower on the screen). The fist keeps its place along the
+	 * hilt through the whole draw, so lifting the sword relative to the arm moves the fist down the tsuka.
+	 */
+	public record Held(float[] lift, float[] arm) {
+		public static final Held NONE = new Held(new float[3], new float[3]);
+	}
+
 	public String model;
+	public Held held = Held.NONE;
 	public Stow stow; // null = defaults of the loader
 	public Hip hip;
 	public DrawDef draw; // null = no draw animation
@@ -106,7 +121,13 @@ public final class ItemManifest {
 				JsonObject o = d.getAsJsonObject("stow");
 				m.stow = new Stow(vec(o, "rot", new float[3]), vec(o, "move", new float[3]),
 						o.has("slide_end") ? o.get("slide_end").getAsFloat() : 0.55f,
-						o.has("pull") ? o.get("pull").getAsFloat() : 0.6f, o.has("retract") ? o.get("retract").getAsFloat() : 0.3f);
+						o.has("pull") ? o.get("pull").getAsFloat() : 0.6f, o.has("retract") ? o.get("retract").getAsFloat() : 0.3f,
+						o.has("arm_roll_stow") ? o.get("arm_roll_stow").getAsFloat() : 0f,
+						o.has("arm_roll_held") ? o.get("arm_roll_held").getAsFloat() : 0f);
+			}
+			if (d.has("held")) {
+				JsonObject o = d.getAsJsonObject("held");
+				m.held = new Held(vec(o, "lift", new float[3]), vec(o, "arm", new float[3]));
 			}
 			if (d.has("hip")) {
 				JsonObject o = d.getAsJsonObject("hip");

@@ -470,6 +470,32 @@ HIPS = {
 sets["kt"] = [k_view("kt_%s_%s" % (n, v), v, "sealed", "sode_no_shirayuki", cfg=cfg, cam=[x, -60, 2.35, 0, 26])
               for n, cfg in HIPS.items() for v, x in (("side_l", 30.5), ("side_r", 20.5), ("front", 40.5), ("back", 110.5))]
 
+# ---- B4 polish: hot pose sweeps. A candidate with "pose" writes <run>/pose_override.json and needs no resource reload, so a
+# whole sweep runs in ONE game launch (keys: lift [x,y,z] sword lift, arm [x,y,z] fist offset from the vanilla fist, roll_stow,
+# roll_held; hand frame blocks, y negative = lower on the screen).
+def pv(name, state, pose, view="fp", p=None):
+    c = {"name": name, "view": view, "state": state, "pose": pose}
+    if p is not None:
+        c["draw_p"] = p
+    return c
+
+
+def sweep_held(tag, lifts, arms, state="shikai"):
+    return [pv("%s_l%02d_a%02d" % (tag, round(l * 100), round(-a * 100)), state, {"lift": [0, l, 0], "arm": [0, a, 0], "roll_stow": 80, "roll_held": 0})
+            for l in lifts for a in arms]
+
+
+def sweep_draw(tag, pose, state="base", frames=(0.0, 0.1, 0.2, 0.3, 0.45, 0.55, 0.7, 0.85, 1.0), view="fp"):
+    return [pv("%s_%02d" % (tag, round(p * 100)), state, pose, view, p) for p in frames]
+
+
+sets["sw1"] = sweep_held("h", (0.0, 0.06, 0.12), (0.0, -0.10, -0.20, -0.30))
+
+POSEA = {"lift": [0, 0.06, 0], "arm": [0, -0.20, 0], "roll_stow": 80, "roll_held": 0}
+POSEB = {"lift": [0, 0.08, 0], "arm": [0, -0.15, 0], "roll_stow": 80, "roll_held": 0}
+sets["sw2"] = sweep_draw("a", POSEA, frames=(0.0, 0.3, 0.55, 0.7, 0.85, 1.0)) + sweep_draw("b", POSEB, frames=(0.0, 0.3, 0.55, 0.7, 0.85, 1.0)) +     [pv("al_shikai", "shikai", POSEA, "fp_left"), pv("bl_shikai", "shikai", POSEB, "fp_left"),
+     pv("al_base", "base", POSEA, "fp_left"), pv("al_sealed", "sealed", POSEA, "fp_left")]
+
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]
     json.dump({"candidates": sets[name]}, open(out, "w"), indent=1)

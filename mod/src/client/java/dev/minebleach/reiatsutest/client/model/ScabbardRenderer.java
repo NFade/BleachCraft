@@ -41,6 +41,10 @@ public final class ScabbardRenderer {
 	private static final float FIST_Y = -0.538f;
 	private static final float FIST_Z = -1.036f;
 
+	/** How far (blocks, hand frame) the scabbard and the left hand are lowered when they leave the screen (toward the lower left). */
+	private static final float SAYA_OUT_DX = 0.25f;
+	private static final float SAYA_OUT_DY = 0.9f;
+
 	private static final boolean DEBUG = Boolean.getBoolean("reiatsu.spike");
 
 	private ScabbardRenderer() {
@@ -95,14 +99,22 @@ public final class ScabbardRenderer {
 		int i = left ? -1 : 1;
 		Transformation tr = om.getTransformation().getTransformation(mode);
 		DrawRig rig = om.rig(left);
+		float prog = DrawTracker.effectiveProgress(player, main);
+		float out = DrawRig.sayaOut(prog); // B4 polish: after the draw the scabbard leaves the first person screen
+		if (out >= 1f) {
+			return;
+		}
 		// the hand matrices carry the camera rotation: positions below are taken back into the frame the hand code works in
 		Matrix4f baseInv = new Matrix4f(m.peek().getPositionMatrix()).invert();
 
 		m.push();
 		m.translate(i * 0.56f, -0.52f + eqY, -0.72f); // the resting main hand frame (swing does not move the scabbard)
+		float[] lf = HeldPose.of(om.manifest()).lift(); // the scabbard shares the lift of the sword (stow pose compensated in the rig)
+		m.translate(i * lf[0], lf[1], lf[2]);
+		m.translate(-i * SAYA_OUT_DX * out, -SAYA_OUT_DY * out, 0f); // lowered out of the screen by the left hand
 		tr.apply(left, m);
 		m.translate(-0.5f, -0.5f, -0.5f);
-		DrawRig.Rigid sp = rig.sayaAt(DrawTracker.effectiveProgress(player, main)); // pulled back while the blade leaves it
+		DrawRig.Rigid sp = rig.sayaAt(prog); // pulled back while the blade leaves it
 		m.translate(sp.t()[0], sp.t()[1], sp.t()[2]);
 		m.multiply(new Quaternionf(sp.q()[0], sp.q()[1], sp.q()[2], sp.q()[3]));
 		VertexConsumer vc = vcp.getBuffer(TexturedRenderLayers.getEntityCutout());

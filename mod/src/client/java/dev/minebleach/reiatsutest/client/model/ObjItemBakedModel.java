@@ -177,25 +177,38 @@ public final class ObjItemBakedModel implements BakedModel {
 	private DrawRig rigRight;
 	private DrawRig rigLeft;
 	private float rigMult = -1f;
+	private String keyRight;
+	private String keyLeft;
 
-	/** The draw rig for the right (main arm right) or left hand pose; rebuilt when the first person scale option changes. */
+	/**
+	 * The draw rig for the right (main arm right) or left hand pose; rebuilt when the first person scale option or the held lift
+	 * (manifest or dev override) changes. The stow move is compensated by the lift: the lift raises the sword and the scabbard
+	 * together everywhere in the hand, the sheathed sword stays where it was.
+	 */
 	public DrawRig rig(boolean left) {
 		float m = dev.minebleach.reiatsutest.client.ClientOptions.firstPersonScaleMultiplier;
+		float[] lift = HeldPose.of(manifest).lift();
+		String key = m + ":" + java.util.Arrays.toString(lift);
 		if (m != rigMult) {
 			rigMult = m;
 			rigRight = null;
 			rigLeft = null;
 		}
 		DrawRig r = left ? rigLeft : rigRight;
-		if (r == null) {
+		if (r == null || !key.equals(left ? keyLeft : keyRight)) {
 			ItemManifest.Stow st = manifest.stow != null ? manifest.stow
 					: new ItemManifest.Stow(new float[3], new float[3], 0.55f, 0.6f, 0.3f);
+			float[] mv = st.move();
+			st = new ItemManifest.Stow(st.rot(), new float[] {mv[0] - lift[0], mv[1] - lift[1], mv[2] - lift[2]}, st.slideEnd(), st.pull(),
+					st.retract(), st.armRollStow(), st.armRollHeld());
 			ModelTransformationMode mode = left ? ModelTransformationMode.FIRST_PERSON_LEFT_HAND : ModelTransformationMode.FIRST_PERSON_RIGHT_HAND;
 			r = new DrawRig(states.sayaMeta, HandMath.stowToModel(getTransformation().getTransformation(mode), left, st), st.slideEnd(), st.pull(), st.retract());
 			if (left) {
 				rigLeft = r;
+				keyLeft = key;
 			} else {
 				rigRight = r;
+				keyRight = key;
 			}
 		}
 		return r;

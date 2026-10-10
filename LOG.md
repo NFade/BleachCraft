@@ -655,3 +655,19 @@ No Blender, no generate_3d. Screenshots: `blender/renders/p6/p6_01_*.png` (68 fi
 **UNVERIFIED of 12.1 resolved** (see step 0): glow depth under Fabulous (fixed with `FxDepth`), model view matrix at LAST (world matrix is in force), VertexBuffer API names (verified; uniform setup to copy from `WorldRenderer#renderLayer`), freeze_desat post (program names are not namespaced: files go under `assets/minecraft/shaders/program/`), BossBarHud field `bossBars` (done, accessor mixin works).
 
 **Next:** regenerate and review the step 2 screenshots, run build + both regressions once, commit step 2, then step 3 with the batch rule (write several steps of code, then one game launch).
+## 2026-10-10: B4 polish: stop point (WIP, stopped on the user's request)
+
+Branch `b4-polish`. No Blender. Screenshots: `blender/renders/b4_polish/` (fp_all_states, draw_strip_rukia/byakuya, fp_left_handed_*, third_person_*).
+
+### Done (3 requested changes)
+1. **Sword higher, hand lower** (user clarification: keep the pre-B4 look, fist low, tsuba fully above it): manifest `draw.held` = `lift [0, 0.06, 0]` (sword and scabbard raised in the hand, stow compensated in `ObjItemBakedModel.rig`) and `arm [0, -0.12, 0]` (fist below the vanilla fist). The fist keeps its place along the hilt through the draw (`FirstPersonHand.gripOffset`). Tried (shikai, Rukia, one launch, hot): lift 0/0.06/0.12 x arm 0/-0.1/-0.2/-0.3; also display-translation lift +2.2/+3.2/+4.4 px (rejected: raises the hand, tsuba hidden by the tilted fist). 0.06/-0.10..-0.12 matches the pre-B4 composition.
+2. **Scabbard leaves the first person screen** after the draw (BASE/SHIKAI/BANKAI): `DrawRig.sayaOut(p)` from p 0.8 (about 0.2 s), saya and left arm lowered out; returns on sheathe and in SEALED. Third person hip scabbard unchanged (checked on stands).
+3. **Right forearm** rolled about the view axis through the fist: `arm_roll_stow` 80 degrees (elbow at the right edge, forearm toward the hilt on the left), eased to `arm_roll_held` 0 after the slide. Left-handed mirrors; checked in `fp_left_handed_*`: no regression.
+- Hot tuning: dev-only `run/pose_override.json` (keys lift, arm, roll_stow, roll_held) re-read by `HeldPose`; harness candidates with `"pose"` need no resource reload (`tools/spike_tune_gen.py` sets `sw1`, `sw2`, helper `tools/b4sheet.py`).
+
+### Not done / state
+- `gradlew build test`: green, 214 tests, 0 failures (before the last clean-up, nothing after).
+- `runPhase4`: NOT clean: 24 CHECK PASS, B2/B3/B4 failed in the one run, with another game/Gradle (phase 6 worktree) running; NOT rerun, not investigated (earlier B4-step runs flaked on B5/B6 the same way). `runPhase5` not run. Rerun both with no other window open.
+- Left-hand `al_base` shot in sweep `sw2` showed a wrong camera (harness artefact, final k5 shots are fine).
+### Next
+Rerun runPhase4/5; user to judge fist height (`held.arm` y) and roll in game; bake any new numbers into `zanpakuto/*.json`.
