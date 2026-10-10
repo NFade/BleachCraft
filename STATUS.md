@@ -18,6 +18,9 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 ## Phase 6 step 2 closed (branch `phase6-fx`, local commit, not pushed)
 - Release 2.1, auras 2.2 (Rukia bankai interim, Byakuya heartbeat), seal 2.3, `DrawFx` mapping of the B4 states, `FxTune` hot reload (`mod/run/fx_override.json`) and the live harness console (`runPhase6 -Phold=console`, `run/p6_cmd.txt`) are done; 41 screenshots in `blender/renders/p6/p6_02_*`. Build 217 tests, runPhase4 89/89, runPhase5 62/62 on the merged branch, runPhase6 release set 49/49. Details and the UNVERIFIED list: `LOG.md` "Phase 6 step 2 (closed)". Next: step 3 (Byakuya swarm), batch the code, one `runPhase6`.
 
+## B4 steps 4 and 5 done (branch `b4game`, local commits, not pushed, 2026-10-11)
+- Step 4: bankai costs no reiatsu, 45 s timer then back to SHIKAI, free bankai abilities with cooldowns (keys U I O), shikai abilities (Z H B) also inside bankai, all areas scaled and in `BalanceConfig` (Absolute zero radius 12, Scatter 12/14, Hakuteiken burst 12, shikai x1.5-2), 60 s bankai re-entry lock. Step 5: shunpo on Y (server teleport 9 blocks along the look direction, wall and landing checks, 2.5 s cooldown, 5.0 reiatsu, SHIKAI and BANKAI), 5 translucent afterimages plus trail and sound. 253 tests. Details, numbers, UNVERIFIED: `LOG.md` "B4 step 4" and "B4 step 5"; rules in `design/STATE_MACHINE.md` section 10.
+
 ## Stop point 2026-10-10 (details and next actions: `HANDOFF_PROMPT.md`)
 - `main`: B4 steps 1-3 and `b4-polish` merged (pose, scabbard left hand, BASE state, scabbard leaves the first-person screen after the draw). 214 tests; runPhase4/5 not rerun on this exact commit.
 - `phase6-fx`: Phase 6 steps 0, 1 and 2 done (see the section above). Steps 3-9 not started.

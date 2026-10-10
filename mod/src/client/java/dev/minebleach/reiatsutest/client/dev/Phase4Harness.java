@@ -650,7 +650,7 @@ public final class Phase4Harness {
 			});
 			sCheck("B3 absorption pool 12.0 left", p -> sm(p).barrierPoolTenths() == 120 ? null : "pool " + sm(p).barrierPoolTenths());
 		});
-		step("creative again, full reiatsu, wait", 150, () -> cmd("gamemode creative @s", "reiatsu full"));
+		step("creative again, full reiatsu, wait", 150, () -> cmd("gamemode creative @s", "reiatsu full", "reiatsu cooldowns clear"));
 		step("press G (byakuya bankai)", 14, () -> press(ReiatsuKeys.BANKAI));
 		step("B4 checks: byakuya bankai", 3, () -> {
 			sCheck("B4 server BANKAI/BYAKUYA", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.BYAKUYA));
@@ -712,9 +712,9 @@ public final class Phase4Harness {
 		step("B7b checks", 3, () -> {
 			cCheck("B7b action_result OK", () -> lastResultIs("OK") ? null : "last result " + lastResult());
 			sCheck("B7b still BANKAI", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.BYAKUYA));
-			sCheck("B7b charged its 12.0 (bar 860..900)", p -> {
+			sCheck("B7b charged its 12.0 (bar 860..930, not 1000)", p -> {
 				int v = sm(p).reiatsu().value();
-				return v >= 860 && v <= 900 ? null : "reiatsu " + v;
+				return v >= 860 && v <= 930 ? null : "reiatsu " + v;
 			});
 			sCheck("B7b cow lost HP", p -> {
 				List<CowEntity> c = cows(p);
@@ -930,7 +930,18 @@ public final class Phase4Harness {
 				() -> ShunpoFx.played > shPlayedBefore);
 		step("D2 freeze", 1, () -> FxClock.freezeIn(0.04));
 		stepUntil("D2 wait for the freeze", 1, 60, () -> { }, () -> FxClock.frozen);
-		step("D2 settle frames", 6, () -> { });
+		step("D2 server checks before the side view", 4, () -> {
+			sCheck("D2 server: moved about 9 blocks along +z (the look direction)", p -> shMoved(p, 8.6, 9.2, true));
+			sCheck("D2 server: reiatsu cost about 5.0", p -> {
+				int spent = shReiatsuBefore - sm(p).reiatsu().value();
+				return spent >= 20 && spent <= 55 ? null : "spent " + spent;
+			});
+			sCheck("D2 server: still SHIKAI, shunpo does not change the state", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.BYAKUYA));
+		});
+		step("D2 side view: turn the player to the side (rotation only, the images stay in the world), camera behind", 8, () -> {
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			cmd("tp @s 0.5 -60 4.5 90 8");
+		});
 		step("D2 shot byakuya afterimages", 4, () -> {
 			shot("16_shunpo_byakuya_frozen");
 			cCheck("D2 4 to 6 afterimages alive in the frozen frame", () -> ShunpoFx.liveImages() >= 4 && ShunpoFx.liveImages() <= 6 ? null : "live " + ShunpoFx.liveImages());
@@ -940,12 +951,6 @@ public final class Phase4Harness {
 			cCheck("D2 trail particles spawned", () -> ShunpoFx.lastTrailParticles >= 20 ? null : "trail " + ShunpoFx.lastTrailParticles);
 			cCheck("D2 sound played", () -> FxSound.LOG.contains("entity.player.attack.sweep") ? null : "sounds " + FxSound.LOG);
 			cCheck("D2 effect distance reported by the server is about 9", () -> Math.abs(ShunpoFx.lastDistance - 9.0) < 0.3 ? null : "distance " + ShunpoFx.lastDistance);
-			sCheck("D2 server: moved about 9 blocks along +z (the look direction)", p -> shMoved(p, 8.6, 9.2, true));
-			sCheck("D2 server: reiatsu cost about 5.0", p -> {
-				int spent = shReiatsuBefore - sm(p).reiatsu().value();
-				return spent >= 20 && spent <= 55 ? null : "spent " + spent;
-			});
-			sCheck("D2 server: still SHIKAI, shunpo does not change the state", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.BYAKUYA));
 			cCheck("D2 action_result OK", () -> lastResultIs("OK") ? null : "last result " + lastResult());
 		});
 		step("D2 unfreeze, press Y at once (cooldown)", 10, () -> {
@@ -954,7 +959,6 @@ public final class Phase4Harness {
 		});
 		step("D2 checks: cooldown", 3, () -> {
 			cCheck("D2 second shunpo is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
-			sCheck("D2 and did not move", p -> shMoved(p, 8.6, 9.2, true));
 			cCheck("D2 afterimages are gone 0.6 s after the shunpo", () -> ShunpoFx.liveImages() == 0 ? null : "live " + ShunpoFx.liveImages());
 			cCheck("D2 render cost of the afterimages under 1 ms per frame on average", () -> {
 				ReiatsuTest.LOGGER.info(P + "shunpo render: {} frames with images, mean {} ms, max {} ms", ShunpoFx.renderFrames,
@@ -1050,10 +1054,13 @@ public final class Phase4Harness {
 		stepUntil("D7 wait for the effect", 1, 60, () -> { }, () -> ShunpoFx.played > shPlayedBefore);
 		step("D7 freeze 0.1 s", 1, () -> FxClock.freezeIn(0.04));
 		stepUntil("D7 wait for the freeze", 1, 60, () -> { }, () -> FxClock.frozen);
-		step("D7 settle", 6, () -> { });
+		step("D7 server check", 4, () -> sCheck("D7 server: Rukia moved 9 blocks too (shared ability)", p -> shMoved(p, 8.6, 9.2, true)));
+		step("D7 side view", 8, () -> {
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			cmd("tp @s 0.5 -60 4.5 90 8");
+		});
 		step("D7 shot rukia afterimages", 4, () -> {
 			shot("19_shunpo_rukia_frozen");
-			sCheck("D7 server: Rukia moved 9 blocks too (shared ability)", p -> shMoved(p, 8.6, 9.2, true));
 			cCheck("D7 4 to 6 afterimages", () -> ShunpoFx.liveImages() >= 4 && ShunpoFx.liveImages() <= 6 ? null : "live " + ShunpoFx.liveImages());
 		});
 		step("D7 unfreeze, look at the trail", 4, FxClock::unfreeze);

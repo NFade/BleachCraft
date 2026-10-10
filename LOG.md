@@ -718,3 +718,67 @@ Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha a
 - The console mode is dev-only, not part of the mod runtime path.
 
 ## 2026-10-10: STOP POINT (b4game): bankai timer / balance numbers and shunpo in progress; existing tests were being updated to the new rules, no harness run yet. Continue per design/FIXES_B4.md steps 4-5 (defaults: shikai abilities cost reiatsu in bankai, 45 s bankai, shunpo shared).
+
+## 2026-10-11: B4 step 4 (usable bankai, scaled abilities), branch `b4game`
+
+Decisions (orchestrator defaults, the user had not answered): shikai abilities cost reiatsu as usual inside bankai; bankai lasts 45 s; shunpo shared by both characters, key Y.
+
+### What changed
+- Bankai costs **0** reiatsu (the bar must still be full), has no upkeep drain (BANKAI rate +2.0/s, the same net as shikai) and a separate timer `bankaiCapTicks = 900` (45 s) that ends bankai into **SHIKAI** (sword stays drawn, character locked, shikai idle timer restarts, effect 11, running casts keep going). An empty bar no longer ends bankai (T5 removed). Re-entry lock `bankaiReentryTicks = 1200` (60 s) after the timer, a seal in bankai or a dimension change (without it a full bar plus a free entry would loop bankai forever); death and logout clear it; wire answer COOLDOWN.
+- Bankai abilities cost 0 and have cooldowns: Absolute zero 20 s (was 25), Scatter 15 s (20), Hakuteiken 30 s (40). Shikai abilities are accepted in BANKAI too (same character), normal cost and cooldown, shared global cooldown. Keys: Z H B shikai (SHIKAI and BANKAI), new rebindable U I O bankai row. HUD: the strip shows the bankai row then the shikai row (6 slots max), no cost tick for free abilities, the "bankai ready" gem waits for the re-entry lock; the timer ring and `0:39` text already existed (client counts `ticksInState` against `bankaiCapTicks`, verified in screenshot p4_10b).
+- All area, damage and cap numbers moved from `AbilityExecutor` into `AbilitySpec.params` (`AbilityParams` keys) in `BalanceConfig.defaults()`; the executor reads only `ctx.spec`. effect_event params are now `[aimX, aimY, aimZ, size, size2]` (size as before; size2 = tornado radius for Scatter, half width for the lines, impact radius for Hakuteiken).
+
+### Numbers and justification
+| Ability | Old | New | Why |
+|---|---|---|---|
+| Tsukishiro radius / height / targets | 4 / 3 / 16 | 7 / 4 / 24 | x1.75 (spec x1.5-2) |
+| Hakuren length / half width / targets / phases | 12 / 2 / 12 / 5 | 20 / 3.5 / 20 / 8 | x1.67, x1.75; 8 phases keep the 24 b/s wave speed |
+| Shirafune reach | 8 | 14 | x1.75 |
+| Mode attack radius / targets | 1.5 / 8 | 3.0 / 16 | x2 |
+| Absolute zero radius, freeze, shatter, targets | 10, Slowness VII 26 t, 14 HP, 32 | **12**, Slowness VII **40 t**, **18 HP**, 48 | mobs at 10-11.6 blocks are inside with margin; the freeze now covers the whole 26 tick wait to the shatter plus margin |
+| Scatter tornado / impact radius, impact HP, tornado HP, targets | 5 / 5, 12, 1.5, 24 | **12 / 14**, 16, 2.0, 48 | spec 12-16 blocks, group damage |
+| Hakuteiken length / half width / burst radius, line HP, targets | 20 / 1 / 5, 12, 24 | 28 / 2 / **12**, 14, 48 | same |
+
+Temp ice: per cast 64 (Absolute zero, Hakuren), per player 128 (`TempBlocks`), rollback unchanged; Hakuren spreads its 64 blocks over the 8 phases. Bankai uptime is at most 45 / (45 + 60) = 43 %.
+
+### Tests and harness
+- `gradlew build test`: 253 tests (217 before). New `BankaiTest` (no cost, full bar still needed, no drain over 900 ticks, timer end -> SHIKAI, free abilities at 0 reiatsu, cooldown spam protection, shikai abilities in bankai with normal cost/cooldown/GCD, timer not extended, re-entry lock, scaled numbers against the old values); amended Transition L3, AutoRevert A1-A3, Reiatsu R1/R3/R6, Balance M2, Ability C1. CorePurityTest green.
+- `runPhase4` extended to 195 steps. Acceptance with the **real server logic** (`ZanpakutoManager`, `AbilityExecutor`): 4 cows at 10.5-11.6 blocks around the Rukia caster are slowed (Slowness VII) and dead after the Absolute zero shatter; Byakuya Scatter kills cows at 7, 9, 12 blocks and one at 10.9 blocks to the side; the timer ends bankai after the real 45 s into SHIKAI with a full bar, G right after is COOLDOWN (lock), shikai abilities fire inside bankai (25.0 / 12.0 charged, state stays BANKAI), a second Absolute zero is COOLDOWN, an empty bar (0.3) does not end bankai.
+
+### UNVERIFIED / open
+- Balance is by arithmetic, not play tested. The 60 s re-entry lock, shared by both characters, is my choice.
+- The Rukia bankai passive (slow within 3 blocks) was not scaled.
+- The voice HUD toast for a locked bankai shows the generic cooldown message.
+- For the visual agents: effect params gained `size2`; Absolute zero visuals should use params[3] = 12.
+- LegacyHud (option) only shows the bankai row.
+
+## 2026-10-11: B4 step 5 (shunpo), branch `b4game`
+
+### Server
+`ShunpoC2S{source, clientSeq}` (C2S `reiatsu_test:shunpo`, no position) -> `ZanpakutoManager.performShunpo` -> `StateMachine.shunpo` (state SHIKAI or BANKAI, item, hand grace, transition lock, cooldown 50 ticks = 2.5 s, cost 5.0, never to 0) -> `ShunpoPath.resolve` over a `Probe` (pure, in `core/`; the real world side is `ShunpoWorld`: `world.isSpaceEmpty(player, box)` block collisions plus the world border, loaded chunks, hazards lava/fire/magma/cactus/campfire/cobweb/powder snow). Path: 9.0 blocks along the server's look vector, 0.25 block samples (smaller than the 0.6 player width, so no wall can be skipped), stops before the first collision; from the ground the end point is snapped down onto the floor (looking up gives a shorter dash, ground within 3 blocks required); a downward look on the ground is flattened; fewer than 1.5 usable blocks gives `BLOCKED` (new result byte 7 / `NO_ROOM`, no cost, no cooldown). Accepted: `requestTeleport` plus `effect_event` id 40 (start, vector, params distance / character / wall flag). All numbers in `BalanceConfig.shunpo()` (`ShunpoSpec`). Lang: `key.reiatsu_test.shunpo`, `...bankai_ability_1..3`, `hud.reiatsu_test.denied.blocked` in en and ru.
+
+### Key
+Y shunpo, U I O bankai abilities. Checked against the decompiled 1.21.1 `GameOptions` (every `KeyBinding` constructor: W A S D Space Shift Ctrl E F Q T Tab / P F2 F5 F11 L 1-9 C X, mouse buttons): no vanilla default on Y, U, I or O. The harness also asserts that no binding in `mc.options.allKeys` shares the bound key of ours.
+
+### Visual: afterimages, one implementation chosen
+Options: (a) mixin into `LivingEntityRenderer` to render the real player again with alpha; (b) an own `PlayerEntityModel` posed and drawn from a `WorldRenderEvents.AFTER_ENTITIES` hook with `RenderLayer.getEntityTranslucent`; (c) a particle silhouette.
+- (a) pros: exact pose, armor and held items for free. Cons: invasive mixin on the hottest render path, vanilla has no alpha path for living entities except the spectator ghost colour, conflicts with other mods and with the parallel effect agents' render hooks, needs a pose snapshot of a live entity.
+- (c) pros: trivially cheap. Cons: no player skin, reads as a blob.
+- **(b) chosen.** Pros: skin and slim or wide arms of the real caster, full control of tint and alpha, no mixin, no entity, deterministic fixed running pose independent of the live pose and of other players, appended to the entity consumers so translucency sorts with the entities. Cons: no armor, no held sword, the pastel tint multiplies the skin so dark skins stay dark, the pose is synthetic.
+
+API verified in the decompiled sources: `PlayerEntityModel(ModelPart, boolean)`, `EntityModelLoader.getModelPart(EntityModelLayers.PLAYER / PLAYER_SLIM)`, `Model.render(MatrixStack, VertexConsumer, int light, int overlay, int color)` with ARGB colour, `RenderLayer.getEntityTranslucent(Identifier)`, `ModelPart.resetTransform/copyTransform`, `SkinTextures.texture()/model()`, `WorldRenderContext.consumers()/camera()/matrixStack()`, `LightmapTextureManager.MAX_LIGHT_COORDINATE`, `ServerPlayNetworkHandler.requestTeleport(x, y, z, yaw, pitch)`.
+
+Parameters (`ShunpoFx`): 5 copies (4 with reduce motion) on the path at i/5 of the distance, stagger 0.02 s, life 0.5 s, opacity 0.6 * (1-t)^1.4, lean 18-24 degrees, stride legs and arms, full bright. Trail: 2 particles per half block (cherry petals for Byakuya, snowflakes for Rukia) plus wind puffs (`CLOUD`) and, for Rukia, sparse `END_ROD`. Sound: `entity.player.attack.sweep` at the start (pitch 1.6) and the arrival (1.9), plus `block.cherry_leaves.break` (Byakuya) or `block.amethyst_block.chime` (Rukia).
+
+### Harness measurements (runPhase4 section D)
+Real shunpo 9.00 blocks along +z, reiatsu cost 5.0, the second press is COOLDOWN, a wall at 4 blocks stops at z in [3.2, 3.71] (stone untouched), a wall one block ahead gives `BLOCKED` without cost or cooldown and a free path right after works, an upward look lands on the floor shorter than 9, works in BANKAI, refused in SEALED and BASE (`DENIED_STATE`), same ability for Rukia. Visual: 4-6 live copies, all drawn in the frozen frame, peak opacity between 0.25 and 0.6, none left 0.6 s later, afterimage render cost 0.14-0.17 ms mean per frame (max 2.0 ms on the first frame, model bake). Screenshots (git-ignored, `mod/run/screenshots`): `p4_16_shunpo_byakuya_frozen`, `p4_19_shunpo_rukia_frozen`, `p4_20_shunpo_rukia_trail`, `p4_17_shunpo_blocked`, `p4_18_shunpo_stopped_by_wall`.
+
+### UNVERIFIED / open
+- Dedicated server and a second client watching a remote caster were not run (the effect goes through the tracking players like every other effect; the skin is looked up by entity id and the copies are skipped if the caster is not loaded).
+- No armor or held sword on the copies; the tint is weak on dark skins.
+- A teleport right after a client move packet may rubber-band a laggy client by one correction; not measured.
+- The dash does not reset fall distance.
+- No HUD cooldown icon for the shunpo (its cooldown is not synced); a denied press shows a toast.
+- Anti-cheat plugins that flag teleports were not considered.
+
+## 2026-10-11: STOP POINT (b4game): tests being updated; not reviewed. Next: build, finish per FIXES_B4 steps 4-5.
