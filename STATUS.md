@@ -39,3 +39,4 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 - `refs/` (private reference images) is gitignored; re-download with `tools/fetch_refs.py`.
 - Dev windows open on the second monitor (`dev_monitor` in `mod/gradle.properties`).
 - Gradle commands need `JAVA_HOME` (Temurin 21) and `GRADLE_USER_HOME=D:\gradle-home`.
+- Known minor defects (queued after phase 6 effects): third-person draw ends with the sword jumping from hip to hand (no interpolation); no sword swing animation visible from outside (third person / other players).
