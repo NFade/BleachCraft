@@ -303,6 +303,11 @@ public final class VoiceControl implements VoiceBackend {
 					String.format(Locale.ROOT, "%.2f", latencyMs));
 		} else if (d.outcome() == VoiceProcessor.Outcome.GATED_OUT || d.outcome() == VoiceProcessor.Outcome.AMBIGUOUS) {
 			ReiatsuTest.LOGGER.info("[voice] \"{}\" -> {} {}", msg.text(), d.outcome().wire(), d.commandId());
+			if (d.outcome() == VoiceProcessor.Outcome.GATED_OUT && d.commandId() != null && d.commandId().endsWith(".shikai.release")
+					&& sm.state() == ZanpakutoState.SEALED && held != CharacterId.NONE) {
+				// the release phrase works from the drawn base form only: tell the player to draw first
+				p.sendMessage(Text.translatable("message.reiatsu_test.denied.not_drawn"), true);
+			}
 		} else {
 			ReiatsuTest.LOGGER.debug("[voice] \"{}\" -> {}", msg.text(), d.outcome().wire());
 		}

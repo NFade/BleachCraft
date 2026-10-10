@@ -3,6 +3,7 @@ package dev.minebleach.reiatsutest.core.state;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuMath;
@@ -25,6 +26,7 @@ class BalanceConfigTest {
 		}
 		// STATE_MACHINE section 3: per batch +10 / +5 / -4
 		assertEquals(10, c.rate(ZanpakutoState.SEALED).net());
+		assertEquals(10, c.rate(ZanpakutoState.BASE).net()); // drawn base form regenerates like sealed
 		assertEquals(5, c.rate(ZanpakutoState.SHIKAI).net());
 		assertEquals(-4, c.rate(ZanpakutoState.BANKAI).net());
 		// bankai cap comes before the idle drain reaches zero from 80.0
@@ -99,12 +101,13 @@ class BalanceConfigTest {
 		for (CharacterId ch : new CharacterId[] {CharacterId.RUKIA, CharacterId.BYAKUYA}) {
 			assertTrue(all.contains(CommandIds.forTransition(ch, ZanpakutoState.SHIKAI)));
 			assertTrue(all.contains(CommandIds.forTransition(ch, ZanpakutoState.BANKAI)));
-			assertEquals(Set.of(ZanpakutoState.SEALED), book.command(CommandIds.forTransition(ch, ZanpakutoState.SHIKAI)).states());
+			assertEquals(Set.of(ZanpakutoState.BASE), book.command(CommandIds.forTransition(ch, ZanpakutoState.SHIKAI)).states());
 			assertEquals(Set.of(ZanpakutoState.SHIKAI), book.command(CommandIds.forTransition(ch, ZanpakutoState.BANKAI)).states());
 			assertEquals(ch, book.command(CommandIds.forTransition(ch, ZanpakutoState.SHIKAI)).item());
 		}
 		assertTrue(all.contains(CommandIds.SEAL));
-		assertEquals(Set.of(ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command(CommandIds.SEAL).states());
+		assertEquals(Set.of(ZanpakutoState.BASE, ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command(CommandIds.SEAL).states());
+		assertNull(CommandIds.forTransition(CharacterId.RUKIA, ZanpakutoState.BASE), "the draw has no voice command");
 		assertEquals(14, all.size());
 	}
 }

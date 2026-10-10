@@ -78,6 +78,7 @@ public final class ClientNet {
 			case DENIED_STATE -> "message.reiatsu_test.denied.state";
 			case DENIED_ITEM -> "message.reiatsu_test.denied.item";
 			case DENIED_REIATSU -> "message.reiatsu_test.denied.reiatsu";
+			case DENIED_NOT_DRAWN -> "message.reiatsu_test.denied.not_drawn";
 			case COOLDOWN -> null; // the HUD icons shake, no text spam
 			case OK, RATE_LIMIT -> null;
 		};

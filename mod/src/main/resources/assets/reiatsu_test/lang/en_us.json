@@ -4,6 +4,7 @@
   "item.reiatsu_test.senbonzakura": "Senbonzakura",
 
   "key.categories.reiatsu_test": "Reiatsu Test",
+  "key.reiatsu_test.draw": "Draw / sheathe",
   "key.reiatsu_test.release": "Release (shikai)",
   "key.reiatsu_test.bankai": "Bankai",
   "key.reiatsu_test.seal": "Seal",
@@ -13,15 +14,18 @@
 
   "hud.reiatsu_test.reiatsu": "Reiatsu",
   "hud.reiatsu_test.state.sealed": "Sealed",
+  "hud.reiatsu_test.state.base": "Drawn",
   "hud.reiatsu_test.state.shikai": "Shikai",
   "hud.reiatsu_test.state.bankai": "Bankai",
-  "hud.reiatsu_test.hint.release": "[%s] Release",
+  "hud.reiatsu_test.hint.draw": "[%s] or right click: draw the sword",
+  "hud.reiatsu_test.hint.release": "[%s] Release (shikai)",
   "hud.reiatsu_test.bankai_time": "%ss left",
   "hud.reiatsu_test.no_ability": "-",
 
   "message.reiatsu_test.denied.state": "Not possible in this state",
   "message.reiatsu_test.denied.item": "Hold the matching zanpakuto in your main hand",
   "message.reiatsu_test.denied.reiatsu": "Not enough reiatsu",
+  "message.reiatsu_test.denied.not_drawn": "Draw the sword first",
   "message.reiatsu_test.denied.cooldown": "Not ready yet",
   "message.reiatsu_test.sealed.hand": "The zanpakuto returned to its sealed form",
   "message.reiatsu_test.voice.ready": "Voice bridge ready: %s (open it in Chrome or Edge and press Start)",

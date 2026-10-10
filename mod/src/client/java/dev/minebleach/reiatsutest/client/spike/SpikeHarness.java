@@ -561,6 +561,8 @@ public final class SpikeHarness {
 					stand(20.5, 90f, stackOf("sealed")), stand(30.5, 270f, stackOf("sealed")), stand(40.5, 180f, stackOf("sealed")),
 					stand(24.5, 90f, stackOf("shikai")), stand(34.5, 270f, stackOf("shikai")), stand(44.5, 180f, stackOf("shikai")),
 					stand(28.5, 90f, stackOf("bankai")), stand(38.5, 270f, stackOf("bankai")), stand(48.5, 180f, stackOf("bankai")),
+					stand(76.5, 90f, stackOf("base")), stand(86.5, 270f, stackOf("base")), stand(96.5, 180f, stackOf("base")),
+					stand(110.5, 0f, stackOf("sealed")), stand(114.5, 0f, stackOf("base")), stand(118.5, 0f, stackOf("shikai")),
 					groundItem(50.5, "sealed"), groundItem(54.5, "shikai"), groundItem(58.5, "bankai"),
 					"fill 58 -60 3 72 -57 3 minecraft:stone",
 					"summon minecraft:item_frame 60 -59 2 {Facing:2b,Item:" + stackNbt(stackOf("sealed")) + "}",
@@ -584,7 +586,7 @@ public final class SpikeHarness {
 			String view = c.get("view").getAsString();
 			String stateName = c.has("state") ? c.get("state").getAsString() : "sealed";
 			boolean shikai = stateName.equals("shikai");
-			int dx = stateName.equals("shikai") ? 4 : stateName.equals("bankai") ? 8 : 0;
+			int dx = stateName.equals("shikai") ? 4 : stateName.equals("bankai") ? 8 : stateName.equals("base") ? 56 : 0;
 			step("tune " + name + ": write display + reload", 2, () -> {
 				if (view.startsWith("dark")) {
 					cmd("tp @s 100.5 -60 0.5 0 15"); // let the chunks around the dark room load during the reload
@@ -594,9 +596,17 @@ public final class SpikeHarness {
 					com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(original[0]).getAsJsonObject();
 					root.add("display", c.getAsJsonObject("display"));
 					Files.writeString(display[0], root.toString());
-					if (c.has("arm") && manifest[0] != null) { // candidate first_person_arm pose
+					if ((c.has("arm") || c.has("draw_cfg")) && manifest[0] != null) { // candidate first_person_arm pose, draw block keys
 						com.google.gson.JsonObject mroot = com.google.gson.JsonParser.parseString(manifestOriginal[0]).getAsJsonObject();
-						mroot.add("first_person_arm", c.getAsJsonObject("arm"));
+						if (c.has("arm")) {
+							mroot.add("first_person_arm", c.getAsJsonObject("arm"));
+						}
+						if (c.has("draw_cfg")) {
+							com.google.gson.JsonObject dr = mroot.getAsJsonObject("draw");
+							for (var en : c.getAsJsonObject("draw_cfg").entrySet()) {
+								dr.add(en.getKey(), en.getValue());
+							}
+						}
 						Files.writeString(manifest[0], mroot.toString());
 					} else if (manifest[0] != null) {
 						Files.writeString(manifest[0], manifestOriginal[0]);
@@ -636,9 +646,14 @@ public final class SpikeHarness {
 					case "side_r" -> view(20.5 + dx, -60, 0.9, 0, 0);
 					case "side_l" -> view(30.5 + dx, -60, 0.9, 0, 0);
 					case "front" -> view(40.5 + dx, -60, 0.9, 0, 0);
+					case "back" -> view(110.5 + (stateName.equals("base") ? 4 : stateName.equals("shikai") ? 8 : 0), -60, 0.9, 0, 0);
 					case "ground" -> view(50.5 + dx, -60, -10.2, 0, 18);
 					case "frame" -> view(60.5 + dx, -60, 0.5, 0, 0);
 					default -> view(0.5, -60, 0.5, 0, 20);
+				}
+				if (c.has("cam")) { // explicit camera: [x, y, z, yaw, pitch] (y is the feet level, eye is 1.62 above)
+					com.google.gson.JsonArray cam = c.getAsJsonArray("cam");
+					view(cam.get(0).getAsDouble(), cam.get(1).getAsDouble(), cam.get(2).getAsDouble(), cam.get(3).getAsFloat(), cam.get(4).getAsFloat());
 				}
 			});
 			if (view.equals("fp_swing")) {
@@ -689,10 +704,14 @@ public final class SpikeHarness {
 	}
 
 	private static String stand(double x, float yaw, String item) {
+		return stand(x, yaw, item, 3.5);
+	}
+
+	private static String stand(double x, float yaw, String item, double z) {
 		return String.format(java.util.Locale.ROOT,
-				"summon minecraft:armor_stand %.1f -60 3.5 {ShowArms:1b,NoGravity:1b,Rotation:[%.1ff,0.0f],"
+				"summon minecraft:armor_stand %.1f -60 " + z + " {ShowArms:1b,NoGravity:1b,Rotation:[%.1ff,0.0f],"
 						+ "Pose:{RightArm:[-20.0f,0.0f,0.0f],LeftArm:[-20.0f,0.0f,0.0f]},"
-						+ "HandItems:[" + stackNbt(item) + "," + stackNbt(item) + "]}",
+						+ "HandItems:[" + stackNbt(item) + ",{}]}",
 				x, yaw);
 	}
 

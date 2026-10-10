@@ -23,11 +23,95 @@ class TransitionTest {
 	// ------------------------------------------------------------------ legal
 
 	@Test
-	void L1_rukiaShikaiRelease() {
+	void L0_drawIsFreeAndLocksTheCharacter() {
+		for (CharacterId c : new CharacterId[] {R, B}) {
+			Fx f = new Fx();
+			TransitionResult r = f.tr(ZanpakutoState.BASE, c);
+			assertTrue(r.ok(), c + " " + r.reason());
+			assertEquals(ZanpakutoState.SEALED, r.from());
+			assertEquals(ZanpakutoState.BASE, r.to());
+			assertEquals(ZanpakutoState.BASE, f.sm.state());
+			assertEquals(c, f.sm.snapshot().character());
+			assertEquals(f.now(), f.sm.snapshot().stateSinceTick());
+			assertEquals(1000, f.sm.reiatsu().value(), "the draw costs nothing");
+			assertTrue(Fx.events(r.events(), StateEvent.ReiatsuSpent.class).isEmpty());
+			assertEquals(ZanpakutoState.BASE, Fx.events(r.events(), StateEvent.MirrorComponent.class).get(0).state());
+			assertTrue(Fx.events(r.events(), StateEvent.BroadcastEffect.class).isEmpty(), "no release effect before shikai");
+			assertEquals(ZanpakutoState.BASE, Fx.lastChange(r.events()).to());
+		}
+	}
+
+	@Test
+	void L0b_drawWorksWithAnAlmostEmptyBar() {
 		Fx f = new Fx();
+		f.sm.devSetReiatsu(1);
+		assertTrue(f.tr(ZanpakutoState.BASE, R).ok());
+		assertEquals(1, f.sm.reiatsu().value());
+	}
+
+	@Test
+	void L0c_sheatheFromBaseIsAllowedAndHasNoReleaseLock() {
+		Fx f = new Fx().toBase(R);
+		TransitionResult r = f.tr(ZanpakutoState.SEALED, R);
+		assertTrue(r.ok());
+		assertEquals(ZanpakutoState.BASE, r.from());
+		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+		assertEquals(CharacterId.NONE, f.sm.character());
+		assertEquals(ZanpakutoState.SEALED, Fx.events(r.events(), StateEvent.MirrorComponent.class).get(0).state());
+		assertTrue(Fx.has(r.events(), StateEvent.CancelEffects.class));
+		assertEquals(f.now(), f.sm.releaseLockEndTick(), "no release lock after sheathing the base form");
+		f.adv(f.cfg.transitionLockTicks());
+		assertTrue(f.tr(ZanpakutoState.BASE, R).ok(), "drawing again right after the transition lock");
+	}
+
+	@Test
+	void L0d_baseToShikaiWorksAndSealedToShikaiIsRejectedWithItsOwnFeedback() {
+		Fx f = new Fx();
+		TransitionResult no = f.tr(ZanpakutoState.SHIKAI, R);
+		assertDenied(no, RejectReason.NOT_DRAWN);
+		assertEquals(ResultCode.DENIED_NOT_DRAWN, no.code());
+		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+		assertEquals(1000, f.sm.reiatsu().value());
+		f.toBase(R);
+		TransitionResult ok = f.tr(ZanpakutoState.SHIKAI, R);
+		assertTrue(ok.ok());
+		assertEquals(ZanpakutoState.BASE, ok.from());
+		assertEquals(ZanpakutoState.SHIKAI, ok.to());
+	}
+
+	@Test
+	void L0e_bankaiOnlyThroughBaseAndShikai() {
+		Fx f = new Fx();
+		assertDenied(f.tr(ZanpakutoState.BANKAI, R), RejectReason.NOT_IN_STATE);
+		f.toBase(R);
+		assertDenied(f.tr(ZanpakutoState.BANKAI, R), RejectReason.NOT_IN_STATE);
+		assertEquals(ZanpakutoState.BASE, f.sm.state());
+		assertDenied(f.tr(ZanpakutoState.BASE, R), RejectReason.NOT_IN_STATE); // duplicate
+		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
+		f.adv(160);
+		assertDenied(f.tr(ZanpakutoState.BASE, R), RejectReason.NOT_IN_STATE); // shikai does not go back to base
+		assertTrue(f.tr(ZanpakutoState.BANKAI, R).ok());
+	}
+
+	@Test
+	void L0f_baseHasNoAbilitiesAndRegeneratesLikeSealed() {
+		Fx f = new Fx().toBase(R);
+		for (AbilityId a : AbilityId.values()) {
+			assertDenied(f.cast(a, a.character), RejectReason.NOT_IN_STATE);
+		}
+		f.sm.devSetReiatsu(500);
+		f.adv(50);
+		assertEquals(500 + 10 * 10, f.sm.reiatsu().value(), "+4.0 per second like SEALED");
+		f.adv(1000);
+		assertEquals(ZanpakutoState.BASE, f.sm.state(), "no idle timeout, no cap in the base form");
+	}
+
+	@Test
+	void L1_rukiaShikaiRelease() {
+		Fx f = new Fx().toBase(R);
 		TransitionResult r = f.tr(ZanpakutoState.SHIKAI, R);
 		assertTrue(r.ok());
-		assertEquals(ZanpakutoState.SEALED, r.from());
+		assertEquals(ZanpakutoState.BASE, r.from());
 		assertEquals(ZanpakutoState.SHIKAI, r.to());
 		assertEquals(850, f.sm.reiatsu().value());
 		assertEquals(R, f.sm.snapshot().character());
@@ -39,7 +123,7 @@ class TransitionTest {
 
 	@Test
 	void L2_byakuyaShikaiRelease() {
-		Fx f = new Fx();
+		Fx f = new Fx().toBase(B);
 		TransitionResult r = f.tr(ZanpakutoState.SHIKAI, B);
 		assertTrue(r.ok());
 		assertEquals(850, f.sm.reiatsu().value());
@@ -97,14 +181,17 @@ class TransitionTest {
 		EnumMap<ZanpakutoState, Rate> rates = new EnumMap<>(ZanpakutoState.class);
 		BalanceConfig d = BalanceConfig.defaults();
 		rates.put(ZanpakutoState.SEALED, d.rate(ZanpakutoState.SEALED));
+		rates.put(ZanpakutoState.BASE, d.rate(ZanpakutoState.BASE));
 		rates.put(ZanpakutoState.SHIKAI, new Rate(0, 100));
 		rates.put(ZanpakutoState.BANKAI, d.rate(ZanpakutoState.BANKAI));
 		BalanceConfig drain = new BalanceConfig(d.maxTenths(), d.regenBatchTicks(), rates, d.shikaiReleaseCost(),
 				d.bankaiCost(), d.bankaiCapTicks(), d.shikaiIdleTicks(), d.handGraceTicks(), d.transitionLockTicks(),
-				d.gcdTicks(), d.settleTicks(), d.sealLockTicks(), d.recoveryLockTicks(), d.rateLimitPerSecond(),
+				d.gcdTicks(), d.settleTicks(), d.sealLockTicks(), d.sheatheLockTicks(), d.recoveryLockTicks(), d.rateLimitPerSecond(),
 				d.respawnTenths(), d.attackModeTicks(), d.barrierTicks(), d.barrierPoolTenths(),
 				d.barrierReductionPercent(), d.abilities());
 		Fx f = new Fx(drain, 400);
+		f.toBase(R);
+		f.sm.devSetReiatsu(400);
 		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok()); // 400 - 150 = 250, drains 100 per batch
 		List<StateEvent> ev = f.adv(15);
 		assertEquals(ZanpakutoState.SEALED, f.sm.state());
@@ -116,6 +203,9 @@ class TransitionTest {
 	void L11_keyAndVoiceGiveIdenticalResults() {
 		Fx a = new Fx();
 		Fx b = new Fx();
+		assertEquals(a.tr(ZanpakutoState.BASE, RequestSource.KEY, R), b.tr(ZanpakutoState.BASE, RequestSource.VOICE, R));
+		a.adv(11);
+		b.adv(11);
 		TransitionResult ra = a.tr(ZanpakutoState.SHIKAI, RequestSource.KEY, R);
 		TransitionResult rb = b.tr(ZanpakutoState.SHIKAI, RequestSource.VOICE, R);
 		assertEquals(ra, rb);
@@ -132,8 +222,10 @@ class TransitionTest {
 		f.adv(11);
 		assertTrue(f.tr(ZanpakutoState.SEALED, R).ok());
 		f.adv(39);
-		assertDenied(f.tr(ZanpakutoState.SHIKAI, R), RejectReason.RELEASE_LOCK);
+		assertDenied(f.tr(ZanpakutoState.BASE, R), RejectReason.RELEASE_LOCK);
 		f.adv(1);
+		assertTrue(f.tr(ZanpakutoState.BASE, R).ok());
+		f.adv(11);
 		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
 		assertEquals(ZanpakutoState.SHIKAI, f.sm.state());
 	}
@@ -187,15 +279,22 @@ class TransitionTest {
 
 	@Test
 	void I5_releaseIsStrictlyAboveFifteen() {
-		assertDenied(new Fx(150).tr(ZanpakutoState.SHIKAI, R), RejectReason.NOT_ENOUGH_REIATSU);
-		Fx f = new Fx(151);
+		Fx poor = new Fx().toBase(R);
+		poor.sm.devSetReiatsu(150);
+		assertDenied(poor.tr(ZanpakutoState.SHIKAI, R), RejectReason.NOT_ENOUGH_REIATSU);
+		Fx f = new Fx().toBase(R);
+		f.sm.devSetReiatsu(151);
 		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
 		assertEquals(1, f.sm.reiatsu().value());
 	}
 
 	@Test
 	void I6_noItemOrWrongCharacterItem() {
-		assertDenied(new Fx().tr(ZanpakutoState.SHIKAI, NONE), RejectReason.WRONG_ITEM);
+		assertDenied(new Fx().tr(ZanpakutoState.BASE, NONE), RejectReason.WRONG_ITEM);
+		Fx base = new Fx().toBase(R);
+		assertDenied(base.tr(ZanpakutoState.SHIKAI, B), RejectReason.WRONG_ITEM);
+		assertDenied(base.tr(ZanpakutoState.SHIKAI, NONE), RejectReason.WRONG_ITEM);
+		assertDenied(base.tr(ZanpakutoState.SEALED, B), RejectReason.WRONG_ITEM);
 		Fx r = new Fx().toShikai(R);
 		assertDenied(r.tr(ZanpakutoState.SEALED, B), RejectReason.WRONG_ITEM);
 		assertDenied(r.tr(ZanpakutoState.SEALED, NONE), RejectReason.WRONG_ITEM);
@@ -230,11 +329,11 @@ class TransitionTest {
 	void I9_deadPlayer() {
 		Fx f = new Fx();
 		f.sm.onDeath();
-		TransitionResult r = f.tr(ZanpakutoState.SHIKAI, R);
+		TransitionResult r = f.tr(ZanpakutoState.BASE, R);
 		assertDenied(r, RejectReason.DEAD_OR_SPECTATOR);
 		assertEquals(ResultCode.DENIED_STATE, r.code());
 		f.sm.onRespawn();
-		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
+		assertTrue(f.tr(ZanpakutoState.BASE, R).ok());
 	}
 
 	@Test
@@ -283,6 +382,7 @@ class TransitionTest {
 	private static void setUp(Fx f, ZanpakutoState s) {
 		switch (s) {
 			case SEALED -> { }
+			case BASE -> f.toBase(R);
 			case SHIKAI -> f.toShikai(R);
 			case BANKAI -> {
 				f.toShikai(R).toBankai(R);
@@ -305,6 +405,7 @@ class TransitionTest {
 				RejectReason.TRANSITION_LOCK, RejectReason.GCD, RejectReason.SETTLE_LOCK}) {
 			assertEquals(ResultCode.COOLDOWN, r.toWire(), r.name());
 		}
+		assertEquals(ResultCode.DENIED_NOT_DRAWN, RejectReason.NOT_DRAWN.toWire());
 		assertEquals(ResultCode.RATE_LIMIT, RejectReason.RATE_LIMITED.toWire());
 		assertEquals(ResultCode.DENIED_STATE, RejectReason.DEAD_OR_SPECTATOR.toWire());
 		for (ResultCode c : ResultCode.values()) {
@@ -317,7 +418,8 @@ class TransitionTest {
 		// state beats item
 		assertDenied(new Fx().tr(ZanpakutoState.BANKAI, NONE), RejectReason.NOT_IN_STATE);
 		// item beats lock: just released (transition lock active) and wrong item
-		Fx f = new Fx();
+		assertDenied(new Fx().tr(ZanpakutoState.SHIKAI, NONE), RejectReason.NOT_DRAWN); // state beats item
+		Fx f = new Fx().toBase(R);
 		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
 		f.adv(2);
 		assertDenied(f.tr(ZanpakutoState.SEALED, B), RejectReason.WRONG_ITEM);
@@ -332,14 +434,18 @@ class TransitionTest {
 		g.sm.devSetReiatsu(1);
 		assertDenied(g.cast(AbilityId.SHIRAFUNE, R), RejectReason.ON_COOLDOWN);
 		// transition lock beats release lock, release lock beats reiatsu
-		Fx h = new Fx(100); // too poor
-		assertTrue(h.tr(ZanpakutoState.SHIKAI, R).ok() == false);
+		Fx h = new Fx().toBase(R); // too poor for shikai
+		h.sm.devSetReiatsu(100);
+		assertDenied(h.tr(ZanpakutoState.SHIKAI, R), RejectReason.NOT_ENOUGH_REIATSU);
 		Fx k = new Fx().toShikai(R);
 		assertTrue(k.tr(ZanpakutoState.SEALED, R).ok());
 		k.sm.devSetReiatsu(1);
 		k.adv(11);
-		assertDenied(k.tr(ZanpakutoState.SHIKAI, R), RejectReason.RELEASE_LOCK);
+		assertDenied(k.tr(ZanpakutoState.BASE, R), RejectReason.RELEASE_LOCK);
 		k.adv(30);
+		assertTrue(k.tr(ZanpakutoState.BASE, R).ok(), "the draw needs no reiatsu");
+		k.adv(11);
+		k.sm.devSetReiatsu(1);
 		assertDenied(k.tr(ZanpakutoState.SHIKAI, R), RejectReason.NOT_ENOUGH_REIATSU);
 	}
 
@@ -347,6 +453,9 @@ class TransitionTest {
 	void unknownCodesDecodeSafely() {
 		assertNull(AbilityId.fromCode((byte) 99));
 		assertEquals(ZanpakutoState.SEALED, ZanpakutoState.fromCode((byte) 9));
+		assertEquals(ZanpakutoState.BASE, ZanpakutoState.fromCode((byte) 1));
+		assertEquals(ZanpakutoState.SHIKAI, ZanpakutoState.fromCode((byte) 2));
+		assertEquals(ZanpakutoState.BANKAI, ZanpakutoState.fromCode((byte) 3));
 		assertEquals(CharacterId.NONE, CharacterId.fromCode((byte) 9));
 		assertEquals(ShikaiMode.IDLE, ShikaiMode.fromCode((byte) -1));
 		assertEquals(AbilityId.HAKUREN, AbilityId.fromCommandId("rukia.shikai.hakuren"));

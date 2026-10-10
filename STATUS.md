@@ -11,15 +11,12 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 - Phase 5: voice. `voice-bridge/index.html` (Web Speech API), loopback HTTP server in the mod, fuzzy matcher with state/item gating. Fixture: 202/202 positives, 0/153 false positives, bridge latency about 1 ms in game.
 - Design for Phase 6 (`design/VFX_STORYBOARD.md`, final, Opus): all effects, quality tiers, HUD/UI spec, implementation order, test plan.
 
-## In progress: fixes B4 (task contract: `design/FIXES_B4.md`, read it first)
-Work branch: `b4-fixes` (from `main`, includes step B3). Status of its five steps:
-- **Step 1 (first-person pose: edge toward the camera, blade ~11.5 deg from vertical): DONE** on `b4-fixes` (commit `1288362`). Values: rotation [-8,-1,6.9], translation [2.14,-0.29,-5], scale 2.4 in the first-person display json; sheets in `blender/renders/inhand_all/`. Not judged against the user's screenshots (not available), user review pending.
-- **Step 3 (drawn base form SEALED -> BASE -> SHIKAI, voice gating): DONE, NOT MERGED.** Lives on branch `b4-steps2-3-wip` (commit `c612dc7`, claimed green: tests, runPhase4 89/89, J key and right click draw). Merge it into `b4-fixes` after verifying `gradlew build` + tests.
-- **Step 2 (scabbard in the left hand, curved draw by the right hand, third-person scabbard on the left hip): UNFINISHED.** Uncommitted-then-WIP work is the top commit of `b4-steps2-3-wip` (`110821d`, "may not build"): new `ScabbardFeature`, `ScabbardRenderer`, `HandMath`, edits to `HeldItemRendererMixin`, `DrawTracker`, `FirstPersonHand`, `ObjItemBakedModel`, manifests. Decision already taken: scabbard is a visual-only client renderer (no off-hand item) and stays in the left hand in all drawn states; the draw must slide along the arc about the `blade_axis` centre (3.03 m), 0.4-0.5 s ease-out, never straight through the saya. Next: make it build, view first and third person (armor stand both sides), then step 2 acceptance.
-- **Step 4 (bankai: duration timer 45 s instead of reiatsu drain, bankai returns to SHIKAI, bankai abilities no reiatsu cost but cooldown, shikai abilities usable in bankai, larger radii, all in `BalanceConfig`): NOT STARTED.**
-- **Step 5 (shunpo: server-authoritative blink 8-10 blocks, wall check, cooldown 2-3 s, afterimages 4-6): NOT STARTED.**
-- Open questions for the user (defaults used until answered): scabbard stays after shikai (yes); shikai abilities in bankai cost reiatsu (yes); bankai duration 45 s; shunpo key (free key, check vanilla conflicts; R G V Z H B and J are taken); shunpo shared by both characters (yes).
-- `phase6-fx` (WIP commit `6d8a69d`, may not build, older than B3): Phase 6 steps 0-2 (FX scaffolding). Do not start phase 6 before B4 is merged.
+## B4 branch b4-steps2-3-wip (2026-10-10)
+- Step 1 (first person pose, yawed 180 degrees on the user request), step 3 (BASE state, J key, right click) and step 2 (client side scabbard in the left hand, right hand draws along the sori arc, hip scabbard in third person) are committed locally, not merged, not pushed. 212 tests, runPhase4 89/89, runPhase5 62/62. Details: LOG B4 step 2. Steps 4 (bankai) and 5 (shunpo) not started.
+
+## In progress (branches, unfinished)
+- `phase6-fx` (WIP commit, may not build; branch point is older than step B3, rebase or merge `main` first): Phase 6 steps 0-2 (FX scaffolding: config/tiers, particle types, glow batch, ScreenFx, anchor entity, texture generators; then new HUD; then release/aura/seal effects).
+- Step B3 (first-person pose, scabbard, draw/sheathe animation) is DONE and merged into `main` (open: user visual review of tilt/scale via `first_person_scale_multiplier` / display json, Byakuya hilt small, no Fabulous check).
 
 ## To do
 1. Phase 6 listens to `DrawEvents.EVENT` (DRAW_START / DRAW_RELEASE = release flash, SHEATHE_START / SHEATHE_END); the model swap happens in the DRAW_RELEASE tick.

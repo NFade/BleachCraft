@@ -2,6 +2,8 @@ package dev.minebleach.reiatsutest.core.state;
 
 public enum RejectReason {
 	NOT_IN_STATE(ResultCode.DENIED_STATE),
+	/** Shikai requested from SEALED: the sword must be drawn (BASE) first. */
+	NOT_DRAWN(ResultCode.DENIED_NOT_DRAWN),
 	WRONG_ITEM(ResultCode.DENIED_ITEM),
 	NOT_ENOUGH_REIATSU(ResultCode.DENIED_REIATSU),
 	BANKAI_NOT_FULL(ResultCode.DENIED_REIATSU),

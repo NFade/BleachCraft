@@ -20,7 +20,7 @@ public final class ClientOptions {
 	public static volatile float firstPersonScaleMultiplier = 1.0f;
 
 	/** Duration of the draw / sheathe animation of the sealed zanpakuto in seconds; 0 = no animation (config key draw_animation_seconds). */
-	public static volatile float drawSeconds = 0.4f;
+	public static volatile float drawSeconds = 0.45f;
 
 	private ClientOptions() {
 	}
@@ -40,7 +40,7 @@ public final class ClientOptions {
 					drawSeconds = Math.max(0f, Math.min(3f, o.get("draw_animation_seconds").getAsFloat()));
 				}
 			} else {
-				Files.writeString(file, "{\n  \"show_first_person_hand\": true,\n  \"first_person_scale_multiplier\": 1.0,\n  \"draw_animation_seconds\": 0.4\n}\n");
+				Files.writeString(file, "{\n  \"show_first_person_hand\": true,\n  \"first_person_scale_multiplier\": 1.0,\n  \"draw_animation_seconds\": 0.45\n}\n");
 			}
 		} catch (IOException | RuntimeException e) {
 			ReiatsuTest.LOGGER.warn("cannot read {}: {}", file, e.toString());

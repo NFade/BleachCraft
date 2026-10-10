@@ -33,7 +33,10 @@ class SenbonzakuraManifestTest {
 	@Test
 	void statesFollowTheAdrTable() throws IOException {
 		ItemManifest m = manifest();
-		assertEquals(List.of("byakuya_sealed_saya", "byakuya_sealed_drawn"), m.states.get("sealed").hand()); // held by the saya, the sword slides out of it
+		assertEquals(List.of("byakuya_sealed_drawn"), m.states.get("sealed").hand()); // B4 step 2: the bare sword; the saya is drawn by ScabbardRenderer
+		assertEquals("byakuya_sealed_saya", m.draw.saya());
+		assertNotNull(m.stow);
+		assertNotNull(m.hip);
 		assertEquals(List.of("byakuya_sealed_sheathed"), m.states.get("sealed").other());
 		assertEquals(List.of("byakuya_shikai_hilt"), m.states.get("shikai").hand());
 		assertEquals(List.of("byakuya_shikai_hilt"), m.states.get("shikai").other());

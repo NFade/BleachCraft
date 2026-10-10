@@ -16,7 +16,7 @@ class VoiceProcessorTest {
 	private final AtomicLong now = new AtomicLong(1_000_000);
 	private final GateContext rukiaShikai = GateContext.of(CharacterId.RUKIA, ZanpakutoState.SHIKAI, false);
 	private final GateContext rukiaShikaiFull = GateContext.of(CharacterId.RUKIA, ZanpakutoState.SHIKAI, true);
-	private final GateContext byakuyaSealed = GateContext.of(CharacterId.BYAKUYA, ZanpakutoState.SEALED, true);
+	private final GateContext byakuyaBase = GateContext.of(CharacterId.BYAKUYA, ZanpakutoState.BASE, true);
 
 	private VoiceProcessor processor(VoiceConfig cfg) {
 		return new VoiceProcessor(new PhraseMatcher(VoiceTestSupport.book(), cfg.matcherConfig()), cfg, now::get);
@@ -189,11 +189,11 @@ class VoiceProcessorTest {
 	void weakWordsNeverFireFromAnInterimResult() {
 		VoiceProcessor p = interimProcessor();
 		for (int i = 0; i < 5; i++) {
-			assertFalse(p.process(interim("chire", 1), byakuyaSealed).fired(), "lone Chire from an interim");
+			assertFalse(p.process(interim("chire", 1), byakuyaBase).fired(), "lone Chire from an interim");
 			assertFalse(p.process(interim("seal", 2), rukiaShikai).fired(), "seal from an interim");
 		}
 		// the final still works
-		assertTrue(p.process(fin("chire", 1), byakuyaSealed).fired());
+		assertTrue(p.process(fin("chire", 1), byakuyaBase).fired());
 	}
 
 	@Test

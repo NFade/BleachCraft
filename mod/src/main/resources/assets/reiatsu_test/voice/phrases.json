@@ -4,7 +4,7 @@
   "fillers": ["please", "now", "okay", "ok", "пожалуйста", "давай", "ну", "сейчас", "お願い"],
   "commands": [
     {
-      "id": "rukia.shikai.release", "states": ["SEALED"], "item": "rukia",
+      "id": "rukia.shikai.release", "states": ["BASE"], "item": "rukia",
       "interimSafe": true, "optional": false, "say": "Mae, Sode no Shirayuki",
       "variants": [
         {"text": "舞え、袖白雪", "origin": "C"},
@@ -128,7 +128,7 @@
       ]
     },
     {
-      "id": "byakuya.shikai.release", "states": ["SEALED"], "item": "byakuya",
+      "id": "byakuya.shikai.release", "states": ["BASE"], "item": "byakuya",
       "interimSafe": true, "optional": false, "say": "Chire, Senbonzakura",
       "variants": [
         {"text": "散れ、千本桜", "origin": "C"},
@@ -277,7 +277,7 @@
       ]
     },
     {
-      "id": "common.seal", "states": ["SHIKAI", "BANKAI"], "item": "any",
+      "id": "common.seal", "states": ["BASE", "SHIKAI", "BANKAI"], "item": "any",
       "interimSafe": true, "optional": false, "say": "Seal",
       "variants": [
         {"text": "封印", "origin": "M", "weak": true},

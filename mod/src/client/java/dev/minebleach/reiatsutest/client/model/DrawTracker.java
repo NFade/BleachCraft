@@ -44,8 +44,11 @@ public final class DrawTracker {
 		}
 
 		float progress(long now, float seconds) {
-			float p = startP + direction * (now - startNanos) / 1.0e9f / seconds;
-			return Math.max(0f, Math.min(1f, p));
+			// linear time t, eased progress p = 1 - (1 - t)^2 (ease-out: the blade leaves fast and settles slowly)
+			float t0 = 1f - (float) Math.sqrt(Math.max(0f, 1f - startP));
+			float t = t0 + direction * (now - startNanos) / 1.0e9f / seconds;
+			t = Math.max(0f, Math.min(1f, t));
+			return 1f - (1f - t) * (1f - t);
 		}
 	}
 
@@ -60,6 +63,11 @@ public final class DrawTracker {
 
 	public static void beginRender(LivingEntity entity) {
 		renderEntity = entity;
+	}
+
+	/** The entity whose held item is being rendered right now, or null. */
+	public static LivingEntity renderEntity() {
+		return renderEntity;
 	}
 
 	public static void endRender() {
@@ -80,6 +88,31 @@ public final class DrawTracker {
 		}
 		Anim a = ACTIVE.get(e.getId());
 		return a == null ? -1f : a.progress(System.nanoTime(), seconds());
+	}
+
+	/** Animation progress of an entity's main hand zanpakuto (player, or any entity under the dev override), -1 = none running. */
+	public static float animProgress(LivingEntity e) {
+		if (!(e.getMainHandStack().getItem() instanceof dev.minebleach.reiatsutest.registry.ZanpakutoItem)) {
+			return -1f;
+		}
+		if (!Float.isNaN(debugProgress)) {
+			return debugProgress;
+		}
+		Anim a = ACTIVE.get(e.getId());
+		return a == null ? -1f : a.progress(System.nanoTime(), seconds());
+	}
+
+	/**
+	 * Where the sword of {@code stack} (the main hand stack of {@code e}) is on its way out of the scabbard: 0 sheathed, 1
+	 * drawn. Follows the running animation, else the render state of the stack (SEALED = 0, everything else = 1).
+	 */
+	public static float effectiveProgress(LivingEntity e, ItemStack stack) {
+		float a = animProgress(e);
+		if (a >= 0f) {
+			return a;
+		}
+		return stack.getOrDefault(dev.minebleach.reiatsutest.registry.ModComponents.RELEASE_STATE,
+				dev.minebleach.reiatsutest.registry.ReleaseState.SEALED) == dev.minebleach.reiatsutest.registry.ReleaseState.SEALED ? 0f : 1f;
 	}
 
 	private static float seconds() {

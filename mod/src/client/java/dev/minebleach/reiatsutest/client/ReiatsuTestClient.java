@@ -19,6 +19,7 @@ public class ReiatsuTestClient implements ClientModInitializer {
 		ClientOptions.load();
 		DevWindowPlacement.init();
 		ObjModelPlugin.register();
+		dev.minebleach.reiatsutest.client.model.ScabbardFeature.register();
 		ClientNet.register();
 		ReiatsuKeys.init();
 		ReiatsuHud.init();

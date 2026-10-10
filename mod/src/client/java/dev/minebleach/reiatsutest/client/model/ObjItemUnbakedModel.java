@@ -2,7 +2,6 @@ package dev.minebleach.reiatsutest.client.model;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.obj.AxisMapper;
-import dev.minebleach.reiatsutest.core.obj.DrawAnimation;
 import dev.minebleach.reiatsutest.core.obj.EmissiveMask;
 import dev.minebleach.reiatsutest.core.obj.ItemManifest;
 import dev.minebleach.reiatsutest.core.obj.ObjGeometry;
@@ -100,19 +99,6 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			sm.handEmpty = def.hand().isEmpty();
 			sm.handBase = buildBase(mb, def.hand(), sprite, cutout, translucent, NO_SHIFT, quadCount);
 			sm.handGlow = buildGlow(mb, def.hand(), sprite, glow, NO_SHIFT, quadCount);
-			if (rs == ReleaseState.SEALED && man.draw != null) {
-				// held by the saya: shifted so the hold point sits at the item origin; saya and sword also kept apart for the draw
-				sm.draw = new DrawAnimation(man.draw, data.metaOf(man.draw.saya()));
-				float[] hs = {-sm.draw.holdOff[0], -sm.draw.holdOff[1], -sm.draw.holdOff[2]};
-				List<String> sayaObjs = List.of(man.draw.saya());
-				List<String> swordObjs = def.hand().stream().filter(o -> !o.equals(man.draw.saya())).toList();
-				sm.handBase = buildBase(mb, def.hand(), sprite, cutout, translucent, hs, quadCount);
-				sm.handGlow = buildGlow(mb, def.hand(), sprite, glow, hs, quadCount);
-				sm.drawSaya = buildBase(mb, sayaObjs, sprite, cutout, translucent, hs, quadCount);
-				sm.drawSayaGlow = buildGlow(mb, sayaObjs, sprite, glow, hs, quadCount);
-				sm.drawSword = buildBase(mb, swordObjs, sprite, cutout, translucent, hs, quadCount);
-				sm.drawSwordGlow = buildGlow(mb, swordObjs, sprite, glow, hs, quadCount);
-			}
 			sm.otherBase = buildBase(mb, def.other(), sprite, cutout, translucent, NO_SHIFT, quadCount);
 			sm.otherGlow = buildGlow(mb, def.other(), sprite, glow, NO_SHIFT, quadCount);
 			for (ItemManifest.DynSeg ds : man.dynamicSegments(def)) {
@@ -134,6 +120,14 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 				sm.icon = buildIcon(mb, sprite.apply(def.icon()), cutout);
 			}
 			states.byState[rs.ordinal()] = sm;
+		}
+		if (man.draw != null) {
+			// B4 step 2: the scabbard is its own mesh (drawn by the scabbard renderer in the left hand / on the hip); the sealed
+			// hand mesh is the bare sword. No shift: both share the model space of the grip.
+			List<String> sayaObjs = List.of(man.draw.saya());
+			states.saya = buildBase(mb, sayaObjs, sprite, cutout, translucent, NO_SHIFT, quadCount);
+			states.sayaGlow = buildGlow(mb, sayaObjs, sprite, glow, NO_SHIFT, quadCount);
+			states.sayaMeta = data.metaOf(man.draw.saya());
 		}
 
 		ModelTransformation transformation = display instanceof JsonUnbakedModel j ? j.getTransformations() : ModelTransformation.NONE;
@@ -244,12 +238,6 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		Mesh otherBase;
 		Mesh otherGlow;
 		Mesh icon;
-		/** Draw animation (sealed state of an item with a {@code draw} manifest entry): parts of the hand mesh, hold shift baked in. */
-		DrawAnimation draw;
-		Mesh drawSaya;
-		Mesh drawSayaGlow;
-		Mesh drawSword;
-		Mesh drawSwordGlow;
 		final List<Mesh> dynamic = new ArrayList<>();
 		/** Emissive overlay per dynamic segment (null entries where the segment does not glow). */
 		final List<Mesh> dynamicGlow = new ArrayList<>();
@@ -258,5 +246,9 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 
 	static final class BakedStates {
 		final StateMeshes[] byState = new StateMeshes[ReleaseState.values().length];
+		/** Scabbard (item with a {@code draw} manifest entry) in model space, null otherwise. */
+		Mesh saya;
+		Mesh sayaGlow;
+		dev.minebleach.reiatsutest.core.obj.ObjMeta sayaMeta;
 	}
 }
