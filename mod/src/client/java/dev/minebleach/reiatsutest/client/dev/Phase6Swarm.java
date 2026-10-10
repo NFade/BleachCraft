@@ -46,7 +46,14 @@ final class Phase6Swarm {
 		private static final List<Double> TIMES = new ArrayList<>();
 		static int skip;
 
+		static long startNanos;
+
+		static double elapsed() {
+			return (System.nanoTime() - startNanos) / 1.0e9;
+		}
+
 		static void begin(int warmup) {
+			startNanos = System.nanoTime();
 			if (!registered) {
 				registered = true;
 				WorldRenderEvents.END.register(ctx -> {
@@ -93,8 +100,13 @@ final class Phase6Swarm {
 
 	/** Measures N frames after the warm-up and logs one line; {@code check} gets the numbers. */
 	static void perfWindow(String name, int frames, java.util.function.Consumer<double[]> check) {
-		step("perf " + name + ": begin", 1, () -> Frames.begin(90));
-		stepUntil("perf " + name + ": wait", 5, 20 * 60, () -> { }, () -> Frames.count() >= frames);
+		perfWindow(name, frames, 90, 0.0, check);
+	}
+
+	/** Frame window with a warm-up (frames) and a minimum duration (seconds): rising rows are a time based event, not a frame count. */
+	static void perfWindow(String name, int frames, int warmup, double minSeconds, java.util.function.Consumer<double[]> check) {
+		step("perf " + name + ": begin", 1, () -> Frames.begin(warmup));
+		stepUntil("perf " + name + ": wait", 5, 20 * 60, () -> { }, () -> Frames.count() >= frames && Frames.elapsed() >= minSeconds);
 		step("perf " + name + ": result", 2, () -> {
 			Frames.end();
 			double[] r = Frames.result();
@@ -225,6 +237,16 @@ final class Phase6Swarm {
 			eventShot("03_attack_t" + ms, ms, () -> press(ReiatsuKeys.SLOTS[0]));
 			step("sw attack t" + ms + ": reset", 70, () -> cmd("reiatsu cooldowns clear", "reiatsu full"));
 		}
+		// the aim is straight behind the player for a camera behind him: the same attack from the eyes (aim 24 blocks away at pitch 6)
+		step("sw attack: first person", 20, () -> {
+			mc.options.setPerspective(Perspective.FIRST_PERSON);
+			cmd("tp @s 0.5 -60 0.5 0 6", "reiatsu cooldowns clear", "reiatsu full");
+		});
+		for (int ms : new int[] {250, 450, 700, 1000, 1700}) {
+			eventShot("03_attack_fp_t" + ms, ms, () -> press(ReiatsuKeys.SLOTS[0]));
+			step("sw attack fp t" + ms + ": reset", 70, () -> cmd("reiatsu cooldowns clear", "reiatsu full"));
+		}
+		step("sw attack: back to third person", 10, () -> view("back"));
 		step("sw attack: hit sparks", 2, () -> {
 			cCheck("S5 HIT feedback received for the damaged pig (" + SwarmFx.hits + ")", () -> SwarmFx.hits > 0 ? null : "hits " + SwarmFx.hits);
 			cmd("kill @e[type=pig]");

@@ -187,6 +187,9 @@ public final class AuraFx {
 		double radMax = bankai ? 0.95 : 0.65;
 		double hMax = rukia && bankai ? 1.9 : 1.1;
 		int n = count(wispRate * FxMath.lerp(tune("nightRate", 0.8), 1.0, day));
+		if (pl == MinecraftClient.getInstance().player && MinecraftClient.getInstance().options.getPerspective().isFirstPerson()) {
+			n = (int) (n * tune("firstPersonWisp", 0.0)); // the wisps rise right in front of the lens in first person
+		}
 		for (int i = 0; i < n && a.live.size() < cap && clientTotal + made < 400; i++) {
 			double ang = RNG.nextDouble() * Math.PI * 2;
 			double rad = radMax * Math.sqrt(RNG.nextDouble());

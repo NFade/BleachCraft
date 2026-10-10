@@ -147,7 +147,7 @@ public final class BankaiBladeRenderer {
 		int l = st.light[i];
 		int block = LightmapTextureManager.getBlockLightCoordinates(l);
 		int sky = LightmapTextureManager.getSkyLightCoordinates(l);
-		return LightmapTextureManager.pack(Math.max(block, (int) FxTune.d("bankai.minBlock", 5)), sky);
+		return LightmapTextureManager.pack(Math.max(block, (int) FxTune.d("bankai.minBlock", 9)), sky);
 	}
 
 	// ------------------------------------------------------------------------------------------ draw
@@ -223,7 +223,7 @@ public final class BankaiBladeRenderer {
 						emissive = (float) Math.min(1.0, BankaiCurves.sweepBoost(l.dist[i], t, comp) / 0.35 * 0.7);
 					}
 					FxMesh m = d < lodDist || lod == null ? blade : lod;
-					m.writeBlade(buf, M, st.bx[i] - cp.x, by - cp.y, st.bz[i] - cp.z, lightOf(st, i), TIP_Y, WHITE, TIP, emissive);
+					m.writeBlade(buf, M, st.bx[i] - cp.x, by - cp.y, st.bz[i] - cp.z, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, 1f / l.scale[i]);
 					cpuQuads += m.quads;
 					cpuBlades++;
 				}
@@ -257,7 +257,7 @@ public final class BankaiBladeRenderer {
 			double lean = Math.toRadians(l.leanDeg(t, i));
 			basis(st, i, lean, M);
 			double by = st.ground[i] - 0.5;
-			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), TIP_Y, WHITE, TIP, 0f);
+			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), TIP_Y, WHITE, TIP, 0f, 1f / l.scale[i]);
 			quads += blade.quads;
 		}
 		BuiltBuffer built = b.endNullable();

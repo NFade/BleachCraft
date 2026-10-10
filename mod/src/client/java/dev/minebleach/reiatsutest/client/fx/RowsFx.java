@@ -188,7 +188,7 @@ public final class RowsFx {
 		// 0.30 to 0.90: night falls
 		t.at(0.30, x -> {
 			st.grade = x.grade(FxTune.s("bankai.night", NIGHT), FxTune.d("bankai.nightStrength", 1.0), 0.6);
-			st.vignette = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.45), 0.6);
+			st.vignette = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.32), 0.6);
 			x.sound("ambient.cave", 0.8, 0.6);
 			x.sound("block.respawn_anchor.charge", 0.6, 0.6);
 		});
@@ -221,7 +221,7 @@ public final class RowsFx {
 			if (st.vignette != null) {
 				st.vignette.release(1.0);
 			}
-			st.vignette2 = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignetteHold", 0.30), 1.0);
+			st.vignette2 = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignetteHold", 0.24), 1.0);
 		});
 		t.lifetime(comp + 1.5);
 		// ripples twins and the fall of the hilt (glow rings), ripple k at 0.18, 0.40, 0.62

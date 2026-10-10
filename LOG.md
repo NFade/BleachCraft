@@ -718,3 +718,5 @@ Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha a
 - The console mode is dev-only, not part of the mod runtime path.
 
 ## 2026-10-10: STOP POINT (phase6-fx): Byakuya swarm (step 3) and bankai rows (step 4) written in part, a first harness run was in progress; nothing reviewed or committed as a closed step. Verify build/tests first. Continue per design/VFX_STORYBOARD.md section 10 steps 3-4.
+
+## 2026-10-11: STOP POINT (phase6-fx): steps 3-4 in progress; not reviewed. Next: build, finish per VFX_STORYBOARD section 10.

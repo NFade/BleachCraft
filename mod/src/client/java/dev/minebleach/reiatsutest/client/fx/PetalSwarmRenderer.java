@@ -146,7 +146,7 @@ public final class PetalSwarmRenderer {
 		int near = 0;
 		int glints = 0;
 		double now = FxClock.now;
-		double petalScale = FxTune.d("swarm.petalScale", 2.2);
+		double petalScale = FxTune.d("swarm.petalScale", 1.8);
 		double glintPower = FxTune.d("swarm.glintPower", 16);
 		float uc = mesh != null ? mesh.centreU : 0.313f;
 		float vc = mesh != null ? mesh.centreV : 0.055f;
@@ -291,7 +291,8 @@ public final class PetalSwarmRenderer {
 					int darker = shade(color, 0.78f);
 					int lighter = shade(color, 1.0f);
 					int side = shade(color, 0.92f);
-					card(buf, bx, by, bz, darker, mx + vx, my + vy, mz + vz, side, tx, ty, tz, lighter, mx - vx, my - vy, mz - vz, side, nx, ny, nz, uc, vc, packed);
+					float cn = (float) FxTune.d("swarm.cardUp", 0.85);
+					card(buf, bx, by, bz, darker, mx + vx, my + vy, mz + vz, side, tx, ty, tz, lighter, mx - vx, my - vy, mz - vz, side, nx * (1 - cn), ny * (1 - cn) + cn, nz * (1 - cn), uc, vc, packed);
 					quads++;
 				}
 				petalsDrawn++;

@@ -62,6 +62,12 @@ final class Phase6Rows {
 		step(prefix + " (full)", 40, () -> cmd("reiatsu full", "reiatsu cooldowns clear"));
 		step(prefix + " (arm first)", 2, () -> FxTimelines.setFreezeAt(ms[0]));
 		step(prefix + " (G)", 1, () -> press(ReiatsuKeys.BANKAI));
+		step(prefix + " (G retry)", 5, () -> {
+			if (RowsFx.states().isEmpty()) {
+				ReiatsuTest.LOGGER.warn("[phase6] bankai key press was not seen, pressing again");
+				press(ReiatsuKeys.BANKAI);
+			}
+		});
 		stepUntil(prefix + " (frozen 0)", 2, 20 * 12, () -> { }, () -> FxClock.frozen);
 		step(prefix + " (shot 0)", 3, () -> shot(prefix + "_t" + ms[0]));
 		for (int k = 1; k < ms.length; k++) {
@@ -91,7 +97,7 @@ final class Phase6Rows {
 			resetWorldFx();
 		});
 		// the release seen from the front: the corridor runs away behind the player
-		bankaiSeries("04_rows", new int[] {0, 180, 600, 1000, 1500, 2200, 2800}, "front");
+		bankaiSeries("04_rows", new int[] {0, 180, 350, 600, 1000, 1500, 2200, 2800}, "front");
 		step("rows: wait for the static buffer", 20, () -> { });
 		stepUntil("rows: static buffer active", 20, 20 * 20, () -> { }, () -> BankaiBladeRenderer.lastStatic);
 		step("rows: static shot prep", 4, () -> { });
@@ -103,21 +109,26 @@ final class Phase6Rows {
 		step("server check", 3, () -> sCheck("S1 rows anchor alive on the server (1)", p -> ZanpakutoManager.anchorCount(p) == 1 ? null : "anchors " + ZanpakutoManager.anchorCount(p)));
 		Phase6Swarm.clockShot("04_rows_settled_front", 0.3);
 		step("rows: high side view (tower 20 blocks up)", 20, () -> {
-			mc.options.setPerspective(Perspective.FIRST_PERSON);
-			cmd("tp @s -16.5 -40 -22.5 -50 38");
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			mc.player.getAbilities().flying = true;
+			mc.player.sendAbilitiesUpdate();
+			cmd("tp @s -14.5 -41 -22.5 -90 32");
 		});
 		step("rows: wait chunks", 30, () -> { });
 		Phase6Swarm.clockShot("04_tower_settled", 0.3);
 		step("rows: tower night", 20, () -> cmd("time set midnight"));
 		Phase6Swarm.clockShot("04_tower_settled_night", 0.3);
-		step("rows: far view (tips at 100 blocks)", 20, () -> cmd("tp @s 0.5 -58 -135 0 3"));
+		step("rows: far view (tips at 100 blocks)", 20, () -> {
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			cmd("tp @s 0.5 -58 105 180 3");
+		});
 		step("rows: wait far chunks", 40, () -> { });
 		Phase6Swarm.clockShot("04_tips_100_night", 0.3);
 		step("rows: noon far", 20, () -> cmd("time set noon"));
 		Phase6Swarm.clockShot("04_tips_100_noon", 0.3);
 		step("rows: ground view", 20, () -> {
-			mc.options.setPerspective(Perspective.FIRST_PERSON);
-			cmd("tp @s -2.5 -60 -6.5 0 4");
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			cmd("tp @s 0.5 -60 -4.5 180 4");
 		});
 		Phase6Swarm.clockShot("04_corridor_ground_noon", 0.3);
 		step("rows: ground night", 20, () -> cmd("time set midnight"));
@@ -142,8 +153,8 @@ final class Phase6Rows {
 		});
 		bankaiSeries("04_rows1000", new int[] {1000, 1500, 2200, 2800}, "front");
 		step("rows 1000: tower", 20, () -> {
-			mc.options.setPerspective(Perspective.FIRST_PERSON);
-			cmd("tp @s -22.5 -34 -40.5 -45 35");
+			mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+			cmd("tp @s -26.5 -36 -40.5 -90 28");
 		});
 		step("rows 1000: wait chunks", 30, () -> { });
 		Phase6Swarm.clockShot("04_tower1000_t2800_live", 0.2);
@@ -193,10 +204,15 @@ final class Phase6Rows {
 			step("rows perf " + n + ": G", 1, () -> {
 				press(ReiatsuKeys.BANKAI);
 			});
+			step("rows perf " + n + ": G retry", 5, () -> {
+				if (RowsFx.states().isEmpty()) {
+					press(ReiatsuKeys.BANKAI);
+				}
+			});
 			if (n == 1000) {
 				// F4b: while rising (about 1.0 to 2.8 s after the release, the window starts at the eruption)
-				step("rows perf 1000: wait eruption", 12, () -> { });
-				perfWindow("F4b 1000 blades rising (CPU path)", 100, r -> ReiatsuTest.LOGGER.info("[phase6] F4b cpu vertices {}", r[6]));
+				step("rows perf 1000: wait eruption", 16, () -> { });
+				perfWindow("F4b 1000 blades rising (CPU path, 1.7 s from the first eruption)", 150, 0, 1.7, r -> ReiatsuTest.LOGGER.info("[phase6] F4b cpu vertices {}", r[6]));
 			}
 			stepUntil("rows perf " + n + ": static", 20, 20 * 40, () -> { }, () -> BankaiBladeRenderer.lastStatic);
 			step("rows perf " + n + ": settle", 40, () -> { });
