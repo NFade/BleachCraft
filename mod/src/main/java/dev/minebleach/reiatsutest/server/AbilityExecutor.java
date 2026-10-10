@@ -58,10 +58,12 @@ final class AbilityExecutor {
 			}
 			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
 		} else {
-			for (LivingEntity e : frozenStillNear(p, ctx)) {
+			List<LivingEntity> hit = frozenStillNear(p, ctx);
+			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
 				e.setFrozenTicks(0);
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit);
 		}
 	}
 
@@ -83,6 +85,7 @@ final class AbilityExecutor {
 				Targeting.chill(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
 			}
 			ServerFx.entities(p, EntityFxS2C.SLOWED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), targets);
 		}
 		// frost layer on the path, rolled back after 3 s; the per-cast budget is spread over the phases
 		int maxBlocks = sp.intNum(AbilityParams.MAX_BLOCKS);
@@ -108,6 +111,7 @@ final class AbilityExecutor {
 			Targeting.hurt(p, target, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
 			Targeting.chill(p, target, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
 			ServerFx.entities(p, EntityFxS2C.FROZEN, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), List.of(target));
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), List.of(target));
 		}
 	}
 
@@ -137,10 +141,12 @@ final class AbilityExecutor {
 				}
 			}
 		} else {
-			for (LivingEntity e : frozenStillNear(p, ctx)) {
+			List<LivingEntity> hit = frozenStillNear(p, ctx);
+			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
 				e.setFrozenTicks(0);
 			}
+			ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit);
 		}
 	}
 
@@ -180,7 +186,7 @@ final class AbilityExecutor {
 		for (LivingEntity e : hit) {
 			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 		}
-		ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit); // S5: hit sparks of the swarm envelope
+		ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks of the swarm envelope
 	}
 
 	private static void scatter(ServerPlayerEntity p, int phase, CastContext ctx) {

@@ -375,6 +375,9 @@ public final class Phase6Harness {
 		if (explicit("console")) {
 			Phase6Release.consoleStart();
 		}
+		if (wants("rk6") || wants("rk7") || wants("rkperf") || explicit("rk")) {
+			Phase6Rukia.steps();
+		}
 		step("finish", 10, () -> {
 			finish();
 			mc.scheduleStop();

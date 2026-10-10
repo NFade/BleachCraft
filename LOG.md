@@ -813,3 +813,17 @@ Real shunpo 9.00 blocks along +z, reiatsu cost 5.0, the second press is COOLDOWN
 ## 2026-10-10: STOP POINT (phase6-fx): Byakuya swarm (step 3) and bankai rows (step 4) written in part, a first harness run was in progress; nothing reviewed or committed as a closed step. Verify build/tests first. Continue per design/VFX_STORYBOARD.md section 10 steps 3-4.
 
 ## 2026-10-11: STOP POINT (phase6-fx): steps 3-4 in progress; not reviewed. Next: build, finish per VFX_STORYBOARD section 10.
+## 2026-10-10: STOP POINT (p6rukia): Rukia shikai (step 6) and bankai (step 7) just started: core classes and tests were being written, no harness run yet. Continue per design/VFX_STORYBOARD.md section 10 steps 6-7.
+
+## 2026-10-11: STOP POINT (p6rukia): steps 6-7 in progress; not reviewed. Next: build, finish per VFX_STORYBOARD section 10.
+
+## 2026-10-11: merge `origin/p6rukia` into `integrate` (build + test green, 289 tests, 0 failures)
+Conflicts resolved (both sides kept):
+- `FxGround` (add/add): one class, two overloads. `sample(ClientWorld, x, z, feetY)` + `stateAt` (phase6-fx: ground rows, Swarm/Byakuya, uncached) and `sample(x, z, hintY)` + `clear()` (p6rukia: Rukia, decals, mesh pass; 1 s per-column cache) which now delegates the scan to the first overload.
+- `FxEvents`: order Shunpo (40), swarm (30/31), then `FxServerClock.sync` + `RukiaFx.onEvent` (20-23 and Rukia bankai release id 2, which therefore no longer reaches `ReleaseFx` for Rukia), then the generic release/seal branch.
+- `EntityFxS2C`: p6rukia and HEAD both used `HIT = 3`. Kept `HIT = 3` for the Rukia ice hit (RukiaEntityFx shell shatter + sparks) and added `HIT_PETAL = 4` for the swarm (MODE_ATTACK sends it, `ClientNet` routes it to `SwarmFx.onHit`); every other kind goes to `RukiaEntityFx.onEntityFx` (this replaces the `EffectPlaceholders.entities` call, which is now unused by ClientNet). Codec unchanged (kind is a byte).
+- `AbilityExecutor`: took HEAD's BalanceConfig-driven numbers (p6rukia had hard-coded 6/8/14 damage, 60/80 ticks, 2.4 step length) and added p6rukia's HIT packets (tsukishiro/absolute zero phase 1, hakuren, shirafune). Absolute zero chill/ENCASED duration is now `STATUS_TICKS` (40), not p6rukia's 26 tick pause.
+- `Phase6Harness`/`Phase6Release`: both step sets kept (`rk6/rk7/rkperf/rk` next to swarm/rows/console); console falls through `Phase6Swarm.console` then `Phase6Rukia.console`.
+- `ClientNet`, `LOG.md`: both sides kept.
+Fix needed after the merge: `RukiaFxParamsTest.pauseMatchesTheServerPhaseTimes` failed because b4game made Hakuren 8 steps over 20 blocks (p6rukia assumed 5 x 2.4). `RukiaFxParams` defaults are now 8 / 2.5 and there is an `extend(..., hakurenSteps, pauseTicks)` overload that `RukiaServerFx.params` fills from the spec's phase offsets, so the client follows balance changes; test updated.
+UNVERIFIED: nothing was run in the game (no runPhase*); the p6rukia Rukia effects were never visually checked against the b4game radii/lengths (sizes come from effect params, expected to follow). The Rukia bankai release (id 2) now uses only `RukiaBankaiFx.release`, the old `ReleaseFx` Rukia bankai path is bypassed (not visually compared).

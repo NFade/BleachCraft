@@ -26,7 +26,7 @@ public final class FxDepth {
 	/** BEFORE_DEBUG_RENDER. */
 	public static void capture() {
 		captured = false;
-		if (!needed() || FxGlowBatch.live() <= 0) {
+		if (!needed() || (FxGlowBatch.live() <= 0 && !FxShapes.active())) {
 			return;
 		}
 		MinecraftClient mc = MinecraftClient.getInstance();
@@ -39,6 +39,39 @@ public final class FxDepth {
 		copy.copyDepthFrom(main);
 		main.beginWrite(false);
 		captured = true;
+	}
+
+	private static boolean stashed;
+
+	/**
+	 * Before a post pass at LAST (Fancy): the pass clears the main target, so the world depth is parked in the private depth
+	 * framebuffer and put back by {@link #unstash()}. Fabulous needs nothing (its depth is restored by {@link #restore()} later).
+	 */
+	public static void stash() {
+		stashed = false;
+		if (needed()) {
+			return;
+		}
+		MinecraftClient mc = MinecraftClient.getInstance();
+		Framebuffer main = mc.getFramebuffer();
+		if (copy == null) {
+			copy = new SimpleFramebuffer(main.textureWidth, main.textureHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+		} else if (copy.textureWidth != main.textureWidth || copy.textureHeight != main.textureHeight) {
+			copy.resize(main.textureWidth, main.textureHeight, MinecraftClient.IS_SYSTEM_MAC);
+		}
+		copy.copyDepthFrom(main);
+		main.beginWrite(false);
+		stashed = true;
+	}
+
+	public static void unstash() {
+		if (!stashed || copy == null) {
+			return;
+		}
+		Framebuffer main = MinecraftClient.getInstance().getFramebuffer();
+		main.copyDepthFrom(copy);
+		main.beginWrite(false);
+		stashed = false;
 	}
 
 	/** Just before the glow batch is drawn at LAST: puts the captured depth back into the main target. */

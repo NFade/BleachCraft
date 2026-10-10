@@ -600,7 +600,7 @@ final class Phase6Release {
 				return true;
 			}
 			default -> {
-				if (!Phase6Swarm.console(w)) {
+				if (!Phase6Swarm.console(w) && !Phase6Rukia.console(w)) {
 					ReiatsuTest.LOGGER.warn("[phase6] console: unknown command {}", w[0]);
 				}
 			}

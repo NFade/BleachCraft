@@ -1,7 +1,6 @@
 package dev.minebleach.reiatsutest.client.net;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
-import dev.minebleach.reiatsutest.client.fx.EffectPlaceholders;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.client.hud.HudModel;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
@@ -47,10 +46,10 @@ public final class ClientNet {
 		});
 		ClientPlayNetworking.registerGlobalReceiver(EntityFxS2C.ID, (payload, ctx) -> {
 			ENTITY_FX.incrementAndGet();
-			if (payload.kind() == EntityFxS2C.HIT) {
+			if (payload.kind() == EntityFxS2C.HIT_PETAL) {
 				dev.minebleach.reiatsutest.client.fx.SwarmFx.onHit(payload.entityIds());
 			} else {
-				EffectPlaceholders.entities(ctx.client(), payload);
+				dev.minebleach.reiatsutest.client.fx.RukiaEntityFx.onEntityFx(ctx.client(), payload);
 			}
 		});
 	}
