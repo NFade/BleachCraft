@@ -40,3 +40,16 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 - Dev windows open on the second monitor (`dev_monitor` in `mod/gradle.properties`).
 - Gradle commands need `JAVA_HOME` (Temurin 21) and `GRADLE_USER_HOME=D:\gradle-home`.
 - Known minor defects (queued after phase 6 effects): third-person draw ends with the sword jumping from hip to hand (no interpolation); no sword swing animation visible from outside (third person / other players).
+
+## STOP POINT 2026-10-10 (evening), parallel work paused on the user's request
+Four worktree branches were running in parallel, all stopped and pushed. None is merged into `main` yet. Base of all four: `phase6-fx` at `9137f97` (= `main` B4 steps 1-3 + polish + Phase 6 steps 0-2 closed). Open order to continue (details in each branch's LOG.md "STOP POINT" section):
+
+| Branch | State | Next action |
+|---|---|---|
+| `phase6-fx` (`303c1b8`) | Phase 6 steps 3-4 (Byakuya swarm, bankai rows) WIP, may not build, screenshots not reviewed | `gradlew build test`; finish steps 3-4 per `design/VFX_STORYBOARD.md` section 10; then step 5 storm and step 8 Hakuteiken |
+| `p6rukia` (`60471d4`) | Phase 6 steps 6-7 (Rukia shikai, bankai, Absolute zero) just started: core classes/tests only | continue steps 6-7; take radii from the server event params / BalanceConfig |
+| `b4game` (`cade3a7`) | B4 step 4 (bankai 45 s timer, no reiatsu drain, return to SHIKAI, larger radii in `BalanceConfig`) + step 5 (shunpo) in progress, existing tests were being updated | make it build; finish per `design/FIXES_B4.md`; defaults: shikai abilities cost reiatsu in bankai, shunpo shared, free key (verify vs vanilla) |
+| `srvdocs` (`f52f169`) | DONE and committed: dedicated server smoke test (`tools/server_smoke.py`), README (EN+RU), `docs/QA_CHECKLIST.md`, LICENSES credits | review, merge first (no conflicts expected with effects code) |
+
+Merge order recommendation: `srvdocs` -> `b4game` -> `phase6-fx` -> `p6rukia` (expect conflicts only in LOG.md/STATUS.md and shared FX scaffolding; resolve keeping both sides). Then Phase 6 steps 5, 8, 9, then third-person defects (hip-to-hand jump, swing animation seen from outside), then Phase 7 QA and Gate D (last Opus call).
+Rules for parallel agents (kept): one game window at a time via `bash /d/MineBleach-locks/game_lock.sh acquire|release <name>` (lock dir is outside the repo, on the machine of whoever runs; on another machine create an equivalent), batch code first then one harness run, 16 GB RAM means at most ~4 agents.
