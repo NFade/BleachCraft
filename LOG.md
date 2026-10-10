@@ -568,6 +568,93 @@ Display rotation of the first-person hand changed from [-8, -1, 6.9] to [-172, 1
 - The user's red scabbard reference image was not available: the composition (saya across the lower screen, left fist on it) is my reading of "large scabbard lower left, guard above" and is flatter than that text suggests; the Rukia saya is dark navy, not red. A steep variant (rot 122) was tried and rejected: the translated arm floats and the saya leaves the screen.
 - Third person: pop at the end of the slide, no second real player, left-handed third person only on armor stands. Fabulous graphics, production refmap for the new mixin, slim skin, hotbar swap (equip) behaviour of the saya checked by code reading only. The sheathe (reverse) uses the same rig with the tracker reversed; not captured as a separate strip.
 
+## 2026-10-10: Phase 6 step 0 (FX scaffolding to the acceptance line), branch `phase6-fx`
+
+Worktree `D:\MineBleach\.claude\worktrees\phase6`, merged with main (SEALED -> BASE -> SHIKAI -> BANKAI, scabbard, `DrawEvents`). The WIP scaffolding compiled as it was; everything below was added or fixed on top. No Blender, no generate_3d. Screenshots: `blender/renders/p6/p6_00_*.png` (also `mod/run/screenshots`).
+
+### What was added
+- `Phase6Harness` (+ `Phase6Fx`, `Phase6Hud`, `Phase6Release` scenario files), `gradlew runPhase6 [-Phold=atlas,grade,perf,hud,release] [-PfreezeAt=ms] [-Pfx=key=value,..]`. Same engine as phase 4 (flat creative world, real key presses, server commands). Screenshots are taken at exact FX times: `FxClock.freezeIn(seconds)` (new) freezes the FX clock after an exact time slice, never by waiting.
+- `FxDepth` (new, see "Fabulous depth" below), `FxProbe` (dev GL state probe), `FxClock.freezeIn`.
+- `tools/gen_fx_textures.py`: `edge_window` for mist, flare and pillar (their recipe values were not 0 at the cell border, an additive box showed at saturation); only `fx_glow.png` changed, every other generated file is byte identical (deterministic seeds).
+- `.gitignore`: `mod/gradle-home/` (a stray 540 MB Gradle home was created inside the worktree by my first command, not committed).
+
+### Numbers and results
+| check | result |
+|---|---|
+| `p6_00_atlas_test.png` (all 17 G sprites, size 2, noon) + `_midnight`, `_fabulous`, `_fabulous_midnight`, `_s05` (size 0.5), `_s8`, `_s8_midnight` (size 8) | drawn 17/17 in all four modes; no 32 px steps at 8 blocks (linear filtering, `RenderPhase.Texture(id, true, false)`) |
+| depth behind a wall `p6_00_atlas_depth.png` (Fancy), `_depth_fabulous.png` | correct in both after the Fabulous fix; the ground clips the lower sigil row in `_s8` (terrain depth also works) |
+| 4096 sprites alive and drawn (`p6_00_glow_4096.png`) | `reiatsu_fx` mean 0.305 ms, max 0.487 ms; `FxGlowBatch` alone max 0.482 ms (< 1.0 ms line) |
+| GRADE (`p6_00_grade_off/on.png`) | world graded, hand and HUD not (multiply quad at LAST, hand is drawn after) |
+| SHAKE (`p6_00_shake_t0/peak.png`) | world and hand both move (pitch offset 10 px at t = 0, yaw peak 1.447 deg at 1/56 s = expected 1.5 x (1 - t/T)^2); reduce motion registers no shake |
+| `gradlew build test` | 212 tests, 0 failures |
+| `runPhase4` | 89/89 ALL PASS |
+| `runPhase5` | 62/62 ALL PASS |
+
+### UNVERIFIED render details of section 12.1, resolved
+1. **Glow depth testing at `WorldRenderEvents.LAST`**: Fancy: the main depth buffer is valid (probe: 0.994 at the wall, 1.0 at the sky). **Fabulous: the main depth buffer is 1.0 everywhere at LAST** (probe `FxProbe`), so the glow ignored walls. Cause (WorldRenderer source): `transparencyPostProcessor.render` -> `PostEffectPass.render` clears the output target (main) before the blit. Fix: `FxDepth.capture()` at `WorldRenderEvents.BEFORE_DEBUG_RENDER` (after the solid entity layers, before translucent) copies the depth into a private `SimpleFramebuffer` (`copyDepthFrom`), `FxDepth.restore()` copies it back into the main target at LAST right before the glow batch (only in Fabulous, only while sprites are alive). No carrier particle needed. In Fabulous the glow therefore shows through water (the translucent layer is drawn after the capture), in Fancy water occludes it: accepted.
+2. **Model view matrix at LAST**: the world position matrix is in force (sprites with camera-relative vertices land correctly in both modes); the GRADE quad pushes its own identity matrix and restores it.
+3. **`VertexBuffer` draw state for cached rows** (step 4): API verified in the Yarn sources: `VertexBuffer(Usage)`, `upload(BuiltBuffer)`, `bind()`, `draw(Matrix4f view, Matrix4f projection, ShaderProgram)`, `unbind()`. Uniform / fog set-up is still to be copied from `WorldRenderer#renderLayer` in step 4 (it initialises the uniforms with `shaderProgram.initializeUniforms(DrawMode.QUADS, matrix4f, positionMatrix, window)` + `bind()`, then `chunkOffset`).
+4. **`PostEffectProcessor` for `freeze_desat`** (step 7), from the sources: `PostEffectPass` -> `JsonEffectShaderProgram` loads `Identifier.ofVanilla("shaders/program/" + name + ".json")`, so program names can NOT be namespaced: the fallback of ADR R2.3 is the rule, files go to `assets/minecraft/shaders/program/reiatsu_test_freeze_desat.{json,fsh}`; the post JSON itself is addressed by an `Identifier` (our namespace is fine). The processor needs `new PostEffectProcessor(textureManager, resourceManager, mainFramebuffer, id)`, `setupDimensions(w, h)` on resize, `render(float)` and `client.getFramebuffer().beginWrite(false)` afterwards (WorldRenderer does the same).
+5. **BossBarHud accessor**: the field is package private `final Map<UUID, ClientBossBar> bossBars` in `BossBarHud` (Yarn 1.21.1), `@Accessor("bossBars")` works.
+
+### Notes / open
+- `options.hudHidden = true` hides the hand as well; the grade shots therefore keep the HUD on (that is the point of them).
+- `graphics()` helper in the harness calls `worldRenderer.reload()` after `setValue` (the vanilla cycling callback does that, a plain `setValue` does not and crashes with a null translucent framebuffer when Fabulous is set).
+- Fabulous at noon: additive glows saturate on a bright sky (design rule 5: alpha components are needed for daylight readability; handled per effect in step 2).
+
+## 2026-10-10: Phase 6 step 1 (HUD, VFX_STORYBOARD section 7)
+
+No Blender, no generate_3d. Screenshots: `blender/renders/p6/p6_01_*.png` (68 files). Harness: `runPhase6 -Phold=hud` (also `hudlayouts`, `huddetail`, `hudperf`).
+
+### What was built
+- **Assets** `tools/gen_hud_textures.py` (Pillow + numpy, deterministic): 7.10 list as one atlas `textures/gui/hud/hud_atlas.png` (512 x 512, 94k of 262k texels used) plus separate files for the soft textures (plate_shadow, title_glow, slot_glow: linear filtering) and the tiled ones (hatch, bar_overlay: texture wrap); `HudAtlasLayout.java` is GENERATED by the script (sheet positions), `textures/gui/sprites/hud/toast.png(.mcmeta)` nine slice. 12 ability icons hand pixelled (ASCII maps and supersampled polygons, ink outline outside only), mic cells, gem, timer ring (36 frames), cooldown sweep (24 frames), emblem frame / fill / icons, bar frame (parallelogram recess), bar fill rows (5 states), frost / petal overlay, sheen. Differences to 7.10: `voice_mic` has 7 cells (three HEARING frames), `title_band` is 300 x 32 (never stretched), `emblem_fill` (new), `pixel` (white 4 x 4 for batched rectangles), `title_glow` 192 x 96 smooth; `title_bankai.png` is NOT generated (see kanji).
+- **Code** `client/hud/`: `HudModel` (all animation state, events and denied logic, FX clock based so the harness can freeze any moment), `PlateHud` (emblem with flip, timer ring with ink outline, name line, bar with chip / hatch / front cap / ticks / cost markers / gem / sheen / overlay, value line, voice row), `StripHud` (ability strip, vertical stack on narrow windows, crosshair pips), `OverlayHud` (shikai card, bankai card, technique toast, denied / info toasts), `HudGfx` (atlas remap, two builders (normal + additive), text queued into the context's consumers and drawn at layer breaks), `HudText` (cached translations), `LegacyHud` (the old simple HUD, used when `hud` is false in the client config), `BossBarHudAccessor` mixin (plate moves down 19 px per boss bar when it would collide), `ReiatsuHud` (entry, layout).
+- **Server / voice (S6)**: `voice/VoiceHudState` (volatile record, written by `VoiceControl`: interim text, final text, command, result; `contact(mic)` from `/status?mic=<state>` which the bridge page now sends on its 2.5 s poll; mic OFF = silent for more than 6 s, computed by the HUD), `VoiceBackend.contact` default method, `VoiceHttp.queryParam`. Dedicated servers never write it, the indicator stays hidden.
+- **Feedback paths**: `ClientNet` remembers requests per sequence number so a denied answer shakes / flashes the right slot; voice results (server sequence -1) are attributed through `HudModel.requestFromVoice()`. With `hud` on the action bar text is gone (HUD toasts + bar hatch + slot feedback + the sounds of 7.7 with vanilla events), with `hud` off the old action bar path stays.
+- Lang: 33 new keys in en and ru (`hud.reiatsu_test.*`).
+
+### Decisions and deviations (all visual, judged on screenshots)
+- Ability strip y = h - 22 (aligned with the hotbar) and the key tab sits at (+13, +13) inside the slot, not (+15, +15): at (+15, +15) the tab and its letter are clipped by the screen bottom (seen in the first screenshots). The vertical stack sits at x = w - 24.
+- ACTIVE slot duration bar is drawn inside the slot at the top (the "under the slot" position is off screen).
+- Bankai title card: the kanji plate is drawn with the game's own unifont glyphs (U+534D U+89E3) at scale `min(6, max(3, h/45))`, ink shadow + accent double strike + white face, on a dark halo and an accent glow; no font file is shipped, so the OFL notice of 12.6 is not needed. The plate moved up to y = 0.27 h (the name line and the translation line would otherwise sit on the crosshair). Shikai band: the accent is mixed 55 percent with ink (pure accent at alpha .85 had no contrast with white text on a bright sky), plus an ink underlay.
+- Key letters show the layout's letter (Cyrillic on the user's layout) as the storyboard says.
+- First shots had a wrong code point for the manji (U+535D renders a different glyph); fixed.
+
+### Numbers
+| check | result |
+|---|---|
+| layouts 7.9 | 320x240 (1280x960 @4), 427x240 (1280x720 @3), 480x270 (1920x1080 @4), 640x360 (1280x720 @2), 960x540 (1920x1080 @2), all real framebuffer sizes (window resized with GLFW; scaled size checked per layout), SEALED / SHIKAI / BANKAI x Rukia / Byakuya = 30 screenshots `p6_01_hud_<WxH>_<char>_<state>.png`, survival mode with hearts and food bar visible: no overlap with hotbar, health rows, chat, status effects; boss bar offset `p6_01_bossbar.png` |
+| detail | `p6_01_cooldown_25/50/75`, `_ping_t50/t150/t250`, `_poor`, `_gem_spark`, `_gem_ready`, `_chip_t100/t500`, `_denied_reiatsu/_cooldown/_state/_item`, `_flip_t150`, `_bankai_in_t150`, `_bankai_end_t100/t1000`, `_seal_lock_t500`, titles `_title_rukia_shikai_t150/600/1500`, `_title_rukia_bankai_t300/800/1600/2400`, `_title_byakuya_shikai_t150/600/1500`, `_title_byakuya_bankai_t300/1600`, `_technique_toast`, voice `_voice_interim/accepted/denied/nomatch` |
+| HUD CPU (bankai plate with every animation, 1920x1080 @4) | **0.134 ms** mean over 407 frames (plate 0.091, strip 0.013, overlay 0.025), 6 draw calls (first version: 0.47 ms with 13 calls: DrawContext#fill and #drawText draw immediately, one call each; fixed by batching quads through an atlas and queueing text) |
+| `gradlew build test` | 215 tests, 0 failures (3 new: `VoiceHudStateTest`) |
+| `runPhase4` / `runPhase5` | 89/89 and 62/62 ALL PASS |
+
+### UNVERIFIED / open
+- The title cards at the 5 scales were checked at 480x270 (the "detail" window) and the plate / strip at all five; the card layout at 320x240 (kanji scale 5, name scale 1 below 400 px) was not screenshotted.
+- Custom sounds `ui.release_stinger`, `ui.cooldown_ready`, `ui.denied` do not exist (vanilla fallbacks as in 7.7 / 7.3): `block.note_block.chime` / `bass`, `ui.toast.in`, `ui.button.click`, bell ticks; the sound of the release card is part of step 2.
+- Voice indicator is exercised through injected `VoiceHudState` values; the real bridge path (page -> `/status?mic=` -> HUD) is covered by the unit test of the parsing and by phase 5 (no regression) but the mic icon was not seen with a real microphone.
+- The release title card is fed by `effect_event` 1 to 4 in `ClientNet`; the real events were not captured on screen in this step (step 2 does that).
+- `HudModel.update` is called from the HUD callback only (the HUD must be drawn for animations to advance): with F1 the animations are paused, which is intended.
+
+## 2026-10-10: Phase 6: stop point (WIP commit, stopped on request)
+
+**Done and checked**
+- Step 0 (commit 6626886): scaffolding, harness `runPhase6`, Fabulous glow depth fix, atlas / GRADE / SHAKE / glow cost. Details in its section above.
+- Step 1 (commit 829a624): HUD complete (plate, strip, titles, denied feedback, voice indicator, 5 layouts), 0.13 ms, build 215 tests, runPhase4 89/89, runPhase5 62/62.
+- Step 2 code (this WIP commit): `FxEvents` (entry of effect_event), `ReleaseFx` (2.1, ids 1 to 4), `AuraFx` (2.2, per-player spawner, caps 120 / 400, dissolve at seal), `SealFx` (2.3, ids 10 / 11), `DrawFx` (DrawEvents mapping, see below), `FxTune` (dev hot reload of numbers from `mod/run/fx_override.json`, FxConfig keys too, verified by a harness check), harness scenarios `relshots, relnight, relflash, aura, seal, draw` (one `runPhase6` run does everything: default hold = all; use a comma list for a subset).
+- Verified in single runs (all CHECK PASS): flash 0.60 peak / 0.19 s, reduce motion flash 0.05 s and peak 0.40, release sounds, peak 84 particles / 44 glow sprites per shikai release, auras live 22 to 60 per player (cap 120), seal / draw / sheathe sounds, real server events handled, hot reload. Screenshots were viewed and judged (release, aura, seal looked good at noon and night).
+
+**Mapping of the B4 states to effects (DrawFx):** SEALED -> BASE (draw): DRAW_START scabbard rattle, DRAW_RELEASE steel glint + "shing", no flash. BASE -> SHIKAI: effect_event 1 / 3, release flash hides the model swap. SHIKAI / BANKAI -> SEALED: effect_event 10 / 11 (SealFx), SHEATHE_START / END sounds + glint. Forced SEALED -> SHIKAI (dev) plays only the draw.
+
+**In progress / not clean**
+- The last full run (all scenarios in one session) had the game PAUSED (`mc.isPaused()` true, FX clock stuck) during the release shots, so `p6_02_release_*` shots timed out (a second agent was running a game on the same machine); an earlier full run timed out in the first three aura shots for a similar reason. Single scenario runs pass. The step 2 screenshots in `mod/run/screenshots` of that run are NOT valid and none were copied to `blender/renders/p6/`; regenerate with `runPhase6 -Phold=release` when no other game window is running (check `tasklist`), then copy `p6_02_*`. Step 2 is therefore not committed as a finished step: `gradlew build test` (215) and runPhase4 (89/89 on rerun; one earlier timing flake A3) / runPhase5 (62/62) were green before the last small edits (FxTune, harness).
+- Tuning ideas: aura on a bright noon sky is subtle, Rukia bankai aura is a placeholder (5.2 later), burst motes at noon.
+
+**Not started:** steps 3 to 10 of section 10 (swarm, rows, storm, Rukia shikai abilities, Rukia bankai, Hakuteiken, polish), server work S1 to S5, custom sounds.
+
+**UNVERIFIED of 12.1 resolved** (see step 0): glow depth under Fabulous (fixed with `FxDepth`), model view matrix at LAST (world matrix is in force), VertexBuffer API names (verified; uniform setup to copy from `WorldRenderer#renderLayer`), freeze_desat post (program names are not namespaced: files go under `assets/minecraft/shaders/program/`), BossBarHud field `bossBars` (done, accessor mixin works).
+
+**Next:** regenerate and review the step 2 screenshots, run build + both regressions once, commit step 2, then step 3 with the batch rule (write several steps of code, then one game launch).
 ## 2026-10-10: B4 polish: stop point (WIP, stopped on the user's request)
 
 Branch `b4-polish`. No Blender. Screenshots: `blender/renders/b4_polish/` (fp_all_states, draw_strip_rukia/byakuya, fp_left_handed_*, third_person_*).
@@ -587,3 +674,74 @@ Rerun runPhase4/5; user to judge fist height (`held.arm` y) and roll in game; ba
 
 ## 2026-10-11: stop point
 - All parallel work stopped on request; WIP committed per branch, see STATUS.md "STOP POINT 2026-10-11".
+## 2026-10-10: Phase 6 step 2 (closed): release 2.1, auras 2.2, seal 2.3, DrawFx, FxTune
+
+Branch `phase6-fx` (merged with `main` first). No Blender, no generate_3d. Screenshots: `blender/renders/p6/p6_02_*.png` (41 files, from the single full run `runPhase6 -Phold=release`, game never paused, one game window at a time).
+
+### Task A: verification of the merged branch (before any change)
+| check | result |
+|---|---|
+| `gradlew build test` | green, 217 tests, 0 failures |
+| `runPhase4` | 89/89 ALL PASS |
+| `runPhase5` | 62/62 ALL PASS |
+No red on the merge: the earlier B2-B4 / A3 reds were the second game window (as suspected in the stop point); with one window open everything is green.
+
+### What changed in this step (on top of WIP c84265f)
+- **Release (ReleaseFx)**: ring tinted more saturated than the flash (additive white on grass looks lime: Rukia `#8CCBF2`, Byakuya `#E8A0F0`, thin ring stays white), anamorphic FLARE across the chest, an upright light column (FLARE cell rotated 90 degrees, PLANE facing the camera; the PILLAR cell has hard top and bottom edges, it was tried first and rejected), burst 72 motes (was 56), motes 0.42 / 0.30 (were 0.32 / 0.26), Rukia gets 16 ICE_SHARD (lit alpha sprites, the part of the burst that stays visible on a bright sky), mote colour ends at `#CFEFFF` (the old end colour `#9ED3F0` was dark teal on grass).
+- **Auras (AuraFx, rewritten)**: three layers per aura (wisps = silhouette, glow layer = two stacked soft discs + ground ring, sparkle accents). Alpha FROST_MOTE sprites (0.40) that swirl up so the aura reads at noon. Wisps follow the sky light (`ClientWorld.getSkyBrightness`): alpha x0.55 and rate x0.8 at night (at x1.3 density the body was buried at night). Rukia shikai: blade star glints, shed snowflakes. Byakuya shikai: lilac glints, rising PETAL_GLOW. Byakuya bankai: heartbeat lub-dub (two delayed ground rings + body pulses in step with the warden heartbeat sound). **Rukia bankai (no longer a stub)**: interim of 5.2: snowfall disc (radius 3.5, 9 flakes/s, no flake right in front of the lens), breathing frost sigil under her (radius 3, 0.02 rev/s, +-10 percent at 0.25 Hz), ground mist sprites, ice glints, cold breath every 3 s, cold hum sound. Decal, rim crystals, ribbons and sheen stay with step 7.
+- **FxGlowBatch**: `Spec.delay(seconds)` (sprite is invisible and does not age before its start; used for the second heartbeat).
+- **SealFx**: ring uses the character ring tint (`seal.ringTint`).
+- **FxTune keys** (all hot, `run/fx_override.json`): `release.ringTint ringPeak flare pillar shards moteEnd moteSize burstSpeed burstCount flashRukiaShikai rukiaFlashColor ringRadius`, `aura.rate wispSize wispAlpha moteSize moteEnd glow nightWisp nightRate snowRate snowSize sigil mist byakShikaiColor byakBankaiColor`, `seal.ringTint`.
+- **Harness**: new scenarios `relfab` (Fabulous graphics: release + auras), `relperf` (frame cost), `console`. **`-Phold=console` is a live console**: the game waits for `run/p6_cmd.txt` (write it atomically, e.g. via a temp file and `mv`), executes the lines (`rel`, `fake`, `aura`, `seal`, `time`, `view`, `hud`, `gfx`, `wait`, `quit`), writes `run/p6_done.txt`. Together with `fx_override.json` this allowed colour, size and rate tuning with one game start (about 30 s for 8 shots instead of a 4 minute run). Draw shots (`p6_02_draw_rukia_k4/k7/k10`, `p6_02_sheathe_rukia_k6/k12`) added.
+
+### Numbers
+| check | result |
+|---|---|
+| `runPhase6 -Phold=release` | 49 CHECK PASS, 0 fail |
+| release flash | peak 0.600, 0.190 s; reduce motion peak 0.400, 0.051 s (frame log) |
+| `reiatsu_fx` CPU (FxClient.Stats, our world pass: glow batch + grade) | baseline 0.004 ms; aura Rukia shikai 0.052, Byakuya shikai 0.052, Rukia bankai 0.056 (max 0.31), Byakuya bankai 0.051 ms mean; release 2 s from R: mean 0.057, max 0.340 ms (line < 1.0 ms) |
+| live particles | aura Rukia shikai 69 (peak 75), Byakuya shikai 50, Rukia bankai 54 (peak 88), Byakuya bankai 70 (peak 83), cap 120 per player, 400 per client; release of Rukia plus its aura: peak 144 particles, 48 glow sprites (release alone about 96 particles: 72 motes, 16 shards, 8 flakes; storyboard budget was 80) |
+| glow sprites live | aura 7 to 19, release peak 48 (limit 90 in the harness) |
+| frame wall time | 8.45 to 8.51 ms in all cases = the harness frame cap (120 fps), so the effects do not move it; the real cost is the `reiatsu_fx` line plus the vanilla particle manager (not separately profiled) |
+| Fabulous | release and auras identical to Fancy (`p6_02_fab_*`), glow depth fix from step 0 holds |
+| `gradlew build test` | green (217 tests) |
+| `runPhase4` / `runPhase5` | 89/89 and 62/62 ALL PASS (run once at the end, after the last code change) |
+
+### Honest judgement against the storyboard
+Good: release at noon and night (flash, cyan or pink ring, column, ice shards / petals, the title card from step 1), the Rukia bankai aura (frost sigil, snowfall, wisps), aura readable at noon and night in both characters, seal and bankai end (rings contract, motes and petals collapse, wisps dissolve in 8 ticks), draw glint at the guard.
+Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha and look dim blue-grey on a dark background, the glow stars carry the night; (2) Byakuya bankai aura is plain until the blade rows (step 4) exist; (3) the aura wisps are the 8 x 32 pixel sprite: at 5 blocks they show square pixels (matches the pixel-art look of the sprites, not smoothed); (4) frames 50 and 100 ms are washed by the flash (0.6 peak, by design); (5) first-person release not screenshotted (the shots are third person plus HUD).
+
+### UNVERIFIED
+- Real multiplayer: another player's release and aura (the harness treats the local player as caster; `-Dreiatsu.fx.remote=true` exists but was not run for these shots).
+- Vanilla particle manager cost of 144 live particles (only our own `reiatsu_fx` section is measured; wall time is capped by the frame limit).
+- Aura distance LOD (x0.5 beyond 24 blocks) not screenshotted.
+- `getSkyBrightness` day factor under rain / thunder (formula follows the vanilla value, which includes the rain darkening, not seen on screen).
+- Custom sounds still vanilla layers; first-person release view; draw effects with Byakuya.
+- The console mode is dev-only, not part of the mod runtime path.
+
+## 2026-10-10: Phase 7: dedicated server smoke (branch `srvdocs`, no game window)
+
+**What exists.** `python -I tools/server_smoke.py [--quick] [--port N]` (stdlib only, about 2.5 minutes, 1.5 minutes with `--quick`; the first run after a clean checkout also remaps Minecraft). It writes `mod/run-server/` (gitignored: `eula.txt` accepted in that run dir only, offline mode, `server-ip=127.0.0.1`, RCON on loopback with a random password, fresh world), starts `gradlew runServer` (new Loom run config `server` in `mod/build.gradle`: own run dir `run-server`, `-Xmx1536M`), drives it and ends with `RESULT: PASS|FAIL` (exit code 0 / 1). The log of the last run is `mod/run-server/smoke_last.log`. Nothing listens beyond 127.0.0.1 and the server is stopped through RCON `stop` (the script only kills its own gradle client and its own `run-server` java process as a last resort).
+
+**What it checks (43 checks, all PASS on 9137f97 + this change):**
+1. Static: no `net.minecraft.client`, `net.fabricmc.fabric.api.client`, `Environment`/`EnvType.CLIENT`, `MinecraftClient` reference in `mod/src/main` (the Loom split source sets already enforce it at compile time).
+2. Server start in the Fabric dev environment, mod in the loader table, our registration line (items, attachments, payloads), no `ERROR` line, no stack trace, no NoClassDefFound / mixin / codec errors. The voice bridge reports "dedicated server: single player only" as designed.
+3. RCON console form of the commands: `/reiatsu voice` ("Voice bridge is off"), `/reiatsu info` ("A player is required"), `help reiatsu` (all subcommands registered).
+4. Two protocol-level bots (no game client, `Bot` class in the script; they mimic the Fabric networking handshake `c:version`, `c:register`, `fabric:accepted_attachments_v1`, so the server really encodes our S2C payloads and attachments):
+   - join, session started, `give` of both swords, `/reiatsu info` as the bot (`execute as`): SEALED, 100 reiatsu;
+   - real C2S payloads of the mod: `request_transition` SEALED -> BASE (held RUKIA) is accepted and answered by `action_result` S2C; `cast_ability` for TSUKISHIRO, ABSOLUTE_ZERO, MODE_ATTACK, MODE_BARRIER, SCATTER, HAKUTEIKEN reach `AbilityExecutor` (dev command forces the state first) with `OK` and no exception, `effect_event` S2C is encoded and sent to the caster;
+   - second client at protocol level (bot 2, teleported next to bot 1 because the vanilla entity tracker only re-evaluates after a move): it receives the attachment sync of bot 1's state change and the `effect_event` of bot 1's cast;
+   - seal clears the temp blocks (`tempBlocks=0`), nobody is kicked or timed out.
+5. Clean stop (`stop`: gradle exit 0, "All dimensions are saved"), restart on the same world, bot rejoins and the persistent `reiatsu` attachment survived (set 37.5, read 40.5 after regeneration).
+
+**Findings.** No client-class leak and no code change needed in `main`. Observation, not a bug: bot 1 receives about 4 `fabric:attachment_sync_v1` packets per second while the bar regenerates (60 in 15 s); worth a look when balancing for many players (sync on every reiatsu change, `targetOnly`), the second client gets far fewer (zanpakuto state only, 7 in the whole run).
+
+**Not covered by this test (manual, needs real game clients).** The bots never render, so these stay with a human (list also in `docs/QA_CHECKLIST.md`, section 8):
+- host: dedicated server in a console window (`gradlew runServer` after accepting the EULA, or the built jar in a Fabric server with Fabric API 0.116.17+1.21.1), client A and client B joined with the mod jar (both clients need the same jar and Fabric API);
+- A: take the sword, press J / right click (BASE), R (shikai), cast every ability, bankai, seal. B stands 10 to 30 blocks away and must see: A's sword model in hand and on the hip (third person), the aura, the release flash ring / petals, every ability effect (Tsukishiro ring, Hakuren wave, Shirafune strike, Absolute Zero, swarm / dome, rows, storm, Hakuteiken), temp ice blocks and their rollback, the freeze overlay on mobs, and B's own bar and HUD stay independent of A's;
+- B joins late (A already in shikai): B must see A's aura immediately (initial attachment sync);
+- B walks out of range and back: effects stop and resume without ghosts; A leaves in bankai: no stuck particles on B, temp blocks rolled back;
+- A dies in bankai and respawns: SEALED on both screens;
+- two players casting at once (cooldowns and reiatsu independent), PvP flag `/reiatsu pvp true` between A and B;
+- voice: dedicated servers do not start the bridge (documented); a human with a microphone on a remote client is not supported yet;
+- latency over a real network (the ADR budget 400 ms was measured on the integrated server only), packet size of `effect_event`, behaviour of 3 or more clients.

@@ -107,6 +107,7 @@ public final class VoiceHttp {
 					if (!method.equals("GET")) {
 						return json(405, "{\"error\":\"GET only\"}", corsOrigin);
 					}
+					backend.contact(queryParam(req.path(), "mic"));
 					return json(200, backend.status(), corsOrigin);
 				}
 				case "/", "/index.html" -> {
@@ -262,6 +263,21 @@ public final class VoiceHttp {
 			h.put("Vary", "Origin");
 		}
 		return h;
+	}
+
+	/** Value of a query parameter of the request target ("a=1&b=2"), or null. */
+	static String queryParam(String target, String name) {
+		int q = target.indexOf('?');
+		if (q < 0) {
+			return null;
+		}
+		for (String kv : target.substring(q + 1).split("&")) {
+			int eq = kv.indexOf('=');
+			if (eq > 0 && kv.substring(0, eq).equals(name)) {
+				return java.net.URLDecoder.decode(kv.substring(eq + 1), StandardCharsets.UTF_8);
+			}
+		}
+		return null;
 	}
 
 	private static Response json(int status, String body, String corsOrigin) {

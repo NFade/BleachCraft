@@ -20,6 +20,7 @@ import dev.minebleach.reiatsutest.registry.ModItems;
 import dev.minebleach.reiatsutest.voice.VoiceBackend;
 import dev.minebleach.reiatsutest.voice.VoiceEndpoint;
 import dev.minebleach.reiatsutest.voice.VoiceHttp;
+import dev.minebleach.reiatsutest.voice.VoiceHudState;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -78,6 +79,7 @@ public final class VoiceControl implements VoiceBackend {
 
 	private synchronized void start(MinecraftServer srv) {
 		stop();
+		VoiceHudState.reset();
 		server = srv;
 		lastError = null;
 		cfg = ModConfig.loadVoice();
@@ -161,7 +163,13 @@ public final class VoiceControl implements VoiceBackend {
 	// ------------------------------------------------------------------ VoiceBackend (HTTP threads)
 
 	@Override
+	public void contact(String mic) {
+		VoiceHudState.contact(mic);
+	}
+
+	@Override
 	public String onVoice(VoiceMessage message, long receivedNanos) {
+		VoiceHudState.contact(null);
 		MinecraftServer srv;
 		synchronized (this) {
 			srv = server;
@@ -282,6 +290,9 @@ public final class VoiceControl implements VoiceBackend {
 			proc.reset(); // a language switch starts a new recognition session
 		}
 		VoiceProcessor.Decision d = proc.process(msg, ctx);
+		if (!msg.isFinal()) {
+			VoiceHudState.interim(msg.text());
+		}
 		JsonObject o = new JsonObject();
 		o.addProperty("matched", d.fired());
 		o.addProperty("command", d.commandId());
@@ -290,6 +301,7 @@ public final class VoiceControl implements VoiceBackend {
 		o.addProperty("text", d.normalized());
 		if (d.fired()) {
 			TransitionResult r = dispatch(p, d.commandId());
+			VoiceHudState.result(msg.text(), d.commandId(), r == null ? VoiceHudState.Result.NO_MATCH : hudResult(r));
 			long appliedNanos = System.nanoTime();
 			double latencyMs = (appliedNanos - receivedNanos) / 1_000_000.0;
 			o.addProperty("result", r == null ? "UNKNOWN_COMMAND" : r.code().name());
@@ -302,6 +314,9 @@ public final class VoiceControl implements VoiceBackend {
 					msg.isFinal(), d.commandId(), o.get("confidence"), o.get("result").getAsString(), sm.state(),
 					String.format(Locale.ROOT, "%.2f", latencyMs));
 		} else if (d.outcome() == VoiceProcessor.Outcome.GATED_OUT || d.outcome() == VoiceProcessor.Outcome.AMBIGUOUS) {
+			if (msg.isFinal()) {
+				VoiceHudState.result(msg.text(), d.commandId(), VoiceHudState.Result.GATED);
+			}
 			ReiatsuTest.LOGGER.info("[voice] \"{}\" -> {} {}", msg.text(), d.outcome().wire(), d.commandId());
 			if (d.outcome() == VoiceProcessor.Outcome.GATED_OUT && d.commandId() != null && d.commandId().endsWith(".shikai.release")
 					&& sm.state() == ZanpakutoState.SEALED && held != CharacterId.NONE) {
@@ -309,10 +324,24 @@ public final class VoiceControl implements VoiceBackend {
 				p.sendMessage(Text.translatable("message.reiatsu_test.denied.not_drawn"), true);
 			}
 		} else {
+			if (msg.isFinal() && d.outcome() != VoiceProcessor.Outcome.EMPTY) {
+				VoiceHudState.result(msg.text(), d.commandId(), VoiceHudState.Result.NO_MATCH);
+			}
 			ReiatsuTest.LOGGER.debug("[voice] \"{}\" -> {}", msg.text(), d.outcome().wire());
 		}
 		o.addProperty("state", sm.state().name());
 		return o.toString();
+	}
+
+	private static VoiceHudState.Result hudResult(TransitionResult r) {
+		return switch (r.code()) {
+			case OK -> VoiceHudState.Result.ACCEPTED;
+			case DENIED_REIATSU -> VoiceHudState.Result.DENIED_REIATSU;
+			case DENIED_ITEM -> VoiceHudState.Result.DENIED_ITEM;
+			case DENIED_NOT_DRAWN -> VoiceHudState.Result.DENIED_NOT_DRAWN;
+			case COOLDOWN -> VoiceHudState.Result.COOLDOWN;
+			case DENIED_STATE, RATE_LIMIT -> VoiceHudState.Result.DENIED_STATE;
+		};
 	}
 
 	/** Maps a command id to the server path the key bindings use. Null for an unknown id. */

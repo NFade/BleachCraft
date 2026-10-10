@@ -324,7 +324,7 @@
 
   // ------------------------------------------------------------ status polling
   function refreshStatus() {
-    fetch(base + "/status", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (s) {
+    fetch(base + "/status?mic=" + encodeURIComponent(($("mic").className || "mic").replace(/^mic ?/, "")), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (s) {
       var gb = $("gameBadge");
       if (s.world === false) {
         gb.className = "badge bad"; $("gameText").textContent = "game: open a world";
