@@ -716,3 +716,30 @@ Still weak: (1) night bursts: the mote texture rays are `#9ED3F0` at 0.8 alpha a
 - `getSkyBrightness` day factor under rain / thunder (formula follows the vanilla value, which includes the rain darkening, not seen on screen).
 - Custom sounds still vanilla layers; first-person release view; draw effects with Byakuya.
 - The console mode is dev-only, not part of the mod runtime path.
+
+## 2026-10-10: Phase 7: dedicated server smoke (branch `srvdocs`, no game window)
+
+**What exists.** `python -I tools/server_smoke.py [--quick] [--port N]` (stdlib only, about 2.5 minutes, 1.5 minutes with `--quick`; the first run after a clean checkout also remaps Minecraft). It writes `mod/run-server/` (gitignored: `eula.txt` accepted in that run dir only, offline mode, `server-ip=127.0.0.1`, RCON on loopback with a random password, fresh world), starts `gradlew runServer` (new Loom run config `server` in `mod/build.gradle`: own run dir `run-server`, `-Xmx1536M`), drives it and ends with `RESULT: PASS|FAIL` (exit code 0 / 1). The log of the last run is `mod/run-server/smoke_last.log`. Nothing listens beyond 127.0.0.1 and the server is stopped through RCON `stop` (the script only kills its own gradle client and its own `run-server` java process as a last resort).
+
+**What it checks (43 checks, all PASS on 9137f97 + this change):**
+1. Static: no `net.minecraft.client`, `net.fabricmc.fabric.api.client`, `Environment`/`EnvType.CLIENT`, `MinecraftClient` reference in `mod/src/main` (the Loom split source sets already enforce it at compile time).
+2. Server start in the Fabric dev environment, mod in the loader table, our registration line (items, attachments, payloads), no `ERROR` line, no stack trace, no NoClassDefFound / mixin / codec errors. The voice bridge reports "dedicated server: single player only" as designed.
+3. RCON console form of the commands: `/reiatsu voice` ("Voice bridge is off"), `/reiatsu info` ("A player is required"), `help reiatsu` (all subcommands registered).
+4. Two protocol-level bots (no game client, `Bot` class in the script; they mimic the Fabric networking handshake `c:version`, `c:register`, `fabric:accepted_attachments_v1`, so the server really encodes our S2C payloads and attachments):
+   - join, session started, `give` of both swords, `/reiatsu info` as the bot (`execute as`): SEALED, 100 reiatsu;
+   - real C2S payloads of the mod: `request_transition` SEALED -> BASE (held RUKIA) is accepted and answered by `action_result` S2C; `cast_ability` for TSUKISHIRO, ABSOLUTE_ZERO, MODE_ATTACK, MODE_BARRIER, SCATTER, HAKUTEIKEN reach `AbilityExecutor` (dev command forces the state first) with `OK` and no exception, `effect_event` S2C is encoded and sent to the caster;
+   - second client at protocol level (bot 2, teleported next to bot 1 because the vanilla entity tracker only re-evaluates after a move): it receives the attachment sync of bot 1's state change and the `effect_event` of bot 1's cast;
+   - seal clears the temp blocks (`tempBlocks=0`), nobody is kicked or timed out.
+5. Clean stop (`stop`: gradle exit 0, "All dimensions are saved"), restart on the same world, bot rejoins and the persistent `reiatsu` attachment survived (set 37.5, read 40.5 after regeneration).
+
+**Findings.** No client-class leak and no code change needed in `main`. Observation, not a bug: bot 1 receives about 4 `fabric:attachment_sync_v1` packets per second while the bar regenerates (60 in 15 s); worth a look when balancing for many players (sync on every reiatsu change, `targetOnly`), the second client gets far fewer (zanpakuto state only, 7 in the whole run).
+
+**Not covered by this test (manual, needs real game clients).** The bots never render, so these stay with a human (list also in `docs/QA_CHECKLIST.md`, section 9):
+- host: dedicated server in a console window (`gradlew runServer` after accepting the EULA, or the built jar in a Fabric server with Fabric API 0.116.17+1.21.1), client A and client B joined with the mod jar (both clients need the same jar; a vanilla client or a client without the mod cannot join because of the registry sync);
+- A: take the sword, press J / right click (BASE), R (shikai), cast every ability, bankai, seal. B stands 10 to 30 blocks away and must see: A's sword model in hand and on the hip (third person), the aura, the release flash ring / petals, every ability effect (Tsukishiro ring, Hakuren wave, Shirafune strike, Absolute Zero, swarm / dome, rows, storm, Hakuteiken), temp ice blocks and their rollback, the freeze overlay on mobs, and A's state in the player list / HUD hints is not leaked to B (B's own bar is independent);
+- B joins late (A already in shikai): B must see A's aura immediately (initial attachment sync);
+- B walks out of range and back: effects stop and resume without ghosts; A leaves in bankai: no stuck particles on B, temp blocks rolled back;
+- A dies in bankai and respawns: SEALED on both screens;
+- two players casting at once (cooldowns and reiatsu independent), PvP flag `/reiatsu pvp true` between A and B;
+- voice: dedicated servers do not start the bridge (documented); a human with a microphone on a remote client is not supported yet;
+- latency over a real network (the ADR budget 400 ms was measured on the integrated server only), packet size of `effect_event`, behaviour of 3 or more clients.

@@ -24,6 +24,11 @@ loom {
 	}
 
 	runs {
+		// Dev-only: dedicated server smoke test (tools/server_smoke.py). Own run dir, so it never touches the client run/ dir.
+		server {
+			runDir "run-server"
+			vmArg "-Xmx1536M"
+		}
 		// Dev-only: open the game window on the monitor containing this point (gradle.properties dev_monitor).
 		client {
 			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"

@@ -9,6 +9,7 @@ refs/
 mod/.gradle/
 mod/build/
 mod/run/
+mod/run-server/
 mod/out/
 .gradle/
 build/

@@ -18,6 +18,9 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 ## Phase 6 step 2 closed (branch `phase6-fx`, local commit, not pushed)
 - Release 2.1, auras 2.2 (Rukia bankai interim, Byakuya heartbeat), seal 2.3, `DrawFx` mapping of the B4 states, `FxTune` hot reload (`mod/run/fx_override.json`) and the live harness console (`runPhase6 -Phold=console`, `run/p6_cmd.txt`) are done; 41 screenshots in `blender/renders/p6/p6_02_*`. Build 217 tests, runPhase4 89/89, runPhase5 62/62 on the merged branch, runPhase6 release set 49/49. Details and the UNVERIFIED list: `LOG.md` "Phase 6 step 2 (closed)". Next: step 3 (Byakuya swarm), batch the code, one `runPhase6`.
 
+## Phase 7 prep (branch `srvdocs`, local commits, not pushed)
+- Task 1 done: `python -I tools/server_smoke.py` = dedicated server smoke without a game window (43 checks PASS, two protocol-level bots, restart persistence). Details and the manual second-client list: `LOG.md` "Phase 7: dedicated server smoke".
+
 ## Stop point 2026-10-10 (details and next actions: `HANDOFF_PROMPT.md`)
 - `main`: B4 steps 1-3 and `b4-polish` merged (pose, scabbard left hand, BASE state, scabbard leaves the first-person screen after the draw). 214 tests; runPhase4/5 not rerun on this exact commit.
 - `phase6-fx`: Phase 6 steps 0, 1 and 2 done (see the section above). Steps 3-9 not started.
