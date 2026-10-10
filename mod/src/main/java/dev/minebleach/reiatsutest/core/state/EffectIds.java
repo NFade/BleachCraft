@@ -8,6 +8,8 @@ public final class EffectIds {
 	public static final int BYAKUYA_BANKAI_RELEASE = 4;
 	public static final int SEAL = 10;
 	public static final int BANKAI_END = 11;
+	/** Shunpo (B4 step 5): x y z = start, dx dy dz = vector to the end, params = {distance, character code}. */
+	public static final int SHUNPO = 40;
 
 	private EffectIds() {
 	}

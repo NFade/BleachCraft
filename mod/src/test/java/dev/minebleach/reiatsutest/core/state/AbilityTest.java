@@ -27,7 +27,11 @@ class AbilityTest {
 			assertTrue(r.ok(), a + " " + r.reason());
 			assertEquals(before - spec.costTenths(), f.sm.reiatsu().value(), a.name());
 			assertEquals(spec.cooldownTicks(), f.sm.cooldownRemaining(a), a.name());
-			assertEquals(spec.costTenths(), Fx.events(r.events(), StateEvent.ReiatsuSpent.class).get(0).tenths());
+			if (spec.costTenths() > 0) {
+				assertEquals(spec.costTenths(), Fx.events(r.events(), StateEvent.ReiatsuSpent.class).get(0).tenths());
+			} else {
+				assertFalse(Fx.has(r.events(), StateEvent.ReiatsuSpent.class), a.name());
+			}
 			assertEquals(spec.effectId(), Fx.events(r.events(), StateEvent.BroadcastEffect.class).get(0).effectId());
 			assertEquals(f.now() + spec.cooldownTicks(), Fx.events(r.events(), StateEvent.CooldownStarted.class).get(0).endTick());
 		}

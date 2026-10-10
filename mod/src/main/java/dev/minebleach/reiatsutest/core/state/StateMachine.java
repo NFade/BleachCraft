@@ -38,6 +38,8 @@ public final class StateMachine {
 	private long modeEnd;
 	private int barrierPool;
 	private long bankaiEnd;
+	private long bankaiLockEnd;
+	private long shunpoEnd;
 
 	private long transitionLockEnd;
 	private long gcdEnd;
@@ -88,6 +90,9 @@ public final class StateMachine {
 		if (state == ZanpakutoState.SEALED && now < releaseLockEnd) {
 			return reject(RejectReason.RELEASE_LOCK);
 		}
+		if (target == ZanpakutoState.BANKAI && now < bankaiLockEnd) {
+			return reject(RejectReason.RELEASE_LOCK); // bankai recovery after the last bankai (timer end, seal)
+		}
 		if (target == ZanpakutoState.SHIKAI && !reiatsu.canSpend(cfg.shikaiReleaseCost())) {
 			return reject(RejectReason.NOT_ENOUGH_REIATSU);
 		}
@@ -127,7 +132,9 @@ public final class StateMachine {
 				ev.add(new StateEvent.BroadcastEffect(EffectIds.shikaiRelease(character), nextSeed(now, EffectIds.shikaiRelease(character))));
 			}
 			case BANKAI -> {
-				spend(cfg.bankaiCost(), ev);
+				if (cfg.bankaiCost() > 0) {
+					spend(cfg.bankaiCost(), ev);
+				}
 				state = ZanpakutoState.BANKAI;
 				stateSince = now;
 				bankaiEnd = now + cfg.bankaiCapTicks();
@@ -157,8 +164,8 @@ public final class StateMachine {
 		long now = clock.nowTick();
 		AbilityId a = r.ability();
 		AbilitySpec spec = a == null ? null : cfg.spec(a);
-		if (spec == null || !spec.enabled() || state == ZanpakutoState.SEALED
-				|| a.character != character || a.requiredState != state) {
+		if (spec == null || !spec.enabled() || state == ZanpakutoState.SEALED || a.character != character
+				|| !(a.requiredState == state || (state == ZanpakutoState.BANKAI && a.requiredState == ZanpakutoState.SHIKAI))) {
 			return reject(RejectReason.NOT_IN_STATE);
 		}
 		if (inHandGrace() || r.held() != character) {
@@ -182,7 +189,9 @@ public final class StateMachine {
 		}
 
 		List<StateEvent> ev = new ArrayList<>();
-		spend(spec.costTenths(), ev);
+		if (spec.costTenths() > 0) {
+			spend(spec.costTenths(), ev); // bankai abilities are free (cooldown only), shikai ones cost as usual in bankai too
+		}
 		long end = now + spec.cooldownTicks();
 		cooldownEnd.put(a, end);
 		gcdEnd = now + cfg.gcdTicks();
@@ -204,6 +213,51 @@ public final class StateMachine {
 		for (int i = 0; i < phases.size(); i++) {
 			ev.add(new StateEvent.ScheduledPhase(a, phases.get(i), i, castSerial));
 		}
+		return new TransitionResult(ResultCode.OK, null, state, state, ev);
+	}
+
+	/**
+	 * Shunpo (B4 step 5): a short teleport along the look direction, SHIKAI and BANKAI only. The machine checks everything
+	 * that is not geometry (state, item, locks, cooldown, reiatsu), then walks the path through {@code probe}. A path with
+	 * no room refuses with {@link RejectReason#NO_ROOM} and costs nothing. The accepted result carries a
+	 * {@link StateEvent.ShunpoMove} for the glue (move the player, broadcast the effect).
+	 *
+	 * @param dir unit look direction ({@link ShunpoPath#direction}); feet position and ground flag are the server's own
+	 */
+	public TransitionResult shunpo(int clientSeq, CharacterId held, ShunpoPath.Probe probe, double x, double y, double z,
+			double[] dir, boolean onGround) {
+		RejectReason pre = preCheck(clientSeq);
+		if (pre != null) {
+			return reject(pre);
+		}
+		long now = clock.nowTick();
+		if (state != ZanpakutoState.SHIKAI && state != ZanpakutoState.BANKAI) {
+			return reject(RejectReason.NOT_IN_STATE);
+		}
+		if (inHandGrace() || held != character) {
+			return reject(RejectReason.WRONG_ITEM);
+		}
+		if (now < transitionLockEnd) {
+			return reject(RejectReason.TRANSITION_LOCK);
+		}
+		if (now < shunpoEnd) {
+			return reject(RejectReason.ON_COOLDOWN);
+		}
+		ShunpoSpec sp = cfg.shunpo();
+		if (!reiatsu.canSpend(sp.costTenths())) {
+			return reject(RejectReason.NOT_ENOUGH_REIATSU);
+		}
+		ShunpoPath.Result path = ShunpoPath.resolve(probe, x, y, z, dir[0], dir[1], dir[2], sp, onGround);
+		if (path == null) {
+			return reject(RejectReason.NO_ROOM);
+		}
+		List<StateEvent> ev = new ArrayList<>();
+		if (sp.costTenths() > 0) {
+			spend(sp.costTenths(), ev);
+		}
+		shunpoEnd = now + sp.cooldownTicks();
+		lastCast = now; // moving counts as activity for the shikai idle timer
+		ev.add(new StateEvent.ShunpoMove(x, y, z, path.x(), path.y(), path.z(), path.stoppedByWall()));
 		return new TransitionResult(ResultCode.OK, null, state, state, ev);
 	}
 
@@ -235,14 +289,13 @@ public final class StateMachine {
 			reiatsu = ReiatsuMath.applyBatch(reiatsu, cfg.rate(state));
 		}
 		if (reiatsu.value() == 0) {
-			if (state == ZanpakutoState.BANKAI) {
-				revertToSealed(t, Trigger.REIATSU_ZERO, EffectIds.BANKAI_END, cfg.recoveryLockTicks(), true, ev);
-			} else if (state == ZanpakutoState.SHIKAI) {
+			// bankai no longer ends at zero: it has no drain and spending cannot reach zero, the timer alone ends it (B4 step 4)
+			if (state == ZanpakutoState.SHIKAI) {
 				revertToSealed(t, Trigger.REIATSU_ZERO, EffectIds.SEAL, cfg.sealLockTicks(), true, ev);
 			}
 		}
 		if (state == ZanpakutoState.BANKAI && t >= bankaiEnd) {
-			revertToSealed(t, Trigger.BANKAI_CAP, EffectIds.BANKAI_END, cfg.recoveryLockTicks(), true, ev);
+			endBankai(t, Trigger.BANKAI_CAP, ev);
 		}
 		if (state == ZanpakutoState.SHIKAI && t - lastCast >= cfg.shikaiIdleTicks()) {
 			revertToSealed(t, Trigger.SHIKAI_IDLE, EffectIds.SEAL, cfg.sealLockTicks(), true, ev);
@@ -358,6 +411,8 @@ public final class StateMachine {
 	public void devClearCooldowns() {
 		cooldownEnd.clear();
 		gcdEnd = 0;
+		shunpoEnd = 0;
+		bankaiLockEnd = 0;
 	}
 
 	// ------------------------------------------------------------------ queries
@@ -401,6 +456,16 @@ public final class StateMachine {
 
 	public long releaseLockEndTick() {
 		return releaseLockEnd;
+	}
+
+	/** Tick until which bankai cannot be entered again (0 = no lock). */
+	public long bankaiLockEndTick() {
+		return bankaiLockEnd;
+	}
+
+	/** Remaining ticks of the shunpo cooldown. */
+	public int shunpoCooldownRemaining() {
+		return (int) Math.max(0L, shunpoEnd - clock.nowTick());
 	}
 
 	public int cooldownRemaining(AbilityId id) {
@@ -472,10 +537,32 @@ public final class StateMachine {
 		ev.add(new StateEvent.ShikaiModeChanged(m));
 	}
 
+	/**
+	 * T4 / T5 (B4 step 4): the bankai timer ran out. Bankai falls back to SHIKAI (not SEALED): the zanpakuto stays released,
+	 * the player keeps the sword, the shikai idle timer restarts and bankai is locked for {@code bankaiReentryTicks}. Abilities
+	 * already cast keep running (the cast serial is not bumped); temporary blocks roll back on their own timers.
+	 */
+	private void endBankai(long t, Trigger trigger, List<StateEvent> ev) {
+		ZanpakutoState from = state;
+		state = ZanpakutoState.SHIKAI;
+		stateSince = t;
+		bankaiEnd = 0;
+		settleEnd = 0;
+		lastCast = t;
+		bankaiLockEnd = t + cfg.bankaiReentryTicks();
+		transitionLockEnd = t + cfg.transitionLockTicks();
+		ev.add(new StateEvent.StateChanged(from, state, trigger));
+		ev.add(new StateEvent.MirrorComponent(state));
+		ev.add(new StateEvent.BroadcastEffect(EffectIds.BANKAI_END, nextSeed(t, EffectIds.BANKAI_END)));
+	}
+
 	/** T3..T8: any released state back to SEALED. Ability cooldowns are kept. */
 	private void revertToSealed(long t, Trigger trigger, int effectId, int releaseLock, boolean transitionLock,
 			List<StateEvent> ev) {
 		ZanpakutoState from = state;
+		if (from == ZanpakutoState.BANKAI) {
+			bankaiLockEnd = t + cfg.bankaiReentryTicks();
+		}
 		state = ZanpakutoState.SEALED;
 		character = CharacterId.NONE;
 		mode = ShikaiMode.IDLE;
@@ -501,6 +588,12 @@ public final class StateMachine {
 		long now = clock.nowTick();
 		List<StateEvent> ev = new ArrayList<>();
 		ZanpakutoState from = state;
+		if (clearCooldowns) {
+			bankaiLockEnd = 0;
+			shunpoEnd = 0;
+		} else if (from == ZanpakutoState.BANKAI) {
+			bankaiLockEnd = now + cfg.bankaiReentryTicks();
+		}
 		state = ZanpakutoState.SEALED;
 		character = CharacterId.NONE;
 		mode = ShikaiMode.IDLE;

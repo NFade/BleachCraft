@@ -21,6 +21,8 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 ## Phase 7 prep (branch `srvdocs`, local commits, not pushed)
 - Task 1 done: `python -I tools/server_smoke.py` = dedicated server smoke without a game window (43 checks PASS, two protocol-level bots, restart persistence). Details and the manual second-client list: `LOG.md` "Phase 7: dedicated server smoke".
 - Task 2 done: `README.md` (English plus short Russian section: requirements, build/install, controls, state flow, voice, config, known issues, credits) and a Credits section in `LICENSES.md`.
+## B4 steps 4 and 5 done (branch `b4game`, local commits, not pushed, 2026-10-11)
+- Step 4: bankai costs no reiatsu, 45 s timer then back to SHIKAI, free bankai abilities with cooldowns (keys U I O), shikai abilities (Z H B) also inside bankai, all areas scaled and in `BalanceConfig` (Absolute zero radius 12, Scatter 12/14, Hakuteiken burst 12, shikai x1.5-2), 60 s bankai re-entry lock. Step 5: shunpo on Y (server teleport 9 blocks along the look direction, wall and landing checks, 2.5 s cooldown, 5.0 reiatsu, SHIKAI and BANKAI), 5 translucent afterimages plus trail and sound. 253 tests. Details, numbers, UNVERIFIED: `LOG.md` "B4 step 4" and "B4 step 5"; rules in `design/STATE_MACHINE.md` section 10.
 
 ## Stop point 2026-10-10 (details and next actions: `HANDOFF_PROMPT.md`)
 - `main`: B4 steps 1-3 and `b4-polish` merged (pose, scabbard left hand, BASE state, scabbard leaves the first-person screen after the draw). 214 tests; runPhase4/5 not rerun on this exact commit.

@@ -14,6 +14,7 @@ import dev.minebleach.reiatsutest.net.CastAbilityC2S;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import dev.minebleach.reiatsutest.net.EntityFxS2C;
 import dev.minebleach.reiatsutest.net.RequestTransitionC2S;
+import dev.minebleach.reiatsutest.net.ShunpoC2S;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,6 +77,15 @@ public final class ClientNet {
 		return seq;
 	}
 
+	/** Asks for a shunpo (B4 step 5): no position, the server teleports along its own view of the look direction. */
+	public static int requestShunpo(RequestSource source) {
+		int seq = SEQ.incrementAndGet();
+		remember(seq, new HudModel.Request(false, null, null));
+		ClientPlayNetworking.send(new ShunpoC2S(source.code(), seq));
+		ReiatsuTest.LOGGER.info("[client] shunpo seq={} ({})", seq, source);
+		return seq;
+	}
+
 	private static void remember(int seq, HudModel.Request req) {
 		REQUESTS.put(seq, req);
 		if (REQUESTS.size() > 64) {
@@ -112,6 +122,7 @@ public final class ClientNet {
 			case DENIED_ITEM -> "message.reiatsu_test.denied.item";
 			case DENIED_REIATSU -> "message.reiatsu_test.denied.reiatsu";
 			case DENIED_NOT_DRAWN -> "message.reiatsu_test.denied.not_drawn";
+			case BLOCKED -> "hud.reiatsu_test.denied.blocked";
 			case COOLDOWN -> null; // the HUD icons shake, no text spam
 			case OK, RATE_LIMIT -> null;
 		};

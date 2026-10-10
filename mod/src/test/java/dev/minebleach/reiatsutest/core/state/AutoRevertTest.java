@@ -13,47 +13,69 @@ class AutoRevertTest {
 	private static final CharacterId B = CharacterId.BYAKUYA;
 
 	@Test
-	void A1_bankaiCapAt900TicksExactly() {
+	void A1_bankaiTimerEndsAt900TicksExactlyAndFallsBackToShikai() {
 		Fx f = new Fx().toShikai(B).toBankai(B);
 		f.adv(899);
 		assertEquals(ZanpakutoState.BANKAI, f.sm.state());
 		List<StateEvent> ev = f.adv(1);
-		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+		assertEquals(ZanpakutoState.SHIKAI, f.sm.state(), "B4 step 4: the timer ends bankai into shikai, not into the scabbard");
+		assertEquals(B, f.sm.character(), "the zanpakuto stays released and locked");
 		assertEquals(Trigger.BANKAI_CAP, Fx.lastChange(ev).trigger());
-		assertEquals(80, f.sm.reiatsu().value());
+		assertEquals(ZanpakutoState.BANKAI, Fx.lastChange(ev).from());
+		assertEquals(ZanpakutoState.SHIKAI, Fx.lastChange(ev).to());
+		assertEquals(1000, f.sm.reiatsu().value(), "no upkeep drain: the bar is still full");
 		assertEquals(11, Fx.events(ev, StateEvent.BroadcastEffect.class).get(0).effectId());
+		assertTrue(Fx.has(ev, StateEvent.MirrorComponent.class));
+		assertEquals(ZanpakutoState.SHIKAI, Fx.events(ev, StateEvent.MirrorComponent.class).get(0).state());
+		assertFalse(Fx.has(ev, StateEvent.CancelEffects.class), "casts in flight keep running");
+		assertEquals(0, f.sm.snapshot().bankaiEndTick());
 	}
 
 	@Test
-	void A2_earlierZeroWithAbilitiesSpent() {
+	void A2_spendingNeverEndsBankaiEarlyAndAZeroBarIsOnlyASafetyNet() {
 		Fx f = new Fx().toShikai(B).toBankai(B);
 		f.adv(44);
-		assertTrue(f.cast(AbilityId.SCATTER, B).ok()); // -30.0
+		assertTrue(f.cast(AbilityId.SCATTER, B).ok()); // free
+		assertTrue(f.cast(AbilityId.MODE_ATTACK, B).reason() == RejectReason.GCD);
+		f.adv(12);
+		assertTrue(f.cast(AbilityId.MODE_ATTACK, B).ok()); // shikai ability inside bankai: -12.0
+		assertEquals(880, f.sm.reiatsu().value());
 		long start = f.now();
-		List<StateEvent> all = new java.util.ArrayList<>();
-		while (f.sm.state() == ZanpakutoState.BANKAI && f.now() < start + 2000) {
-			all.addAll(f.adv(1));
-		}
-		assertEquals(ZanpakutoState.SEALED, f.sm.state());
-		assertTrue(f.sm.snapshot().bankaiEndTick() == 0);
-		StateEvent.StateChanged c = Fx.lastChange(all);
-		assertEquals(Trigger.REIATSU_ZERO, c.trigger());
-		assertTrue(Fx.has(all, StateEvent.CancelEffects.class));
-		assertTrue(Fx.has(all, StateEvent.RollbackTempBlocks.class));
-		assertEquals(11, Fx.events(all, StateEvent.BroadcastEffect.class).get(0).effectId());
-		assertTrue(f.now() < start + 900, "zero must come before the 45 s cap");
-		assertEquals(0, f.sm.reiatsu().value(), "the bar was empty when the bankai ended");
+		f.adv(800);
+		assertEquals(ZanpakutoState.BANKAI, f.sm.state(), "abilities never end bankai early");
+		// a (custom) bankai drain that empties the bar does not end bankai either: only the timer does
+		Fx d = new Fx(Fx.withRate(ZanpakutoState.BANKAI, new dev.minebleach.reiatsutest.core.reiatsu.Rate(0, 4)), 1000);
+		d.toShikai(B);
+		d.adv(150);
+		assertTrue(d.tr(ZanpakutoState.BANKAI, B).ok());
+		d.sm.devSetReiatsu(8);
+		d.adv(100);
+		assertEquals(0, d.sm.reiatsu().value());
+		assertEquals(ZanpakutoState.BANKAI, d.sm.state());
+		assertTrue(start > 0);
 	}
 
 	@Test
-	void A3_recoveryLockIsLongerThanTheSealLock() {
+	void A3_bankaiReentryLockAfterTheTimerAndAfterASeal() {
 		Fx cap = new Fx().toShikai(R).toBankai(R);
 		cap.adv(900);
-		assertEquals(ZanpakutoState.SEALED, cap.sm.state());
-		cap.adv(159);
-		assertEquals(RejectReason.RELEASE_LOCK, cap.tr(ZanpakutoState.BASE, R).reason());
+		assertEquals(ZanpakutoState.SHIKAI, cap.sm.state());
+		assertEquals(1000, cap.sm.reiatsu().value());
+		cap.adv(1199);
+		assertEquals(RejectReason.RELEASE_LOCK, cap.tr(ZanpakutoState.BANKAI, R).reason(), "full bar is not enough during the lock");
+		assertEquals(ResultCode.COOLDOWN, cap.tr(ZanpakutoState.BANKAI, R).code());
 		cap.adv(1);
-		assertTrue(cap.tr(ZanpakutoState.BASE, R).ok());
+		assertTrue(cap.tr(ZanpakutoState.BANKAI, R).ok(), "the lock lasts bankaiReentryTicks (1200) from the end of the timer");
+
+		Fx byHand = new Fx().toShikai(R).toBankai(R);
+		byHand.adv(60);
+		assertTrue(byHand.tr(ZanpakutoState.SEALED, R).ok());
+		byHand.adv(40);
+		assertTrue(byHand.tr(ZanpakutoState.BASE, R).ok());
+		byHand.adv(11);
+		assertTrue(byHand.tr(ZanpakutoState.SHIKAI, R).ok());
+		byHand.adv(300);
+		assertEquals(RejectReason.RELEASE_LOCK, byHand.tr(ZanpakutoState.BANKAI, R).reason(), "sealing in bankai starts the lock too");
 
 		Fx seal = new Fx().toShikai(R);
 		assertTrue(seal.tr(ZanpakutoState.SEALED, R).ok());

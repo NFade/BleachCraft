@@ -1,6 +1,8 @@
 package dev.minebleach.reiatsutest.server;
 
 import dev.minebleach.reiatsutest.core.state.AbilityId;
+import dev.minebleach.reiatsutest.core.state.AbilityParams;
+import dev.minebleach.reiatsutest.core.state.AbilitySpec;
 import dev.minebleach.reiatsutest.net.EntityFxS2C;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +21,10 @@ import net.minecraft.util.math.Vec3d;
 
 /**
  * Server effects of the abilities (STATE_MACHINE section 4). Called by the scheduler once per phase, only while the
- * cast is still valid. Damage is attributed to the caster. No visuals are produced here (effect events do that).
+ * cast is still valid. Damage is attributed to the caster. No visuals are produced here (effect events do that). Every
+ * radius, length, damage and target cap comes from the ability's {@link AbilitySpec} (BalanceConfig), none is hard coded.
  */
 final class AbilityExecutor {
-	private static final int FROZEN_SPLIT_RADIUS = 13;
-
 	private AbilityExecutor() {
 	}
 
@@ -47,44 +48,49 @@ final class AbilityExecutor {
 	// ------------------------------------------------------------------ Rukia
 
 	private static void tsukishiro(ServerPlayerEntity p, int phase, CastContext ctx) {
+		AbilitySpec sp = ctx.spec;
 		if (phase == 0) {
-			List<LivingEntity> targets = Targeting.cylinder(p, ctx.origin, 4.0, 3.0, 16);
+			List<LivingEntity> targets = Targeting.cylinder(p, ctx.origin, sp.num(AbilityParams.RADIUS), sp.num(AbilityParams.HEIGHT),
+					sp.intNum(AbilityParams.MAX_TARGETS));
 			for (LivingEntity e : targets) {
-				Targeting.chill(p, e, 3, 60);
+				Targeting.chill(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
 				ctx.frozen.add(e.getId());
 			}
-			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + 60, targets);
+			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
 		} else {
 			for (LivingEntity e : frozenStillNear(p, ctx)) {
-				Targeting.hurt(p, e, 6.0F, DamageTypes.FREEZE, false);
+				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
 				e.setFrozenTicks(0);
 			}
 		}
 	}
 
 	private static void hakuren(ServerPlayerEntity p, int phase, CastContext ctx) {
+		AbilitySpec sp = ctx.spec;
 		ServerWorld world = p.getServerWorld();
-		double d0 = phase * 2.4;
-		double d1 = (phase + 1) * 2.4;
+		int phases = sp.phaseOffsets().size();
+		double seg = sp.num(AbilityParams.LENGTH) / phases;
+		double half = sp.num(AbilityParams.HALF_WIDTH);
+		double d0 = phase * seg;
+		double d1 = (phase + 1) * seg;
 		Vec3d start = ctx.origin.add(0, 0.9, 0);
-		int room = 12 - ctx.hit.size();
+		int room = sp.intNum(AbilityParams.MAX_TARGETS) - ctx.hit.size();
 		if (room > 0) {
-			List<LivingEntity> targets = Targeting.segment(p, start, ctx.flatDir, d0, d1, 2.0, room, ctx.hit);
+			List<LivingEntity> targets = Targeting.segment(p, start, ctx.flatDir, d0, d1, half, room, ctx.hit);
 			for (LivingEntity e : targets) {
 				ctx.hit.add(e.getId());
-				Targeting.hurt(p, e, 5.0F, DamageTypes.FREEZE, false);
-				Targeting.chill(p, e, 1, 60);
+				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
+				Targeting.chill(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
 			}
-			ServerFx.entities(p, EntityFxS2C.SLOWED, now(p) + 60, targets);
+			ServerFx.entities(p, EntityFxS2C.SLOWED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
 		}
-		// frost layer on the path, rolled back after 3 s (at most 64 blocks per cast)
+		// frost layer on the path, rolled back after 3 s; the per-cast budget is spread over the phases
+		int maxBlocks = sp.intNum(AbilityParams.MAX_BLOCKS);
+		int budget = Math.min(maxBlocks, (phase + 1) * Math.max(1, maxBlocks / phases));
 		Vec3d side = new Vec3d(-ctx.flatDir.z, 0, ctx.flatDir.x);
 		int yHint = (int) Math.floor(ctx.origin.y);
-		for (double d = d0; d < d1 && ctx.tempBlocksPlaced < 64; d += 1.0) {
-			for (double off : new double[] {-1.5, -0.5, 0.5, 1.5}) {
-				if (ctx.tempBlocksPlaced >= 64) {
-					break;
-				}
+		for (double d = d0; d < d1 && ctx.tempBlocksPlaced < budget; d += 1.0) {
+			for (double off = -half + 0.5; off <= half - 0.4 && ctx.tempBlocksPlaced < budget; off += 1.0) {
 				double x = ctx.origin.x + ctx.flatDir.x * (d + 0.5) + side.x * off;
 				double z = ctx.origin.z + ctx.flatDir.z * (d + 0.5) + side.z * off;
 				BlockPos pos = TempBlocks.surface(world, x, yHint, z);
@@ -96,30 +102,35 @@ final class AbilityExecutor {
 	}
 
 	private static void shirafune(ServerPlayerEntity p, CastContext ctx) {
-		LivingEntity target = Targeting.firstOnRay(p, ctx.eye, ctx.dir, 8.0);
+		AbilitySpec sp = ctx.spec;
+		LivingEntity target = Targeting.firstOnRay(p, ctx.eye, ctx.dir, sp.num(AbilityParams.LENGTH));
 		if (target != null) {
-			Targeting.hurt(p, target, 8.0F, DamageTypes.FREEZE, false);
-			Targeting.chill(p, target, 2, 80);
-			ServerFx.entities(p, EntityFxS2C.FROZEN, now(p) + 80, List.of(target));
+			Targeting.hurt(p, target, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
+			Targeting.chill(p, target, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
+			ServerFx.entities(p, EntityFxS2C.FROZEN, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), List.of(target));
 		}
 	}
 
 	private static void absoluteZero(ServerPlayerEntity p, int phase, CastContext ctx) {
+		AbilitySpec sp = ctx.spec;
 		if (phase == 0) {
+			double radius = sp.num(AbilityParams.RADIUS);
 			Vec3d center = ctx.origin.add(0, 1.0, 0);
-			List<LivingEntity> targets = Targeting.sphere(p, center, 10.0, 32);
+			List<LivingEntity> targets = Targeting.sphere(p, center, radius, sp.intNum(AbilityParams.MAX_TARGETS));
 			for (LivingEntity e : targets) {
-				Targeting.chill(p, e, 6, 26);
+				Targeting.chill(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
 				ctx.frozen.add(e.getId());
 			}
-			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + 26, targets);
-			// up to 64 temporary ice blocks around, rolled back 2.0 to 5.0 s later (4.0 to 7.0 s after the cast)
+			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
+			// temporary ice blocks around (per cast MAX_BLOCKS here, per player Tuning.MAX_TEMP_BLOCKS_PER_PLAYER in TempBlocks),
+			// rolled back 2.0 to 5.0 s later (4.0 to 7.0 s after the cast)
 			ServerWorld world = p.getServerWorld();
 			Random rnd = new Random(ctx.seed);
 			int yHint = (int) Math.floor(ctx.origin.y);
-			for (int attempt = 0; attempt < 256 && ctx.tempBlocksPlaced < 64; attempt++) {
+			int maxBlocks = sp.intNum(AbilityParams.MAX_BLOCKS);
+			for (int attempt = 0; attempt < 256 && ctx.tempBlocksPlaced < maxBlocks; attempt++) {
 				double ang = rnd.nextDouble() * Math.PI * 2;
-				double r = Math.sqrt(rnd.nextDouble()) * 10.0;
+				double r = Math.sqrt(rnd.nextDouble()) * radius;
 				BlockPos pos = TempBlocks.surface(world, ctx.origin.x + Math.cos(ang) * r, yHint, ctx.origin.z + Math.sin(ang) * r);
 				if (pos != null && TempBlocks.place(world, p.getUuid(), pos, true, now(p) + 40L + rnd.nextInt(61))) {
 					ctx.tempBlocksPlaced++;
@@ -127,7 +138,7 @@ final class AbilityExecutor {
 			}
 		} else {
 			for (LivingEntity e : frozenStillNear(p, ctx)) {
-				Targeting.hurt(p, e, 14.0F, DamageTypes.FREEZE, false);
+				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
 				e.setFrozenTicks(0);
 			}
 		}
@@ -137,10 +148,10 @@ final class AbilityExecutor {
 	private static List<LivingEntity> frozenStillNear(ServerPlayerEntity p, CastContext ctx) {
 		List<LivingEntity> out = new ArrayList<>();
 		ServerWorld world = p.getServerWorld();
+		double split = ctx.spec.num(AbilityParams.SPLIT_RADIUS);
 		for (int id : ctx.frozen) {
 			Entity e = world.getEntityById(id);
-			if (e instanceof LivingEntity le && Targeting.valid(p, le)
-					&& le.squaredDistanceTo(ctx.origin) <= (double) FROZEN_SPLIT_RADIUS * FROZEN_SPLIT_RADIUS) {
+			if (e instanceof LivingEntity le && Targeting.valid(p, le) && le.squaredDistanceTo(ctx.origin) <= split * split) {
 				out.add(le);
 			}
 		}
@@ -164,36 +175,41 @@ final class AbilityExecutor {
 	// ------------------------------------------------------------------ Byakuya
 
 	private static void modeAttack(ServerPlayerEntity p, CastContext ctx) {
-		for (LivingEntity e : Targeting.sphere(p, ctx.aim, 1.5, 8)) {
-			Targeting.hurt(p, e, 2.0F, DamageTypes.INDIRECT_MAGIC, true);
+		AbilitySpec sp = ctx.spec;
+		for (LivingEntity e : Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS))) {
+			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 		}
 	}
 
 	private static void scatter(ServerPlayerEntity p, int phase, CastContext ctx) {
+		AbilitySpec sp = ctx.spec;
+		int max = sp.intNum(AbilityParams.MAX_TARGETS);
 		if (phase < 2) {
 			// tornado around the caster (caster safe by Targeting.valid)
-			for (LivingEntity e : Targeting.sphere(p, p.getPos().add(0, 1.0, 0), 5.0, 24)) {
-				Targeting.hurt(p, e, 1.5F, DamageTypes.INDIRECT_MAGIC, true);
+			for (LivingEntity e : Targeting.sphere(p, p.getPos().add(0, 1.0, 0), sp.num(AbilityParams.TORNADO_RADIUS), max)) {
+				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE2), DamageTypes.INDIRECT_MAGIC, true);
 			}
 		} else {
-			for (LivingEntity e : Targeting.sphere(p, ctx.aim, 5.0, 24)) {
-				Targeting.hurt(p, e, 12.0F, DamageTypes.INDIRECT_MAGIC, true);
-				Targeting.knockback(e, ctx.aim, 1.0);
+			for (LivingEntity e : Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max)) {
+				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
+				Targeting.knockback(e, ctx.aim, sp.num(AbilityParams.KNOCKBACK));
 			}
 		}
 	}
 
 	private static void hakuteiken(ServerPlayerEntity p, int phase, CastContext ctx) {
+		AbilitySpec sp = ctx.spec;
+		int max = sp.intNum(AbilityParams.MAX_TARGETS);
 		if (phase == 0) {
 			double length = ctx.eye.distanceTo(ctx.aim);
-			for (LivingEntity e : Targeting.segment(p, ctx.eye, ctx.dir, 0.0, length, 1.0, 24, null)) {
+			for (LivingEntity e : Targeting.segment(p, ctx.eye, ctx.dir, 0.0, length, sp.num(AbilityParams.HALF_WIDTH), max, null)) {
 				ctx.hit.add(e.getId());
-				Targeting.hurt(p, e, 12.0F, DamageTypes.INDIRECT_MAGIC, true);
+				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE2), DamageTypes.INDIRECT_MAGIC, true);
 			}
 		} else {
-			for (LivingEntity e : Targeting.sphere(p, ctx.aim, 5.0, 24)) {
-				Targeting.hurt(p, e, 24.0F, DamageTypes.INDIRECT_MAGIC, true);
-				Targeting.knockback(e, ctx.aim, 1.0);
+			for (LivingEntity e : Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max)) {
+				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
+				Targeting.knockback(e, ctx.aim, sp.num(AbilityParams.KNOCKBACK));
 			}
 		}
 	}

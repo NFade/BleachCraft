@@ -340,7 +340,7 @@ public final class VoiceControl implements VoiceBackend {
 			case DENIED_ITEM -> VoiceHudState.Result.DENIED_ITEM;
 			case DENIED_NOT_DRAWN -> VoiceHudState.Result.DENIED_NOT_DRAWN;
 			case COOLDOWN -> VoiceHudState.Result.COOLDOWN;
-			case DENIED_STATE, RATE_LIMIT -> VoiceHudState.Result.DENIED_STATE;
+			case DENIED_STATE, RATE_LIMIT, BLOCKED -> VoiceHudState.Result.DENIED_STATE;
 		};
 	}
 

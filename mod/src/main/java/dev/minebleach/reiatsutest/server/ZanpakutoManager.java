@@ -16,6 +16,8 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.net.ActionResultS2C;
 import dev.minebleach.reiatsutest.net.CastAbilityC2S;
 import dev.minebleach.reiatsutest.net.RequestTransitionC2S;
+import dev.minebleach.reiatsutest.net.ShunpoC2S;
+import dev.minebleach.reiatsutest.core.state.ShunpoPath;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ModItems;
@@ -77,6 +79,8 @@ public final class ZanpakutoManager {
 	public static void init() {
 		ServerPlayNetworking.registerGlobalReceiver(RequestTransitionC2S.ID, (payload, ctx) -> onTransition(ctx.player(), payload));
 		ServerPlayNetworking.registerGlobalReceiver(CastAbilityC2S.ID, (payload, ctx) -> onCast(ctx.player(), payload));
+		ServerPlayNetworking.registerGlobalReceiver(ShunpoC2S.ID, (payload, ctx) ->
+				performShunpo(ctx.player(), RequestSource.fromCode(payload.source()), Math.max(0, payload.clientSeq())));
 		ServerTickEvents.END_SERVER_TICK.register(ZanpakutoManager::tick);
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> onJoin(handler.player));
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) -> onLeave(handler.player));
@@ -225,9 +229,26 @@ public final class ZanpakutoManager {
 					seed = b.seed();
 				}
 			}
-			ctx = CastContext.capture(p, ability, seed);
+			ctx = CastContext.capture(p, ability, s.sm.config().spec(ability), seed);
 		}
 		apply(p, s, r.events(), ctx);
+		reply(p, seq, r.code());
+		return r;
+	}
+
+	/**
+	 * The one server path of a shunpo (B4 step 5): the machine checks state, item, locks, cooldown and reiatsu, the path
+	 * is walked over the real block collisions ({@link ShunpoWorld}); the client never sends a position.
+	 */
+	public static TransitionResult performShunpo(ServerPlayerEntity p, RequestSource source, int seq) {
+		Session s = session(p);
+		CharacterId held = ModItems.characterOf(p.getMainHandStack());
+		boolean ground = p.isOnGround();
+		double[] dir = ShunpoPath.direction(p.getYaw(), p.getPitch(), ground);
+		TransitionResult r = s.sm.shunpo(seq, held, new ShunpoWorld(p), p.getX(), p.getY(), p.getZ(), dir, ground);
+		ReiatsuTest.LOGGER.info("[reiatsu] {} shunpo (held {}, {}): {} {}", p.getName().getString(), held, source, r.code(),
+				r.ok() ? "ok" : r.reason());
+		apply(p, s, r.events(), null);
 		reply(p, seq, r.code());
 		return r;
 	}
@@ -259,6 +280,10 @@ public final class ZanpakutoManager {
 					}
 				}
 				case StateEvent.ShikaiModeChanged m -> { }
+				case StateEvent.ShunpoMove m -> {
+					p.networkHandler.requestTeleport(m.toX(), m.toY(), m.toZ(), p.getYaw(), p.getPitch());
+					ServerFx.shunpo(p, m, s.sm.character());
+				}
 			}
 		}
 		flush(p, s);

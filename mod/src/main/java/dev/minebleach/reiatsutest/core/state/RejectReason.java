@@ -15,7 +15,9 @@ public enum RejectReason {
 	RATE_LIMITED(ResultCode.RATE_LIMIT),
 	/** A replayed or out-of-order clientSeq (transport duplicate). Silent, like the rate limit. */
 	STALE_SEQ(ResultCode.RATE_LIMIT),
-	DEAD_OR_SPECTATOR(ResultCode.DENIED_STATE);
+	DEAD_OR_SPECTATOR(ResultCode.DENIED_STATE),
+	/** Shunpo: the path ahead is shorter than the minimum or has no safe landing. */
+	NO_ROOM(ResultCode.BLOCKED);
 
 	private final ResultCode wire;
 

@@ -34,4 +34,12 @@ public sealed interface StateEvent {
 
 	record ShikaiModeChanged(ShikaiMode mode) implements StateEvent {
 	}
+
+	/** Teleport the player from one feet position to another (shunpo). The glue moves the player and broadcasts the effect. */
+	record ShunpoMove(double fromX, double fromY, double fromZ, double toX, double toY, double toZ, boolean stoppedByWall)
+			implements StateEvent {
+		public double distance() {
+			return Math.sqrt((toX - fromX) * (toX - fromX) + (toY - fromY) * (toY - fromY) + (toZ - fromZ) * (toZ - fromZ));
+		}
+	}
 }

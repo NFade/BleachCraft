@@ -2,6 +2,8 @@
 
 **B4 step 3 amendment (2026-10-09, binding over the text below where they differ):** a fourth state **BASE** (the drawn base form, sealed-drawn) sits between SEALED (sheathed) and SHIKAI. Drawing the sword is SEALED -> BASE (free); shikai is entered from BASE only; seal/sheathe returns to SEALED from BASE, SHIKAI and BANKAI. Details in sections 2 (T0, T1, T3), 3, 4, 5, 6 and 8. Everywhere below "SEALED" means sheathed.
 
+**B4 steps 4 and 5 amendment (2026-10-11, binding over the text below where they differ):** bankai costs no reiatsu, ends by its own 45 s timer into SHIKAI (not SEALED), its abilities are free with cooldowns, shikai abilities stay usable inside bankai, all area numbers are scaled up and live in `BalanceConfig`, and a shunpo teleport exists for SHIKAI and BANKAI. See section 10 (rows T2, T4, T5, the BANKAI reiatsu rate and the bankai ability costs below are superseded there).
+
 Status: PROPOSAL for the phase 4 coding agent. `design/ADR.md` is binding; where this file disagrees with it, ADR wins (see section 8). Pure Java in `dev.minebleach.reiatsutest.core.state` and `core.reiatsu` (no `net.minecraft` / `net.fabricmc` imports, enforced by `CorePurityTest`), plus thin glue in `server/`, `net/`, `registry/`, `client/hud`. Command ids are those of `design/VOICE_PHRASES.md`; timings come from `ART_BIBLE.md` 2.x. Units: time in **server ticks** (20/s), reiatsu in **tenths of a point** (ADR: `int value (tenths)`), tables show points and seconds. All numbers live in one `BalanceConfig` record (defaults below) so they can be retuned without touching logic.
 
 ## 1. Ownership and consistency
@@ -37,8 +39,8 @@ Graph: `SEALED -> BASE -> SHIKAI -> BANKAI -> SEALED`, plus `BASE -> SEALED` and
 | T1 | BASE | SHIKAI | voice `rukia.shikai.release` / `byakuya.shikai.release` (voice gating: valid in BASE only); key R | alive; held character == locked character; not in hand grace; transition lock expired; reiatsu strictly greater than 15.0 | cost 15.0; set component SHIKAI; `stateSinceTick = now` | 1 rukia, 3 byakuya |
 | T2 | SHIKAI | BANKAI | voice `*.bankai.release`; key G | held character == locked character; not in hand grace; `reiatsu == max` (100.0); transition lock expired | cost 20.0 (80.0 left); `bankaiEndTick = now + 900`; settle lock 44 ticks (ability use denied while rows rise, ART 2.5); set component BANKAI | 2 rukia, 4 byakuya |
 | T3 | BASE, SHIKAI or BANKAI | SEALED | voice `common.seal` (valid in BASE, SHIKAI, BANKAI); key V; from BASE also key J | held character == locked character; not in hand grace; transition lock expired | cost 0; component SEALED; character NONE; cancel effects, roll back temp blocks; `release_lock = 40` ticks (2 s) from SHIKAI/BANKAI, **0 from BASE** (`sheatheLockTicks`: drawing again is only held back by the 10 tick transition lock); ability cooldowns are kept | 10 (none from BASE) |
-| T4 | BANKAI | SEALED | timeout: `now >= bankaiEndTick` (45 s cap) | none | as T3 but `release_lock = 160` (8 s, bankai recovery); extra warning sound | 11 |
-| T5 | BANKAI | SEALED | reiatsu reached 0 (only via upkeep drain, see rule R2) | none | as T4 | 11 |
+| T4 | BANKAI | **SHIKAI** (B4 step 4) | timeout: `now >= bankaiEndTick` (45 s timer) | none | state SHIKAI, character kept, shikai idle timer restarts, transition lock 10, bankai re-entry lock 1200 ticks; running casts are not cancelled; mirror SHIKAI; effect 11 (warning sound) | 11 |
+| T5 | - | - | (removed in B4 step 4: bankai has no drain and an empty bar does not end it; only the timer, seal, hand loss, death, logout, dimension change do) | | | |
 | T6 | SHIKAI | SEALED | reiatsu reached 0 (safety net, unreachable by design) | none | as T3 | 10 |
 | T7 | SHIKAI | SEALED | shikai idle timeout: no ability cast for 2400 ticks (120 s) | none | as T3 | 10 |
 | T8 | BASE, SHIKAI or BANKAI | SEALED | hand grace expired / item dropped | none | as T3, `release_lock = 0` | 10 (none from BASE) |
@@ -67,7 +69,7 @@ Order of checks (first failure wins, fixed so tests are deterministic): alive, r
 | SEALED | +4.0 | 0 | +4.0 (0 to full in 25 s) | +10 |
 | BASE | +4.0 | 0 | +4.0 (drawn but not released: same as SEALED) | +10 |
 | SHIKAI | +3.2 | -1.2 | +2.0 | +8 -3 = +5 |
-| BANKAI | +0.8 | -2.4 | -1.6 | +2 -6 = -4 |
+| BANKAI | +2.0 | 0 (B4 step 4) | +2.0 | +5 |
 
 Formula per batch: `value = clamp(value + regen(state) - drain(state), 0, max)`; all three rates are integers per batch, no rounding.
 
@@ -214,3 +216,21 @@ Decision of the orchestrator (FIXES_B4 step 3): drawing the sword no longer rele
 - **Triggers**: key J (toggle), right click with the item (SEALED only; server side, same path and guards), key R, voice (`*.shikai.release` is valid in BASE only; `common.seal` in BASE, SHIKAI, BANKAI), key V.
 - **HUD**: SEALED shows `[J] or right click: draw the sword`, BASE shows `[R] Release (shikai)` and the label "Drawn"; no ability boxes before shikai.
 - **Client animation**: `DrawTracker` plays the draw on SEALED -> BASE and the sheathe on BASE -> SEALED (also after a later seal from SHIKAI/BANKAI: the sheathe runs from the current model).
+
+## 10. B4 steps 4 and 5: usable bankai, scaled abilities, shunpo
+
+Decisions of the orchestrator (the user had not answered): shikai abilities cost reiatsu as usual inside bankai; bankai lasts 45 s; shunpo is shared by both characters, key Y.
+
+### 10.1 Bankai
+- **Entry** (T2): needs a full bar and is not locked, costs **0**. `bankaiEndTick = now + bankaiCapTicks` (900). The settle lock (44 ticks) stays. Re-entry lock: `bankaiReentryTicks = 1200` (60 s) starts when bankai ends for any reason (timer, seal V, dimension change); rejected as `RELEASE_LOCK` (wire COOLDOWN). Death and logout clear it.
+- **Reiatsu in bankai**: regeneration +2.0/s (rate 5 per batch), no upkeep drain. Spending still cannot reach 0 (R2). An empty bar never ends bankai.
+- **End** (T4): the timer ends bankai into SHIKAI with the sword still drawn and the character locked; HUD "Bankai ended", effect 11. Seal (V, voice), hand loss (grace 20 ticks), drop, death, logout, dimension change still go to SEALED as before.
+- **Abilities**: bankai abilities cost 0 and have cooldowns (Absolute zero 20 s, Scatter 15 s, Hakuteiken 30 s); a rejected cast starts no cooldown. In BANKAI the machine also accepts the character's **shikai abilities** with their normal cost and cooldown (rule: `requiredState == state` or `state == BANKAI && requiredState == SHIKAI`); the global cooldown (12 ticks) and the settle lock apply to both tiers. Keys: Z H B shikai abilities (SHIKAI and BANKAI), **U I O** bankai abilities (new rebindable bindings). The HUD strip shows the bankai row first, then the shikai row.
+- **Numbers**: every area, damage and cap is in `AbilitySpec.params` (`AbilityParams` keys, `BalanceConfig.defaults()`), none hard coded in the server. Justification and table: LOG "B4 step 4". Temp ice keeps the per-cast cap (64) and the per-player cap (128) of `TempBlocks`.
+
+### 10.2 Shunpo
+- Request: C2S `shunpo` (`ShunpoC2S{source, clientSeq}`, no position). Server: `StateMachine.shunpo` checks, in this order, alive/rate/seq, state SHIKAI or BANKAI (`NOT_IN_STATE`), item and hand grace (`WRONG_ITEM`), transition lock, shunpo cooldown 50 ticks (`ON_COOLDOWN`), reiatsu (cost 5.0, never to 0), then walks the path.
+- Path (`ShunpoPath`, pure): direction from the server's yaw/pitch (on the ground a downward look is flattened; straight up/down uses the horizontal facing), sampled every 0.25 blocks up to 9.0; stops before the first sample where the player box does not fit (wall, ceiling, border, unloaded chunk); from the ground the landing is snapped down onto the floor (looking up gives a shorter dash) and must be safe (ground within 3 blocks, no lava, fire, magma, cactus, campfire); an airborne start may land in the air. Fewer than 1.5 usable blocks: `NO_ROOM` -> wire `BLOCKED` (byte 7), no cost, no cooldown.
+- Accepted: `StateEvent.ShunpoMove`; the glue teleports (`networkHandler.requestTeleport`) and broadcasts `effect_event` id 40 (x y z = start, d = vector to the end, params = distance, character code, stopped-by-wall) to the player and trackers.
+- Shunpo counts as activity for the shikai idle timer. Not synced to the HUD (no cooldown icon).
+- Tests: `ShunpoTest`, `BankaiTest`, plus the amended Transition/AutoRevert/Reiatsu/Balance/Ability tests.

@@ -28,11 +28,12 @@ class BalanceConfigTest {
 		assertEquals(10, c.rate(ZanpakutoState.SEALED).net());
 		assertEquals(10, c.rate(ZanpakutoState.BASE).net()); // drawn base form regenerates like sealed
 		assertEquals(5, c.rate(ZanpakutoState.SHIKAI).net());
-		assertEquals(-4, c.rate(ZanpakutoState.BANKAI).net());
-		// bankai cap comes before the idle drain reaches zero from 80.0
-		int toZero = ReiatsuMath.ticksToZero(new ReiatsuState(c.maxTenths() - c.bankaiCost(), c.maxTenths()),
-				c.rate(ZanpakutoState.BANKAI), c.regenBatchTicks());
-		assertTrue(c.bankaiCapTicks() < toZero, "cap " + c.bankaiCapTicks() + " vs zero at " + toZero);
+		// B4 step 4: bankai costs no reiatsu, has no upkeep drain, and ends by its own timer
+		assertEquals(5, c.rate(ZanpakutoState.BANKAI).net());
+		assertEquals(0, c.rate(ZanpakutoState.BANKAI).drainPerBatch());
+		assertEquals(0, c.bankaiCost());
+		assertEquals(900, c.bankaiCapTicks());
+		assertTrue(c.bankaiReentryTicks() > 0);
 		// a per-second rate must give a whole number of tenths per batch: batches per second is integral
 		assertEquals(0, 20 % c.regenBatchTicks());
 
@@ -44,7 +45,8 @@ class BalanceConfigTest {
 			assertNotNull(spec, a.name());
 			assertEquals(a, spec.id());
 			assertTrue(spec.costTenths() < c.maxTenths(), a.name());
-			assertTrue(spec.costTenths() > 0 && spec.cooldownTicks() > 0, a.name());
+			assertTrue(spec.cooldownTicks() > 0, a.name());
+			assertEquals(a.requiredState == ZanpakutoState.BANKAI, spec.costTenths() == 0, a.name() + ": bankai abilities are free, shikai ones cost");
 			assertTrue(codes.add(a.code), "duplicate code " + a);
 			assertTrue(effects.add(spec.effectId()), "duplicate effect id " + a);
 			assertTrue(ids.add(a.commandId), "duplicate command id " + a);
