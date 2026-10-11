@@ -20,7 +20,10 @@ import java.util.function.LongSupplier;
  *       two consecutive interims of the same utterance;</li>
  *   <li>one command per utterance index; same command debounce {@code debounceMs}; any command {@code globalGapMs};</li>
  *   <li>consumed text: for {@code consumedTextMs} after a fire, a message starting with the same key tokens has them
- *       removed (the Web Speech API repeats finals); an empty remainder is dropped.</li>
+ *       removed (the Web Speech API repeats finals); an empty remainder is dropped;</li>
+ *   <li>alternatives (G3): when a final result matched nothing usable, the lower ranked recogniser hypotheses are tried
+ *       in order under the same rules, but only a confident match ({@link #ALT_MIN_CONFIDENCE}) may fire, so a wrong
+ *       second guess of ordinary speech cannot start a command.</li>
  * </ul>
  */
 public final class VoiceProcessor {
@@ -38,6 +41,11 @@ public final class VoiceProcessor {
 			return outcome == Outcome.FIRED;
 		}
 	}
+
+	/** A match found only in a lower ranked alternative must be at least this confident. */
+	public static final double ALT_MIN_CONFIDENCE = 0.93;
+	/** At most this many alternatives are looked at. */
+	public static final int MAX_ALTERNATIVES = 3;
 
 	private final PhraseMatcher matcher;
 	private final VoiceConfig cfg;
@@ -70,8 +78,33 @@ public final class VoiceProcessor {
 	}
 
 	public Decision process(VoiceMessage msg, GateContext ctx) {
+		Decision main = run(msg, msg.text(), ctx, 0.0);
+		if (main.fired() || !msg.isFinal() || msg.alternatives().isEmpty()) {
+			return main;
+		}
+		switch (main.outcome()) {
+			case NO_MATCH, WEAK_NOT_WHOLE_UTTERANCE, AMBIGUOUS, GATED_OUT -> { }
+			default -> {
+				return main; // debounced, empty or ignored: an alternative must not get around that
+			}
+		}
+		int tried = 0;
+		for (String alt : msg.alternatives()) {
+			if (alt == null || alt.isBlank() || tried++ >= MAX_ALTERNATIVES) {
+				continue;
+			}
+			Decision d = run(msg, alt, ctx, ALT_MIN_CONFIDENCE);
+			if (d.fired()) {
+				return new Decision(Outcome.FIRED, d.commandId(), d.confidence(), d.normalized(), d.detail() + " (alternative " + tried + ")");
+			}
+		}
+		return main;
+	}
+
+	/** One text through the whole pipeline; {@code minConfidence} above 0 rejects weaker matches (alternatives). */
+	private Decision run(VoiceMessage msg, String text, GateContext ctx, double minConfidence) {
 		long now = clockMs.getAsLong();
-		String key = Normalizer.normalize(msg.text());
+		String key = Normalizer.normalize(text);
 		if (key.isEmpty()) {
 			return new Decision(Outcome.EMPTY, null, 0.0, key, "");
 		}
@@ -110,6 +143,9 @@ public final class VoiceProcessor {
 				return new Decision(Outcome.AMBIGUOUS, null, r.confidence(), key, "");
 			}
 			default -> { }
+		}
+		if (r.confidence() < minConfidence) {
+			return new Decision(Outcome.NO_MATCH, null, r.confidence(), key, "alternative below " + minConfidence);
 		}
 		Command cmd = r.command();
 		if (!msg.isFinal()) {

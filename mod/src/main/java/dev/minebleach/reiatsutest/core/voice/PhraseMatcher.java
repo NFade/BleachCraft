@@ -4,6 +4,7 @@ import dev.minebleach.reiatsutest.core.voice.PhraseBook.Command;
 import dev.minebleach.reiatsutest.core.voice.PhraseBook.Variant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,10 @@ import java.util.Map;
  *   <li>same token count as a multi-token variant: every aligned token pair within its own Levenshtein limit
  *       (length 1..4 exact, 5..7 one edit, 8+ two edits).</li>
  * </ul>
+ *
+ * Variants that survive that pass with no window get one more chance on the coarser {@link LooseKey} (vowel colour,
+ * voicing, "nd" versus "n"), only for long non-weak variants (loose length 8+), with a lower confidence than a strict
+ * hit and the same per-token, split-word and stray-fragment guards.
  *
  * Weak variants ("seal", lone "chire") only match when the whole utterance, minus filler words, is the variant. The
  * best command must lead the second best one by at least {@code margin}, otherwise nothing fires.
@@ -48,12 +53,35 @@ public final class PhraseMatcher {
 		}
 	}
 
+	/** Smallest loose key length that may be matched loosely (shorter keys stay exact-only or strict). */
+	static final int LOOSE_MIN_LENGTH = 11;
+	/** Largest loose confidence; a strict hit scoring higher wins, an equal one makes the pair ambiguous. */
+	private static final double LOOSE_CAP = 0.97;
+	private static final double LOOSE_EXACT = 0.95;
+
+	/** Loose view of a variant: loose tokens, their compact form and whether the strict variant has the particle "no". */
+	private record LooseTarget(List<String> tokens, String compact, boolean hasNo, List<String> strictTokens) {
+	}
+
 	private final PhraseBook book;
 	private final Config cfg;
+	private final Map<Variant, LooseTarget> loose = new IdentityHashMap<>();
 
 	public PhraseMatcher(PhraseBook book, Config cfg) {
 		this.book = book;
 		this.cfg = cfg;
+		for (Command c : book.commands()) {
+			for (Variant v : c.variants()) {
+				if (v.weak()) {
+					continue;
+				}
+				List<String> lt = LooseKey.tokens(v.tokens());
+				String compact = Normalizer.compact(lt);
+				if (compact.length() >= LOOSE_MIN_LENGTH) {
+					loose.put(v, new LooseTarget(List.copyOf(lt), compact, v.tokens().contains("no"), v.tokens()));
+				}
+			}
+		}
 	}
 
 	public PhraseBook book() {
@@ -81,6 +109,7 @@ public final class PhraseMatcher {
 			}
 		}
 		boolean weakNotWhole = false;
+		List<String> looseTokens = null;
 		Map<Command, Double> best = new HashMap<>();
 		Map<Command, Variant> bestVariant = new HashMap<>();
 		for (Command c : book.commands()) {
@@ -99,6 +128,13 @@ public final class PhraseMatcher {
 					}
 				} else {
 					s = anyWindow(tokens, v);
+					LooseTarget lt = s < 0 ? loose.get(v) : null;
+					if (lt != null) {
+						if (looseTokens == null) {
+							looseTokens = LooseKey.tokens(tokens);
+						}
+						s = anyWindowLoose(tokens, looseTokens, lt);
+					}
 				}
 				if (s >= 0 && s > best.getOrDefault(c, -1.0)) {
 					best.put(c, s);
@@ -160,6 +196,84 @@ public final class PhraseMatcher {
 			}
 		}
 		return best;
+	}
+
+	// ------------------------------------------------------------------ loose scoring
+
+	private double anyWindowLoose(List<String> strictTokens, List<String> tokens, LooseTarget t) {
+		int len = t.compact().length();
+		int slack = maxLevenshtein(len);
+		double best = -1;
+		for (int i = 0; i < tokens.size(); i++) {
+			int total = 0;
+			for (int j = i; j < tokens.size(); j++) {
+				total += tokens.get(j).length();
+				if (total > len + slack) {
+					break;
+				}
+				if (total >= len - slack) {
+					best = Math.max(best, scoreSpanLoose(strictTokens.subList(i, j + 1), tokens.subList(i, j + 1), t));
+				}
+			}
+		}
+		return best;
+	}
+
+	/**
+	 * Same guards as {@link #scoreSpan} with room for a word the recogniser split into several small ones
+	 * ("send bonds a cura"): up to n + 3 tokens, at most one single-letter fragment and never at the window edge.
+	 */
+	private double scoreSpanLoose(List<String> strictSpan, List<String> span, LooseTarget t) {
+		String compact = Normalizer.compact(span);
+		int n = t.tokens().size();
+		int k = span.size();
+		boolean exact = compact.equals(t.compact());
+		if (!exact) {
+			if (k > n + 3 || k < n - 1 || (k == n - 1 && (n < 3 || !t.hasNo()))) {
+				return -1;
+			}
+		}
+		if (k > n) {
+			boolean variantHasLetter = t.tokens().stream().anyMatch(x -> x.length() < 2);
+			int strays = 0;
+			for (int i = 0; i < k; i++) {
+				if (span.get(i).length() < 2 && !variantHasLetter) {
+					strays++;
+					if (i == 0 || i == k - 1 || strays > 1) {
+						return -1;
+					}
+				}
+			}
+			if (!exact && JaroWinkler.levenshtein(compact, t.compact()) > Math.max(1, maxLevenshtein(t.compact().length()) - 1)) {
+				return -1;
+			}
+		}
+		if (exact) {
+			return LOOSE_EXACT;
+		}
+		int len = t.compact().length();
+		if (Math.abs(compact.length() - len) > maxLevenshtein(len)
+				|| JaroWinkler.levenshtein(compact, t.compact()) > maxLevenshtein(len)) {
+			return -1;
+		}
+		double jw = JaroWinkler.similarity(compact, t.compact());
+		if (jw < Math.max(minSimilarity(len) + 0.02, cfg.threshold())) {
+			return -1;
+		}
+		if (k > 1 && k == n) {
+			// aligned words: the loose pair AND the strict pair (one more slip allowed) must both be close, so a shared
+			// long prefix ("senbonzakura kogeki" versus "senbonzakura kageyoshi") cannot carry a different last word
+			for (int i = 0; i < k; i++) {
+				String vt = t.tokens().get(i);
+				String st = t.strictTokens().get(i);
+				if (JaroWinkler.levenshtein(span.get(i), vt) > tokenLimit(vt.length())
+						|| JaroWinkler.levenshtein(strictSpan.get(i), st) > tokenLimit(st.length()) + 1) {
+					return -1;
+				}
+			}
+		}
+		double score = Math.min(LOOSE_CAP, jw * 0.98);
+		return score < cfg.threshold() ? -1 : score;
 	}
 
 	private double scoreSpan(List<String> tokens, int from, int to, Variant v) {

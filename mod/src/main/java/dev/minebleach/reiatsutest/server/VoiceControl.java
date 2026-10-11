@@ -310,9 +310,9 @@ public final class VoiceControl implements VoiceBackend {
 			if (msg.clientTimeMs() > 0) {
 				o.addProperty("browserToAppliedMs", System.currentTimeMillis() - msg.clientTimeMs());
 			}
-			ReiatsuTest.LOGGER.info("[voice] \"{}\" ({}, final={}) -> {} conf={} => {} state={} in {} ms", msg.text(), msg.lang(),
-					msg.isFinal(), d.commandId(), o.get("confidence"), o.get("result").getAsString(), sm.state(),
-					String.format(Locale.ROOT, "%.2f", latencyMs));
+			ReiatsuTest.LOGGER.info("[voice] \"{}\" ({}, final={}) key='{}' via {} -> {} conf={} => {} state={} in {} ms", msg.text(),
+					msg.lang(), msg.isFinal(), d.normalized(), d.detail(), d.commandId(), o.get("confidence"), o.get("result").getAsString(),
+					sm.state(), String.format(Locale.ROOT, "%.2f", latencyMs));
 		} else if (d.outcome() == VoiceProcessor.Outcome.GATED_OUT || d.outcome() == VoiceProcessor.Outcome.AMBIGUOUS) {
 			if (msg.isFinal()) {
 				VoiceHudState.result(msg.text(), d.commandId(), VoiceHudState.Result.GATED);
@@ -327,7 +327,13 @@ public final class VoiceControl implements VoiceBackend {
 			if (msg.isFinal() && d.outcome() != VoiceProcessor.Outcome.EMPTY) {
 				VoiceHudState.result(msg.text(), d.commandId(), VoiceHudState.Result.NO_MATCH);
 			}
-			ReiatsuTest.LOGGER.debug("[voice] \"{}\" -> {}", msg.text(), d.outcome().wire());
+			if (msg.isFinal() && d.outcome() != VoiceProcessor.Outcome.EMPTY) {
+				// tuning aid (G3): what the recogniser said, the key the matcher saw and how many alternatives came with it
+				ReiatsuTest.LOGGER.info("[voice] heard \"{}\" ({}) key='{}' alts={} -> {}", msg.text(), msg.lang(), d.normalized(),
+						msg.alternatives().size(), d.outcome().wire());
+			} else {
+				ReiatsuTest.LOGGER.debug("[voice] \"{}\" -> {}", msg.text(), d.outcome().wire());
+			}
 		}
 		o.addProperty("state", sm.state().name());
 		return o.toString();

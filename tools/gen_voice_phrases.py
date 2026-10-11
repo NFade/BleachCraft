@@ -22,7 +22,11 @@ ROOT = Path(__file__).resolve().parent.parent
 MD = ROOT / "design" / "VOICE_PHRASES.md"
 OUT = ROOT / "mod" / "src" / "main" / "resources" / "assets" / "reiatsu_test" / "voice" / "phrases.json"
 
-FILLERS = ["please", "now", "okay", "ok", "пожалуйста", "давай", "ну", "сейчас", "お願い"]
+# Fillers are ignored by the whole-utterance rule of weak variants ("uh, seal"). G3 added hesitations and lead-in words
+# that real speech has; none of them is a command word, and they never help a non-weak variant to match.
+FILLERS = ["please", "now", "okay", "ok", "пожалуйста", "давай", "ну", "сейчас", "お願い",
+           "uh", "um", "er", "ah", "oh", "hmm", "so", "yeah", "then",
+           "эм", "ага", "так", "вот", "ладно", "тогда"]
 
 # Commands that may fire from a stable interim result (VOICE_PHRASES 5.4 early-OK set). Never: bankai releases,
 # scatter, hakuteiken, absolute zero, senkei (expensive or irreversible).
@@ -36,17 +40,50 @@ INTERIM_SAFE = {
 EXTRA_ALIASES = {
     # md 2.13 lists "sen kei" as reachable by fuzzy matching (tier F); the matcher refuses to assemble a key of 6 letters
     # or less from two ordinary words (it would turn "banka i" into "bankai"), so the split form is an explicit alias.
-    "byakuya.bankai.senkei": [("sen kei", False)],
+    #
+    # --- G3 (live speech): forms a recogniser plausibly gives for the same sounds (UNVERIFIED without a live
+    # microphone). Each one is a nonsense phrase in ordinary speech; the loose key (LooseKey) covers long names beyond
+    # this list. Never add a spelling whose key equals a gated "bank eye" family key ("bankei", "bankeye" -> "banke").
+    #
+    # the key of Shirayuki is only 8 letters, so a three-way split ("she ra yuki") is out of fuzzy reach
+    "rukia.shikai.release": [("she ra yuki", False), ("shi ra yuki", False), ("sherry yuki", False),
+                             ("мае сода но шира юки", False), ("широ юки", True)],
+    # "bankai" is 6 letters (exact-only), so the vowel slips of real recognisers are explicit aliases
+    "rukia.bankai.release": [("bankay", False), ("bunkay", False), ("bonkay", False), ("bang kai", False),
+                             ("bung kai", False)],
+    "rukia.bankai.absolute_zero": [("absolute zeros", False)],
+    # Kageyoshi: the ey fold shortens its key to 6 letters ("kagesi", exact-only); the spaced spellings keep eight
+    # letters and so one slip of tolerance
+    "byakuya.bankai.release": [("kage yoshi", False), ("kaga yoshi", False), ("kagayoshi", False),
+                               ("bankay", False), ("bunkay", False), ("bonkay", False), ("bang kai", False),
+                               ("bung kai", False)],
+    "byakuya.shikai.release": [("sherry senbonzakura", False), ("chiray senbonzakura", False),
+                               ("чере сенбонзакура", False)],
+    "byakuya.shikai.mode_attack": [("attacked mode", False), ("режим атака", False)],
+    "byakuya.shikai.mode_barrier": [("barrier modo", False), ("bury her mode", False),
+                                    ("bow gyo mode", False), ("режим барьер", False), ("режим купол", False)],
+    "byakuya.bankai.scatter": [("sherry senbonzakura", False), ("chiray senbonzakura", False),
+                               ("чере сенбонзакура", False), ("лепестковая буря", False),
+                               ("буря из лепестков", False), ("шторм из лепестков", False), ("petal storms", False)],
+    "byakuya.bankai.hakuteiken": [("haku tei ken", False), ("hakutei ken", False), ("хаку тейкен", False)],
+    # senkei is optional and 6 letters long: exact-only, so the common mis-hearings are listed ("sankei"/"sankey" is
+    # left out on purpose: its key "sanke" is also the plain English word)
+    "byakuya.bankai.senkei": [("sen kei", False), ("sen kai", False), ("senkai", False),
+                              ("senkay", False), ("sankay", False), ("сенкай", False)],
+    # seal: only the whole utterance counts (weak), so natural objects of the verb are variants of their own
+    "common.seal": [("seal your sword", True), ("seal my sword", True), ("seal the blade", True),
+                    ("seal the zanpakuto", True), ("запечатай катану", True), ("запечатать катану", True),
+                    ("запечатай свой меч", True)],
 }
 
 # Context-gated ASR forms of "bankai" (decision: treat "bank eye" as bankai ONLY in SHIKAI + full reiatsu + item).
 GATED_ALIASES = {
     "rukia.bankai.release": [
         ("bank eye", True), ("bankeye", True), ("bank i", True), ("bank ai", True), ("bank eye hakka no togame", False),
-        ("bank i hakka no togame", False),
+        ("bank i hakka no togame", False), ("bankie", True), ("banki", True),
     ],
     "byakuya.bankai.release": [
-        ("bank eye", True), ("bankeye", True), ("bank i", True), ("bank ai", True),
+        ("bank eye", True), ("bankeye", True), ("bank i", True), ("bank ai", True), ("bankie", True), ("banki", True),
         ("bank eye senbonzakura kageyoshi", False), ("bank i senbonzakura kageyoshi", False),
     ],
 }

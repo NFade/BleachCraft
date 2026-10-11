@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.voice;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -11,7 +12,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.LongSupplier;
@@ -40,6 +43,7 @@ public final class VoiceHttp {
 	}
 
 	private static final int MAX_TEXT_CHARS = 1000;
+	private static final int MAX_ALTERNATIVES = 4;
 
 	private final VoiceConfig cfg;
 	private final VoiceBackend backend;
@@ -189,7 +193,16 @@ public final class VoiceHttp {
 			}
 			long utt = o.has("utt") ? o.get("utt").getAsLong() : -1;
 			long t = o.has("t") ? o.get("t").getAsLong() : 0;
-			return new VoiceMessage(text, fin, lang, utt, t);
+			List<String> alts = new ArrayList<>();
+			if (o.has("alts") && o.get("alts").isJsonArray()) {
+				for (JsonElement e : o.getAsJsonArray("alts")) {
+					String alt = e.getAsString();
+					if (alts.size() < MAX_ALTERNATIVES && !alt.isBlank() && alt.length() <= MAX_TEXT_CHARS) {
+						alts.add(alt);
+					}
+				}
+			}
+			return new VoiceMessage(text, fin, lang, utt, t, alts);
 		} catch (ClassCastException | IllegalStateException | NumberFormatException | UnsupportedOperationException e) {
 			throw new IllegalArgumentException("wrong field type");
 		}

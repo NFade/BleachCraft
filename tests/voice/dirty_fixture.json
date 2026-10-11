@@ -1,0 +1,1682 @@
+{
+ "_comment": "G3 dirty-speech fixture (2026-10-11): ASR-style renderings written from how Web Speech en-US/ru-RU is expected to split, voice and pad the names. NOT recorded from a live microphone (UNVERIFIED). Positives must fire their command in a context valid for it; neutrals must never fire in any gate context. The 202/153 fixture next to this file is untouched.",
+ "version": 1,
+ "positives": [
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "may sodeno shirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "mai sode no shirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "my sode no shirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "Mae so day no she ra yuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "may soda no shirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "mae sode no sheerah yuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "Mae, Sode no Shira Yuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "maye sode no sirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "mei sode no shira yuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "uh mae sode no shirayuki please"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "okay so mae sode no shirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "shira yuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "sirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "shirayuki now"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "sheera yuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "she ra yuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "shirayuki!"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "dance sode no shirayuki"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "Мае Сода но Сираюки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "Май сода но сирайуки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "мае содэ но сирайуки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "мае сода но шира юки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "мае соде но сира юки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "ширайуки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "сира юки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "шираюки"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "ru-RU",
+   "text": "ну мае содэ но ширайюки пожалуйста"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "some no my tsukishiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "tsuki shiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "sukishiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "suki shiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "zuki shiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "tsuki sheero"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "some no mai tsukishiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "somenomai tsukishiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "so me no mai tsuki shiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "sumo no mai tsukishiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "tsukishiro please"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "some no my suki shiro"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "ru-RU",
+   "text": "сомэ но май цукиширо"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "ru-RU",
+   "text": "соме но май цукиширо"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "ru-RU",
+   "text": "сомэ но май цуки сиро"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "ru-RU",
+   "text": "цуки широ"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "ru-RU",
+   "text": "цукиширо"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "ru-RU",
+   "text": "суки сиро"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "en-US",
+   "text": "haku ren"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "en-US",
+   "text": "hakuren please"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "en-US",
+   "text": "tsugi no mai hakuren"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "en-US",
+   "text": "sugi no mai hakuren"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "en-US",
+   "text": "sue gee no my hakuren"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "en-US",
+   "text": "tsugi no my haku ren"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "en-US",
+   "text": "next dance hakuren"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "ru-RU",
+   "text": "цуги но май хакурен"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "ru-RU",
+   "text": "тсуги но май хакурэн"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "ru-RU",
+   "text": "хаку рен"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "ru-RU",
+   "text": "хакурин"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "ru-RU",
+   "text": "суги но май хакурен"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "en-US",
+   "text": "sirafune"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "en-US",
+   "text": "shira fune"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "en-US",
+   "text": "shirafuni"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "en-US",
+   "text": "san no mai shirafune"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "en-US",
+   "text": "sun no mai shirafune"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "en-US",
+   "text": "son no my shira fune"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "en-US",
+   "text": "third dance shirafune"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "ru-RU",
+   "text": "сан но май ширафуне"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "ru-RU",
+   "text": "сан но май сирафунэ"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "ru-RU",
+   "text": "шира фуне"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "ru-RU",
+   "text": "сирафуни"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "ru-RU",
+   "text": "ширафунэ пожалуйста"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bunkai"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bankai!"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "ban kai"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bankai hakka no togame"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bunkai hakka no togame"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bankai haka no togame"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bankai hakka no togami"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bankai hakka notogame"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "hakka no togame"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "haka no togame"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "hakka no toga me"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bankai hack a no toga may"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "bankai please"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "okay bankai"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай!"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкаи"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "бункай"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай хакка но тогамэ"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай хака но тогамэ"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай хакка но тогами"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "хакка но тогамэ"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "хака но тогаме"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай пожалуйста"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "ну банкай давай"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "absolute zero"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "absolute zeros"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "apsolute zero"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "absolut zero"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "absolute sero"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "absolute zero please"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "the absolute zero"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "bankai absolute zero"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "absolute zeroh"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "zettai reido"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "zettai rei do"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "zetai reido"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "ru-RU",
+   "text": "абсолютный ноль"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "ru-RU",
+   "text": "абсолютный ноль пожалуйста"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "ru-RU",
+   "text": "абсолют ноль"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "ru-RU",
+   "text": "абсолютный нол"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "ru-RU",
+   "text": "апсолютный ноль"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "ru-RU",
+   "text": "абсолютный нуль"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "ru-RU",
+   "text": "ну абсолютный ноль"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire senbonzakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "cheery senbonzakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "sherry senbonzakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chiri senbonzakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chiray senbonzakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chi re senbonzakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "scatter senbonzakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire send bonds a cura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire sen bon zakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire sembon zakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire senbon zakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire sen bonzai kura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire senbonsakura"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "scatter sembonzakura please"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "scatter"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "Чире Сенбонзакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чири сенбонзакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире сенбон закура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чири сенбон закура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире сэмбонзакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире сембонзакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире сенбонзакуро"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чере сенбонзакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чиле сенбонзакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире сенбонсакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире сенбон сакура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире сем бон закура"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "attack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "a tack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "attacked mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "attack mood"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "the attack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "attack mode please"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "kogeki mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "kogeki modo"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "kogeki mood"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "senbonzakura attack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "senbonzakura kogeki mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "send bonds a cura attack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "sen bon zakura attack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "attack mod"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "Set attack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "en-US",
+   "text": "switch to attack mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "ru-RU",
+   "text": "режим атаки"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "ru-RU",
+   "text": "режим атака"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "ru-RU",
+   "text": "режим атаки сенбонзакура"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "ru-RU",
+   "text": "сенбонзакура режим атаки"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "ru-RU",
+   "text": "сенбон закура режим атаки"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "ru-RU",
+   "text": "режим атаки пожалуйста"
+  },
+  {
+   "command": "byakuya.shikai.mode_attack",
+   "lang": "ru-RU",
+   "text": "включи режим атаки"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "barrier mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "bury her mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "barrier mood"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "barrio mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "barrier modo"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "bogyo mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "bogyo modo"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "bow gyo mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "dome mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "dome mood"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "barrie mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "the barrier mode please"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "switch to barrier mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "en-US",
+   "text": "senbonzakura barrier mode"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "ru-RU",
+   "text": "режим барьера"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "ru-RU",
+   "text": "режим барьер"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "ru-RU",
+   "text": "режим купола"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "ru-RU",
+   "text": "режим купол"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "ru-RU",
+   "text": "режим барьера сенбонзакура"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "ru-RU",
+   "text": "включи режим барьера"
+  },
+  {
+   "command": "byakuya.shikai.mode_barrier",
+   "lang": "ru-RU",
+   "text": "режим борьера"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "bunkai"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "kageyoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "kagey oshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "kage yoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "kaga yoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "kagayoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "senbonzakura kageyoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "senbonzakura kage yoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "bankai senbonzakura kageyoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "bunkai senbonzakura kage yoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "bankai sen bon zakura kageyoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "bankai send bonds a cura kage yoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "bankai senbonzakura kagayoshi"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "кагеёси"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "кагэёси"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "кагеёши"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "каге ёси"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай сенбонзакура кагеёши"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай сенбон закура кагэёси"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкай сенбонзакура кагаёси"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "chire senbonzakura"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "sakura fubuki"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "sakura fu buki"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "sakura fubuki please"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "petal storm"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "petal storms"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "petals storm"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "chire send bonds a cura"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "сакура фубуки"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "сакура фу буки"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "сакура фубуку"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "буря лепестков"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "шторм лепестков"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "лепестковая буря"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "чири сенбон закура"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "hakuteiken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "haku tei ken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "hakutei ken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "shukei hakuteiken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "shoe kay hakuteiken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "shuukei hakuteiken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "shukei haku tei ken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "hakutei kan"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "hakuteiken please"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "hakutaken"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "хакутэйкэн"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "хакутейкен"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "хаку тейкен"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "хакутеикен"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "сюкэй хакутэйкэн"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "шукей хакутейкен"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "шукэй хаку тэйкэн"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "хакутейкан"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "senkei"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "sen kei"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "sen kay"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "senkay"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "sankay"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "sen kai"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "senkei please"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "ru-RU",
+   "text": "сенкей"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "ru-RU",
+   "text": "сэнкэй"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "ru-RU",
+   "text": "сен кей"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "ru-RU",
+   "text": "сенкэй"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "ru-RU",
+   "text": "сенкэй пожалуйста"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "seal"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "seal it"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "seal sword"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "seal the sword"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "seal your sword"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "please seal"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "okay seal sword now"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "uh seal"
+  },
+  {
+   "command": "common.seal",
+   "lang": "en-US",
+   "text": "seal it please"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "запечатай"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "запечатай меч"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "запечатать меч"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "запечатать"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "запечатай мечь"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "запечатай клинок"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "печать"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "ну запечатай меч"
+  },
+  {
+   "command": "common.seal",
+   "lang": "ru-RU",
+   "text": "запечатай катану"
+  }
+ ],
+ "neutrals": [
+  {
+   "lang": "en-US",
+   "text": "attack more"
+  },
+  {
+   "lang": "en-US",
+   "text": "barrier more"
+  },
+  {
+   "lang": "en-US",
+   "text": "sealed"
+  },
+  {
+   "lang": "en-US",
+   "text": "send bonds to the bank"
+  },
+  {
+   "lang": "en-US",
+   "text": "a sandbox in the garden"
+  },
+  {
+   "lang": "en-US",
+   "text": "same bond as before"
+  },
+  {
+   "lang": "en-US",
+   "text": "samba dancing tonight"
+  },
+  {
+   "lang": "en-US",
+   "text": "absolutely not"
+  },
+  {
+   "lang": "en-US",
+   "text": "absolutely"
+  },
+  {
+   "lang": "en-US",
+   "text": "the zero point"
+  },
+  {
+   "lang": "en-US",
+   "text": "chili sauce on the side"
+  },
+  {
+   "lang": "en-US",
+   "text": "sherry the cat"
+  },
+  {
+   "lang": "en-US",
+   "text": "she ran yuki"
+  },
+  {
+   "lang": "en-US",
+   "text": "she ran away"
+  },
+  {
+   "lang": "en-US",
+   "text": "shi ra is here"
+  },
+  {
+   "lang": "en-US",
+   "text": "cheery tune"
+  },
+  {
+   "lang": "en-US",
+   "text": "chirp senbon"
+  },
+  {
+   "lang": "en-US",
+   "text": "kagayaki"
+  },
+  {
+   "lang": "en-US",
+   "text": "kaga is a city"
+  },
+  {
+   "lang": "en-US",
+   "text": "yoshi is a dinosaur"
+  },
+  {
+   "lang": "en-US",
+   "text": "gage yoshi"
+  },
+  {
+   "lang": "en-US",
+   "text": "bunkbed"
+  },
+  {
+   "lang": "en-US",
+   "text": "bunker hill"
+  },
+  {
+   "lang": "en-US",
+   "text": "bank on it"
+  },
+  {
+   "lang": "en-US",
+   "text": "i bank at night"
+  },
+  {
+   "lang": "en-US",
+   "text": "bang kite"
+  },
+  {
+   "lang": "en-US",
+   "text": "bung hole"
+  },
+  {
+   "lang": "en-US",
+   "text": "bonk him"
+  },
+  {
+   "lang": "en-US",
+   "text": "sankey diagram"
+  },
+  {
+   "lang": "en-US",
+   "text": "sunday kai"
+  },
+  {
+   "lang": "en-US",
+   "text": "send kate a message"
+  },
+  {
+   "lang": "en-US",
+   "text": "attack the mood"
+  },
+  {
+   "lang": "en-US",
+   "text": "attacked by zombies"
+  },
+  {
+   "lang": "en-US",
+   "text": "it was a mode"
+  },
+  {
+   "lang": "en-US",
+   "text": "barrier modem"
+  },
+  {
+   "lang": "en-US",
+   "text": "barrio hero"
+  },
+  {
+   "lang": "en-US",
+   "text": "boggy mode"
+  },
+  {
+   "lang": "en-US",
+   "text": "petal soup"
+  },
+  {
+   "lang": "en-US",
+   "text": "storm petrel"
+  },
+  {
+   "lang": "en-US",
+   "text": "sakura cherry tree"
+  },
+  {
+   "lang": "en-US",
+   "text": "sakura food booking"
+  },
+  {
+   "lang": "en-US",
+   "text": "hockey time"
+  },
+  {
+   "lang": "en-US",
+   "text": "hack the planet"
+  },
+  {
+   "lang": "en-US",
+   "text": "hack you"
+  },
+  {
+   "lang": "en-US",
+   "text": "take it in"
+  },
+  {
+   "lang": "en-US",
+   "text": "haku is nice"
+  },
+  {
+   "lang": "en-US",
+   "text": "ken doll"
+  },
+  {
+   "lang": "en-US",
+   "text": "seal the deal"
+  },
+  {
+   "lang": "en-US",
+   "text": "seal of approval"
+  },
+  {
+   "lang": "en-US",
+   "text": "i will seal it with wax"
+  },
+  {
+   "lang": "en-US",
+   "text": "uh what"
+  },
+  {
+   "lang": "en-US",
+   "text": "um okay"
+  },
+  {
+   "lang": "en-US",
+   "text": "so now what"
+  },
+  {
+   "lang": "en-US",
+   "text": "oh yeah"
+  },
+  {
+   "lang": "en-US",
+   "text": "then we go"
+  },
+  {
+   "lang": "en-US",
+   "text": "please wait"
+  },
+  {
+   "lang": "en-US",
+   "text": "now"
+  },
+  {
+   "lang": "en-US",
+   "text": "okay"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "уже поздно"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "так вот"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "ну ладно тогда"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "эм ага"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "режим работы"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "купол над домом"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "барьер на реке"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "лепестковая роза"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "буря из облаков"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "шторм над морем"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "абсолютный чемпион"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "нулевой уровень"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "кагэ мне сказал"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "каге бункер"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "широ юка"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "мае сода вода"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сода но вода"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "запечатай письмо"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "запечатай конверт"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "санкэй газета"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "хаку тейлор"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "чере пашка"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сем бон закон"
+  }
+ ]
+}

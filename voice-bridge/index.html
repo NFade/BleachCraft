@@ -376,7 +376,7 @@ function createRecognizer(env, hooks, overrides) {
       prepared: mode === "ptt", armed: mode === "always", stopping: false,
       resultFloor: 0, idleSpeech: false, startedAt: now(), audioAt: null, firstTextAt: null, promote: "", ilog: []
     };
-    rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; rec.lang = lang;
+    rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3; rec.lang = lang;
     if ("processLocally" in rec) rec.processLocally = s.local;
     wire(s);
     session = s;
@@ -450,7 +450,7 @@ function createRecognizer(env, hooks, overrides) {
         if (!txt) continue;
         if (s.firstTextAt == null) s.firstTextAt = now();
         if (pressState) pressState.gotText = true;
-        if (r.isFinal) { s.promote = ""; deliverFinal(s, txt, false); }
+        if (r.isFinal) { s.promote = ""; deliverFinal(s, txt, false, altsOf(r, txt)); }
         else interim += (interim ? " " : "") + txt;
       }
       if (interim) { s.promote = interim; s.ilog.push({ t: interim.toLowerCase(), at: now() }); if (s.ilog.length > 20) s.ilog.shift(); if (hooks.onInterim) hooks.onInterim(interim, { id: s.id, firstTextAt: s.firstTextAt }); }
@@ -493,11 +493,21 @@ function createRecognizer(env, hooks, overrides) {
   }
 
   // ---- results
-  function deliverFinal(s, text, promoted) {
+  // lower ranked hypotheses of a final result (best first), without the main text: the server tries them when the main
+  // text matched nothing, so a mis-ranked recogniser guess does not cost the command
+  function altsOf(r, main) {
+    var out = [];
+    for (var k = 1; k < (r.length || 1) && out.length < 3; k++) {
+      var t = ((r[k] && r[k].transcript) || "").trim();
+      if (t && t !== main && out.indexOf(t) < 0) out.push(t);
+    }
+    return out;
+  }
+  function deliverFinal(s, text, promoted, alts) {
     var p = pressState && pressState.session === s ? pressState : null;
     var meta = {
       id: s.id, lang: s.lang, local: s.local, track: s.track, promoted: promoted, mode: mode,
-      firstTextAt: s.firstTextAt, finalAt: now(),
+      firstTextAt: s.firstTextAt, finalAt: now(), alts: alts || [],
       pressToReadyMs: p ? (p.readyAt == null ? null : Math.max(0, p.readyAt - p.at)) : null,
       readyOnPress: p ? p.readyOnPress : null
     };
@@ -758,7 +768,7 @@ function createStats(max) {
   }
 
   // ------------------------------------------------------------ talking to the game
-  function post(text, isFinal, then) {
+  function post(text, isFinal, then, alts) {
     var started = performance.now();
     var ctl = ("AbortController" in window) ? new AbortController() : null;
     var timer = ctl ? setTimeout(function () { ctl.abort(); }, 2500) : null;
@@ -766,7 +776,7 @@ function createStats(max) {
     fetch(base + "/voice", {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify({ text: text, final: isFinal, lang: lang, utt: utt, t: Date.now() }),
+      body: JSON.stringify(alts && alts.length ? { text: text, final: isFinal, lang: lang, utt: utt, t: Date.now(), alts: alts } : { text: text, final: isFinal, lang: lang, utt: utt, t: Date.now() }),
       signal: ctl ? ctl.signal : undefined,
       cache: "no-store"
     }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
@@ -776,7 +786,7 @@ function createStats(max) {
       })
       .catch(function () { if (timer) clearTimeout(timer); then(null, null); });
   }
-  function sendFinal(text, meta) {
+  function sendFinal(text, meta, alts) {
     var myUtt = utt;
     var sentAt = performance.now();
     post(text, true, function (reply, rtt) {
@@ -792,7 +802,7 @@ function createStats(max) {
         stats.addUtt(u); renderStats();
       }
       refreshStatus();
-    });
+    }, alts);
     utt = myUtt + 1;
   }
   function sendInterim(text) {
@@ -962,7 +972,7 @@ function createStats(max) {
       if (audio.ctx && meta.stableAt != null && lvl.lastLoudAt > 0 && meta.stableAt >= lvl.lastLoudAt) u.endToStableMs = Math.round(meta.stableAt - lvl.lastLoudAt);
       if (meta.firstTextAt != null) u.textToFinalMs = Math.round(finalAt - meta.firstTextAt);
       lvl.onsetAt = null;
-      sendFinal(text, { rec: u, finalAt: finalAt });
+      sendFinal(text, { rec: u, finalAt: finalAt }, meta.alts);
     },
     onEvent: function (name, d) {
       if (name === "session") {
