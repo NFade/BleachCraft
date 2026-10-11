@@ -36,6 +36,15 @@ class DissolveMathTest {
 	}
 
 	@Test
+	void tipFirstTakesTheTopOfTheBladeBeforeTheHilt() {
+		// the default: the top (tip, held up) goes first, so the point near the tip is gone while the one near the hilt is still there
+		double p = 0.2;
+		double b = DissolveMath.boundary(p, true);
+		assertFalse(DissolveMath.keep(0.95, b, true));
+		assertTrue(DissolveMath.keep(0.1, b, true));
+	}
+
+	@Test
 	void everythingIsKeptAtTheStartAndGoneAtTheEnd() {
 		for (boolean tipFirst : new boolean[] {false, true}) {
 			double start = DissolveMath.boundary(0, tipFirst);

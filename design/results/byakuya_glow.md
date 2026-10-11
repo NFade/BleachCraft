@@ -24,7 +24,7 @@ After: the pink hold runs as before; then for `release.dissolveTime` (0.6 s) the
   2. the drawn blade, pink, with the quads whose centre lies behind the front removed by a Fabric `QuadTransform` (returning false drops the quad; checked in the renderer API sources);
   3. the glow shell over the remaining blade, alpha = `shellAlpha(p)` times `release.dissolveGlow`.
 - The hilt part of the drawn blade (s below 0) is never drawn during the dissolve; the shikai hilt replaces it.
-- The direction is hilt to tip by default. The brief said both "from the hilt to the tip" and "top to bottom"; `release.dissolveTipFirst` 1 reverses it. This is a guess and needs a look in game.
+- Direction: top to bottom in the world, as in the anime. The front starts at the tip and goes down to the hilt (`release.dissolveTipFirst` 1, the default). Why the tip is the top: the blade's model axis runs from the saya mouth to the tip along +Y (about (0, 0.99, -0.12)). Applying the item display transforms by hand (`senbonzakura_display.json`: third person rotation [45, 180, 0], first person [-172, 1, -173.1]), the tip ends up above the grip under both common Euler orders, so the held sword points tip up. This is a hand calculation, not measured: the arm pose can tilt it, and it has not been seen in game. `release.dissolveTipFirst` 0 gives hilt first.
 
 The petal swarm is still started at the end of the hold (`SwarmFx.onRelease`), not tied to the moving front. The petals leave from the hand and tip points, as before.
 
@@ -37,7 +37,7 @@ The petal swarm is still started at the end of the hold (`SwarmFx.onRelease`), n
 | `swarm.haloSize` | 0.7 | halo sprite size (blocks) |
 | `swarm.fpGlowMin` | 0.15 | first person glow factor next to the lens (1 = no falloff) |
 | `release.dissolveTime` | 0.6 | dissolve duration in seconds (0 = off, the blade vanishes at the end of the hold as before) |
-| `release.dissolveTipFirst` | 0 | 1 = the front starts at the tip |
+| `release.dissolveTipFirst` | 1 | 1 = the front starts at the tip (top of the held blade, down to the hilt); 0 = from the hilt up |
 | `release.dissolveGlow` | 0.45 | strength of the pink glow shell over the remaining blade |
 | `release.pinkTime` / `release.pinkColor` | 0.4 / `#FF6EC0` | existing pink hold (unchanged) |
 
@@ -46,6 +46,6 @@ The petal swarm is still started at the end of the hold (`SwarmFx.onRelease`), n
 - Nothing was rendered. Harness scenarios (`runPhase6` etc.) were not run, per the rules. The existing `fxpink`, `swarm` and `fxfix` checks may move: the halo colour, the first person glow falloff and the blade's presence after the hold have all changed.
 - Whether the pink glow shell looks right against the sword texture (it is the sword's own texture tinted pink, emissive, translucent); whether it shows z-fighting with the hilt at the tsuba.
 - The first person look of the glow shell at close range.
-- Whether the dissolve direction matches what the user meant.
+- The top-to-bottom direction rests on the hand calculation above, not on a render.
 - Rukia shares `ObjItemUnbakedModel`: she also gets a glow shell mesh and blade axis (not used, since the dissolve starts only for effect id 3).
 - Remote casters: the dissolve is keyed by entity id like the pink hold, but only the local player was looked at.

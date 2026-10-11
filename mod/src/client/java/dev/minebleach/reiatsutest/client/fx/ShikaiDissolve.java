@@ -6,7 +6,8 @@ import java.util.Map;
 
 /**
  * Byakuya shikai release, part 2 (plan G-glow). Right after the pink hold ({@link ReleaseHold}) the drawn blade does not vanish: it keeps
- * a pink glow and breaks into petals from the hilt towards the tip ({@code release.dissolveTipFirst} 1 reverses it), over
+ * a pink glow and breaks into petals from the top of the blade down to the hilt (the tip is up in the display transforms;
+ * {@code release.dissolveTipFirst} 0 reverses it to hilt first), over
  * {@code release.dissolveTime} seconds. The item model asks this class for the progress and the colours; the geometry clip is in
  * {@code ObjItemBakedModel}. Clocked by the FX clock like the hold. {@code release.dissolveTime} 0 turns the dissolve off.
  */
@@ -34,7 +35,7 @@ public final class ShikaiDissolve {
 	}
 
 	public static boolean tipFirst() {
-		return FxTune.d("release.dissolveTipFirst", 0.0) > 0.5;
+		return FxTune.d("release.dissolveTipFirst", 1.0) > 0.5;
 	}
 
 	/** 0..1 through the dissolve, or -1 before it starts and after it ends (the entry is then removed). */

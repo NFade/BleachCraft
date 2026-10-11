@@ -2,8 +2,8 @@ package dev.minebleach.reiatsutest.core.fx;
 
 /**
  * Byakuya shikai blade dissolve (plan G-glow): after the pink hold the drawn blade glows pink and breaks into petals along its length.
- * Pure math, no Minecraft types. The blade runs from s = 0 (saya mouth, the tsuba) to s = 1 (tip); the front moves from the hilt end
- * to the tip (default) or the other way round. Points with s below 0 are the hilt and never dissolve.
+ * Pure math, no Minecraft types. The blade runs from s = 0 (saya mouth, the tsuba) to s = 1 (tip); the front moves from the tip
+ * (top of the held blade, tip first is the default) down to the hilt, or the other way round. Points with s below 0 are the hilt and never dissolve.
  */
 public final class DissolveMath {
 	/** The front starts and ends a little outside the blade so the first and last quads are fully covered. */
