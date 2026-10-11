@@ -1,5 +1,8 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.kido.KidoId;
+import dev.minebleach.reiatsutest.core.kido.KidoMath;
+import dev.minebleach.reiatsutest.core.kido.KidoSpec;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.EffectIds;
 import dev.minebleach.reiatsutest.core.state.StateEvent;
@@ -36,6 +39,17 @@ final class ServerFx {
 		EffectEventS2C payload = new EffectEventS2C(EffectIds.SHUNPO, caster.getId(), tick, m.fromX(), m.fromY(), m.fromZ(),
 				(float) (m.toX() - m.fromX()), (float) (m.toY() - m.fromY()), (float) (m.toZ() - m.fromZ()), -1, tick,
 				new float[] {(float) m.distance(), who.code, m.stoppedByWall() ? 1f : 0f});
+		sendToViewers(caster, payload);
+	}
+
+	/**
+	 * Kido effect (ids 50 to 52): x y z = the caster's eye, d = unit look direction, target = id of the entity hit or -1, params =
+	 * {@link KidoMath#effectParams} (line length, travel ticks, burst radius, hit kind, speed, binding ticks).
+	 */
+	static void kido(ServerPlayerEntity caster, KidoId kido, int seed, Vec3d eye, Vec3d dir, KidoManager.Trace trace, KidoSpec spec) {
+		float[] params = KidoMath.effectParams(spec, trace.length(), trace.hitKind());
+		EffectEventS2C payload = new EffectEventS2C(kido.effectId, caster.getId(), seed, eye.x, eye.y, eye.z, (float) dir.x, (float) dir.y,
+				(float) dir.z, trace.entity() == null ? -1 : trace.entity().getId(), caster.getServer().getTicks(), params);
 		sendToViewers(caster, payload);
 	}
 

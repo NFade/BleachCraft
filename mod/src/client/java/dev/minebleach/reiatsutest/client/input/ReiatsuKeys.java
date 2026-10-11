@@ -3,6 +3,7 @@ package dev.minebleach.reiatsutest.client.input;
 import dev.minebleach.reiatsutest.client.ClientState;
 import dev.minebleach.reiatsutest.client.net.ClientNet;
 import dev.minebleach.reiatsutest.core.combat.BlockRules;
+import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
@@ -18,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * Key bindings (STATE_MACHINE section 4): J draw / sheathe, R release (BASE to SHIKAI), G bankai, V seal, Z / H / B shikai ability slots 1 to 3
- * (also inside bankai), U / I / O bankai ability slots 1 to 3, Y shunpo (SHIKAI and BANKAI). None of them is a
+ * (also inside bankai), U / I / O bankai ability slots 1 to 3, Y shunpo (SHIKAI and BANKAI), K / N / M kido spells (any state). None of them is a
  * vanilla 1.21.1 default (checked against GameOptions: W A S D, Space, E, F, Q, T, Tab, /, P, L, 1-9, C, X, F2, F5, F11,
  * Ctrl, Shift and the mouse buttons). All are rebindable in Options > Controls.
  */
@@ -41,6 +42,15 @@ public final class ReiatsuKeys {
 			register("key.reiatsu_test.bankai_ability_1", GLFW.GLFW_KEY_U),
 			register("key.reiatsu_test.bankai_ability_2", GLFW.GLFW_KEY_I),
 			register("key.reiatsu_test.bankai_ability_3", GLFW.GLFW_KEY_O)};
+
+	/**
+	 * Kido spells (B5), no state or sword needed: K Byakurai (Hado 4), N Shakkaho (Hado 31), M Sai (Bakudo 1). Free in vanilla 1.21.1
+	 * (no default binding on K, N or M) and not used by this mod; rebindable like the others.
+	 */
+	public static final KeyBinding[] KIDO = {
+			register("key.reiatsu_test.kido_1", GLFW.GLFW_KEY_K),
+			register("key.reiatsu_test.kido_2", GLFW.GLFW_KEY_N),
+			register("key.reiatsu_test.kido_3", GLFW.GLFW_KEY_M)};
 
 	private ReiatsuKeys() {
 	}
@@ -87,6 +97,24 @@ public final class ReiatsuKeys {
 		while (SHUNPO.wasPressed()) {
 			ClientNet.requestShunpo(RequestSource.KEY);
 		}
+		for (int slot = 0; slot < KIDO.length; slot++) {
+			while (KIDO[slot].wasPressed()) {
+				castKido(client, slot);
+			}
+		}
+	}
+
+	/** A kido key: only the local block rule is checked here (like the ability slots), the server re-validates everything. */
+	public static void castKido(MinecraftClient client, int slot) {
+		KidoId kido = KidoId.forSlot(slot);
+		if (kido == null) {
+			return;
+		}
+		if (client.player != null && !BlockRules.allowsAbility(ZanpakutoItem.isBlocking(client.player))) {
+			ClientNet.feedback(client, ResultCode.DENIED_STATE);
+			return;
+		}
+		ClientNet.castKido(kido, RequestSource.KEY);
 	}
 
 	/**
@@ -121,6 +149,9 @@ public final class ReiatsuKeys {
 			while (k.wasPressed()) { }
 		}
 		while (SHUNPO.wasPressed()) { }
+		for (KeyBinding k : KIDO) {
+			while (k.wasPressed()) { }
+		}
 	}
 
 	/** Dev/harness: simulate a physical key press of one binding (goes through the same wasPressed() path). */

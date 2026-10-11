@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.registry.data;
 
+import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,18 @@ public record CooldownData(Map<Byte, Integer> remainingTicks) {
 		Map<Byte, Integer> m = new HashMap<>();
 		remaining.forEach((a, t) -> m.put(a.code, t));
 		return new CooldownData(m);
+	}
+
+	/** Abilities and kido spells together; the codes do not collide (abilities 1 to 9, kido 101 and up). */
+	public static CooldownData of(Map<AbilityId, Integer> remaining, Map<KidoId, Integer> kido) {
+		Map<Byte, Integer> m = new HashMap<>();
+		remaining.forEach((a, t) -> m.put(a.code, t));
+		kido.forEach((k, t) -> m.put(k.code, t));
+		return new CooldownData(m);
+	}
+
+	public int remaining(KidoId id) {
+		return remainingTicks.getOrDefault(id.code, 0);
 	}
 
 	public int remaining(AbilityId id) {

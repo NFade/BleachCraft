@@ -86,7 +86,7 @@ class BalanceConfigTest {
 		for (PhraseBook.Command c : book.commands()) {
 			String id = c.id();
 			all.add(id);
-			if (!id.endsWith(".release") && !id.equals("common.seal")) {
+			if (!id.endsWith(".release") && !id.equals("common.seal") && !id.startsWith("kido.")) {
 				abilityIds.add(id);
 				AbilityId a = AbilityId.fromCommandId(id);
 				assertNotNull(a, "phrase table id without AbilityId: " + id);
@@ -110,6 +110,6 @@ class BalanceConfigTest {
 		assertTrue(all.contains(CommandIds.SEAL));
 		assertEquals(Set.of(ZanpakutoState.BASE, ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command(CommandIds.SEAL).states());
 		assertNull(CommandIds.forTransition(CharacterId.RUKIA, ZanpakutoState.BASE), "the draw has no voice command");
-		assertEquals(14, all.size());
+		assertEquals(17, all.size(), "14 zanpakuto commands + 3 kido, which have no AbilityId (see KidoId)");
 	}
 }

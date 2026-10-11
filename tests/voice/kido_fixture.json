@@ -1,0 +1,635 @@
+{
+ "_comment": "Kido (B5) voice fixture, separate from the 202/153, dirty (G3) and live (2026-10-11) ones. Positives must fire exactly their command in EVERY gate context (the spells need no state and no sword); neutrals must fire nothing in any context. The ASR spellings are expected renderings from VOICE_PHRASES 1.15 to 1.17 and the generator aliases, NOT recordings (UNVERIFIED with a real microphone).",
+ "version": 1,
+ "positives": [
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "Byakurai"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "Hado 4 Byakurai"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "hado no yon byakurai"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "Hado four Byakurai"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "hado for byakurai"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "okay Byakurai please"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "Hado number four"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "bya kurai"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "by a cry"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "be a cry"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "Hado 4"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "en-US",
+   "text": "hado yon"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "Хадо чётыре Бякурай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "Хадо четыре бякурай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "бякурай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "Хадо 4 Бякурай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "бьякурай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "ну бякурай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "хадо ён бякурай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "Хадо четыре"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ru-RU",
+   "text": "бя курай"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "破道の四 白雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "白雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "びゃくらい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "はどうのよん びゃくらい"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "Shakkaho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "Hado 31 Shakkaho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "hado no sanjuichi shakkaho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "Hado thirty one Shakkaho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "hado san ju ichi shakkaho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "Shakkaho please"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "shakaho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "sha ka ho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "shack a ho"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "Hado 31"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "en-US",
+   "text": "Hado thirty-one"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "Сякухо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "Сякахо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "Хадо тридцать один Сякахо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "Хадо 31 Сякухо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "шакахо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "давай сякахо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "Хадо тридцать один"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "сяка хо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ru-RU",
+   "text": "шаккахо"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "破道の三十一 赤火砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "赤火砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "しゃっかほう"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "はどうのさんじゅういち しゃっかほう"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "Sai"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "Bakudo 1 Sai"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "bakudo ichi sai"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "Bakudo no ichi Sai"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "Bakudo one"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "bakudo"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "Bakudo 1"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "bakudo number one"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "uh Sai"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "en-US",
+   "text": "Bakudo one Sai please"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "Сай"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "Бакудо один Сай"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "бакудо номер один"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "Бакудо 1"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "бакудо"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "Бакудо один"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "ну сай"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ru-RU",
+   "text": "бакудо но ити сай"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "縛道の一 塞"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "塞"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "さい"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "ばくどう さい"
+  }
+ ],
+ "neutrals": [
+  {
+   "lang": "en-US",
+   "text": "say"
+  },
+  {
+   "lang": "en-US",
+   "text": "sigh"
+  },
+  {
+   "lang": "en-US",
+   "text": "psy"
+  },
+  {
+   "lang": "en-US",
+   "text": "sad"
+  },
+  {
+   "lang": "en-US",
+   "text": "buy"
+  },
+  {
+   "lang": "en-US",
+   "text": "I said hi"
+  },
+  {
+   "lang": "en-US",
+   "text": "shock"
+  },
+  {
+   "lang": "en-US",
+   "text": "show me"
+  },
+  {
+   "lang": "en-US",
+   "text": "shack"
+  },
+  {
+   "lang": "en-US",
+   "text": "hat"
+  },
+  {
+   "lang": "en-US",
+   "text": "bike"
+  },
+  {
+   "lang": "en-US",
+   "text": "cannon"
+  },
+  {
+   "lang": "en-US",
+   "text": "lightning"
+  },
+  {
+   "lang": "en-US",
+   "text": "white lightning struck the tree"
+  },
+  {
+   "lang": "en-US",
+   "text": "the red fire cannon is loud"
+  },
+  {
+   "lang": "en-US",
+   "text": "fire in the hole"
+  },
+  {
+   "lang": "en-US",
+   "text": "he woke up by a cry in the night"
+  },
+  {
+   "lang": "en-US",
+   "text": "I heard a cry"
+  },
+  {
+   "lang": "en-US",
+   "text": "the sai is a weapon"
+  },
+  {
+   "lang": "en-US",
+   "text": "Sai is a good name"
+  },
+  {
+   "lang": "en-US",
+   "text": "bakudo is a spell category"
+  },
+  {
+   "lang": "en-US",
+   "text": "the bakudo spells are hard"
+  },
+  {
+   "lang": "en-US",
+   "text": "Hado"
+  },
+  {
+   "lang": "en-US",
+   "text": "hado is a word"
+  },
+  {
+   "lang": "en-US",
+   "text": "back to do the dishes"
+  },
+  {
+   "lang": "en-US",
+   "text": "back to do list"
+  },
+  {
+   "lang": "en-US",
+   "text": "Chicago"
+  },
+  {
+   "lang": "en-US",
+   "text": "sake"
+  },
+  {
+   "lang": "en-US",
+   "text": "sky"
+  },
+  {
+   "lang": "en-US",
+   "text": "Sally"
+  },
+  {
+   "lang": "en-US",
+   "text": "how do you do"
+  },
+  {
+   "lang": "en-US",
+   "text": "hard to do"
+  },
+  {
+   "lang": "en-US",
+   "text": "I went to the shack a while ago"
+  },
+  {
+   "lang": "en-US",
+   "text": "thirty one"
+  },
+  {
+   "lang": "en-US",
+   "text": "number four"
+  },
+  {
+   "lang": "en-US",
+   "text": "number one"
+  },
+  {
+   "lang": "en-US",
+   "text": "buy a crab"
+  },
+  {
+   "lang": "en-US",
+   "text": "be a curious kid"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "скажи"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сайт"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сайга"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "хорошо"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "Хадо"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "хадо это слово"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "бакудо это категория заклинаний"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "шакал"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "шахта"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "белая молния ударила"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "красная пушка"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "бык курай"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "четыре"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "тридцать один"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "номер один"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сякать"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сайка"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "бакалавр"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "бокал"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сякаю"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "さようなら"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "ありがとう"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "はい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "いいえ"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "さいたま"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "ばくだん"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "はどう"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "しゃか"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "いち"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "よん"
+  }
+ ]
+}

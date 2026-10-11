@@ -234,3 +234,9 @@ Decisions of the orchestrator (the user had not answered): shikai abilities cost
 - Accepted: `StateEvent.ShunpoMove`; the glue teleports (`networkHandler.requestTeleport`) and broadcasts `effect_event` id 40 (x y z = start, d = vector to the end, params = distance, character code, stopped-by-wall) to the player and trackers.
 - Shunpo counts as activity for the shikai idle timer. Not synced to the HUD (no cooldown icon).
 - Tests: `ShunpoTest`, `BankaiTest`, plus the amended Transition/AutoRevert/Reiatsu/Balance/Ability tests.
+
+### 10.3 Kido (B5)
+- Three spells outside the zanpakuto state machine's gating: **Hado 4 Byakurai** (key K), **Hado 31 Shakkaho** (key N), **Bakudo 1 Sai** (key M). Valid in SEALED, BASE, SHIKAI and BANKAI, with any sword or none; no state, item, hand-grace, transition-lock or settle-lock check.
+- `StateMachine.castKido(KidoRequest)` checks, in this order: alive/spectator, sequence (voice uses `SERVER_SEQ`), rate limit, master switch and the spell's own switch (`NOT_IN_STATE`), the gap between two kido casts (`GCD`, 10 ticks), the spell's cooldown (`ON_COOLDOWN`), reiatsu (`NOT_ENOUGH_REIATSU`, the bar never goes to 0, rule R2). Accepted: reiatsu spent, cooldown and gap started, `lastCast` updated (counts as activity for the shikai idle timer), event `KidoCast`. Cooldowns are kept next to the ability cooldowns (own map, byte codes 101 to 103 in the `cooldowns` attachment) and cleared on death and logout.
+- The block rule of the abilities applies (`BlockRules.allowsAbility`, checked in `ZanpakutoManager.performKido` before the machine, for key and voice alike). Damage is `INDIRECT_MAGIC` from the caster, so the block and the parry (melee only) never reduce or cancel it.
+- Numbers, voice phrases and what to check in the game: `design/results/kido.md`.

@@ -1,5 +1,8 @@
 package dev.minebleach.reiatsutest.core.state;
 
+import dev.minebleach.reiatsutest.core.kido.KidoId;
+import dev.minebleach.reiatsutest.core.kido.KidoSpec;
+
 /** What the server glue must execute after a machine call. The machine itself touches nothing outside its own data. */
 public sealed interface StateEvent {
 	/** The synced snapshot changed (glue writes the attachment). */
@@ -33,6 +36,10 @@ public sealed interface StateEvent {
 	}
 
 	record ShikaiModeChanged(ShikaiMode mode) implements StateEvent {
+	}
+
+	/** A kido spell was accepted (B5): reiatsu and cooldown are already charged; the glue runs the effect and broadcasts it. */
+	record KidoCast(KidoId kido, KidoSpec spec, long cooldownEndTick, int seed) implements StateEvent {
 	}
 
 	/** Teleport the player from one feet position to another (shunpo). The glue moves the player and broadcasts the effect. */

@@ -38,6 +38,8 @@ public final class Normalizer {
 		{"封印", "fuin"}, {"納刀", "noto"}, {"戻れ", "modore"},
 		// additions beyond the contract table (filler word "please" only)
 		{"お願い", "onegai"},
+		// kido (B5): Hado, Bakudo, and the three spell names
+		{"破道", "hado"}, {"縛道", "bakudo"}, {"白雷", "byakurai"}, {"赤火砲", "shakkaho"}, {"塞", "sai"},
 	};
 
 	private static final String[][] KANJI_SORTED;

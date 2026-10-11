@@ -16,7 +16,10 @@ import dev.minebleach.reiatsutest.core.state.TransitionRequest;
 import dev.minebleach.reiatsutest.core.state.TransitionResult;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.net.ActionResultS2C;
+import dev.minebleach.reiatsutest.core.kido.KidoId;
+import dev.minebleach.reiatsutest.core.kido.KidoRequest;
 import dev.minebleach.reiatsutest.net.CastAbilityC2S;
+import dev.minebleach.reiatsutest.net.CastKidoC2S;
 import dev.minebleach.reiatsutest.net.RequestTransitionC2S;
 import dev.minebleach.reiatsutest.net.ShunpoC2S;
 import dev.minebleach.reiatsutest.core.state.ShunpoPath;
@@ -81,6 +84,7 @@ public final class ZanpakutoManager {
 	public static void init() {
 		ServerPlayNetworking.registerGlobalReceiver(RequestTransitionC2S.ID, (payload, ctx) -> onTransition(ctx.player(), payload));
 		ServerPlayNetworking.registerGlobalReceiver(CastAbilityC2S.ID, (payload, ctx) -> onCast(ctx.player(), payload));
+		ServerPlayNetworking.registerGlobalReceiver(CastKidoC2S.ID, (payload, ctx) -> onKido(ctx.player(), payload));
 		ServerPlayNetworking.registerGlobalReceiver(ShunpoC2S.ID, (payload, ctx) ->
 				performShunpo(ctx.player(), RequestSource.fromCode(payload.source()), Math.max(0, payload.clientSeq())));
 		ServerTickEvents.END_SERVER_TICK.register(ZanpakutoManager::tick);
@@ -142,6 +146,7 @@ public final class ZanpakutoManager {
 		ReiatsuData stored = p.getAttached(ModAttachments.REIATSU);
 		ReiatsuState initial = stored != null ? stored.toState() : ReiatsuState.full(cfg.maxTenths());
 		Session s = new Session(new StateMachine(srv::getTicks, cfg, initial));
+		s.sm.setKidoConfig(KidoManager.config());
 		SESSIONS.put(p.getUuid(), s);
 		return s;
 	}
@@ -201,6 +206,37 @@ public final class ZanpakutoManager {
 			return;
 		}
 		performCast(p, ability, RequestSource.fromCode(pl.source()), Math.max(0, pl.clientSeq()));
+	}
+
+	private static void onKido(ServerPlayerEntity p, CastKidoC2S pl) {
+		KidoId kido = KidoId.fromCode(pl.kidoId());
+		if (kido == null) {
+			reply(p, pl.clientSeq(), ResultCode.DENIED_STATE);
+			return;
+		}
+		performKido(p, kido, RequestSource.fromCode(pl.source()), Math.max(0, pl.clientSeq()));
+	}
+
+	/**
+	 * The one server path of a kido cast (B5), shared by the key ({@code cast_kido}) and the voice bridge. Needs no state and no
+	 * sword. Like every ability it is refused while the block is held (design/PARRY_PLAN.md section 5), before the machine
+	 * charges reiatsu, cooldown or the gap.
+	 */
+	public static TransitionResult performKido(ServerPlayerEntity p, KidoId kido, RequestSource source, int seq) {
+		Session s = session(p);
+		if (!BlockRules.allowsAbility(ZanpakutoItem.isBlocking(p))) {
+			ZanpakutoState st = s.sm.state();
+			ReiatsuTest.LOGGER.info("[kido] {} cast {} ({}): denied, blocking", p.getName().getString(), kido, source);
+			reply(p, seq, ResultCode.DENIED_STATE);
+			return new TransitionResult(ResultCode.DENIED_STATE, dev.minebleach.reiatsutest.core.state.RejectReason.NOT_IN_STATE, st, st,
+					List.of());
+		}
+		TransitionResult r = s.sm.castKido(new KidoRequest(kido, source, seq));
+		ReiatsuTest.LOGGER.info("[kido] {} cast {} ({}, state {}): {} {}", p.getName().getString(), kido, source, s.sm.state(),
+				r.code(), r.ok() ? "ok" : r.reason());
+		apply(p, s, r.events(), null);
+		reply(p, seq, r.code());
+		return r;
 	}
 
 	/**
@@ -301,6 +337,7 @@ public final class ZanpakutoManager {
 					}
 				}
 				case StateEvent.ShikaiModeChanged m -> { }
+				case StateEvent.KidoCast k -> KidoManager.cast(p, k);
 				case StateEvent.ShunpoMove m -> {
 					p.networkHandler.requestTeleport(m.toX(), m.toY(), m.toZ(), p.getYaw(), p.getPitch());
 					ServerFx.shunpo(p, m, s.sm.character());
@@ -322,7 +359,7 @@ public final class ZanpakutoManager {
 			p.setAttached(ModAttachments.REIATSU, r);
 			s.lastReiatsu = r;
 		}
-		CooldownData c = CooldownData.of(s.sm.cooldownRemainingAll());
+		CooldownData c = CooldownData.of(s.sm.cooldownRemainingAll(), s.sm.kidoCooldownRemainingAll());
 		if (!c.remainingTicks().keySet().equals(s.lastCooldownKeys)) {
 			p.setAttached(ModAttachments.COOLDOWNS, c);
 			s.lastCooldownKeys = Set.copyOf(c.remainingTicks().keySet());

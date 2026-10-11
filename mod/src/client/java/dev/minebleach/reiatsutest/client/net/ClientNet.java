@@ -4,12 +4,14 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.client.hud.HudModel;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
+import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
 import dev.minebleach.reiatsutest.core.state.ResultCode;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.net.ActionResultS2C;
 import dev.minebleach.reiatsutest.net.CastAbilityC2S;
+import dev.minebleach.reiatsutest.net.CastKidoC2S;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import dev.minebleach.reiatsutest.net.EntityFxS2C;
 import dev.minebleach.reiatsutest.net.RequestTransitionC2S;
@@ -79,6 +81,15 @@ public final class ClientNet {
 		remember(seq, new HudModel.Request(false, null, ability));
 		ClientPlayNetworking.send(new CastAbilityC2S(ability.code, source.code(), seq));
 		ReiatsuTest.LOGGER.info("[client] cast_ability {} seq={} ({})", ability.commandId, seq, source);
+		return seq;
+	}
+
+	/** Casts a kido spell (B5): no state or sword needed, the server checks cooldown, reiatsu and the block. */
+	public static int castKido(KidoId kido, RequestSource source) {
+		int seq = SEQ.incrementAndGet();
+		remember(seq, new HudModel.Request(false, null, null));
+		ClientPlayNetworking.send(new CastKidoC2S(kido.code, source.code(), seq));
+		ReiatsuTest.LOGGER.info("[client] cast_kido {} seq={} ({})", kido.commandId, seq, source);
 		return seq;
 	}
 

@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import dev.minebleach.reiatsutest.core.kido.KidoConfig;
 import dev.minebleach.reiatsutest.core.voice.VoiceConfig;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -12,8 +13,8 @@ import java.nio.file.Path;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
- * {@code config/reiatsu_test.json} (ADR section 2 "Config"): one JSON object, one section per feature. Only the
- * {@code "voice"} section exists so far. A missing file or section is written with defaults; a file that does not parse
+ * {@code config/reiatsu_test.json} (ADR section 2 "Config"): one JSON object, one section per feature. The
+ * {@code "voice"} and {@code "kido"} sections exist so far. A missing file or section is written with defaults; a file that does not parse
  * is left untouched (defaults are used for the session) so a typo never destroys the user's settings.
  */
 public final class ModConfig {
@@ -43,6 +44,42 @@ public final class ModConfig {
 			}
 		}
 		VoiceConfig cfg = VoiceConfig.fromRoot(root);
+		if (write) {
+			cfg.writeInto(root);
+			try {
+				Files.createDirectories(file.getParent());
+				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(),
+						StandardCharsets.UTF_8);
+			} catch (IOException e) {
+				ReiatsuTest.LOGGER.warn("[config] could not write {}: {}", file, e.toString());
+			}
+		}
+		return cfg;
+	}
+
+	/**
+	 * The {@code "kido"} section (B5). Same rules as {@link #loadVoice}: a missing section is written with the defaults next
+	 * to whatever else the file holds, an unreadable file is left alone and the defaults are used for the session.
+	 */
+	public static KidoConfig loadKido() {
+		Path file = file();
+		JsonObject root = new JsonObject();
+		boolean write = true;
+		if (Files.isRegularFile(file)) {
+			try {
+				var el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
+				if (el.isJsonObject()) {
+					root = el.getAsJsonObject();
+					write = !root.has(KidoConfig.SECTION);
+				} else {
+					write = false;
+				}
+			} catch (IOException | JsonParseException e) {
+				ReiatsuTest.LOGGER.warn("[config] {} is not readable ({}), using kido defaults and leaving it alone", file, e.toString());
+				return KidoConfig.defaults();
+			}
+		}
+		KidoConfig cfg = KidoConfig.fromRoot(root);
 		if (write) {
 			cfg.writeInto(root);
 			try {

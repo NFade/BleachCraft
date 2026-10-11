@@ -1,5 +1,9 @@
 package dev.minebleach.reiatsutest.core.state;
 
+import dev.minebleach.reiatsutest.core.kido.KidoConfig;
+import dev.minebleach.reiatsutest.core.kido.KidoId;
+import dev.minebleach.reiatsutest.core.kido.KidoRequest;
+import dev.minebleach.reiatsutest.core.kido.KidoSpec;
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuMath;
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuState;
 import java.util.ArrayList;
@@ -29,6 +33,9 @@ public final class StateMachine {
 	private final BalanceConfig cfg;
 	private final RateLimiter limiter;
 	private final EnumMap<AbilityId, Long> cooldownEnd = new EnumMap<>(AbilityId.class);
+	private final EnumMap<KidoId, Long> kidoCooldownEnd = new EnumMap<>(KidoId.class);
+	private KidoConfig kidoCfg = KidoConfig.defaults();
+	private long kidoGcdEnd;
 
 	private ReiatsuState reiatsu;
 	private CharacterId character = CharacterId.NONE;
@@ -214,6 +221,72 @@ public final class StateMachine {
 			ev.add(new StateEvent.ScheduledPhase(a, phases.get(i), i, castSerial));
 		}
 		return new TransitionResult(ResultCode.OK, null, state, state, ev);
+	}
+
+	/** The spell numbers of this machine (defaults unless the glue sets the user config). */
+	public void setKidoConfig(KidoConfig config) {
+		this.kidoCfg = config == null ? KidoConfig.defaults() : config;
+	}
+
+	public KidoConfig kidoConfig() {
+		return kidoCfg;
+	}
+
+	/**
+	 * Kido (B5): a spell any living player may cast in ANY state (sealed, drawn, released, with any sword or none), so it has
+	 * no state, item or release lock check. What it does check: dead or spectator, the rate limit and the sequence, the
+	 * master switch and the spell's own switch, the gap between two kido casts, the spell's cooldown and the reiatsu (the bar
+	 * never goes to zero, rule R2). Accepted: reiatsu is charged, the cooldown and the gap start and a {@link StateEvent.KidoCast}
+	 * is returned for the glue. A cast counts as activity for the shikai idle timer.
+	 */
+	public TransitionResult castKido(KidoRequest r) {
+		RejectReason pre = preCheck(r.clientSeq());
+		if (pre != null) {
+			return reject(pre);
+		}
+		long now = clock.nowTick();
+		KidoId k = r.kido();
+		KidoSpec spec = k == null ? null : kidoCfg.spec(k);
+		if (spec == null || !kidoCfg.enabled() || !spec.enabled()) {
+			return reject(RejectReason.NOT_IN_STATE);
+		}
+		if (now < kidoGcdEnd) {
+			return reject(RejectReason.GCD);
+		}
+		Long cd = kidoCooldownEnd.get(k);
+		if (cd != null && now < cd) {
+			return reject(RejectReason.ON_COOLDOWN);
+		}
+		if (!reiatsu.canSpend(spec.costTenths())) {
+			return reject(RejectReason.NOT_ENOUGH_REIATSU);
+		}
+		List<StateEvent> ev = new ArrayList<>();
+		if (spec.costTenths() > 0) {
+			spend(spec.costTenths(), ev);
+		}
+		long end = now + spec.cooldownTicks();
+		kidoCooldownEnd.put(k, end);
+		kidoGcdEnd = now + kidoCfg.gcdTicks();
+		lastCast = now;
+		ev.add(new StateEvent.KidoCast(k, spec, end, nextSeed(now, spec.effectId())));
+		return new TransitionResult(ResultCode.OK, null, state, state, ev);
+	}
+
+	public int kidoCooldownRemaining(KidoId id) {
+		Long end = kidoCooldownEnd.get(id);
+		return end == null ? 0 : (int) Math.max(0L, end - clock.nowTick());
+	}
+
+	/** Remaining ticks of every spell that is on cooldown, for the owner-only cooldown sync. */
+	public Map<KidoId, Integer> kidoCooldownRemainingAll() {
+		EnumMap<KidoId, Integer> out = new EnumMap<>(KidoId.class);
+		long now = clock.nowTick();
+		for (Map.Entry<KidoId, Long> e : kidoCooldownEnd.entrySet()) {
+			if (e.getValue() > now) {
+				out.put(e.getKey(), (int) (e.getValue() - now));
+			}
+		}
+		return out;
 	}
 
 	/**
@@ -410,6 +483,8 @@ public final class StateMachine {
 
 	public void devClearCooldowns() {
 		cooldownEnd.clear();
+		kidoCooldownEnd.clear();
+		kidoGcdEnd = 0;
 		gcdEnd = 0;
 		shunpoEnd = 0;
 		bankaiLockEnd = 0;
@@ -612,6 +687,8 @@ public final class StateMachine {
 		castSerial++;
 		if (clearCooldowns) {
 			cooldownEnd.clear();
+			kidoCooldownEnd.clear();
+			kidoGcdEnd = 0;
 		}
 		ev.add(new StateEvent.CancelEffects());
 		ev.add(new StateEvent.RollbackTempBlocks());

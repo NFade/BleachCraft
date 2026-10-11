@@ -27,7 +27,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ## 1. Command list
 
-**14 commands** (13 required, 1 optional: `byakuya.bankai.senkei`).
+**17 commands** (16 required, 1 optional: `byakuya.bankai.senkei`). The last three (`kido.*`, B5) are valid in every state with any sword or none.
 
 | id | state | item in hand | canonical phrase | weak | notes |
 |---|---|---|---|---|---|
@@ -45,6 +45,9 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `byakuya.bankai.hakuteiken` | BANKAI | Byakuya's zanpakuto | Shukei: Hakuteiken | no | Final strike. Canon name. |
 | `byakuya.bankai.senkei` | BANKAI | Byakuya's zanpakuto | Senkei | no | OPTIONAL (ART_BIBLE stretch). Build only if Senkei is built. |
 | `common.seal` | BASE / SHIKAI / BANKAI | either zanpakuto | (mod-defined) Seal | yes | Back to SEALED (sheathed) from BASE, SHIKAI or BANKAI. Mod-defined. Whole-utterance only. |
+| `kido.byakurai` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Hado no yon, Byakurai | no | Kido (B5): Hado 4, white lightning beam. Castable in every state, no sword needed. Number optional, "Hado" alone never fires. |
+| `kido.shakkaho` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Hado no sanjuichi, Shakkaho | no | Kido (B5): Hado 31, red fireball with a burst. Every state, no sword. Number optional, "Hado" alone never fires. |
+| `kido.sai` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Bakudo no ichi, Sai | no | Kido (B5): Bakudo 1, short binding. Every state, no sword. Lone "Sai" and lone "Bakudo" are weak (whole utterance). |
 
 "weak" = the command is made of short or very common words and is accepted only when the **whole utterance** is the phrase (section 3.1). A few strong commands also carry weak lone-word variants ("Chire", "Scatter"); these are marked in their tables.
 
@@ -341,6 +344,103 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 |  | Печать | `M` | `pecat` |
 |  | Запечатать меч | `M` | `sapecatat mec` |
 
+### 1.15 `kido.byakurai`
+
+- **Required state:** any (SEALED, BASE, SHIKAI or BANKAI). **Item:** any sword, or none (bare hands). Costs reiatsu and has a cooldown (server).
+- **Canonical phrase:** Hado no yon, Byakurai
+- **Notes:** Hado no 4, Byakurai (white lightning): a thin hitscan beam. Castable in ANY state with ANY sword or bare hands. The number is optional, the name alone is enough; "Hado" alone is never enough (it would be ambiguous with Hado 31).
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Japanese script (ja-JP ASR form) | 破道の四 白雷 | `C` | `hado no byakurai` |
+|  | 白雷 | `C` | `byakurai` |
+|  | びゃくらい | `C` | `byakurai` |
+|  | はどうのよん びゃくらい | `C` | `hadonoyon byakurai` |
+| Romaji | Hado no yon, Byakurai | `C` | `hado no yon byakurai` |
+|  | Hado yon, Byakurai | `C` | `hado yon byakurai` |
+|  | Byakurai | `C` | `byakurai` |
+|  | Hado no yon | `C` | `hado no yon` |
+| English sub | Way of Destruction 4, White Lightning | `T` | `way oh destruction 4 white rightning` |
+|  | White lightning (weak: whole utterance) | `T` | `white rightning` |
+|  | Hado 4, Byakurai | `M` | `hado 4 byakurai` |
+|  | Hado four | `M` | `hado hor` |
+|  | Hado number four | `M` | `hado nunber hor` |
+|  | Hado 4 | `M` | `hado 4` |
+| Russian (Cyrillic) | Хадо четыре, Бякурай | `X` | `hado cetire byakurai` |
+|  | Хадо чётыре, Бякурай | `X` | `hado cotire byakurai` |
+|  | Хадо 4 Бякурай | `X` | `hado 4 byakurai` |
+|  | Хадо 4 | `X` | `hado 4` |
+|  | Хадо но ён, Бякурай | `X` | `hado no yon byakurai` |
+|  | Бякурай | `X` | `byakurai` |
+|  | Хадо четыре | `X` | `hado cetire` |
+
+
+### 1.16 `kido.shakkaho`
+
+- **Required state:** any (SEALED, BASE, SHIKAI or BANKAI). **Item:** any sword, or none (bare hands). Costs reiatsu and has a cooldown (server).
+- **Canonical phrase:** Hado no sanjuichi, Shakkaho
+- **Notes:** Hado no 31, Shakkaho (red fire cannon): a red fireball that bursts where it lands. Castable in ANY state with ANY sword or bare hands. Short key (sakaho, 6 letters): exact-only, so the spelling variants of the ASR are explicit aliases in the generator. The number is optional; "Hado" alone is never enough.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Japanese script (ja-JP ASR form) | 破道の三十一 赤火砲 | `C` | `hado no sakaho` |
+|  | 赤火砲 | `C` | `sakaho` |
+|  | しゃっかほう | `C` | `sakaho` |
+|  | はどうのさんじゅういち しゃっかほう | `C` | `hadonosansuici sakaho` |
+| Romaji | Hado no sanjuichi, Shakkaho | `C` | `hado no sansuici sakaho` |
+|  | Hado san ju ichi, Shakkaho | `C` | `hado san su ici sakaho` |
+|  | Shakkaho | `C` | `sakaho` |
+|  | Hado no sanjuichi | `C` | `hado no sansuici` |
+| English sub | Way of Destruction 31, Red Flame Cannon | `T` | `way oh destruction 31 red hrame canon` |
+|  | Red fire cannon (weak: whole utterance) | `T` | `red hire canon` |
+|  | Hado 31, Shakkaho | `M` | `hado 31 sakaho` |
+|  | Hado thirty one | `M` | `hado thirty one` |
+|  | Hado thirty-one, Shakkaho | `M` | `hado thirty one sakaho` |
+|  | Hado 31 | `M` | `hado 31` |
+| Russian (Cyrillic) | Хадо тридцать один, Сякахо | `X` | `hado tridcat odin sakaho` |
+|  | Хадо 31 Сякахо | `X` | `hado 31 sakaho` |
+|  | Хадо 31 | `X` | `hado 31` |
+|  | Хадо но сандзюити, Сякахо | `X` | `hado no sansuiti sakaho` |
+|  | Сякахо | `X` | `sakaho` |
+|  | Сякухо | `X` | `sakuho` |
+|  | Шакахо | `X` | `sakaho` |
+|  | Хадо тридцать один | `X` | `hado tridcat odin` |
+
+
+### 1.17 `kido.sai`
+
+- **Required state:** any (SEALED, BASE, SHIKAI or BANKAI). **Item:** any sword, or none (bare hands). Costs reiatsu and has a cooldown (server).
+- **Canonical phrase:** Bakudo no ichi, Sai
+- **Notes:** Bakudo no 1, Sai (restraint): a short range binding, the target cannot move for a moment. Castable in ANY state with ANY sword or bare hands. Bakudo is the only binding spell the mod has, so "Bakudo" alone fires it (weak, whole utterance); a lone "Sai" is weak too (3 letters).
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Japanese script (ja-JP ASR form) | 縛道の一 塞 | `C` | `bakudo no sai` |
+|  | ばくどう さい | `C` | `bakudo sai` |
+|  | 塞 (weak: whole utterance) | `C` | `sai` |
+|  | さい (weak: whole utterance) | `C` | `sai` |
+| Romaji | Bakudo no ichi, Sai | `C` | `bakudo no ici sai` |
+|  | Bakudo ichi, Sai | `C` | `bakudo ici sai` |
+|  | Bakudo no ichi | `C` | `bakudo no ici` |
+
+|  | Sai (weak: whole utterance) | `C` | `sai` |
+| English sub | Way of Binding 1, Restrain | `T` | `way oh binding 1 restrain` |
+|  | Bakudo 1, Sai | `M` | `bakudo 1 sai` |
+|  | Bakudo one | `M` | `bakudo one` |
+|  | Bakudo number one | `M` | `bakudo nunber one` |
+|  | Bakudo ichi | `M` | `bakudo ici` |
+|  | Bakudo 1 | `M` | `bakudo 1` |
+|  | Bakudo (weak: whole utterance) | `M` | `bakudo` |
+| Russian (Cyrillic) | Бакудо один, Сай | `X` | `bakudo odin sai` |
+|  | Бакудо номер один | `X` | `bakudo nomer odin` |
+|  | Бакудо один | `X` | `bakudo odin` |
+|  | Бакудо 1 Сай | `X` | `bakudo 1 sai` |
+|  | Бакудо 1 | `X` | `bakudo 1` |
+|  | Бакудо но ити, Сай | `X` | `bakudo no iti sai` |
+|  | Сай (weak: whole utterance) | `X` | `sai` |
+|  | Бакудо (weak: whole utterance) | `X` | `bakudo` |
+
+
 ## 2. Typical ASR mis-recognitions
 
 These rows seed the fixture generator: each is a realistic raw string the Web Speech API could return for that command. The lists are my best expectation of how each language model behaves, **not recordings**; they must be replaced or extended by real captures from the bridge page (see 5.7).
@@ -615,6 +715,9 @@ Totals: 160 ASR rows, 115 tier F (fuzzy reaches them), 45 tier A (alias required
 | `byakuya.bankai.hakuteiken` | `Hakuteiken` alone, or `Shukei Hakuteiken`. | "Shukei" alone (and "Senkei" must not be mistaken for it), "emperor", "sword". |
 | `byakuya.bankai.senkei` | `Senkei` / `Сэнкэй` / 殲景 (exact key `senke`, plus aliases). | "sen" alone, "senbonzakura" alone. |
 | `common.seal` | Whole utterance: `Seal`, `Seal it`, `Seal sword`, `Запечатать`, `Запечатай`, `Печать`, `Запечатать меч`, 封印, 納刀, 戻れ. | Any longer sentence containing the word ("the seal is broken", "сними печать с письма"). |
+| `kido.byakurai` | `Byakurai` (alone), `Hado no yon Byakurai`, `Hado 4`, `Hado no yon`, `Хадо четыре Бякурай`, 白雷. Valid in every state. | "Hado" alone (it would be Hado 4 or 31), "white" / "lightning" alone, "by a cry" inside a sentence. |
+| `kido.shakkaho` | `Shakkaho` (alone), `Hado no sanjuichi`, `Hado 31`, `Сякахо`, `Сякухо`, 赤火砲. Valid in every state. | "Hado" alone, "red" / "fire" / "cannon" alone, "shack a ho" inside a sentence. |
+| `kido.sai` | `Bakudo ichi Sai`, `Bakudo 1`, `Бакудо один Сай`, lone `Sai` / `Bakudo` / `Сай` / `Бакудо` (weak: whole utterance only), 塞. Valid in every state. | "say", "sigh", "psy", "sad", "buy" (ordinary words close to Sai), any sentence that merely contains "sai" or "bakudo". |
 
 ### 3.3 Gating and ambiguity matrix (expected results, usable as test cases)
 
@@ -751,6 +854,8 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 - **Rukia vs Byakuya "Bankai":** the same word triggers whichever character the held item belongs to. Nothing to disambiguate.
 
 ## 4. Neutral phrases (must never trigger)
+
+> Kido (B5): the neutral sentences for the three kido commands (everyday words with the same syllables: say, sigh, psy, shack, show, hat, bike, buy, cannon, lightning, fire and so on) are in `tests/voice/kido_fixture.json` ("neutrals"), checked in every gate context by `KidoVoiceFixtureTest`. The table below is the older set and stays as it was.
 
 89 phrases (41 en-US, 39 ru-RU, 9 ja-JP). The test feeds each one to **every** command with **no** state or item gating (strictest case) and expects zero matches. "Nearest" is the best raw similarity to any variant before thresholds, as a margin diagnostic; it is informational, the pass/fail condition is "nothing fires".
 

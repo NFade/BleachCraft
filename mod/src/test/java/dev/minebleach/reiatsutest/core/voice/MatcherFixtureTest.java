@@ -58,6 +58,9 @@ class MatcherFixtureTest {
 	void everyCommandHasPositivesAndTheyAllFireItself() throws IOException {
 		PhraseMatcher m = VoiceTestSupport.matcher();
 		for (PhraseBook.Command c : m.book().commands()) {
+			if (c.id().startsWith("kido.")) {
+				continue; // the kido commands have their own fixture (tests/voice/kido_fixture.json, KidoVoiceFixtureTest)
+			}
 			long n = VoiceTestSupport.positives().stream().filter(p -> p.command().equals(c.id())).count();
 			assertTrue(n >= 10, c.id() + " has only " + n + " positives");
 		}

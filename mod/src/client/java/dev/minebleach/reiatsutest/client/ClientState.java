@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client;
 
+import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
@@ -82,6 +83,14 @@ public final class ClientState {
 
 	/** Remaining cooldown of an ability in ticks (0 = ready). */
 	public static int cooldownRemaining(AbilityId id) {
+		if (lastCooldowns == null) {
+			return 0;
+		}
+		return Math.max(0, lastCooldowns.remaining(id) - (int) (ticks - cooldownsReceivedAt));
+	}
+
+	/** Remaining cooldown of a kido spell in ticks (0 = ready). */
+	public static int cooldownRemaining(KidoId id) {
 		if (lastCooldowns == null) {
 			return 0;
 		}

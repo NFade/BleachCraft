@@ -96,6 +96,18 @@ EXTRA_ALIASES = {
                     ("запечатай свой меч", True)],
 }
 
+# --- B5 kido (design/results/kido.md). The three spells are valid in every state with any sword or none, so a false positive costs
+# reiatsu and can happen while the player talks; the ASR spellings that are several ordinary words ("by a cry") are therefore
+# WEAK (whole utterance only). Single made-up words ("бякурая") are strong. The 6 letter key of Shakkaho (sakaho) is exact-only,
+# so its split and vowel-slip renderings are explicit. UNVERIFIED with a real microphone (expected renderings, not recordings).
+EXTRA_ALIASES.update({
+    "kido.byakurai": [("by a cry", True), ("be a cry", True), ("beer a cry", True), ("bye a cry", True), ("бекурай", False),
+                      ("бякурая", False), ("бья курай", False), ("хадо ён", False), ("hado yon", False)],
+    "kido.shakkaho": [("sha ka ho", True), ("shaka ho", True), ("shack a ho", True), ("сяка хо", True), ("шака хо", True),
+                      ("сякаго", False), ("сякохо", False), ("shockaho", False)],
+    "kido.sai": [("бокудо один", False), ("bokudo ichi sai", False)],
+})
+
 # Context-gated ASR forms of "bankai" (decision: treat "bank eye" as bankai ONLY in SHIKAI + full reiatsu + item).
 GATED_ALIASES = {
     "rukia.bankai.release": [
@@ -144,7 +156,8 @@ def parse():
         if in_s1_table and section is None and len(c) == 6 and c[0].startswith("`"):
             cid = strip_ticks(c[0])
             states = [s.strip() for s in c[1].split("/")]
-            item = {"Rukia's zanpakuto": "rukia", "Byakuya's zanpakuto": "byakuya", "either zanpakuto": "any"}[c[2]]
+            item = {"Rukia's zanpakuto": "rukia", "Byakuya's zanpakuto": "byakuya", "either zanpakuto": "any",
+                    "any sword or none": "any"}[c[2]]
             say = re.sub(r"^\(mod-defined\)\s*", "", c[3])
             say = re.sub(r"\s*/\s*mod:.*$", "", say)
             say = re.sub(r"\s*\(same word as shikai\)", "", say)

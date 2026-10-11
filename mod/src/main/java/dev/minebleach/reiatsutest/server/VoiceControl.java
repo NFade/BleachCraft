@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import dev.minebleach.reiatsutest.ModConfig;
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
@@ -362,6 +363,11 @@ public final class VoiceControl implements VoiceBackend {
 		} else if (id.equals("common.seal")) {
 			announceHeard(p, "message.reiatsu_test.voice.cmd.seal");
 			r = ZanpakutoManager.performTransition(p, ZanpakutoState.SEALED, RequestSource.VOICE, StateMachine.SERVER_SEQ);
+		} else if (KidoId.fromCommandId(id) != null) {
+			// kido (B5): no state, no sword; the same server path as the kido keys
+			KidoId k = KidoId.fromCommandId(id);
+			announceHeard(p, "kido.reiatsu_test." + k.key);
+			r = ZanpakutoManager.performKido(p, k, RequestSource.VOICE, StateMachine.SERVER_SEQ);
 		} else {
 			AbilityId a = AbilityId.fromCommandId(id);
 			if (a == null) {
