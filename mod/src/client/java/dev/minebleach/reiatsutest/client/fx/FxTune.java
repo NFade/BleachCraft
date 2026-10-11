@@ -61,6 +61,16 @@ public final class FxTune {
 		}
 	}
 
+	/** Harness: sets a value like a line of fx_override.json would (until the next reload of the file). */
+	public static void override(String key, double value) {
+		VALUES.put(key, new com.google.gson.JsonPrimitive(value));
+	}
+
+	/** Harness: removes an override set by {@link #override}. */
+	public static void unset(String key) {
+		VALUES.remove(key);
+	}
+
 	public static double d(String key, double def) {
 		JsonElement e = VALUES.get(key);
 		try {

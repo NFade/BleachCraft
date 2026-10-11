@@ -12,6 +12,7 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -28,8 +29,8 @@ public final class FxDecals {
 
 	public static final class Decal {
 		final Identifier tex;
-		final double cx;
-		final double cz;
+		double cx;
+		double cz;
 		final double radius;
 		final int rings;
 		final int segs;
@@ -44,6 +45,14 @@ public final class FxDecals {
 		public double alphaMax = 0.85;
 		public float[] tint = FxMath.hex("#EEF6FF");
 		boolean dead;
+		/** True: kept in the list when the cap evicts (a decal that lives as long as a state, e.g. the Rukia bankai seal). */
+		boolean persistent;
+		/** Entity the decal follows (centre = its interpolated feet each frame); the height grid is resampled when the centre moved {@link #RESAMPLE} blocks. */
+		Entity follow;
+		double sampleX;
+		double sampleZ;
+
+		static final double RESAMPLE = 0.2;
 
 		Decal(Identifier tex, double cx, double cz, double hintY, double radius, int rings, int segs, double birth) {
 			this.tex = tex;
@@ -54,12 +63,35 @@ public final class FxDecals {
 			this.segs = segs;
 			this.birth = birth;
 			this.ys = new double[rings + 1][segs];
+			resample(hintY);
+		}
+
+		/** Re-reads the terrain heights of the grid around the current centre (the decal is created once and moves, it is never re-created). */
+		void resample(double hintY) {
+			sampleX = cx;
+			sampleZ = cz;
 			for (int i = 0; i <= rings; i++) {
 				double r = radius * i / rings;
 				for (int j = 0; j < segs; j++) {
 					double a = Math.PI * 2 * j / segs;
 					ys[i][j] = i == 0 && j > 0 ? ys[0][0] : FxGround.sample(cx + Math.cos(a) * r, cz + Math.sin(a) * r, hintY) + 0.025;
 				}
+			}
+		}
+
+		/** The decal follows this entity: the one decal under the feet of a moving player (no per step copies). */
+		public Decal follow(Entity e) {
+			follow = e;
+			persistent = true;
+			return this;
+		}
+
+		/** Moves the centre now (called per frame by the draw pass for followers). */
+		void moveTo(double x, double z, double hintY) {
+			cx = x;
+			cz = z;
+			if (Math.hypot(x - sampleX, z - sampleZ) > RESAMPLE) {
+				resample(hintY);
 			}
 		}
 
@@ -132,7 +164,17 @@ public final class FxDecals {
 		int segs = radius < 1.5 ? 12 : FxConfig.tier().decalSegments;
 		Decal d = new Decal(tex, cx, cz, hintY, Math.max(0.1, radius), rings, segs, FxClock.now + delay);
 		while (DECALS.size() >= 24) {
-			DECALS.remove(0);
+			int victim = -1;
+			for (int i = 0; i < DECALS.size(); i++) {
+				if (!DECALS.get(i).persistent) {
+					victim = i;
+					break;
+				}
+			}
+			if (victim < 0) {
+				break;
+			}
+			DECALS.remove(victim);
 		}
 		DECALS.add(d);
 		return d;
@@ -165,6 +207,13 @@ public final class FxDecals {
 		}
 		Vec3d cam = ctx.camera().getPos();
 		double now = FxClock.now;
+		float td = ctx.tickCounter().getTickDelta(false);
+		for (Decal d : DECALS) {
+			if (d.follow != null && !d.follow.isRemoved()) {
+				Vec3d f = d.follow.getLerpedPos(td);
+				d.moveTo(f.x, f.z, f.y);
+			}
+		}
 		// one layer per texture: all decals of a texture are written together
 		for (Identifier tex : new Identifier[] {FROST, CRACK}) {
 			VertexConsumer vc = null;

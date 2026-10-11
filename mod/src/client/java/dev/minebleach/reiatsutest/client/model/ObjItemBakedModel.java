@@ -70,6 +70,29 @@ public final class ObjItemBakedModel implements BakedModel {
 		ModelTransformationMode mode = context.itemTransformationMode();
 		QuadEmitter em = context.getEmitter();
 		ObjItemUnbakedModel.StateMeshes sm = states.byState[state.ordinal()];
+		if (state == ReleaseState.SHIKAI && states.saya != null && isHandMode(mode)) {
+			// plan A6: the Byakuya release holds the drawn blade for 0.4 s and turns it pink before it bursts into petals
+			LivingEntity ph = DrawTracker.renderEntity();
+			if (ph != null && ph.getMainHandStack() == stack) {
+				int tint = dev.minebleach.reiatsutest.client.fx.ReleaseHold.tint(ph.getId());
+				if (tint != 0) {
+					ObjItemUnbakedModel.StateMeshes bare = states.byState[ReleaseState.SEALED.ordinal()];
+					context.pushTransform(q -> {
+						for (int c = 0; c < 4; c++) {
+							q.color(c, mulColor(q.color(c), tint));
+						}
+						return true;
+					});
+					bare.handBase.outputTo(em);
+					if (bare.handGlow != null) {
+						bare.handGlow.outputTo(em);
+					}
+					context.popTransform();
+					stats(t0);
+					return;
+				}
+			}
+		}
 		if (states.saya != null && isHandMode(mode)) {
 			// B4 step 2: the scabbard is drawn separately; the sword of the main hand follows the draw rig
 			LivingEntity holder = DrawTracker.renderEntity();
@@ -119,6 +142,14 @@ public final class ObjItemBakedModel implements BakedModel {
 			EMIT_NANOS.addAndGet(System.nanoTime() - t0);
 			EMIT_CALLS.incrementAndGet();
 		}
+	}
+
+	/** Component wise product of two ARGB colours (alpha of the first kept). */
+	private static int mulColor(int a, int b) {
+		int r = ((a >> 16) & 255) * ((b >> 16) & 255) / 255;
+		int g = ((a >> 8) & 255) * ((b >> 8) & 255) / 255;
+		int bl = (a & 255) * (b & 255) / 255;
+		return (a & 0xFF000000) | (r << 16) | (g << 8) | bl;
 	}
 
 	private static boolean isHandMode(ModelTransformationMode mode) {

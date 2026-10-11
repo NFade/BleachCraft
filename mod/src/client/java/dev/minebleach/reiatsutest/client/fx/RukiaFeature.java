@@ -29,6 +29,9 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 	/** Statistics for the harness. */
 	public static int drawn;
 	public static int lastSegments;
+	/** Harness: horizontal displacement of the tip of the middle ribbon chain from her feet along her body facing (negative = behind her), blocks. */
+	public static double lastTipForward;
+	public static double lastTipHeight;
 	private static boolean warned;
 
 	public RukiaFeature(FeatureRendererContext<AbstractClientPlayerEntity, PlayerEntityModel<AbstractClientPlayerEntity>> context) {
@@ -93,11 +96,14 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 		int maxSeg = FxConfig.fxTier == FxConfig.TierSetting.LOW ? 6 : 9;
 		double now = FxClock.now;
 		matrices.push();
-		// back to the entity frame (feet origin, +z forward, body yaw applied): the inverse of the renderer's scale(-1,-1,1) and translate(0,-1.501,0)
+		// back to the entity frame (feet origin, +z forward after the 180 degree turn below, body yaw applied): the inverse of the renderer's scale(-1,-1,1) and translate(0,-1.501,0)
 		// (the player renderer also scales by 0.9375 between the flip and the translate: undone here, so the ribbons are in block units)
 		matrices.translate(0f, 1.501f, 0f);
 		matrices.scale(1f / 0.9375f, 1f / 0.9375f, 1f / 0.9375f);
 		matrices.scale(-1f, -1f, 1f);
+		// the renderer's setupTransforms turns the body by (180 - bodyYaw) about Y, so this frame still has +z BEHIND the player (the player model faces -z in model space):
+		// without this turn the ribbons stood up and FORWARD of her (the three white spikes of the first review). 180 degrees about Y gives +z forward again.
+		matrices.multiply(new org.joml.Quaternionf().rotateY((float) Math.PI));
 		Matrix4f base = new Matrix4f(matrices.peek().getPositionMatrix());
 		FxMeshes.Mesh seg = FxMeshes.get(FxMeshes.RIBBON_SEG);
 		FxMeshes.Mesh tip = FxMeshes.get(FxMeshes.RIBBON_TIP);
@@ -122,7 +128,7 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 					double tau = RukiaBankaiClient.segmentAge(id, j);
 					double flick = tau < 0 ? 0 : Math.toRadians(15) * Math.exp(-tau / 0.2) * Math.cos(2 * Math.PI * tau / 0.28);
 					double th = theta + sway + flick;
-					double out = side * (FxTune.d("rbankai.ribbonOut", 0.35) + 0.05 * j);
+					double out = side * (FxTune.d("rbankai.ribbonOut", 0.12) + 0.05 * j);
 					d.set((float) (out * Math.sin(th)), (float) Math.cos(th), (float) -Math.sin(th)).normalize();
 					// orientation: mesh -Y along the direction, width axis along the lateral axis
 					xAxis.set(1f, 0f, 0f).fma(-d.x, d).normalize();
@@ -139,6 +145,16 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 					theta += j < 5 ? curve : -curve;
 				}
 				lastSegments = count;
+				if (k == 1 && pass == 0) {
+					Vector3f w = base.transformPosition(new Vector3f(p));
+					Vec3d cam = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+					Vec3d f = entity.getLerpedPos(td);
+					double dx = w.x + cam.x - f.x;
+					double dz = w.z + cam.z - f.z;
+					double yaw = Math.toRadians(entity.bodyYaw);
+					lastTipForward = dx * -Math.sin(yaw) + dz * Math.cos(yaw);
+					lastTipHeight = w.y + cam.y - f.y;
+				}
 			}
 		}
 		matrices.pop();

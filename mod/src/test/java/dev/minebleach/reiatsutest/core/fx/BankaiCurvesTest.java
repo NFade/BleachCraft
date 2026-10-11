@@ -44,4 +44,34 @@ class BankaiCurvesTest {
 			assertTrue(BankaiCurves.faultTime(d, 100) <= 1.0 + BladeRowLayout.ERUPT_PER_BLOCK * d + 0.001 || d < 1, "d " + d);
 		}
 	}
+
+	@Test
+	void swordThrowHangsThenSinksSlowlyAndStays() {
+		double hang = 1.05;
+		double end = -0.4;
+		assertEquals(0.0, BankaiCurves.swordFlight(0), 1e-9);
+		assertEquals(1.0, BankaiCurves.swordFlight(0.3), 1e-9);
+		// hangs (within the sway) until the sink starts
+		assertEquals(hang, BankaiCurves.swordHeight(0.4, hang, end), 0.03);
+		assertEquals(hang, BankaiCurves.swordHeight(BankaiCurves.SWORD_HANG_END - 0.01, hang, end), 0.03);
+		// monotone descent after that, ends at endY and stays there
+		double prev = BankaiCurves.swordHeight(BankaiCurves.SWORD_HANG_END, hang, end);
+		for (double t = BankaiCurves.SWORD_HANG_END + 0.02; t <= BankaiCurves.SWORD_SINK_END; t += 0.02) {
+			double h = BankaiCurves.swordHeight(t, hang, end);
+			assertTrue(h <= prev + 1e-9, "t " + t);
+			prev = h;
+		}
+		assertEquals(end, BankaiCurves.swordHeight(BankaiCurves.SWORD_SINK_END, hang, end), 1e-9);
+		assertEquals(end, BankaiCurves.swordHeight(5.0, hang, end), 1e-9);
+		// slow: the whole descent takes about 0.9 s, the ground is touched in the middle of it
+		double c = BankaiCurves.swordContactTime(hang, end);
+		assertTrue(c > BankaiCurves.SWORD_HANG_END + 0.3 && c < BankaiCurves.SWORD_SINK_END, "contact " + c);
+		assertEquals(0.0, BankaiCurves.swordHeight(c, hang, end), 1e-6);
+		// splash: nothing before the contact, rings grow and fade
+		assertEquals(0.0, BankaiCurves.splashAlpha(0, c - 0.01, c), 1e-9);
+		assertEquals(0.0, BankaiCurves.splashRadius(0, c, c, 1.0), 1e-9);
+		assertEquals(3.5, BankaiCurves.splashRadius(0, c + 2, c, 1.0), 1e-9);
+		assertEquals(0.0, BankaiCurves.splashAlpha(0, c + 1.0, c), 1e-9);
+		assertTrue(BankaiCurves.splashAlpha(1, c + 0.5, c) > 0.5);
+	}
 }

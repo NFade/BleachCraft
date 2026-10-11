@@ -33,8 +33,6 @@ public final class RukiaBankaiClient {
 		double endedAt = -1;
 		double flareAt = -10;
 		FxDecals.Decal decal;
-		double decalX;
-		double decalZ;
 		boolean fieldMade;
 		Vec3d fieldPos;
 		ScreenFx.Layer vignette;
@@ -59,6 +57,8 @@ public final class RukiaBankaiClient {
 	private static int tickCounter;
 	/** Statistics for the harness. */
 	public static int fieldsMade;
+	/** Frost ground decals created for the passive (one per bankai start, never one per step). */
+	public static int decalsMade;
 
 	private RukiaBankaiClient() {
 	}
@@ -191,16 +191,12 @@ public final class RukiaBankaiClient {
 			}
 			double age = now - p.since;
 			boolean local = pl == mc.player && !FxClient.forceRemote();
-			// ---- the frost ground that follows her
+			// ---- the frost ground that follows her: ONE decal per bankai, created once and moved every frame (never one per step: that was the mush)
 			Vec3d feet = pl.getPos();
-			if (p.decal == null || Math.hypot(feet.x - p.decalX, feet.z - p.decalZ) > 0.6) {
-				if (p.decal != null) {
-					p.decal.fadeOutNow(1.5);
-				}
-				double delay = p.decal == null && age < 0.6 ? 0.6 - age : 0.0;
-				p.decal = FxDecals.frost(feet.x, feet.z, feet.y, FxTune.d("rbankai.decalRadius", 3.4), delay).reveal(p.decal == null ? 0.5 : 0.4).alpha(FxTune.d("rbankai.decal", 0.82));
-				p.decalX = feet.x;
-				p.decalZ = feet.z;
+			if (p.decal == null || p.decal.isDead()) {
+				double delay = age < 0.6 ? 0.6 - age : 0.0;
+				p.decal = FxDecals.frost(feet.x, feet.z, feet.y, FxTune.d("rbankai.decalRadius", 3.4), delay).reveal(0.5).alpha(FxTune.d("rbankai.decal", 0.82)).follow(pl);
+				decalsMade++;
 			}
 			// ---- the standing field: 6 crystals at the release point, 8 on the rim
 			if (!p.fieldMade) {

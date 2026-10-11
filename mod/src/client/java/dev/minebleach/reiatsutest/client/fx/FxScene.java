@@ -41,7 +41,8 @@ public final class FxScene {
 			if (a.kind() == FxAnchorKind.SWARM) {
 				swarms++;
 				SwarmFx.State st = SwarmFx.of(owner);
-				if (st == null && w.getEntityById(owner) != null && FxClock.now > 0) {
+				// (not while the blade of this owner is still turning pink: the anchor is there at once, the swarm is born 0.4 s later)
+				if (st == null && w.getEntityById(owner) != null && FxClock.now > 0 && !ReleaseHold.active(owner)) {
 					st = SwarmFx.lateState(owner, a.seed(), w.getEntityById(owner).getPos());
 					lateJoins++;
 				}

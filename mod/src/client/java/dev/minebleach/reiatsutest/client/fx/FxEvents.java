@@ -61,6 +61,15 @@ public final class FxEvents {
 				// the quiet drop (6.1): no flash, ring or burst; the ripples, the night and the rows are the release
 				SwarmFx.end(e.casterId());
 				RowsFx.onRelease(e);
+			} else if (id == 3 && FxTune.d("release.pinkTime", 0.4) > 0.01) {
+				// plan A6: the blade in the hand turns pink for 0.4 s (ReleaseHold tints the item model), then the flash, ring and petals start
+				double hold = FxTune.d("release.pinkTime", 0.4);
+				ReleaseHold.start(e.casterId(), hold);
+				FxSound.play(null, "block.amethyst_block.resonate", e.x(), e.y() + 1.1, e.z(), 1.7, 0.35);
+				FxDelayed.after(hold, () -> {
+					ReleaseFx.play(e);
+					SwarmFx.onRelease(e);
+				});
 			} else if (id <= 4) {
 				ReleaseFx.play(e);
 				if (id == 3) {

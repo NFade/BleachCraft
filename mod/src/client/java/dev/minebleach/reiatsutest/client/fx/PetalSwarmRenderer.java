@@ -48,6 +48,11 @@ public final class PetalSwarmRenderer {
 	public static int lastNear;
 	public static int lastGlints;
 	public static int lastStreaks;
+	/** Harness: petals removed by the first person clearing of the owner's view in the last frame, and whether it was active. */
+	public static int lastFpCulled;
+	public static boolean lastFp;
+	/** Harness: distance from the camera to the nearest petal drawn in the first person view of the owner (a big number when none). */
+	public static double lastFpNearest = 1000;
 
 	/** Glow data collected while drawing (camera relative), consumed by the glow source later in the same frame. */
 	private static final class GlowItem {
@@ -145,7 +150,15 @@ public final class PetalSwarmRenderer {
 		int petalsDrawn = 0;
 		int near = 0;
 		int glints = 0;
+		int fpCulled = 0;
+		double fpNearest = 1000;
+		boolean anyFp = false;
 		double now = FxClock.now;
+		// first person of the owner: the swarm orbits around the camera, so the petals near the lens are removed (all inside fpClear, then thinned and shrunk up to fpFade)
+		double fpClear = FxTune.d("swarm.fpClear", 1.5);
+		double fpFade = FxTune.d("swarm.fpFade", 5.0);
+		double fpKeep = FxTune.d("swarm.fpKeep", 0.12);
+		double fpSize = FxTune.d("swarm.fpSize", 0.35);
 		double petalScale = FxTune.d("swarm.petalScale", 1.8);
 		double glintPower = FxTune.d("swarm.glintPower", 16);
 		float uc = mesh != null ? mesh.centreU : 0.313f;
@@ -166,6 +179,9 @@ public final class PetalSwarmRenderer {
 			if (dOwner > 80) {
 				continue;
 			}
+			boolean fp = st.ownerId == (mc.player != null ? mc.player.getId() : -1) && !FxClient.forceRemote() && mc.options.getPerspective().isFirstPerson()
+					&& FxTune.d("swarm.fpClearing", 1.0) > 0.5;
+			anyFp |= fp;
 			int stride = dOwner <= 16 ? 1 : dOwner <= 32 ? 2 : 4;
 			double t = st.time();
 			st.t = t;
@@ -232,6 +248,21 @@ public final class PetalSwarmRenderer {
 				if (sc <= 0.001) {
 					continue;
 				}
+				if (fp) {
+					double distNow = Math.sqrt(dist2);
+					if (distNow < fpClear) {
+						fpCulled++;
+						continue;
+					}
+					double a = FxMath.smoothstep(fpClear, fpFade, distNow);
+					double hash = (i * 0.6180339887498949) % 1.0;
+					if (hash > fpKeep + (1.0 - fpKeep) * a) {
+						fpCulled++;
+						continue;
+					}
+					sc *= fpSize + (1.0 - fpSize) * a;
+					fpNearest = Math.min(fpNearest, distNow);
+				}
 				double size = petalScale * sc * (mode.kind == SwarmMath.Kind.BARRIER ? 1.25 : 1.0) * (0.8 + 0.4 * st.slots.tumblePhase[i] / 6.2832);
 				double ang = st.slots.tumblePhase[i] + st.slots.tumbleRate[i] * now;
 				rot(st.slots.tx[i], st.slots.ty[i], st.slots.tz[i], ang, M);
@@ -297,11 +328,12 @@ public final class PetalSwarmRenderer {
 				}
 				petalsDrawn++;
 				// glow items: sparkle on the strong glints, streaks behind fast petals
-				if (glint > 0.55 && glints < 220 && dl < 40) {
+				boolean glowOk = !fp || dl > fpFade * 0.8;
+				if (glowOk && glint > 0.55 && glints < 220 && dl < 40) {
 					glints++;
 					addItem(0, x, y, z, 0, 0, 0, (float) glint);
 				}
-				if (streakStride > 0 && i % streakStride == 0 && dl < 24) {
+				if (glowOk && streakStride > 0 && i % streakStride == 0 && dl < 24) {
 					SwarmMath.position(st.slots, i, Math.max(0, t - 0.02), mode, st.yaw, OUT2);
 					SwarmMath.position(st.slots, i, t, mode, st.yaw, OUT);
 					float vx = (float) (OUT[0] - OUT2[0]) / 0.02f;
@@ -313,7 +345,7 @@ public final class PetalSwarmRenderer {
 					}
 				}
 				// halo: 1 petal in 8 gets a soft glow
-				if ((i & 7) == 0 && dl < 30) {
+				if (glowOk && (i & 7) == 0 && dl < 30) {
 					addItem(2, x, y, z, 0, 0, 0, 1f);
 				}
 			}
@@ -326,6 +358,9 @@ public final class PetalSwarmRenderer {
 		lastVertices = quads * 4;
 		lastPetals = petalsDrawn;
 		lastNear = near;
+		lastFpCulled = fpCulled;
+		lastFpNearest = fpNearest;
+		lastFp = anyFp;
 		lastGlints = glints;
 		lastMs = (System.nanoTime() - t0) / 1.0e6;
 		sumMs += lastMs;

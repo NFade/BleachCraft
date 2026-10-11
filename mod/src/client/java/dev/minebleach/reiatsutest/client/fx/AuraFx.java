@@ -32,6 +32,14 @@ public final class AuraFx {
 		int nextSoundTick;
 		int nextRingTick;
 		int nextBreathTick;
+		int entityId;
+		/** Horizontal speed of the player in blocks per second (smoothed over the client ticks); the moving player gets fewer ground effects. */
+		double speed;
+		double lastX;
+		double lastZ;
+		boolean hasLast;
+		/** FX clock value at which the Rukia bankai aura of this player began (the sigil fades in from it), or -1. */
+		double rukiaBankaiSince = -1;
 		final ArrayDeque<Integer> live = new ArrayDeque<>();
 		final ArrayDeque<FxParticles.FxParticle> wisps = new ArrayDeque<>();
 	}
@@ -44,6 +52,52 @@ public final class AuraFx {
 	public static int peakLive;
 
 	private AuraFx() {
+	}
+
+	public static void init() {
+		FxGlowBatch.addSource(AuraFx::emitGlow);
+	}
+
+	/** 0..1: how still the player is (1 standing, 0 running); the ground effects of the aura scale with it. */
+	private static double stillness(PlayerAura a) {
+		return FxMath.clamp(1.0 - (a.speed - 0.8) / 3.7);
+	}
+
+	/**
+	 * The Rukia bankai frost sigil under the feet: ONE sprite per player and frame, positioned at the interpolated feet, so it follows her smoothly and
+	 * can never pile up while she moves (it used to be a 12 tick sprite spawned every 5 ticks, which smeared a trail of sigils behind a walking player).
+	 */
+	private static void emitGlow(FxGlowBatch.Emitter e) {
+		if (PLAYERS.isEmpty()) {
+			return;
+		}
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if (mc.world == null) {
+			return;
+		}
+		float td = mc.getRenderTickCounter().getTickDelta(false);
+		Vec3d cam = mc.gameRenderer.getCamera().getPos();
+		double now = FxClock.now;
+		double glow = tune("glow", 1.0);
+		float[] col = FxMath.hex("#CFEFFF");
+		for (PlayerAura a : PLAYERS.values()) {
+			if (a.rukiaBankaiSince < 0) {
+				continue;
+			}
+			net.minecraft.entity.Entity pl = mc.world.getEntityById(a.entityId);
+			if (pl == null || !pl.isAlive()) {
+				continue;
+			}
+			Vec3d f = pl.getLerpedPos(td);
+			double lod = FxMath.lod(cam.distanceTo(f));
+			if (lod <= 0) {
+				continue;
+			}
+			double fade = FxMath.smoothstep(0.0, 0.6, now - a.rukiaBankaiSince);
+			double breath = 1.0 + 0.10 * Math.sin(2 * Math.PI * 0.25 * now);
+			// the frost sigil on the ground, radius 3, 0.02 rev/s, breathing +-10 percent at 0.25 Hz
+			e.ground(GlowSprite.FROST_SIGIL, f.x, f.y + 0.04, f.z, 6.0 * breath, 6.0 * breath, 2 * Math.PI * 0.02 * now, col[0], col[1], col[2], tune("sigil", 0.34) * glow * 0.6 * fade * lod);
+		}
 	}
 
 	/** The character a player last had released (the seal event arrives after the state is already SEALED). */
@@ -105,6 +159,20 @@ public final class AuraFx {
 			while (!a.live.isEmpty() && a.live.peekFirst() <= tickCounter) {
 				total--;
 				a.live.pollFirst();
+			}
+			a.entityId = pl.getId();
+			if (a.hasLast) {
+				double inst = Math.hypot(pl.getX() - a.lastX, pl.getZ() - a.lastZ) * 20.0;
+				a.speed += (inst - a.speed) * 0.35;
+			}
+			a.lastX = pl.getX();
+			a.lastZ = pl.getZ();
+			a.hasLast = true;
+			boolean rukiaBankai = released && a.character == CharacterId.RUKIA && a.state == ZanpakutoState.BANKAI && pl.isAlive() && !pl.isSpectator();
+			if (rukiaBankai && a.rukiaBankaiSince < 0) {
+				a.rukiaBankaiSince = FxClock.now;
+			} else if (!rukiaBankai) {
+				a.rukiaBankaiSince = -1;
 			}
 			if (!released || !pl.isAlive() || pl.isSpectator()) {
 				continue;
@@ -237,7 +305,7 @@ public final class AuraFx {
 				.peak((bankai ? 0.30 : 0.26) * glow * (1.0 + 0.3 * day)).lod(lod).spawn();
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(feet.x, feet.y + 1.55, feet.z).axisY().size(bodyS * 0.9).lifeTicks(12).curve(0.12, 0.6).color(halo)
 				.peak((bankai ? 0.26 : 0.22) * glow * (1.0 + 0.3 * day)).lod(lod).spawn();
-		if (!(!rukia && bankai) && tickCounter >= a.nextRingTick) {
+		if (!(!rukia && bankai) && tickCounter >= a.nextRingTick && !(rukia && bankai && stillness(a) < 0.5)) {
 			a.nextRingTick = tickCounter + (bankai ? 28 : 24);
 			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(feet.x, feet.y + 0.05, feet.z).ground().size(1.6, bankai ? 5.4 : 4.2).sizeEase(FxMath.OC).life(0.9)
 					.curve(0.1, 0.75).color(halo).peak(0.32 * glow).lod(lod).spawn();
@@ -292,7 +360,8 @@ public final class AuraFx {
 	private static int rukiaBankaiExtras(PlayerAura a, Vec3d feet, double lod, double now, int cap, int clientTotal, double fx, double fz, double glow) {
 		int made = 0;
 		// snowfall: a disc of radius 3.5 at 3.5 above the feet, flakes fall 0.55 b/s with a sideways drift, spin
-		int n = count(tune("snowRate", 9));
+		double still = stillness(a);
+		int n = count(tune("snowRate", 9) * FxMath.lerp(0.35, 1.0, still));
 		for (int i = 0; i < n && a.live.size() < cap && clientTotal + made < 400; i++) {
 			double ang = RNG.nextDouble() * Math.PI * 2;
 			double rad = 3.5 * Math.sqrt(RNG.nextDouble());
@@ -308,18 +377,16 @@ public final class AuraFx {
 				made++;
 			}
 		}
-		// the frost sigil on the ground, radius 3, 0.02 rev/s, breathing +-10 percent at 0.25 Hz
-		double breath = 1.0 + 0.10 * Math.sin(2 * Math.PI * 0.25 * now);
-		FxGlowBatch.sprite(GlowSprite.FROST_SIGIL).at(feet.x, feet.y + 0.04, feet.z).ground().size(6.0 * breath).lifeTicks(12).curve(0.12, 0.6)
-				.rot(2 * Math.PI * 0.02 * now, 0).color("#CFEFFF").peak(tune("sigil", 0.34) * glow).lod(lod).spawn();
+		// (the frost sigil is a per frame sprite: emitGlow)
 		// ground mist hugging the frost: one soft sprite per cadence drifting around her
 		double ang = RNG.nextDouble() * Math.PI * 2;
 		double rad = 0.8 + RNG.nextDouble() * 1.8;
+		if (RNG.nextDouble() < FxMath.lerp(0.25, 1.0, still))
 		FxGlowBatch.sprite(GlowSprite.MIST).at(feet.x + Math.cos(ang) * rad, feet.y + 0.12, feet.z + Math.sin(ang) * rad).ground().rot(RNG.nextDouble() * 6.28, 0.1)
 				.size(3.4 + RNG.nextDouble())
 				.vel(-Math.sin(ang) * 0.35, 0.05, Math.cos(ang) * 0.35).lifeTicks(30).curve(0.3, 0.6).color("#EAF8FF").peak(tune("mist", 0.22) * glow).lod(lod).spawn();
 		// glints on the ice air (6 per second)
-		n = count(6);
+		n = count(6 * FxMath.lerp(0.4, 1.0, still));
 		for (int i = 0; i < n; i++) {
 			double ga = RNG.nextDouble() * Math.PI * 2;
 			double gr = 3.0 * Math.sqrt(RNG.nextDouble());

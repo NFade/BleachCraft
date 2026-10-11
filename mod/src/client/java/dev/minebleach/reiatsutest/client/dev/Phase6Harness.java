@@ -384,6 +384,9 @@ public final class Phase6Harness {
 		if (wants("rowsperf")) {
 			Phase6Rows.perfSteps();
 		}
+		if (Phase6FxFix.wants()) {
+			Phase6FxFix.steps();
+		}
 		if (explicit("console")) {
 			Phase6Release.consoleStart();
 		}
