@@ -952,3 +952,8 @@ One code batch, then the harness scenario `fxfix` (`Phase6FxFix`; `gradlew runPh
 
 ## 2026-10-11: BC2 fix, tiny-config for dev run
 - `mod/build.gradle`: added `modLocalRuntime "maven.modrinth:tiny-config:3.1.0-fabric"` (BC nests it, Loom skips nested jars in dev). Build OK, resolves in runtimeClasspath. runClient not run. Details: `design/results/bc2_fix.md`.
+
+## 2026-10-11: BC4 hand/pose conflicts with Better Combat (by code)
+- javap of BC 2.4.0 + playerAnimator 2.0.4: BC has no mixin into HeldItemRenderer, PlayerEntityRenderer, BipedEntityModel, ArmorFeatureRenderer (its LivingEntityRenderer mixin is empty). PA hooks HeldItemRenderer (renderHandsWithItems HEAD cancel, renderItem INVOKE renderStatic cancel), PlayerEntityModel.setAngles (after super, overwrites arms/body), HeldItemFeatureRenderer (item bone). No direct method+point clash with our mixins; BC attacks never call swingHand, so our T4 slash does not fire for them.
+- Only change: `"priority": 1100` in `reiatsu_test.client.mixins.json` so our RETURN inject (matrix pop, DrawTracker.endRender) also sees the return PA inserts when it cancels mid renderItem. UNVERIFIED in game.
+- Open for BC5 / common run: BC katana pose is on even when the sword is SEALED (empty hand), BC attack in first person hides our hand + scabbard (PA THIRD_PERSON_MODEL), rightItem bone of the pose rotates the sword in third person. Details and checklist: `design/results/bc4.md`.
