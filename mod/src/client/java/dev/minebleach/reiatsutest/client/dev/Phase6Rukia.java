@@ -206,6 +206,11 @@ final class Phase6Rukia {
 		press(ReiatsuKeys.SLOTS[slot]);
 	}
 
+	/** Bankai row (U I O): Absolute zero is the first one. */
+	private static void castBankai(int slot) {
+		press(ReiatsuKeys.BANKAI_SLOTS[slot]);
+	}
+
 	// ------------------------------------------------------------------------------------------------ scenarios
 
 	/** One ability shot. kind: tsuki, hak, shira, abs. */
@@ -224,7 +229,7 @@ final class Phase6Rukia {
 			default -> 0;
 		};
 		scene(name, state, mobs, night ? "midnight" : "noon", view, kind.equals("abs") ? 90 : 36);
-		armShot(name, ms, () -> cast(slot), () -> shotChecks(name, kind, ms));
+		armShot(name, ms, () -> { if (kind.equals("abs")) { castBankai(0); } else { cast(slot); } }, () -> shotChecks(name, kind, ms));
 	}
 
 	/** What the state must be at the frozen moment: logged for every shot, hard checks where the storyboard gives a number. */
@@ -351,7 +356,7 @@ final class Phase6Rukia {
 		scene("07_abszero_fallback_t2000", "bankai", zombiesAt(ring32()), "noon", "back", 90);
 		armShot("07_abszero_fallback_t2000", 2000, () -> {
 			FreezeDesat.forceFallback = true;
-			cast(0);
+			castBankai(0);
 		});
 		step("rk7: fallback reset", 2, () -> FreezeDesat.forceFallback = false);
 	}
@@ -418,7 +423,7 @@ final class Phase6Rukia {
 		scene("perf-F6", "bankai", zombiesAt(ring32()), "noon", "back", 100);
 		step("perf F6: record + cast", 1, () -> {
 			startRecording();
-			cast(0);
+			castBankai(0);
 		});
 		step("perf F6: 5 s of absolute zero", 20 * 5, () -> { });
 		step("perf F6: report", 1, () -> report("F6 absolute zero, 32 zombies", 60, 45));

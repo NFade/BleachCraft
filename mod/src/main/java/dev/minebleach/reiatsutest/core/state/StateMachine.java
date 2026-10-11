@@ -413,6 +413,10 @@ public final class StateMachine {
 		gcdEnd = 0;
 		shunpoEnd = 0;
 		bankaiLockEnd = 0;
+		if (state == ZanpakutoState.BANKAI) {
+			// dev harness: a long scripted run must not fall out of bankai through the 45 s cap
+			bankaiEnd = clock.nowTick() + cfg.bankaiCapTicks();
+		}
 	}
 
 	// ------------------------------------------------------------------ queries

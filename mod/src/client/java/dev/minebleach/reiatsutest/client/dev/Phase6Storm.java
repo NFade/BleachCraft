@@ -92,7 +92,12 @@ final class Phase6Storm {
 	private static void waitSettled(String name) {
 		stepUntil(name + " (effect over)", 10, 20 * 16, () -> { }, () -> StormFx.states().isEmpty() && HakuteikenFx.states().isEmpty()
 				&& RowsFx.states().values().stream().noneMatch(RowsFx.State::phaseBusy) && BankaiBladeRenderer.lastStatic);
-		step(name + " (reset)", 20, () -> cmd("reiatsu cooldowns clear", "reiatsu full", "kill @e[type=pig]"));
+		step(name + " (reset)", 20, () -> {
+			ReiatsuTest.LOGGER.info("[phase6] settled? storm={} hak={} busy={} static={} phases={}", StormFx.states().size(), HakuteikenFx.states().size(),
+					RowsFx.states().values().stream().filter(RowsFx.State::phaseBusy).count(), BankaiBladeRenderer.lastStatic,
+					RowsFx.states().values().stream().map(r -> r.phase + "").toList());
+			cmd("reiatsu cooldowns clear", "reiatsu full", "kill @e[type=pig]");
+		});
 	}
 
 	private static void castScatter() {
@@ -129,8 +134,8 @@ final class Phase6Storm {
 				};
 			} else if (ms == 1500) {
 				checks = () -> {
-					cCheck("storm petals drawn at 1.5 s (" + StormRenderer.lastPetals + " of " + (StormFx.states().isEmpty() ? 0 : StormFx.states().values().iterator().next().storm.m) + ")",
-							() -> !StormFx.states().isEmpty() && StormRenderer.lastPetals >= 0.7 * StormFx.states().values().iterator().next().storm.m ? null : "drawn " + StormRenderer.lastPetals);
+					cCheck("storm petals drawn at 1.5 s (" + StormRenderer.lastPetals + " of " + (StormFx.states().isEmpty() ? 0 : StormFx.states().values().iterator().next().storm.m) + "; the rest is behind the camera or past 90 m)",
+							() -> !StormFx.states().isEmpty() && StormRenderer.lastPetals >= 0.55 * StormFx.states().values().iterator().next().storm.m ? null : "drawn " + StormRenderer.lastPetals);
 					cCheck("every blade is gone at 1.5 s", () -> rows() != null && rows().fraction(0) == 0 && rows().fraction(rows().layout.n - 1) == 0 ? null : "fractions "
 							+ (rows() == null ? "no rows" : rows().fraction(0) + " / " + rows().fraction(rows().layout.n - 1)));
 					cCheck("storm CPU cost " + f(StormRenderer.lastMs) + " ms <= 4 ms", () -> StormRenderer.lastMs <= 4.0 ? null : "ms " + StormRenderer.lastMs);

@@ -25,7 +25,8 @@ final class AnchorManager {
 
 	private static final Map<UUID, Anchors> BY_OWNER = new HashMap<>();
 	/** Safety net: rows vanish by themselves after this many ticks (a bankai lasts 900 ticks at most). */
-	private static final int ROWS_LIFE = 20 * 70;
+	/** Real play: bankai lasts 45 s. The phase 6 harness (dev only) holds bankai for minutes, so its anchors live longer. */
+	private static final int ROWS_LIFE = Boolean.getBoolean("reiatsu.phase6") ? 20 * 900 : 20 * 70;
 
 	private AnchorManager() {
 	}
