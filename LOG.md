@@ -936,3 +936,7 @@ One code batch, then the harness scenario `fxfix` (`Phase6FxFix`; `gradlew runPh
 ## 2026-10-11: BC2 Better Combat as dev dependency
 - `mod/build.gradle`: Modrinth maven (exclusiveContent) + `modLocalRuntime` for better-combat 2.4.0+1.21.1-fabric, playeranimator 2.0.4+1.21.1-fabric, cloth-config 15.0.140+fabric. `fabric.mod.json` depends: bettercombat >=2.4.0, playeranimator >=2.0.0, cloth-config >=15.0.130. Nothing of BC embedded or copied.
 - `gradlew build`: OK, deps resolve and remap (runtimeClasspath), built jar has no BC content. UNVERIFIED: real client/server start with both mods (not run). Details: `design/results/bc2.md`.
+
+## 2026-10-11: BC3 Better Combat presets + sword damage
+- `data/reiatsu_test/weapon_attributes/{sode_no_shirayuki,senbonzakura}.json` = `{"parent":"bettercombat:katana"}` (spike_item is not a sword, no file). `ModItems`: both swords get attack damage +6.0 (7 with base, BC multiplies 0.8/1.2) and attack speed -2.4 (vanilla sword). javap: BC `startUpswing` returns while `isUsingItem`, so RMB block forbids a swing on the client; BC server attack skips Fabric `AttackEntityCallback`, so our server-side block guard does not cover BC hits (risk, not changed).
+- Test `WeaponAttributesPresetTest` (2 tests) passes; full `gradlew test`: 374 run, 3 failed in the voice suite (parallel agent editing phrases.json), not BC3. Game not run, hit in game UNVERIFIED. Details: `design/results/bc3.md`.
