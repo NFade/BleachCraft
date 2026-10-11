@@ -949,3 +949,6 @@ One code batch, then the harness scenario `fxfix` (`Phase6FxFix`; `gradlew runPh
 - `ShunpoFx`: afterimage model scale now `shunpo.afterimageScale` (default 1.0, was a fixed 0.9375 = vanilla player scale; set 0.9375 to match the live player). Alpha and LIFE unchanged.
 - Screen rush for the caster only: `ScreenFx.shunpoRush` draws the radial speed lines (existing speed_lines.png, own slot) and a FOV kick added in `GameRendererMixin` to `getFov` (world camera only, not the hand). Keys: `shunpo.speedFx` 0.6, `shunpo.speedFxTime` 0.3, `shunpo.fovKick` 10. Off with reduceMotion / photosensitiveSafe; scaled by screenFxScale.
 - `gradlew test`: 380 run, 0 failed. Game not run. UNVERIFIED: look of the 2.0-block copies at default scale, speed_lines.png as radial lines (preview was blank), kick feel at 10 deg. Details: `design/results/shunpo_fx.md`.
+
+## 2026-10-11: BC2 fix, tiny-config for dev run
+- `mod/build.gradle`: added `modLocalRuntime "maven.modrinth:tiny-config:3.1.0-fabric"` (BC nests it, Loom skips nested jars in dev). Build OK, resolves in runtimeClasspath. runClient not run. Details: `design/results/bc2_fix.md`.
