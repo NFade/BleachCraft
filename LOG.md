@@ -969,3 +969,9 @@ One code batch, then the harness scenario `fxfix` (`Phase6FxFix`; `gradlew runPh
 - Third person item: `BcItemPose` applies a fixed Rx(-55 deg) about the grip while a PA layer drives rightItem (blade of `[45,180,0]` to vanilla's resting blade, JOML check), eased; hot tuning `pose_override.json` key `bc_item`. NOTE BC rightItem numbers are radians (bc4 said degrees).
 - Removed: `BipedEntityModelMixin`, `SwingPose`, T4 wrist in `HeldItemRendererMixin`, harness `swings`, T4 scenes in `tools/spike_tune_gen.py`. Kept: draw, scabbard T3, first person pose.
 - `gradlew compileClientJava test`: 402 tests, 0 failed. Game not run. UNVERIFIED: flag sync in game, mixin applies, first person view, item rotation values. Details and checklist: `design/results/bc5.md`.
+
+## 2026-10-11: Проект жестов рук и меча для абилок (design only)
+- `design/FP_ABILITY_ANIMS.md`: для каждой абилки (Рукия и Бякуя шикай/банкай, атака, барьер, блок, удар BC, шунпо, доставание, кидо) идея жеста, ключи по t с привязкой к VFX, камера, параметры для pose_override, механизмы и объём.
+- Факты из кода: правая рука приклеена к рукояти (`FirstPersonHand.gripOffset`), левая рука в обнажённом виде не рисуется (`ScabbardRenderer`, `sayaOut`), PA-слоёв у нас нет.
+- Новые механизмы N1-N7: свободная левая рука, свободная правая рука, поворот меча в хвате, таймлайн жестов, камера, PA-слой для третьего лица (без `rightItem`, иначе сработает `BcItemPose`), пустая рука без предмета.
+- Порядок: инфраструктура N1/N4/N5, затем банкай Бякуи Scatter и Release, банкай Рукии, шикай. Код не писан, игра не запускалась. Жесты по памяти, веб-референсы не сверены (UNVERIFIED).
