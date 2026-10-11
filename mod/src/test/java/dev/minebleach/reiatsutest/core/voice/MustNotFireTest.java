@@ -8,13 +8,14 @@ import org.junit.jupiter.api.Test;
 
 /**
  * VOICE_PHRASES 3.2, right-hand column: prefixes and short words that must never fire a command alone, and never when
- * combined with ordinary words. Run in every gate context (and ungated).
+ * combined with ordinary words. Run in every gate context (and ungated). The sword name "senbonzakura" left this list on
+ * 2026-10-11: alone it is now the shikai release in BASE (a weak, whole-utterance variant), see LiveSessionFixtureTest.
  */
 class MustNotFireTest {
 	private static final String[] ALONE = {
 		"mae", "sode", "dance", "some no mai", "tsugi no mai", "san no mai", "first dance", "next dance", "third dance",
-		"hakka", "togame", "zero", "absolute", "senbonzakura", "attack", "barrier", "dome", "shukei", "emperor", "sword",
-		"sen", "ноль", "атака", "барьер", "сан", "мае", "сенбонзакура", "千本桜", "桜", "雪", "banzai", "bonsai", "банка", "cherry",
+		"hakka", "togame", "zero", "absolute", "attack", "barrier", "dome", "shukei", "emperor", "sword",
+		"sen", "ноль", "атака", "барьер", "сан", "мае", "桜", "雪", "banzai", "bonsai", "банка", "cherry",
 	};
 
 	/** Ordinary words used to dress the prefixes up as sentences. */

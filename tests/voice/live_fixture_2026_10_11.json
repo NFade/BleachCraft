@@ -1,0 +1,542 @@
+{
+ "_comment": "Live session 2026-10-11 (Chrome ru-RU/en-US, real microphone): the strings the recogniser really produced (source=log) plus the aliases added for their siblings (source=alias) and ordinary phrases that must stay silent (source=design). Positives must fire exactly their command in a context valid for it; neutrals never in any gate context. Separate from the 202/153 and the dirty (G3) fixtures.",
+ "version": 1,
+ "positives": [
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "ширая Сен бонзакура",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "что сэмбонзакура",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "Сэм бонзакура",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "щиро сен-бонзакура",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "шире",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "щире",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чьере",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чере",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "чире",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "сэмбонзакура",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "Сенбонзакура",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "Сэм бонзакура пожалуйста",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "ну сэнбонзакура",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "ru-RU",
+   "text": "щире сэнбонзакура",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "Senbonzakura",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "senbonsakura",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "sen bonsakura",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "uh senbonzakura",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "senbonzakura please",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "shire",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "sire",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "cire",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "shiro senbonzakura",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "shire sen bonzakura",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.shikai.release",
+   "lang": "en-US",
+   "text": "chire senbonzakura",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "шире",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "чьере",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "ru-RU",
+   "text": "щиро сен-бонзакура",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "shire",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.scatter",
+   "lang": "en-US",
+   "text": "shire senbonzakura",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкой",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "Банкай",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "кагаеси",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "ru-RU",
+   "text": "кага еси",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.release",
+   "lang": "en-US",
+   "text": "cagey yoshi",
+   "source": "alias"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "ru-RU",
+   "text": "банкой",
+   "source": "log"
+  },
+  {
+   "command": "rukia.bankai.release",
+   "lang": "en-US",
+   "text": "Bankai",
+   "source": "log"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "ru-RU",
+   "text": "хаку тайкен",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.hakuteiken",
+   "lang": "en-US",
+   "text": "hacku tay ken",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "en-US",
+   "text": "sen key",
+   "source": "alias"
+  },
+  {
+   "command": "byakuya.bankai.senkei",
+   "lang": "ru-RU",
+   "text": "сен кей",
+   "source": "alias"
+  },
+  {
+   "command": "rukia.shikai.release",
+   "lang": "en-US",
+   "text": "my sudano shirayuki",
+   "source": "log"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "en-US",
+   "text": "Suki Shiro",
+   "source": "log"
+  },
+  {
+   "command": "rukia.bankai.absolute_zero",
+   "lang": "en-US",
+   "text": "absolute zero",
+   "source": "log"
+  },
+  {
+   "command": "rukia.shikai.tsukishiro",
+   "lang": "ru-RU",
+   "text": "самая намаи цукиширов",
+   "source": "log"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "ru-RU",
+   "text": "цугина МАИ хакурен",
+   "source": "log"
+  },
+  {
+   "command": "rukia.shikai.hakuren",
+   "lang": "ru-RU",
+   "text": "хакурен",
+   "source": "log"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "ru-RU",
+   "text": "нормально саннами ширафуна",
+   "source": "alias"
+  },
+  {
+   "command": "rukia.shikai.shirafune",
+   "lang": "ru-RU",
+   "text": "ширафуна",
+   "source": "log"
+  }
+ ],
+ "neutrals": [
+  {
+   "lang": "en-US",
+   "text": "sign language",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "talk",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "bye so they're not sure",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "there no shit iuki",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "so many more",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "so you know my heron",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "my",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "Samuel",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "black oprosa Aquarium",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "hot Korean",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "Sugino Maya Quran",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "near",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "hot Connecticut",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "что",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "фига он сделал уже парирование",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "три из трёх",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "ну-ка тут",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "ra",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сэмбо на",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "а",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "а так Мот",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "А так молд",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "такие дела",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "Ну вот он сделал кстати",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "а почему вокруг меня ничего нет",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "и что блядь",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "Почему не читает",
+   "source": "log"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "стало лучше",
+   "source": "log"
+  },
+  {
+   "lang": "en-US",
+   "text": "siro",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "щиро",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "silo",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "cherry",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "cheery",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "chili",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "тире",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "банка",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сэмбо на",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "I like senbonzakura music",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "senbonzakura is a great song",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "спой сенбонзакура для меня",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "это сэнбонзакура из блича",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "the shire",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "build a silo",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "шире шаг",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "шире плечи",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "сделай шире",
+   "source": "design"
+  },
+  {
+   "lang": "en-US",
+   "text": "sire of the realm",
+   "source": "design"
+  },
+  {
+   "lang": "ru-RU",
+   "text": "через дорогу",
+   "source": "design"
+  }
+ ]
+}

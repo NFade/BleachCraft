@@ -178,7 +178,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 - **Required state:** BASE. **Item:** Byakuya's zanpakuto in the main hand.
 - **Canonical phrase:** Chire, Senbonzakura
-- **Notes:** Release word 散れ (chire, "scatter"). `ART_BIBLE` storyboard calls the shikai release "Chire". Name alone ("Senbonzakura") is **not** a trigger.
+- **Notes:** Release word 散れ (chire, "scatter"). `ART_BIBLE` storyboard calls the shikai release "Chire". 2026-10-11 (first live session): the name alone ("Senbonzakura", any spelling that shares the key `senbonsakura`) **is** a trigger in BASE, as a weak variant (whole utterance, fillers ignored), because Chrome ru-RU almost never writes "chire" correctly. The name inside a longer sentence still does nothing.
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
@@ -591,7 +591,7 @@ Totals: 160 ASR rows, 115 tier F (fuzzy reaches them), 45 tier A (alias required
 
 1. **Window match, not full-string match.** The matcher looks for the variant inside the utterance (extra words before or after are allowed) for every **strong** variant. "Okay now Sode no Shirayuki please" fires.
 2. **Weak variants need a whole-utterance match.** The utterance, after removing the filler words `please, now, пожалуйста, давай, ну, сейчас, お願い`, must equal the variant. Applies to every variant of `common.seal` and to the lone-word variants "Chire", "Scatter", "Чире", "散れ", "ちれ". Reason: these are short or common words ("seal", "scatter", "печать").
-3. **Names may be said without the prefix.** The ability name alone is enough: `Hakuren`, `Tsukishiro`, `Shirafune`, `Hakuteiken`, `Hakka no Togame`, `Kageyoshi`. The prefix alone ("Tsugi no mai", "Some no mai", "Mae", "Shukei", "Sode", "Senbonzakura") is **never** enough.
+3. **Names may be said without the prefix.** The ability name alone is enough: `Hakuren`, `Tsukishiro`, `Shirafune`, `Hakuteiken`, `Hakka no Togame`, `Kageyoshi`. The prefix alone ("Tsugi no mai", "Some no mai", "Mae", "Shukei", "Sode") is **never** enough. Exception decided 2026-10-11: "Senbonzakura" alone releases Byakuya's shikai in BASE (weak variant, whole utterance only; in SHIKAI, BANKAI, SEALED or with another sword it still does nothing).
 4. **State/item gating happens before scoring**; a phrase for another state is not an error, it is simply ignored. This is what separates "Chire" (shikai release in BASE, petal storm in BANKAI, ignored in SHIKAI) and "Bankai" (release in SHIKAI, ignored in BASE, SEALED and BANKAI).
 5. **Cross-language tolerance.** All variants of all languages are matched regardless of the `lang` field (people mix: an en-US session will hear Cyrillic-like romaji). `lang` is only logged.
 6. **Margin rule.** If two different commands of the gated set both pass, the higher wins only if it leads by at least 0.03; otherwise nothing fires (log "ambiguous"). With the current table this never happens inside one state (checked), so it is a safety net for future edits.
@@ -607,7 +607,7 @@ Totals: 160 ASR rows, 115 tier F (fuzzy reaches them), 45 tier A (alias required
 | `rukia.shikai.shirafune` | `Shirafune` (alone) or `San no mai Shirafune`; English `Third dance, white sword`. | "San no mai" alone, "third dance" alone. |
 | `rukia.bankai.release` | `Bankai` (alone) or `Hakka no Togame` (alone) or both. English `Censure of the White Haze` accepted. | "Hakka" alone, "togame" alone. |
 | `rukia.bankai.absolute_zero` | `Absolute zero` / `Абсолютный ноль` / 絶対零度 (full phrase). | "zero" alone, "absolute" alone, "ноль" alone. `Hakka no Togame` and `Bankai` are **ignored** in BANKAI state. |
-| `byakuya.shikai.release` | `Chire Senbonzakura` (any ASR spelling) **or** the lone word `Chire` / `Scatter` / `Чире` / 散れ as a whole utterance. | "Senbonzakura" alone, "Bankai", "cherry blossoms". |
+| `byakuya.shikai.release` | `Chire Senbonzakura` (any ASR spelling) **or** the lone word `Chire` / `Scatter` / `Чире` / 散れ as a whole utterance, **or** `Senbonzakura` as a whole utterance (any spelling with the key `senbonsakura`: "sen bonzakura", "сэм бонзакура", 千本桜), or the lone ASR garbles of Chire `shire` / `sire` / `шире` / `щире` / `чьере` / `чере` (whole utterance), or a garble glued to the name (`щиро сен-бонзакура`, `что сэмбонзакура`). | "Senbonzakura" inside a sentence ("I like senbonzakura music"), lone `siro` / `щиро` (the key of "silo"), "Bankai", "cherry blossoms". |
 | `byakuya.shikai.mode_attack` | `Attack mode` / `Режим атаки` / 攻撃モード (two words). | "attack" alone, "атака" alone. |
 | `byakuya.shikai.mode_barrier` | `Barrier mode` / `Dome mode` / `Режим барьера` / `Режим купола` / 防御モード. | "barrier" alone, "dome" alone, "барьер" alone. |
 | `byakuya.bankai.release` | `Bankai` alone, `Kageyoshi` alone, or `Senbonzakura Kageyoshi` (with or without "Bankai"). In SHIKAI state only. | **"Senbonzakura" alone must NOT trigger.** "Chire" must NOT trigger (Gate A 8). |
@@ -626,7 +626,12 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | まえそでのしらゆき | BASE | rukia | `rukia.shikai.release` |
 | そめのまいつきしろ | SHIKAI | rukia | `rukia.shikai.tsukishiro` |
 | ばんかいせんぼんざくらかげよし | SHIKAI | byakuya | `byakuya.bankai.release` |
-| senbonzakura | BASE | byakuya | none * |
+| senbonzakura | BASE | byakuya | `byakuya.shikai.release` * |
+| сэм бонзакура | BASE | byakuya | `byakuya.shikai.release` |
+| шире | BASE | byakuya | `byakuya.shikai.release` |
+| шире | SHIKAI | byakuya | none |
+| siro | BASE | byakuya | none * |
+| senbonzakura is a great song | BASE | byakuya | none * |
 | senbonzakura | BANKAI | byakuya | none |
 | сенбонзакура | SHIKAI | byakuya | none |
 | 千本桜 | SHIKAI | byakuya | none |
@@ -741,6 +746,7 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 - **"Banzai", "bonsai", "банка", "банзай"** differ from "bankai" by one letter or one letter missing. Short keys (6 letters or less) are therefore exact-match only; Jaro-Winkler alone would score "банка" at 0.967 and "banzai" at 0.92, which is why a plain threshold is not enough (see 5.2).
 - **"Hakka no Togame" in BANKAI state** is ignored on purpose. Otherwise the second half of "Bankai, Hakka no Togame" could re-fire as a different command if the first half fired from an interim result.
 - **"Chire" collisions:** English "cherry" (key `cery`) and Russian "чирей" (boil, key `cire`) are the only real words close to the key. "Cherry" does not fire; "чирей" fires as a lone word in BASE (Byakuya) and BANKAI. Accepted as a known, very rare collision.
+- **Lone "Senbonzakura" and the garbled "Chire" (2026-10-11, first live session).** Chrome ru-RU wrote "chire" as шире, щиро, чьере, сире and rarely correctly, and en-US as sire, shire, siro. Decision: the sword name alone and the lone garbles `shire`/`sire`/`шире`/`щире`/`чьере`/`чере` fire the shikai release in BASE (and, for the garbles, the petal storm in BANKAI), always as weak variants (whole utterance only). `siro`/`shiro`/`щиро` alone stay silent (key `siro` = the Minecraft word "silo"); glued to the name they count. `cherry`, `cheery`, `chili`, `тире` stay silent. Known price: "шире" and "sire" as a one-word utterance spoken while Byakuya's drawn sword is in hand. The z to s fold (`senbonzakura` = `senbonsakura`) was already in the normaliser (5.1) and needed no change.
 - **"Absolute zero"** is also ordinary physics talk. It only matters when Rukia holds her bankai sword in BANKAI state, so no further rule is applied.
 - **Rukia vs Byakuya "Bankai":** the same word triggers whichever character the held item belongs to. Nothing to disambiguate.
 

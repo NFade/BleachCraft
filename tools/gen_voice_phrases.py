@@ -35,6 +35,21 @@ INTERIM_SAFE = {
     "byakuya.shikai.release", "byakuya.shikai.mode_attack", "byakuya.shikai.mode_barrier", "common.seal",
 }
 
+# --- 2026-10-11 live session (design/results/voice_v3.md). Byakuya's names, as Chrome ru-RU / en-US actually wrote them.
+# The lone sword name is the shikai release in BASE (it was a trap before: "Senbonzakura" alone was ignored). It is WEAK,
+# i.e. only the whole utterance counts (fillers ignored), so "I like senbonzakura music" never fires it. The z/s, m/n and
+# word-split variants ("sen bonsakura", "сэм бонзакура", "сэмбонзакура") all share one key and need no alias.
+SENBON_ALONE = [("senbonzakura", True), ("сэнбонзакура", True), ("千本桜", True)]
+# "chire" heard as other words: the keys are sire (shire, шире, щире) and cere (чьере, чере). Nonsense or very rare as a whole
+# utterance; weak (whole utterance only), and valid only in BASE (release) or BANKAI (scatter).
+# Deliberately NOT lone: cherry / cheery / chili (key cery, ciri), тире, and shiro / щиро (key siro, the same as the
+# Minecraft word "silo"); those two only count glued to the name (CHIRE_LEAD_COMBOS).
+CHIRE_LONE_WEAK = [("shire", True), ("шире", True), ("щире", True), ("чьере", True), ("чере", True)]
+# the same mis-hearings glued to the name ("щиро сен-бонзакура", "что сэмбонзакура", "ширая сен бонзакура"); the lead may
+# be any of the garbles because the name itself is the evidence (strong variant, fuzzy per token as usual).
+CHIRE_LEAD_COMBOS = [(lead + " senbonzakura", False) for lead in
+                     ("shire", "shiro", "шире", "щире", "щиро", "чьере", "ширая", "что", "sheeray")]
+
 # id -> list of (text, weak). Reasons are in the comments; every entry is an ASR rendering seen or expected in the
 # fixture (tests/voice/phrases_fixture.json) that Jaro-Winkler cannot reach from the canonical forms.
 EXTRA_ALIASES = {
@@ -55,21 +70,26 @@ EXTRA_ALIASES = {
     # Kageyoshi: the ey fold shortens its key to 6 letters ("kagesi", exact-only); the spaced spellings keep eight
     # letters and so one slip of tolerance
     "byakuya.bankai.release": [("kage yoshi", False), ("kaga yoshi", False), ("kagayoshi", False),
+                               ("cagey yoshi", False), ("кагаеси", False), ("кага еси", False),
                                ("bankay", False), ("bunkay", False), ("bonkay", False), ("bang kai", False),
                                ("bung kai", False)],
     "byakuya.shikai.release": [("sherry senbonzakura", False), ("chiray senbonzakura", False),
-                               ("чере сенбонзакура", False)],
+                               ("чере сенбонзакура", False)] + SENBON_ALONE + CHIRE_LONE_WEAK + CHIRE_LEAD_COMBOS,
     "byakuya.shikai.mode_attack": [("attacked mode", False), ("режим атака", False)],
     "byakuya.shikai.mode_barrier": [("barrier modo", False), ("bury her mode", False),
                                     ("bow gyo mode", False), ("режим барьер", False), ("режим купол", False)],
     "byakuya.bankai.scatter": [("sherry senbonzakura", False), ("chiray senbonzakura", False),
                                ("чере сенбонзакура", False), ("лепестковая буря", False),
-                               ("буря из лепестков", False), ("шторм из лепестков", False), ("petal storms", False)],
-    "byakuya.bankai.hakuteiken": [("haku tei ken", False), ("hakutei ken", False), ("хаку тейкен", False)],
+                               ("буря из лепестков", False), ("шторм из лепестков", False), ("petal storms", False)]
+                              + CHIRE_LONE_WEAK + CHIRE_LEAD_COMBOS,
+    # live log 2026-10-11 and expected siblings: ASR splits "hakuteiken" in two or three, or hears "taken"
+    "byakuya.bankai.hakuteiken": [("haku tei ken", False), ("hakutei ken", False), ("хаку тейкен", False),
+                                  ("хаку тайкен", False), ("hacku tay ken", False)],
     # senkei is optional and 6 letters long: exact-only, so the common mis-hearings are listed ("sankei"/"sankey" is
     # left out on purpose: its key "sanke" is also the plain English word)
     "byakuya.bankai.senkei": [("sen kei", False), ("sen kai", False), ("senkai", False),
-                              ("senkay", False), ("sankay", False), ("сенкай", False)],
+                              ("senkay", False), ("sankay", False), ("сенкай", False),
+                              ("sen key", False), ("сен кей", False)],
     # seal: only the whole utterance counts (weak), so natural objects of the verb are variants of their own
     "common.seal": [("seal your sword", True), ("seal my sword", True), ("seal the blade", True),
                     ("seal the zanpakuto", True), ("запечатай катану", True), ("запечатать катану", True),
@@ -87,6 +107,10 @@ GATED_ALIASES = {
         ("bank eye senbonzakura kageyoshi", False), ("bank i senbonzakura kageyoshi", False),
     ],
 }
+# live log 2026-10-11: the ru-RU recogniser's top hypothesis for "банкай" was "банкой" (the instrumental of "банка", a jar);
+# same protection as the bank eye family (SHIKAI + item + full bar, whole utterance only)
+GATED_ALIASES["rukia.bankai.release"].append(("банкой", True))
+GATED_ALIASES["byakuya.bankai.release"].append(("банкой", True))
 
 
 def cells(line):

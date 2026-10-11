@@ -328,9 +328,9 @@ public final class VoiceControl implements VoiceBackend {
 				VoiceHudState.result(msg.text(), d.commandId(), VoiceHudState.Result.NO_MATCH);
 			}
 			if (msg.isFinal() && d.outcome() != VoiceProcessor.Outcome.EMPTY) {
-				// tuning aid (G3): what the recogniser said, the key the matcher saw and how many alternatives came with it
+				// tuning aid (G3): what the recogniser said, the key the matcher saw and the other hypotheses that came with it
 				ReiatsuTest.LOGGER.info("[voice] heard \"{}\" ({}) key='{}' alts={} -> {}", msg.text(), msg.lang(), d.normalized(),
-						msg.alternatives().size(), d.outcome().wire());
+						msg.alternatives(), d.outcome().wire());
 			} else {
 				ReiatsuTest.LOGGER.debug("[voice] \"{}\" -> {}", msg.text(), d.outcome().wire());
 			}

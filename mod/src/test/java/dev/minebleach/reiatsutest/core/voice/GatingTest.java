@@ -44,7 +44,9 @@ class GatingTest {
 				"the tail of the bankai phrase must not re-fire in the new state");
 		// Gate A decision 8: "Chire" is never a bankai trigger
 		assertFalse("byakuya.bankai.release".equals(fire("chire", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI)));
-		assertNull(fire("senbonzakura", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI), "the sword name alone is not a trigger");
+		assertNull(fire("senbonzakura", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI), "the sword name alone is the shikai release only in BASE");
+		assertNull(fire("senbonzakura", CharacterId.BYAKUYA, ZanpakutoState.BANKAI));
+		assertEquals("byakuya.shikai.release", fire("senbonzakura", CharacterId.BYAKUYA, ZanpakutoState.BASE));
 	}
 
 	@Test

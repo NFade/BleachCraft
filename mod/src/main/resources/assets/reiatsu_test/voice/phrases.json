@@ -121,7 +121,8 @@
         {"text": "bank eye hakka no togame", "origin": "A", "requires": ["full_reiatsu"]},
         {"text": "bank i hakka no togame", "origin": "A", "requires": ["full_reiatsu"]},
         {"text": "bankie", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "banki", "origin": "A", "weak": true, "requires": ["full_reiatsu"]}
+        {"text": "banki", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
+        {"text": "банкой", "origin": "A", "weak": true, "requires": ["full_reiatsu"]}
       ]
     },
     {
@@ -165,7 +166,24 @@
         {"text": "тире сенбонзакура", "origin": "A"},
         {"text": "sherry senbonzakura", "origin": "A"},
         {"text": "chiray senbonzakura", "origin": "A"},
-        {"text": "чере сенбонзакура", "origin": "A"}
+        {"text": "чере сенбонзакура", "origin": "A"},
+        {"text": "senbonzakura", "origin": "A", "weak": true},
+        {"text": "сэнбонзакура", "origin": "A", "weak": true},
+        {"text": "千本桜", "origin": "A", "weak": true},
+        {"text": "shire", "origin": "A", "weak": true},
+        {"text": "шире", "origin": "A", "weak": true},
+        {"text": "щире", "origin": "A", "weak": true},
+        {"text": "чьере", "origin": "A", "weak": true},
+        {"text": "чере", "origin": "A", "weak": true},
+        {"text": "shire senbonzakura", "origin": "A"},
+        {"text": "shiro senbonzakura", "origin": "A"},
+        {"text": "шире senbonzakura", "origin": "A"},
+        {"text": "щире senbonzakura", "origin": "A"},
+        {"text": "щиро senbonzakura", "origin": "A"},
+        {"text": "чьере senbonzakura", "origin": "A"},
+        {"text": "ширая senbonzakura", "origin": "A"},
+        {"text": "что senbonzakura", "origin": "A"},
+        {"text": "sheeray senbonzakura", "origin": "A"}
       ]
     },
     {
@@ -234,6 +252,9 @@
         {"text": "kage yoshi", "origin": "A"},
         {"text": "kaga yoshi", "origin": "A"},
         {"text": "kagayoshi", "origin": "A"},
+        {"text": "cagey yoshi", "origin": "A"},
+        {"text": "кагаеси", "origin": "A"},
+        {"text": "кага еси", "origin": "A"},
         {"text": "bankay", "origin": "A"},
         {"text": "bunkay", "origin": "A"},
         {"text": "bonkay", "origin": "A"},
@@ -246,7 +267,8 @@
         {"text": "bankie", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
         {"text": "banki", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
         {"text": "bank eye senbonzakura kageyoshi", "origin": "A", "requires": ["full_reiatsu"]},
-        {"text": "bank i senbonzakura kageyoshi", "origin": "A", "requires": ["full_reiatsu"]}
+        {"text": "bank i senbonzakura kageyoshi", "origin": "A", "requires": ["full_reiatsu"]},
+        {"text": "банкой", "origin": "A", "weak": true, "requires": ["full_reiatsu"]}
       ]
     },
     {
@@ -278,7 +300,21 @@
         {"text": "лепестковая буря", "origin": "A"},
         {"text": "буря из лепестков", "origin": "A"},
         {"text": "шторм из лепестков", "origin": "A"},
-        {"text": "petal storms", "origin": "A"}
+        {"text": "petal storms", "origin": "A"},
+        {"text": "shire", "origin": "A", "weak": true},
+        {"text": "шире", "origin": "A", "weak": true},
+        {"text": "щире", "origin": "A", "weak": true},
+        {"text": "чьере", "origin": "A", "weak": true},
+        {"text": "чере", "origin": "A", "weak": true},
+        {"text": "shire senbonzakura", "origin": "A"},
+        {"text": "shiro senbonzakura", "origin": "A"},
+        {"text": "шире senbonzakura", "origin": "A"},
+        {"text": "щире senbonzakura", "origin": "A"},
+        {"text": "щиро senbonzakura", "origin": "A"},
+        {"text": "чьере senbonzakura", "origin": "A"},
+        {"text": "ширая senbonzakura", "origin": "A"},
+        {"text": "что senbonzakura", "origin": "A"},
+        {"text": "sheeray senbonzakura", "origin": "A"}
       ]
     },
     {
@@ -299,7 +335,9 @@
         {"text": "hockey tay ken", "origin": "A"},
         {"text": "haku tei ken", "origin": "A"},
         {"text": "hakutei ken", "origin": "A"},
-        {"text": "хаку тейкен", "origin": "A"}
+        {"text": "хаку тейкен", "origin": "A"},
+        {"text": "хаку тайкен", "origin": "A"},
+        {"text": "hacku tay ken", "origin": "A"}
       ]
     },
     {
@@ -321,7 +359,9 @@
         {"text": "senkai", "origin": "A"},
         {"text": "senkay", "origin": "A"},
         {"text": "sankay", "origin": "A"},
-        {"text": "сенкай", "origin": "A"}
+        {"text": "сенкай", "origin": "A"},
+        {"text": "sen key", "origin": "A"},
+        {"text": "сен кей", "origin": "A"}
       ]
     },
     {
