@@ -83,7 +83,7 @@ public final class LegacyHud {
 		}
 
 		if (state == ZanpakutoState.SEALED || state == ZanpakutoState.BASE) {
-			// sheathed: the draw key (or a right click); drawn base form: the release key (no abilities before shikai)
+			// sheathed: the draw key (a right click is the block now); drawn base form: the release key (no abilities before shikai)
 			Text hint = state == ZanpakutoState.SEALED
 					? Text.translatable("hud.reiatsu_test.hint.draw", ReiatsuKeys.DRAW.getBoundKeyLocalizedText())
 					: Text.translatable("hud.reiatsu_test.hint.release", ReiatsuKeys.RELEASE.getBoundKeyLocalizedText());

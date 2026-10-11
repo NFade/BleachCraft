@@ -185,7 +185,7 @@ public final class Phase5Harness {
 		return onServer(p -> sm(p).state());
 	}
 
-	/** The draw (SEALED to BASE) through the same server path as the J key and the right click, then waits out the transition lock. */
+	/** The draw (SEALED to BASE) through the same server path as the J key, then waits out the transition lock. */
 	private static void drawSword() throws Exception {
 		onServer(p -> ZanpakutoManager.performTransition(p, ZanpakutoState.BASE, RequestSource.KEY, StateMachine.SERVER_SEQ));
 		Thread.sleep(700);

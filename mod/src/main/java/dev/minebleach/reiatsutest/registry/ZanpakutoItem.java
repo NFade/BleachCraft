@@ -1,20 +1,20 @@
 package dev.minebleach.reiatsutest.registry;
 
 import dev.minebleach.reiatsutest.core.state.CharacterId;
-import dev.minebleach.reiatsutest.core.state.RequestSource;
-import dev.minebleach.reiatsutest.core.state.StateMachine;
-import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
-import dev.minebleach.reiatsutest.server.ZanpakutoManager;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
 
 /** One item per character (ADR section 1). The visual state lives in the {@code release_state} component. */
 public class ZanpakutoItem extends Item {
+	/** Block hold time: effectively unlimited (1 hour), the block ends when the player releases the right mouse button. */
+	public static final int BLOCK_MAX_USE_TICKS = 72000;
+
 	private final CharacterId character;
 
 	public ZanpakutoItem(Settings settings, CharacterId character) {
@@ -27,18 +27,41 @@ public class ZanpakutoItem extends Item {
 	}
 
 	/**
-	 * Right click draws the sword (SEALED to BASE, B4 step 3). Only the server acts (through the same path as the draw key,
-	 * so every guard of the state machine applies); the result is PASS on both sides so no swing animation, no block
-	 * placement and no item use animation interfere. Does nothing in any drawn state.
+	 * Right click holds a block (design/PARRY_PLAN.md section 2): the sword is NOT drawn or sheathed by the mouse any more, that
+	 * is the draw key (J). Same pattern as a shield: {@code setCurrentHand} on both sides and CONSUME, so the vanilla use hold,
+	 * the block arm pose and the stop-use packet on release do the tracking. Only the main hand blocks: the whole state model
+	 * (draw, release, mirror) is main-hand based.
 	 */
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-		if (!world.isClient && hand == Hand.MAIN_HAND && user instanceof ServerPlayerEntity sp) {
-			StateMachine sm = ZanpakutoManager.machine(sp);
-			if (sm != null && sm.state() == ZanpakutoState.SEALED) {
-				ZanpakutoManager.performTransition(sp, ZanpakutoState.BASE, RequestSource.KEY, StateMachine.SERVER_SEQ);
-			}
+		ItemStack stack = user.getStackInHand(hand);
+		if (hand != Hand.MAIN_HAND) {
+			return TypedActionResult.pass(stack);
 		}
-		return TypedActionResult.pass(user.getStackInHand(hand));
+		user.setCurrentHand(hand);
+		return TypedActionResult.consume(stack);
+	}
+
+	@Override
+	public UseAction getUseAction(ItemStack stack) {
+		return UseAction.BLOCK;
+	}
+
+	@Override
+	public int getMaxUseTime(ItemStack stack, LivingEntity user) {
+		return BLOCK_MAX_USE_TICKS;
+	}
+
+	/**
+	 * True while the entity holds a block with a zanpakuto. Own definition on purpose: the vanilla {@code isBlocking()} only
+	 * becomes true after 5 ticks (shield delay), which would eat the 4 tick parry window.
+	 */
+	public static boolean isBlocking(LivingEntity entity) {
+		return entity.isUsingItem() && entity.getActiveItem().getItem() instanceof ZanpakutoItem;
+	}
+
+	/** Ticks since the block began (0 on the tick the right button went down), or -1 when not blocking. */
+	public static int blockTicks(LivingEntity entity) {
+		return isBlocking(entity) ? entity.getItemUseTime() : -1;
 	}
 }

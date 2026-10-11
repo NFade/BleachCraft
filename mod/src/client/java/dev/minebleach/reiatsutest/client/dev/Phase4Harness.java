@@ -358,12 +358,22 @@ public final class Phase4Harness {
 			cCheck("A1d client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
 			cCheck("A1d held stack SEALED", () -> clientStack(ReleaseState.SEALED));
 		});
-		step("A1e right click with the sword (draw)", 12, () -> {
+		step("A1e right click with the sword (block, no draw)", 12, () -> {
 			mc.interactionManager.interactItem(mc.player, net.minecraft.util.Hand.MAIN_HAND);
 		});
-		step("A1e checks: right click draws", 3, () -> {
-			sCheck("A1e server BASE/RUKIA after the right click", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA));
+		step("A1e checks: right click blocks and does not draw", 3, () -> {
+			sCheck("A1e server still SEALED after the right click", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+			cCheck("A1e client holds a block", () -> dev.minebleach.reiatsutest.registry.ZanpakutoItem.isBlocking(mc.player) ? null : "not blocking");
+			sCheck("A1e server sees the block", p -> dev.minebleach.reiatsutest.registry.ZanpakutoItem.isBlocking(p) ? null : "not blocking");
+		});
+		step("A1e release the block, press J (draw)", 12, () -> {
+			mc.interactionManager.stopUsingItem(mc.player);
+			press(ReiatsuKeys.DRAW);
+		});
+		step("A1e checks: J draws", 3, () -> {
+			sCheck("A1e server BASE/RUKIA after J", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA));
 			cCheck("A1e client BASE", () -> clientExpect(ZanpakutoState.BASE, CharacterId.RUKIA));
+			sCheck("A1e server no longer blocking", p -> dev.minebleach.reiatsutest.registry.ZanpakutoItem.isBlocking(p) ? "still blocking" : null);
 		});
 		step("A1f press V (seal from the base form)", 12, () -> press(ReiatsuKeys.SEAL));
 		step("A1f checks: seal from BASE", 3, () -> {

@@ -12,6 +12,7 @@
 		"client": ["dev.minebleach.reiatsutest.client.ReiatsuTestClient"]
 	},
 	"mixins": [
+		"reiatsu_test.mixins.json",
 		{ "config": "reiatsu_test.client.mixins.json", "environment": "client" }
 	],
 	"depends": {

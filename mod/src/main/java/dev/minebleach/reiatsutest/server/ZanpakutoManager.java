@@ -1,6 +1,8 @@
 package dev.minebleach.reiatsutest.server;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.combat.BlockOutcome;
+import dev.minebleach.reiatsutest.core.combat.BlockRules;
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuState;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.AbilityRequest;
@@ -114,6 +116,7 @@ public final class ZanpakutoManager {
 			server = null;
 		});
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register(ZanpakutoManager::allowDamage);
+		BlockParry.init();
 	}
 
 	// ------------------------------------------------------------------ sessions
@@ -218,6 +221,15 @@ public final class ZanpakutoManager {
 	/** The one server path of an ability cast; see {@link #performTransition}. */
 	public static TransitionResult performCast(ServerPlayerEntity p, AbilityId ability, RequestSource source, int seq) {
 		Session s = session(p);
+		if (!BlockRules.allowsAbility(ZanpakutoItem.isBlocking(p))) {
+			// abilities cannot be cast while the block is held (design/PARRY_PLAN.md section 5); checked here so the key and the
+			// voice path both obey it, before the machine charges a cooldown, a GCD or reiatsu
+			ZanpakutoState st = s.sm.state();
+			ReiatsuTest.LOGGER.info("[reiatsu] {} cast {} ({}): denied, blocking", p.getName().getString(), ability, source);
+			reply(p, seq, ResultCode.DENIED_STATE);
+			return new TransitionResult(ResultCode.DENIED_STATE, dev.minebleach.reiatsutest.core.state.RejectReason.NOT_IN_STATE, st, st,
+					List.of());
+		}
 		CharacterId held = ModItems.characterOf(p.getMainHandStack());
 		TransitionResult r = s.sm.cast(new AbilityRequest(ability, source, seq, held));
 		ReiatsuTest.LOGGER.info("[reiatsu] {} cast {} (held {}, {}): {} {}", p.getName().getString(), ability, held, source,
@@ -415,23 +427,40 @@ public final class ZanpakutoManager {
 		if (reentrantDamage || !(entity instanceof ServerPlayerEntity p)) {
 			return true;
 		}
-		Session s = SESSIONS.get(p.getUuid());
-		if (s == null || s.sm.shikaiMode() != dev.minebleach.reiatsutest.core.state.ShikaiMode.BARRIER
-				|| source.isIn(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+		if (source.isIn(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 			return true;
 		}
-		int total = Math.round(amount * 10.0F);
-		int remaining = s.sm.absorbBarrier(total);
-		if (remaining >= total) {
-			return true;
-		}
-		flush(p, s);
-		if (remaining <= 0) {
+		// block / parry first (design/PARRY_PLAN.md section 3): a parry cancels the hit, a block lowers it; the lowered
+		// amount then goes through the barrier below
+		float eff = amount;
+		boolean modified = false;
+		BlockOutcome block = BlockParry.onHit(p, source, amount);
+		if (block.parried()) {
 			return false;
+		}
+		if (block.blocked()) {
+			eff = block.damage();
+			modified = true;
+		}
+		Session s = SESSIONS.get(p.getUuid());
+		if (s != null && s.sm.shikaiMode() == dev.minebleach.reiatsutest.core.state.ShikaiMode.BARRIER) {
+			int total = Math.round(eff * 10.0F);
+			int remaining = s.sm.absorbBarrier(total);
+			if (remaining < total) {
+				flush(p, s);
+				if (remaining <= 0) {
+					return false;
+				}
+				eff = remaining / 10.0F;
+				modified = true;
+			}
+		}
+		if (!modified) {
+			return true;
 		}
 		reentrantDamage = true;
 		try {
-			p.damage(source, remaining / 10.0F);
+			p.damage(source, eff);
 		} finally {
 			reentrantDamage = false;
 		}

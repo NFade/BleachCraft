@@ -19,7 +19,7 @@
   "hud.reiatsu_test.state.base": "Drawn",
   "hud.reiatsu_test.state.shikai": "Shikai",
   "hud.reiatsu_test.state.bankai": "Bankai",
-  "hud.reiatsu_test.hint.draw": "[%s] or right click: draw the sword",
+  "hud.reiatsu_test.hint.draw": "[%s]: draw the sword (right click blocks)",
   "hud.reiatsu_test.hint.release": "[%s] Release (shikai)",
   "hud.reiatsu_test.bankai_time": "%ss left",
   "hud.reiatsu_test.no_ability": "-",

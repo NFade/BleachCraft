@@ -11,7 +11,7 @@ public final class CommandIds {
 	private CommandIds() {
 	}
 
-	/** Voice command of a transition; null for BASE (the draw has no voice command, it is the key or a right click). */
+	/** Voice command of a transition; null for BASE (the draw has no voice command, it is the key; a right click blocks since the parry work). */
 	public static String forTransition(CharacterId character, ZanpakutoState target) {
 		return switch (target) {
 			case BASE -> null;

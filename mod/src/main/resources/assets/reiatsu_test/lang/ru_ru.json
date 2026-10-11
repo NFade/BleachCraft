@@ -19,7 +19,7 @@
   "hud.reiatsu_test.state.base": "Обнажён",
   "hud.reiatsu_test.state.shikai": "Шикай",
   "hud.reiatsu_test.state.bankai": "Банкай",
-  "hud.reiatsu_test.hint.draw": "[%s] или правый клик: достать меч",
+  "hud.reiatsu_test.hint.draw": "[%s]: достать меч (правый клик: блок)",
   "hud.reiatsu_test.hint.release": "[%s] Высвободить (шикай)",
   "hud.reiatsu_test.bankai_time": "осталось %s с",
   "hud.reiatsu_test.no_ability": "-",

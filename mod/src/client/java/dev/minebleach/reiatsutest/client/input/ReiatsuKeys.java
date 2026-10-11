@@ -2,11 +2,13 @@ package dev.minebleach.reiatsutest.client.input;
 
 import dev.minebleach.reiatsutest.client.ClientState;
 import dev.minebleach.reiatsutest.client.net.ClientNet;
+import dev.minebleach.reiatsutest.core.combat.BlockRules;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
 import dev.minebleach.reiatsutest.core.state.ResultCode;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
+import dev.minebleach.reiatsutest.registry.ZanpakutoItem;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
@@ -92,6 +94,10 @@ public final class ReiatsuKeys {
 	 * picks the bankai ability of that slot (U I O); the normal row (Z H B) always means the shikai ability, also inside bankai.
 	 */
 	public static void castSlot(MinecraftClient client, int slot, boolean bankaiRow) {
+		if (client.player != null && !BlockRules.allowsAbility(ZanpakutoItem.isBlocking(client.player))) {
+			ClientNet.feedback(client, ResultCode.DENIED_STATE); // abilities cannot be cast while the block (right mouse) is held
+			return;
+		}
 		var z = ClientState.zanpakuto();
 		CharacterId character = z.zanpakutoState() == ZanpakutoState.SEALED ? ClientState.heldCharacter() : z.characterId();
 		ZanpakutoState tier = bankaiRow ? ZanpakutoState.BANKAI : ZanpakutoState.SHIKAI;
