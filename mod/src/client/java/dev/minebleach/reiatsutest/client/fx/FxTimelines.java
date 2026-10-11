@@ -133,6 +133,7 @@ public final class FxTimelines {
 			freezeNow = true;
 		}
 		FxClock.advance(dt);
+		FxDelayed.run();
 		for (int i = 0; i < ACTIVE.size(); i++) {
 			ACTIVE.get(i).advance(dt);
 		}
@@ -147,6 +148,8 @@ public final class FxTimelines {
 
 	public static void clear() {
 		ACTIVE.clear();
+		FxDelayed.clear();
+		ReleaseHold.clear();
 		FxGlowBatch.clear();
 		ScreenFx.clear();
 		FxParticles.clearAll();

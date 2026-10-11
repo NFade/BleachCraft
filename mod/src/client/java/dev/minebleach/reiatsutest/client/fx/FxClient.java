@@ -58,6 +58,8 @@ public final class FxClient {
 			p.pop();
 		});
 		PetalSwarmRenderer.init();
+		AuraFx.init();
+		ReleaseHold.init();
 		BankaiBladeRenderer.init();
 		StormRenderer.init();
 		WingHaloRenderer.init();

@@ -78,3 +78,6 @@ Merge order: srvdocs -> b4game -> phase6-fx -> p6rukia -> tp3 (LOG.md / STATUS.m
 
 ## 2026-10-11: tp3b
 T2-T4 finished on `tp3b` (from main): build+test green (320), runPhase4 151 checks, runPhase5 62/62. Merge `tp3b` into main instead of the WIP `tp3` commit. Open: second real client, Fabulous, production refmap check (see UNVERIFIED in LOG).
+
+## 2026-10-11: fxfix (effect fixes A1-A6, branch fxfix, local, not pushed)
+Rukia bankai seal made once and following (no trail), ribbons behind her, no ice blocks; Byakuya shikai swarm cleared around the owner first person camera; bankai sword appears in front, hangs, sinks slowly with a splash and its hilt stays (rows start 0.8 s later); shikai release holds the pink blade 0.4 s before the petals. build+test 321 green, runPhase4 151 checks, runPhase5 62/62, scenarios fxfix, rows, swarm, rk7 pass. Details, numbers, UNVERIFIED: LOG.md "effect fixes A1-A6"; screenshots blender/renders/fxfix/. Open: user visual review of the numbers (ribbons, A4 radius, sword visibility at night).

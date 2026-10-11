@@ -54,6 +54,8 @@ public final class RowsFx {
 		public double lastSeen = FxClock.now;
 		public boolean anchorSeen;
 		public final double created = FxClock.now;
+		/** FX clock value of the sword throw (plan A5); long ago for a late joiner (the hilt is already in the ground). */
+		public double swordT0 = -1.0e9;
 		/** Phase after a bankai ability (S3): {@link RowsPhase#STANDING}, {@link RowsPhase#SCATTERED} (id 32) or {@link RowsPhase#CONSUMED} (id 33). */
 		public byte phase;
 		/** FX clock value of the start of the phase. */
@@ -126,6 +128,12 @@ public final class RowsFx {
 			return FxClock.now - epoch;
 		}
 
+		/** Seconds since the sword was thrown (not the rows clock: the rows start {@link #rowsDelay()} later). */
+		public double swordTime() {
+			return FxClock.now - swordT0;
+		}
+
+
 		/** Seconds since the start of the current phase (negative or meaningless while STANDING). */
 		public double phaseTau() {
 			return FxClock.now - phaseStart;
@@ -171,6 +179,26 @@ public final class RowsFx {
 
 	private RowsFx() {
 	}
+
+	/** The rows (fault lines, eruption) start this long after the throw of the sword, which needs about 1.5 s to hang and sink. */
+	public static double rowsDelay() {
+		return FxTune.d("bankai.rowsDelay", 0.8);
+	}
+
+	/** Height of the sword point above the ground while it hangs in front of the caster. */
+	public static double swordHang() {
+		return FxTune.d("bankai.swordHang", 1.0);
+	}
+
+	/** Height of the sword point when it has sunk: below the ground by the hilt length minus the part that stays visible. */
+	public static double swordEndY(double hiltScale) {
+		return -(BankaiCurves.HILT_LENGTH * hiltScale - FxTune.d("bankai.hiltRemain", 0.38));
+	}
+
+	public static double swordContact(double hiltScale) {
+		return BankaiCurves.swordContactTime(swordHang(), swordEndY(hiltScale));
+	}
+
 
 	public static Map<Integer, State> states() {
 		return STATES;
@@ -219,7 +247,10 @@ public final class RowsFx {
 		if (old != null && old.vbo != null) {
 			old.vbo.close();
 		}
-		State st = create(e.casterId(), e.seed(), FxClock.now, AnchorPlan.flatYawDeg(e.dx(), e.dz()), e.x(), e.y(), e.z(), w);
+		double delay = rowsDelay();
+		// the rows clock starts after the sword throw (plan A5): fault lines, eruption and the blade timeline are all shifted by the delay
+		State st = create(e.casterId(), e.seed(), FxClock.now + delay, AnchorPlan.flatYawDeg(e.dx(), e.dz()), e.x(), e.y(), e.z(), w);
+		st.swordT0 = FxClock.now;
 		st.owner = !FxClient.forceRemote() && mc.player != null && mc.player.getId() == e.casterId();
 		released++;
 		Vec3d pos = new Vec3d(e.x(), e.y(), e.z());
@@ -229,12 +260,23 @@ public final class RowsFx {
 		double hg = st.hiltGround;
 		BladeRowLayout l = st.layout;
 		double comp = l.completionTime();
-		// 0.18: the hilt reaches the ground and sinks into it like into water; three ripples
-		t.at(0.18, x -> {
-			x.soundAt("item.trident.hit_ground", new Vec3d(hx, hg, hz), 0.8, 0.9);
-			x.soundAt("block.bell.use", new Vec3d(hx, hg, hz), 0.5, 0.6);
-			x.soundAt("block.bubble_column.whirlpool_inside", new Vec3d(hx, hg, hz), 1.6, 0.3);
+		// plan A5. 0.0: the sword appears in front of the caster, point down, and hangs; from 0.62 it sinks slowly; at the ground contact the point
+		// enters the ground like water: a light splash ring (three rings), motes thrown up, the hilt stays standing in the ground
+		double hiltScale = FxTune.d("bankai.hiltScale", 1.8);
+		double contact = swordContact(hiltScale);
+		double hangY = hg + swordHang() + 0.5 * BankaiCurves.HILT_LENGTH * hiltScale;
+		t.at(0.0, x -> {
+			x.soundAt("item.trident.throw", new Vec3d(hx, hangY, hz), 1.4, 0.35);
+			FxGlowBatch.sprite(GlowSprite.STAR4).at(hx, hangY, hz).lifeTicks(8).size(0.9, 0.2).sizeEase(FxMath.IQ).color("#F3E4FF").peak(0.9).owner(x).spawn();
 		});
+		t.at(BankaiCurves.SWORD_HANG_END, x -> x.soundAt("block.amethyst_block.chime", new Vec3d(hx, hangY, hz), 0.7, 0.4));
+		t.at(contact, x -> {
+			x.soundAt("item.trident.hit_ground", new Vec3d(hx, hg, hz), 0.9, 0.5);
+			x.soundAt("entity.generic.splash", new Vec3d(hx, hg, hz), 1.5, 0.3);
+			x.soundAt("block.bubble_column.whirlpool_inside", new Vec3d(hx, hg, hz), 1.6, 0.3);
+			splash(x, hx, hg, hz);
+		});
+		t.at(contact + 0.5, x -> x.soundAt("block.bell.use", new Vec3d(hx, hg, hz), 0.5, 0.35));
 		// 0.30 to 0.90: night falls
 		t.at(0.30, x -> {
 			// others: the night is graded by the distance to the NEAREST ROW POINT (standing in the corridor = full night), not to the caster (6.1)
@@ -246,47 +288,64 @@ public final class RowsFx {
 		});
 		t.at(0.60, x -> x.sound("entity.warden.heartbeat", 0.7, 0.5));
 		// 0.90: fault lines (anticipation)
-		t.at(0.90, x -> {
+		t.at(0.90 + delay, x -> {
 			x.sound("entity.warden.emerge", 1.4, 0.4);
 			faultLines(x, st);
 		});
 		for (int k = 0; k < 6; k++) {
 			double amp = 0.1 + 0.1 * k;
-			t.at(0.90 + 0.2 * k, x -> x.shake(amp, 0.3));
+			t.at(0.90 + delay + 0.2 * k, x -> x.shake(amp, 0.3));
 		}
 		// 1.00: eruption starts
-		t.at(1.00, x -> {
+		t.at(1.00 + delay, x -> {
 			x.sound("item.mace.smash_ground_heavy", 0.6, 0.7);
 			x.sound("entity.ender_dragon.growl", 0.5, 0.25);
 		});
 		for (double ts = 1.2; ts < comp; ts += 0.2) {
-			t.at(ts, x -> x.shake(0.6, 0.25));
+			t.at(ts + delay, x -> x.shake(0.6, 0.25));
 		}
 		// rows complete
-		t.at(comp, x -> {
+		t.at(comp + delay, x -> {
 			x.shake(FxTune.d("bankai.completeShake", 1.2), 0.4);
 			x.sound("block.beacon.ambient", 0.6, 0.35);
 			x.sound("block.bell.resonate", 0.6, 0.4);
 		});
 		// hold: the vignette settles to the playable level
-		t.at(comp + 0.6, x -> {
+		t.at(comp + delay + 0.6, x -> {
 			if (st.vignette != null) {
 				st.vignette.release(1.0);
 			}
 			st.vignette2 = x.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignetteHold", 0.30), 1.0);
 		});
-		t.lifetime(comp + 1.5);
-		// ripples twins and the fall of the hilt (glow rings), ripple k at 0.18, 0.40, 0.62
-		double[] starts = {0.18, 0.40, 0.62};
-		double[] radii = {6.0, 4.5, 3.0};
+		t.lifetime(comp + delay + 1.5);
+		// the light splash rings (glow) at the ground contact, ring k at contact + 0.3 k
+		double splashScale = FxTune.d("bankai.splashScale", 1.0);
 		for (int k = 0; k < 3; k++) {
 			final int kk = k;
-			t.at(starts[k], x -> FxGlowBatch.sprite(GlowSprite.RING_THIN).at(hx, hg + 0.06, hz).ground().size(0.4, radii[kk] / 0.4375).sizeEase(FxMath.OC).life(1.0)
-					.curve(0.02, 0.85).color("#F3E4FF").peak(0.35).owner(x).spawn());
+			t.at(contact + 0.3 * k, x -> FxGlowBatch.sprite(GlowSprite.RING_THIN).at(hx, hg + 0.06, hz).ground().size(0.4, BankaiCurves.splashRadius(kk, contact + 5, contact, splashScale) / 0.4375)
+					.sizeEase(FxMath.OC).life(0.9).curve(0.02, 0.85).color("#F3E4FF").peak(0.5).owner(x).spawn());
 		}
 		FxTimelines.start(t);
 		ReiatsuTest.LOGGER.info("[fx] rows: {} blades, {} ranks, completion {} s, settle {} s, length {}", l.n, l.ranks, String.format(java.util.Locale.ROOT, "%.2f", comp),
 				String.format(java.util.Locale.ROOT, "%.2f", st.settleAt), String.format(java.util.Locale.ROOT, "%.1f", l.length()));
+	}
+
+	/** The splash where the point of the sword enters the ground: lilac motes thrown up and out, a few glow petals, a soft flare. */
+	private static void splash(EffectTimeline t, double hx, double hg, double hz) {
+		Random r = t.rng(21);
+		for (int i = 0; i < 22; i++) {
+			double a = r.nextDouble() * Math.PI * 2;
+			double s = 1.2 + r.nextDouble() * 2.2;
+			FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(hx + Math.cos(a) * 0.12, hg + 0.1, hz + Math.sin(a) * 0.12).vel(Math.cos(a) * s, 1.5 + r.nextDouble() * 1.8, Math.sin(a) * s)
+					.drag(0.9).gravity(0.5).life(18).size(0.22 + 0.2 * r.nextDouble()).seed(r.nextInt(4)).color("#F3E4FF").colorTo("#C9A8EE").fade(0.4).owner(t).spawn();
+		}
+		for (int i = 0; i < 6; i++) {
+			double a = r.nextDouble() * Math.PI * 2;
+			double s = 1.0 + r.nextDouble() * 1.6;
+			FxGlowBatch.sprite(GlowSprite.PETAL_GLOW).at(hx, hg + 0.15, hz).vel(Math.cos(a) * s, 1.2 + r.nextDouble(), Math.sin(a) * s).drag(0.92).lifeTicks(14).size(0.4 + r.nextDouble() * 0.2)
+					.color("#F9C8F6").peak(0.8).twinkle().rot(r.nextDouble() * 6.28, (r.nextDouble() - 0.5) * 3).owner(t).spawn();
+		}
+		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(hx, hg + 0.2, hz).size(0.8, 2.2).sizeEase(FxMath.OC).life(0.4).curve(0.02, 0.8).color("#F3E4FF").peak(0.7).owner(t).spawn();
 	}
 
 	/** Horizontal distance of the camera to the nearest blade of the rows (0 inside the corridor). */

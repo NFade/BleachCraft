@@ -361,6 +361,9 @@ public final class BankaiBladeRenderer {
 			int light = LightmapTextureManager.pack(Math.max(7, world.getLightLevel(net.minecraft.world.LightType.BLOCK, net.minecraft.util.math.BlockPos.ofFloored(hx, hg + 1, hz))),
 					world.getLightLevel(net.minecraft.world.LightType.SKY, net.minecraft.util.math.BlockPos.ofFloored(hx, hg + 1, hz)));
 			double hs = FxTune.d("bankai.hiltScale", 1.8);
+			double sw = st.swordTime();
+			double swordEnd = RowsFx.swordEndY(hs);
+			double swordContact = RowsFx.swordContact(hs);
 			if (hilt != null) {
 				if (hb == null) {
 					hb = extraBuilder(0);
@@ -374,7 +377,7 @@ public final class BankaiBladeRenderer {
 					Entity ow = ctx.world().getEntityById(st.ownerId);
 					Vec3d hand = ow != null ? ow.getLerpedPos(ctx.tickCounter().getTickDelta(true)).add(0, 1.1, 0) : new Vec3d(st.fx, st.fy + 1.1, st.fz);
 					double sx = hx;
-					double sy = hg - BankaiCurves.SINK_DEPTH * hs;
+					double sy = hg + swordEnd;
 					double sz = hz;
 					double px = FxMath.lerp(sx, hand.x, e);
 					double py = FxMath.lerp(sy, hand.y, e) + Math.sin(Math.PI * e) * 0.6;
@@ -384,22 +387,31 @@ public final class BankaiBladeRenderer {
 						hilt.write(hb, M, px - cp.x, py - cp.y, pz - cp.z, WHITE, light);
 					}
 				} else {
-					hy = hg + BankaiCurves.hiltHeight(t, 1.1) * (t < BankaiCurves.DROP_TIME ? 1.0 : hs);
-					// the drop starts at the hand (0 ahead of the feet) and ends at the hilt point
-					double k = FxMath.iq(FxMath.clamp(t / BankaiCurves.DROP_TIME));
-					double px = FxMath.lerp(st.fx, hx, k);
-					double pz = FxMath.lerp(st.fz, hz, k);
-					fillBasis(yawDeg, hs);
-					hilt.write(hb, M, px - cp.x, hy - cp.y, pz - cp.z, WHITE, light);
+					// plan A5: the sword appears from the hand in front of the caster, hangs point down, then sinks slowly into the ground and stays (hilt above ground)
+					double flight = BankaiCurves.swordFlight(sw);
+					hy = hg + BankaiCurves.swordHeight(sw, RowsFx.swordHang(), swordEnd);
+					Entity ow = world.getEntityById(st.ownerId);
+					Vec3d feetNow = ow != null ? ow.getLerpedPos(ctx.tickCounter().getTickDelta(true)) : new Vec3d(st.fx, st.fy, st.fz);
+					double yr = Math.toRadians(yawDeg);
+					double hx0 = feetNow.x + Math.cos(yr) * 0.35 - Math.sin(yr) * 0.3;
+					double hz0 = feetNow.z + Math.sin(yr) * 0.35 + Math.cos(yr) * 0.3;
+					double px = FxMath.lerp(hx0, hx, flight);
+					double pz = FxMath.lerp(hz0, hz, flight);
+					double py = FxMath.lerp(feetNow.y + 1.2, hy, flight);
+					fillBasis(yawDeg, hs * FxMath.lerp(0.55, 1.0, flight));
+					if (sw >= 0) {
+						hilt.write(hb, M, px - cp.x, py - cp.y, pz - cp.z, WHITE, light);
+					}
 				}
 			}
 			if (ripple != null && st.endAt < 0) {
 				if (rb == null) {
 					rb = extraBuilder(1);
 				}
+				double rippleScale = FxTune.d("bankai.splashScale", 1.0);
 				for (int k = 0; k < 3; k++) {
-					double rad = BankaiCurves.rippleRadius(k, t);
-					double a = BankaiCurves.rippleAlpha(k, t);
+					double rad = BankaiCurves.splashRadius(k, sw, swordContact, rippleScale);
+					double a = BankaiCurves.splashAlpha(k, sw, swordContact);
 					if (rad > 0.02 && a > 0.01) {
 						ripple(rb, hx - cp.x, hg + 0.03 - cp.y, hz - cp.z, rad, a * FxTune.d("bankai.rippleAlpha", 0.85));
 					}
