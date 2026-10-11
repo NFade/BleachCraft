@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.registry;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.registry.data.CooldownData;
+import dev.minebleach.reiatsutest.registry.data.RageData;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
 import dev.minebleach.reiatsutest.registry.data.ZanpakutoData;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -29,6 +30,12 @@ public final class ModAttachments {
 			ReiatsuTest.id("cooldowns"),
 			b -> b.initializer(() -> CooldownData.EMPTY)
 					.syncWith(CooldownData.PACKET_CODEC, AttachmentSyncPredicate.targetOnly()));
+
+	/** Rage bar (B4), owner only, not persistent: starts at zero on join and after death. */
+	public static final AttachmentType<RageData> RAGE = AttachmentRegistry.create(
+			ReiatsuTest.id("rage"),
+			b -> b.initializer(() -> RageData.EMPTY)
+					.syncWith(RageData.PACKET_CODEC, AttachmentSyncPredicate.targetOnly()));
 
 	private ModAttachments() {
 	}

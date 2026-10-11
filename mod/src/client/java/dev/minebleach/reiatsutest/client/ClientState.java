@@ -6,6 +6,7 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.ModItems;
 import dev.minebleach.reiatsutest.registry.data.CooldownData;
+import dev.minebleach.reiatsutest.registry.data.RageData;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
 import dev.minebleach.reiatsutest.registry.data.ZanpakutoData;
 import net.minecraft.client.MinecraftClient;
@@ -65,6 +66,13 @@ public final class ClientState {
 	public static ReiatsuData reiatsu() {
 		ClientPlayerEntity p = MinecraftClient.getInstance().player;
 		return p == null ? null : p.getAttached(ModAttachments.REIATSU);
+	}
+
+	/** Synced rage; empty until the first sync arrives. */
+	public static RageData rage() {
+		ClientPlayerEntity p = MinecraftClient.getInstance().player;
+		RageData r = p == null ? null : p.getAttached(ModAttachments.RAGE);
+		return r == null ? RageData.EMPTY : r;
 	}
 
 	public static CharacterId heldCharacter() {

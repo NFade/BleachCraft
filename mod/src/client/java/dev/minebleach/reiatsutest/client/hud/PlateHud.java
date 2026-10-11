@@ -83,6 +83,7 @@ final class PlateHud {
 			drawNameLine(g, font, x0 + 34, y0 + 2, ch, st, accent, alpha, barW);
 		}
 		drawValueLine(g, font, barX, y0 + 26, barW, ch, st, accent, alpha, tickDelta);
+		drawRage(g, font, barX, y0 + 37, barW, alpha, now);
 		long q3 = System.nanoTime();
 		PROF[0] += q1 - q0;
 		PROF[1] += q2 - q1;
@@ -444,6 +445,43 @@ final class PlateHud {
 			}
 			g.text(font, left, barX, y, col | a << 24, true);
 		}
+	}
+
+	// ------------------------------------------------------------------------------------------ rage
+
+	private static final int RAGE_H = 4;
+	private static final float[] RAGE_BACK = FxMath.hex("#2A0E0A");
+	private static final float[] RAGE_FILL = FxMath.hex("#C2410C");
+	private static final float[] RAGE_HOT = FxMath.hex("#FF6A2B");
+	private static final float[] RAGE_FULL = FxMath.hex("#FFC27A");
+	private static double rageShown;
+	private static double rageLastNow = -1;
+
+	/**
+	 * Rage bar (B4): a thin dark-orange bar under the reiatsu value line, plain filled rectangles (no atlas sheet). Hidden while
+	 * the bar is empty and has settled. The shown value eases to the synced one; at a full bar it pulses (not with reduceMotion).
+	 */
+	private static void drawRage(HudGfx g, TextRenderer font, int bx, int by, int barW, float alpha, double now) {
+		var r = dev.minebleach.reiatsutest.client.ClientState.rage();
+		double max = Math.max(1, r.max());
+		double target = Math.min(1.0, r.value() / max);
+		double dt = rageLastNow < 0 ? 1.0 : Math.min(0.25, Math.max(0.0, now - rageLastNow));
+		rageLastNow = now;
+		rageShown = FxConfig.reduceMotion ? target : rageShown + (target - rageShown) * Math.min(1.0, dt * 10.0);
+		if (target <= 0.0 && rageShown < 0.004) {
+			rageShown = 0;
+			return;
+		}
+		boolean full = r.value() >= r.max() && r.max() > 0;
+		float pulse = full && !FxConfig.reduceMotion ? (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.5 * now)) : 0f;
+		g.fill(bx, by, bx + barW, by + RAGE_H, HudGfx.argb(RAGE_BACK, 0.85f * alpha));
+		int len = (int) Math.round((barW - 2) * rageShown);
+		if (len > 0) {
+			float[] c = full ? FxMath.mix(RAGE_HOT, RAGE_FULL, pulse) : FxMath.mix(RAGE_FILL, RAGE_HOT, (float) rageShown);
+			g.fill(bx + 1, by + 1, bx + 1 + len, by + RAGE_H - 1, HudGfx.argb(c, alpha));
+		}
+		String label = HudText.tr("hud.reiatsu_test.rage") + " " + Math.round(r.value() / 10.0);
+		g.text(font, label, bx, by + RAGE_H + 1, (full ? HudGfx.argb(RAGE_FULL, 1f) : HudGfx.argb(RAGE_HOT, 0.8f)) & 0x00FFFFFF | alphaInt(alpha) << 24, true);
 	}
 
 	// ------------------------------------------------------------------------------------------ voice row

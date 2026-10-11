@@ -31,6 +31,7 @@ public class ReiatsuTest implements ModInitializer {
 		ModEntities.init();
 		ModNetworking.registerPayloads();
 		ZanpakutoManager.init();
+		dev.minebleach.reiatsutest.server.RageManager.init();
 		ReiatsuCommand.register();
 		VoiceControl.init();
 		dev.minebleach.reiatsutest.server.RukiaServerFx.init();
