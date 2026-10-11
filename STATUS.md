@@ -48,7 +48,7 @@ Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Detail
 - `refs/` (private reference images) is gitignored; re-download with `tools/fetch_refs.py`.
 - Dev windows open on the second monitor (`dev_monitor` in `mod/gradle.properties`).
 - Gradle commands need `JAVA_HOME` (Temurin 21) and `GRADLE_USER_HOME=D:\gradle-home`.
-- Known minor defects (queued after phase 6 effects): third-person draw ends with the sword jumping from hip to hand (no interpolation); no sword swing animation visible from outside (third person / other players).
+- T2-T4 done on branch `tp3b` (local, not merged/pushed): hip scabbard checked, smooth hip-to-hand blend, third-person katana swing (LOG 2026-10-11 "T2-T4 finished"; sheets in `blender/renders/tp3/`). Previous known defects (hip-to-hand jump, no swing seen from outside) are closed there.
 
 ## STOP POINT 2026-10-10 (evening), parallel work paused on the user's request
 Four worktree branches were running in parallel, all stopped and pushed. None is merged into `main` yet. Base of all four: `phase6-fx` at `9137f97` (= `main` B4 steps 1-3 + polish + Phase 6 steps 0-2 closed). Open order to continue (details in each branch's LOG.md "STOP POINT" section):
@@ -75,3 +75,6 @@ All agents stopped, game closed, lock released. Uncommitted work saved as WIP co
 | `tp3` | f306d70 | WIP: third-person scabbard, draw transition, swing animation (T2-T4) | build, finish T2-T4 per design/TASKS_BACKLOG.md |
 
 Merge order: srvdocs -> b4game -> phase6-fx -> p6rukia -> tp3 (LOG.md / STATUS.md conflicts: keep both sides). Voice task T1 (vox-arcana ideas) is not started, see design/TASKS_BACKLOG.md.
+
+## 2026-10-11: tp3b
+T2-T4 finished on `tp3b` (from main): build+test green (320), runPhase4 151 checks, runPhase5 62/62. Merge `tp3b` into main instead of the WIP `tp3` commit. Open: second real client, Fabulous, production refmap check (see UNVERIFIED in LOG).

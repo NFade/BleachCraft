@@ -544,6 +544,65 @@ T4.append(ext("t4_other_lefty_front", "other", "base", 0, arm="left", swings=SW,
 T4.append(ext("t4_other_sealed_right", "other", "sealed", 270, swings=SW, dist=3.0))
 sets["t4"] = T4
 
+# ---- tp: one combined run of T2 + T3 + T4 (branch tp3b); trimmed so that the whole run stays well under the watchdog
+TP = []
+for who, st in (("other", "sealed"), ("self", "base")):
+    for ang, an in ((0, "front"), (90, "left"), (180, "back"), (270, "right")):
+        TP.append(ext("t2_%s_%s_%s" % (who, st, an), who, st, ang))
+TP.append(ext("t2_self_shikai_left", "self", "shikai", 90))
+TP.append(ext("t2_other_shikai_left", "other", "shikai", 90))
+for mo in ("walk", "sprint", "sneakwalk"):
+    for ang, an in ((90, "left"), (270, "right")):
+        TP.append(ext("t2_mv_%s_%s" % (mo, an), "other", "sealed", ang, motion=mo, ticks=40, shots=2, gap=4))
+TP.append(ext("t2_self_sneak_left", "self", "sealed", 90, motion="sneak", ticks=30))
+TP.append(ext("t2_slim_left", "other", "sealed", 90, slim=True))
+TP.append(ext("t2_lefty_right", "other", "sealed", 270, arm="left"))
+PS2 = (0.0, 0.4, 0.55, 0.7, 0.82, 0.92, 0.97, 1.0)
+for who, st, ang, an in (("self", "base", 90, "left"), ("self", "base", 0, "front"), ("other", "base", 270, "right"), ("other", "base", 0, "front")):
+    TP.append(ext("t3_%s_%s" % (who, an), who, st, ang, ps=list(PS2), dist=2.8))
+TP.append(ext("t3_other_lefty_front", "other", "base", 0, arm="left", ps=list(PS2), dist=2.8))
+for who, st, ang, an in (("self", "base", 270, "right"), ("self", "base", 0, "front"), ("other", "base", 270, "right"), ("other", "base", 0, "front"),
+                         ("other", "shikai", 270, "right"), ("self", "shikai", 90, "left")):
+    TP.append(ext("t4_%s_%s_%s" % (who, st, an), who, st, ang, swings=[1, 2, 3, 4, 5], dist=3.0))
+TP.append(ext("t4_other_lefty_front", "other", "base", 0, arm="left", swings=[1, 2, 3, 4, 5], dist=3.0))
+sets["tp"] = TP
+
+# ---- tp2: swing wrist / arm variants (hot pose override, no reload), other player, state base
+def swv(name, **sw):
+    out = []
+    for ang, an in ((270, "right"), (0, "front")):
+        out.append(ext("sw_%s_%s" % (name, an), "other", "base", ang, swings=[2, 3, 4], dist=3.0, pose={"swing": sw}))
+    return out
+
+
+TP2 = []
+TP2 += swv("v0")
+TP2 += swv("v1", wrist_pitch_strike=90.0)
+TP2 += swv("v2", wrist_pitch_strike=-45.0)
+TP2 += swv("v3", wrist_roll_strike=80.0)
+TP2 += swv("v4", wrist_pitch_wind=0.0, wrist_pitch_strike=90.0, pitch_strike=-80.0)
+TP2 += swv("v5", wrist_yaw_strike=80.0)
+for ang, an in ((270, "right"), (0, "front"), (90, "left")):
+    TP2.append(ext("t3b_other_%s" % an, "other", "base", ang, ps=[0.0, 0.55, 0.8, 0.92, 0.97, 1.0], dist=2.8))
+sets["tp2"] = TP2
+
+# ---- tp4: forward strike wrist variants (negative wrist pitch turns the blade forward) + the draw end check
+def swv2(name, **sw):
+    out = []
+    for ang, an in ((270, "right"), (0, "front")):
+        out.append(ext("sw_%s_%s" % (name, an), "other", "base", ang, swings=[2, 3, 4, 5], dist=3.0, pose={"swing": sw}))
+    return out
+
+
+TP4 = []
+TP4 += swv2("w1", wrist_pitch_strike=-100.0, pitch_strike=-70.0)
+TP4 += swv2("w2", wrist_pitch_strike=-130.0, pitch_strike=-70.0)
+TP4 += swv2("w3", wrist_pitch_wind=20.0, wrist_pitch_strike=-120.0, pitch_strike=-80.0)
+TP4 += swv2("w4", wrist_pitch_wind=-60.0, wrist_pitch_strike=-150.0, pitch_strike=-60.0)
+TP4.append(ext("t3c_other_right", "other", "base", 270, ps=[0.9, 0.97, 1.0], dist=2.8, pose={}))
+TP4.append(ext("t3c_other_front", "other", "base", 0, ps=[0.9, 0.97, 1.0], dist=2.8, pose={}))
+sets["tp4"] = TP4
+
 if __name__ == "__main__":
     out, name = sys.argv[1], sys.argv[2]
     json.dump({"candidates": sets[name]}, open(out, "w"), indent=1)

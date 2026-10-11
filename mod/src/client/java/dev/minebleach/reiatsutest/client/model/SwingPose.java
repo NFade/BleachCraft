@@ -28,15 +28,15 @@ public final class SwingPose {
 		DEFAULTS.put("t_wind", 0.30f);
 		DEFAULTS.put("t_strike", 0.58f);
 		DEFAULTS.put("pitch_wind", -150f);
-		DEFAULTS.put("pitch_strike", -55f);
+		DEFAULTS.put("pitch_strike", -60f);
 		DEFAULTS.put("yaw_wind", 25f);
 		DEFAULTS.put("yaw_strike", -40f);
 		DEFAULTS.put("roll_wind", 20f);
 		DEFAULTS.put("roll_strike", -15f);
 		DEFAULTS.put("body_wind", 17f);
 		DEFAULTS.put("body_strike", -22f);
-		DEFAULTS.put("wrist_pitch_wind", -35f);
-		DEFAULTS.put("wrist_pitch_strike", 40f);
+		DEFAULTS.put("wrist_pitch_wind", -60f);
+		DEFAULTS.put("wrist_pitch_strike", -150f);
 		DEFAULTS.put("wrist_roll_wind", 0f);
 		DEFAULTS.put("wrist_roll_strike", 0f);
 		DEFAULTS.put("wrist_yaw_wind", 0f);

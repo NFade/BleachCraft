@@ -163,6 +163,7 @@ public final class ScabbardRenderer {
 		float p = DrawTracker.effectiveProgress(e, main);
 		ItemManifest man = om.manifest();
 		ItemManifest.Hip hip = man.hip != null ? man.hip : new ItemManifest.Hip(new float[] {6.2f, 9f, -1f}, DEFAULT_DIR, 1f);
+		hip = hipOverride(hip);
 		DrawRig rig = om.rig(false);
 
 		Matrix4f base = new Matrix4f(m.peek().getPositionMatrix());
@@ -183,7 +184,6 @@ public final class ScabbardRenderer {
 			drawMesh(om.swordMesh(), m.peek(), vc, light);
 			m.pop();
 		}
-		debugCompare(m, e, om, model, p);
 		Matrix4f hipFrame = null;
 		if (p >= rig.slideEnd && p < 1f) {
 			// T3: the blade is clear of the mouth (end of the slide pose, in the frame of the hip)
@@ -196,7 +196,7 @@ public final class ScabbardRenderer {
 		m.pop();
 		if (hipFrame != null) {
 			// the blade travels from the hip to the hand; at p = 1 it is exactly where the hand item draws it
-			Matrix4f handFrame = handFrame(m, e, om, model);
+			Matrix4f handFrame = handFrameOf(m, e, om, model);
 			float u = DrawRig.smooth((p - rig.slideEnd) / (1f - rig.slideEnd));
 			blendFrames(m, base, hipFrame, handFrame, u);
 			drawMesh(om.swordMesh(), m.peek(), vc, light);
@@ -204,38 +204,59 @@ public final class ScabbardRenderer {
 		}
 	}
 
-	/** Dev check (-Dreiatsu.spike): the model space frame the hand item really got, captured in the held item mixin, against {@link #handFrame}. */
+	/** Dev hot tuning of the hip scabbard: {@code pose_override.json} key {@code "hip": {"pos_px": [x, y, z], "dir": [x, y, z], "scale": s}} (any subset). */
+	private static ItemManifest.Hip hipOverride(ItemManifest.Hip hip) {
+		com.google.gson.JsonObject o = HeldPose.overrideObject();
+		if (o == null || !o.has("hip")) {
+			return hip;
+		}
+		com.google.gson.JsonObject h = o.getAsJsonObject("hip");
+		float[] pos = hip.posPx();
+		float[] dir = hip.dir();
+		float scale = hip.scale();
+		if (h.has("pos_px")) {
+			com.google.gson.JsonArray a = h.getAsJsonArray("pos_px");
+			pos = new float[] {a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()};
+		}
+		if (h.has("dir")) {
+			com.google.gson.JsonArray a = h.getAsJsonArray("dir");
+			dir = new float[] {a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat()};
+		}
+		if (h.has("scale")) {
+			scale = h.get("scale").getAsFloat();
+		}
+		return new ItemManifest.Hip(pos, dir, scale);
+	}
+
+	/**
+	 * The model space frame the hand item really gets (T3), captured every frame in the held item mixin (it runs even while the
+	 * item model draws nothing, so it exists during the draw too). The blend of the draw ends exactly on it, so there is no pop
+	 * at p = 1 whatever the vanilla chain (arm angle, swing, child scale, slim arms) does. Fallback: {@link #handFrame}.
+	 */
 	private static Matrix4f realHand;
 	private static int realHandId = -1;
+	private static long realHandNanos;
 
 	public static void captureHand(LivingEntity e, MatrixStack m, boolean leftHanded, ObjItemBakedModel om) {
-		if (!DEBUG) {
-			return;
-		}
 		m.push();
 		ModelTransformationMode mode = leftHanded ? ModelTransformationMode.THIRD_PERSON_LEFT_HAND : ModelTransformationMode.THIRD_PERSON_RIGHT_HAND;
 		om.getTransformation().getTransformation(mode).apply(leftHanded, m);
 		m.translate(-0.5f, -0.5f, -0.5f);
-		realHand = new Matrix4f(m.peek().getPositionMatrix());
+		if (realHand == null) {
+			realHand = new Matrix4f();
+		}
+		realHand.set(m.peek().getPositionMatrix());
 		realHandId = e.getId();
+		realHandNanos = System.nanoTime();
 		m.pop();
 	}
 
-	private static void debugCompare(MatrixStack m, LivingEntity e, ObjItemBakedModel om, BipedEntityModel<?> model, float p) {
-		if (!DEBUG || realHand == null || realHandId != e.getId() || p < 1f || (System.nanoTime() / 500_000_000L) % 4 != 0) {
-			return;
+	/** The captured hand frame of this frame for the entity, or the predicted one. */
+	private static Matrix4f handFrameOf(MatrixStack m, LivingEntity e, ObjItemBakedModel om, BipedEntityModel<?> model) {
+		if (realHand != null && realHandId == e.getId() && System.nanoTime() - realHandNanos < 60_000_000L) {
+			return new Matrix4f(realHand);
 		}
-		Matrix4f mine = handFrame(m, e, om, model);
-		float d = 0f;
-		for (int c = 0; c < 4; c++) {
-			for (int r = 0; r < 4; r++) {
-				d = Math.max(d, Math.abs(mine.get(c, r) - realHand.get(c, r)));
-			}
-		}
-		Vector3f s1 = mine.getScale(new Vector3f());
-		Vector3f s2 = realHand.getScale(new Vector3f());
-		dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[handframe] maxdiff={} predictedScale={} realScale={} mineT={} realT={}", d, s1, s2,
-				mine.getTranslation(new Vector3f()), realHand.getTranslation(new Vector3f()));
+		return handFrame(m, e, om, model);
 	}
 
 	/**
@@ -282,8 +303,10 @@ public final class ScabbardRenderer {
 		gb.getTranslation(pb);
 		ga.getScale(sa);
 		gb.getScale(sb);
-		ga.getNormalizedRotation(qa);
-		gb.getNormalizedRotation(qb);
+		// JOML's getNormalizedRotation does not remove the scale: normalize the 3x3 part first (a scaled input gave a quaternion
+		// of length 1.17 that enlarged the blade by 17 percent during the blend)
+		new Matrix4f(ga).normalize3x3().getNormalizedRotation(qa).normalize();
+		new Matrix4f(gb).normalize3x3().getNormalizedRotation(qb).normalize();
 		Vector3f p = pa.lerp(pb, u);
 		float sc = sa.x + (sb.x - sa.x) * u;
 		Quaternionf q = qa.slerp(qb, u);
