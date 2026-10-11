@@ -5,6 +5,7 @@ import dev.minebleach.reiatsutest.core.obj.AxisMapper;
 import dev.minebleach.reiatsutest.core.obj.EmissiveMask;
 import dev.minebleach.reiatsutest.core.obj.ItemManifest;
 import dev.minebleach.reiatsutest.core.obj.ObjGeometry;
+import dev.minebleach.reiatsutest.core.obj.ObjMeta;
 import dev.minebleach.reiatsutest.registry.ReleaseState;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,6 +102,10 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			sm.handGlow = buildGlow(mb, def.hand(), sprite, glow, NO_SHIFT, quadCount);
 			sm.otherBase = buildBase(mb, def.other(), sprite, cutout, translucent, NO_SHIFT, quadCount);
 			sm.otherGlow = buildGlow(mb, def.other(), sprite, glow, NO_SHIFT, quadCount);
+			if (rs == ReleaseState.SEALED && man.draw != null) {
+				// plan G-glow: the drawn blade's pink glow shell (ReleaseHold / ShikaiDissolve), the same quads pushed out along the normal
+				sm.bladeShell = buildShell(mb, def.hand(), sprite, glow, quadCount);
+			}
 			for (ItemManifest.DynSeg ds : man.dynamicSegments(def)) {
 				String seg = ds.object();
 				float[] origin = data.metaOf(seg).originModel(seg);
@@ -128,6 +133,23 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			states.saya = buildBase(mb, sayaObjs, sprite, cutout, translucent, NO_SHIFT, quadCount);
 			states.sayaGlow = buildGlow(mb, sayaObjs, sprite, glow, NO_SHIFT, quadCount);
 			states.sayaMeta = data.metaOf(man.draw.saya());
+			// plan G-glow: blade axis in model space (saya mouth to tip) for the dissolve front; left null when the meta has none
+			ObjMeta bm = data.metaOf(man.draw.blade());
+			float[] grip = bm == null ? null : bm.empties.get("grip_hand");
+			float[] tip = bm == null ? null : bm.empties.get("tip");
+			if (grip != null && tip != null && bm.bladeAxis != null) {
+				float[] tipM = AxisMapper.blenderToModel(tip, grip);
+				float[] mouthM = AxisMapper.blenderToModel(bm.bladeAxis.origin(), grip);
+				float dx = tipM[0] - mouthM[0];
+				float dy = tipM[1] - mouthM[1];
+				float dz = tipM[2] - mouthM[2];
+				float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+				if (len > 1e-4f) {
+					states.bladeBase = mouthM;
+					states.bladeDir = new float[] {dx / len, dy / len, dz / len};
+					states.bladeLen = len;
+				}
+			}
 		}
 
 		ModelTransformation transformation = display instanceof JsonUnbakedModel j ? j.getTransformations() : ModelTransformation.NONE;
@@ -152,6 +174,20 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			Sprite sp = sprite.apply(def.diffuse());
 			for (ObjGeometry.Quad q : data.quads().get(obj)) {
 				emit(em, q, sp, def.translucent() ? translucentMat : mat, 0xFFFFFFFF, 0f, shift);
+				count[0]++;
+			}
+		}
+		return mb.build();
+	}
+
+	/** Glow shell: the same quads pushed out by {@link #GLOW_OFFSET} and drawn with the emissive material (the colour is set when drawn). */
+	private Mesh buildShell(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial glowMat, int[] count) {
+		QuadEmitter em = mb.getEmitter();
+		for (String obj : objects) {
+			ItemManifest.ObjectDef def = data.manifest().objects.get(obj);
+			Sprite sp = sprite.apply(def.diffuse());
+			for (ObjGeometry.Quad q : data.quads().get(obj)) {
+				emit(em, q, sp, glowMat, 0xFFFFFFFF, GLOW_OFFSET, NO_SHIFT);
 				count[0]++;
 			}
 		}
@@ -235,6 +271,8 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		boolean handEmpty;
 		Mesh handBase;
 		Mesh handGlow;
+		/** Pink glow shell of the drawn blade (SEALED only, when the manifest has a draw entry); null otherwise. */
+		Mesh bladeShell;
 		Mesh otherBase;
 		Mesh otherGlow;
 		Mesh icon;
@@ -250,5 +288,9 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		Mesh saya;
 		Mesh sayaGlow;
 		dev.minebleach.reiatsutest.core.obj.ObjMeta sayaMeta;
+		/** Blade axis in model space: base at the saya mouth, unit direction towards the tip, length; null when unknown. */
+		float[] bladeBase;
+		float[] bladeDir;
+		float bladeLen;
 	}
 }

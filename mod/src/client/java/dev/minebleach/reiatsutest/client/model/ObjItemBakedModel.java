@@ -1,5 +1,7 @@
 package dev.minebleach.reiatsutest.client.model;
 
+import dev.minebleach.reiatsutest.client.fx.ShikaiDissolve;
+import dev.minebleach.reiatsutest.core.fx.DissolveMath;
 import dev.minebleach.reiatsutest.core.obj.DrawRig;
 import dev.minebleach.reiatsutest.core.obj.ItemManifest;
 import net.minecraft.entity.LivingEntity;
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
+import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.block.BlockState;
@@ -91,6 +94,15 @@ public final class ObjItemBakedModel implements BakedModel {
 					stats(t0);
 					return;
 				}
+			}
+		}
+		if (state == ReleaseState.SHIKAI && states.bladeBase != null && isHandMode(mode)) {
+			// plan G-glow: after the pink hold the drawn blade glows and breaks into petals from the hilt towards the tip
+			LivingEntity dp = DrawTracker.renderEntity();
+			if (dp != null && dp.getMainHandStack() == stack && ShikaiDissolve.active(dp.getId())) {
+				emitDissolve(states, ShikaiDissolve.progress(dp.getId()), context);
+				stats(t0);
+				return;
 			}
 		}
 		if (states.saya != null && isHandMode(mode)) {
@@ -187,6 +199,72 @@ public final class ObjItemBakedModel implements BakedModel {
 			sm.handGlow.outputTo(context.getEmitter());
 		}
 		context.popTransform();
+	}
+
+	/**
+	 * Plan G-glow: the drawn blade breaks into petals from the hilt towards the tip ({@link DissolveMath}). Three parts, all in model space:
+	 * the shikai hilt (tinted pink, back to its own colour as the dissolve ends), the remaining drawn blade (quads behind the front
+	 * removed by the transform, pink), and its glow shell (the same quads pushed out, emissive, fading with the dissolve).
+	 */
+	private static void emitDissolve(ObjItemUnbakedModel.BakedStates st, double p, RenderContext context) {
+		QuadEmitter em = context.getEmitter();
+		boolean tipFirst = ShikaiDissolve.tipFirst();
+		double boundary = DissolveMath.boundary(p, tipFirst);
+		float[] base = st.bladeBase;
+		float[] dir = st.bladeDir;
+		float len = st.bladeLen;
+		int hilt = ShikaiDissolve.hiltTint(p);
+		context.pushTransform(q -> {
+			for (int c = 0; c < 4; c++) {
+				q.color(c, mulColor(q.color(c), hilt));
+			}
+			return true;
+		});
+		ObjItemUnbakedModel.StateMeshes shikai = st.byState[ReleaseState.SHIKAI.ordinal()];
+		shikai.handBase.outputTo(em);
+		if (shikai.handGlow != null) {
+			shikai.handGlow.outputTo(em);
+		}
+		context.popTransform();
+		ObjItemUnbakedModel.StateMeshes bare = st.byState[ReleaseState.SEALED.ordinal()];
+		int blade = ShikaiDissolve.bladeTint();
+		context.pushTransform(q -> {
+			if (!bladeQuad(q, base, dir, len, boundary, tipFirst)) {
+				return false;
+			}
+			for (int c = 0; c < 4; c++) {
+				q.color(c, mulColor(q.color(c), blade));
+			}
+			return true;
+		});
+		bare.handBase.outputTo(em);
+		context.popTransform();
+		int shell = ShikaiDissolve.shellArgb(p);
+		if (bare.bladeShell != null && (shell >>> 24) != 0) {
+			context.pushTransform(q -> {
+				if (!bladeQuad(q, base, dir, len, boundary, tipFirst)) {
+					return false;
+				}
+				for (int c = 0; c < 4; c++) {
+					q.color(c, shell);
+				}
+				return true;
+			});
+			bare.bladeShell.outputTo(em);
+			context.popTransform();
+		}
+	}
+
+	/** Keeps a quad of the drawn blade while the dissolve front has not reached its centre; the hilt part (s below 0) is never kept. */
+	private static boolean bladeQuad(MutableQuadView q, float[] base, float[] dir, float len, double boundary, boolean tipFirst) {
+		Vector3f v = new Vector3f();
+		double sum = 0;
+		for (int c = 0; c < 4; c++) {
+			q.copyPos(c, v);
+			sum += DissolveMath.along(v.x, v.y, v.z, base[0], base[1], base[2], dir[0], dir[1], dir[2], len);
+		}
+		double s = sum / 4;
+		return s >= 0 && DissolveMath.keep(s, boundary, tipFirst);
 	}
 
 	// ------------------------------------------------------------------ scabbard access (ScabbardRenderer, FirstPersonHand)

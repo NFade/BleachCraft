@@ -150,6 +150,7 @@ public final class FxTimelines {
 		ACTIVE.clear();
 		FxDelayed.clear();
 		ReleaseHold.clear();
+		ShikaiDissolve.clear();
 		FxGlowBatch.clear();
 		ScreenFx.clear();
 		FxParticles.clearAll();

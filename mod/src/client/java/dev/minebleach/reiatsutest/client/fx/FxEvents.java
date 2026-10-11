@@ -65,6 +65,7 @@ public final class FxEvents {
 				// plan A6: the blade in the hand turns pink for 0.4 s (ReleaseHold tints the item model), then the flash, ring and petals start
 				double hold = FxTune.d("release.pinkTime", 0.4);
 				ReleaseHold.start(e.casterId(), hold);
+				ShikaiDissolve.start(e.casterId(), hold); // plan G-glow: the blade dissolves into petals after the pink hold
 				FxSound.play(null, "block.amethyst_block.resonate", e.x(), e.y() + 1.1, e.z(), 1.7, 0.35);
 				FxDelayed.after(hold, () -> {
 					ReleaseFx.play(e);
@@ -74,6 +75,7 @@ public final class FxEvents {
 				ReleaseFx.play(e);
 				if (id == 3) {
 					SwarmFx.onRelease(e);
+					ShikaiDissolve.start(e.casterId(), 0);
 				}
 			} else {
 				SealFx.play(e);

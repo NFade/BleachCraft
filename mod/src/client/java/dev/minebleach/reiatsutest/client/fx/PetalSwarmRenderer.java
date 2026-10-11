@@ -64,6 +64,8 @@ public final class PetalSwarmRenderer {
 		float vz;
 		float strength;
 		int kind;
+		/** 1 in the third person; for the owner's first person it falls from 1 to swarm.fpGlowMin as a petal comes to the lens. */
+		float fade;
 	}
 
 	private static GlowItem[] items = new GlowItem[0];
@@ -89,7 +91,7 @@ public final class PetalSwarmRenderer {
 		return layer;
 	}
 
-	private static void addItem(int kind, float x, float y, float z, float vx, float vy, float vz, float strength) {
+	private static void addItem(int kind, float x, float y, float z, float vx, float vy, float vz, float strength, float fade) {
 		if (itemCount >= items.length) {
 			items = Arrays.copyOf(items, Math.max(256, items.length * 2));
 			for (int i = itemCount; i < items.length; i++) {
@@ -105,6 +107,7 @@ public final class PetalSwarmRenderer {
 		g.vy = vy;
 		g.vz = vz;
 		g.strength = strength;
+		g.fade = fade;
 	}
 
 	/** Rotation matrix (row major) of an angle about a unit axis. */
@@ -159,6 +162,7 @@ public final class PetalSwarmRenderer {
 		double fpFade = FxTune.d("swarm.fpFade", 5.0);
 		double fpKeep = FxTune.d("swarm.fpKeep", 0.12);
 		double fpSize = FxTune.d("swarm.fpSize", 0.35);
+		double fpGlowMin = FxTune.d("swarm.fpGlowMin", 0.15);
 		double petalScale = FxTune.d("swarm.petalScale", 1.8);
 		double glintPower = FxTune.d("swarm.glintPower", 16);
 		float uc = mesh != null ? mesh.centreU : 0.313f;
@@ -328,12 +332,13 @@ public final class PetalSwarmRenderer {
 				}
 				petalsDrawn++;
 				// glow items: sparkle on the strong glints, streaks behind fast petals
-				boolean glowOk = !fp || dl > fpFade * 0.8;
-				if (glowOk && glint > 0.55 && glints < 220 && dl < 40) {
+				// glow falls off smoothly for the owner's first person: weak next to the lens, full from about 1.5 x fpFade on
+					float fade = fp ? (float) (fpGlowMin + (1.0 - fpGlowMin) * FxMath.smoothstep(fpClear, fpFade * 1.5, dl)) : 1f;
+				if (glint > 0.55 && glints < 220 && dl < 40) {
 					glints++;
-					addItem(0, x, y, z, 0, 0, 0, (float) glint);
+					addItem(0, x, y, z, 0, 0, 0, (float) glint, fade);
 				}
-				if (glowOk && streakStride > 0 && i % streakStride == 0 && dl < 24) {
+				if (streakStride > 0 && i % streakStride == 0 && dl < 24) {
 					SwarmMath.position(st.slots, i, Math.max(0, t - 0.02), mode, st.yaw, OUT2);
 					SwarmMath.position(st.slots, i, t, mode, st.yaw, OUT);
 					float vx = (float) (OUT[0] - OUT2[0]) / 0.02f;
@@ -341,12 +346,12 @@ public final class PetalSwarmRenderer {
 					float vz = (float) (OUT[2] - OUT2[2]) / 0.02f;
 					float sp = (float) Math.sqrt(vx * vx + vy * vy + vz * vz);
 					if (sp > 12.0f) {
-						addItem(1, x, y, z, vx, vy, vz, sp);
+						addItem(1, x, y, z, vx, vy, vz, sp, fade);
 					}
 				}
 				// halo: 1 petal in 8 gets a soft glow
-				if (glowOk && (i & 7) == 0 && dl < 30) {
-					addItem(2, x, y, z, 0, 0, 0, 1f);
+				if ((i & 7) == 0 && dl < 30) {
+					addItem(2, x, y, z, 0, 0, 0, 1f, fade);
 				}
 			}
 			st.visible = petalsDrawn;
@@ -388,6 +393,10 @@ public final class PetalSwarmRenderer {
 	private static void emitGlow(FxGlowBatch.Emitter e) {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		double glowMul = FxTune.d("swarm.glowMul", 1.0);
+		// plan G-glow: the petal halo is pink (swarm.haloColor), soft and moderate; swarm.haloIntensity 0 turns it off
+		float[] halo = FxMath.hex(FxTune.s("swarm.haloColor", "#FF7FC8"));
+		double haloInt = FxTune.d("swarm.haloIntensity", 0.36);
+		double haloSize = FxTune.d("swarm.haloSize", 0.7);
 		Vec3d cp = mc.gameRenderer.getCamera().getPos();
 		for (int k = 0; k < itemCount; k++) {
 			GlowItem g = items[k];
@@ -395,15 +404,15 @@ public final class PetalSwarmRenderer {
 			double wy = g.y + cp.y;
 			double wz = g.z + cp.z;
 			switch (g.kind) {
-				case 0 -> e.sprite(GlowSprite.STAR4, wx, wy, wz, 0.38 + 0.4 * g.strength, k * 0.7, 1f, 0.93f, 1f, FxTune.d("swarm.glintIntensity", 0.85) * g.strength * glowMul);
+				case 0 -> e.sprite(GlowSprite.STAR4, wx, wy, wz, (0.38 + 0.4 * g.strength) * (0.5 + 0.5 * g.fade), k * 0.7, 1f, 0.93f, 1f, FxTune.d("swarm.glintIntensity", 0.85) * g.strength * glowMul * g.fade);
 				case 1 -> {
 					double sp = Math.sqrt(g.vx * g.vx + g.vy * g.vy + g.vz * g.vz);
 					if (sp > 1e-3) {
 						double len = Math.min(1.6, sp * 0.05);
-						e.streak(GlowSprite.STREAK, wx, wy, wz, wx - g.vx / sp * len, wy - g.vy / sp * len, wz - g.vz / sp * len, 0.14, 0.98f, 0.82f, 0.98f, 0.40 * glowMul);
+						e.streak(GlowSprite.STREAK, wx, wy, wz, wx - g.vx / sp * len, wy - g.vy / sp * len, wz - g.vz / sp * len, 0.14, 0.98f, 0.82f, 0.98f, 0.40 * glowMul * g.fade);
 					}
 				}
-				default -> e.sprite(GlowSprite.PETAL_GLOW, wx, wy, wz, 0.5, k * 1.3, 0.98f, 0.78f, 0.96f, FxTune.d("swarm.haloIntensity", 0.30) * glowMul);
+				default -> e.sprite(GlowSprite.PETAL_GLOW, wx, wy, wz, haloSize * (0.5 + 0.5 * g.fade), k * 1.3, halo[0], halo[1], halo[2], haloInt * glowMul * g.fade);
 			}
 		}
 		// barrier: lavender rim on the ground, shimmer discs on the dome surface
