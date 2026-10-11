@@ -78,3 +78,6 @@ Merge order: srvdocs -> b4game -> phase6-fx -> p6rukia -> tp3 (LOG.md / STATUS.m
 
 ## 2026-10-11: tp3b
 T2-T4 finished on `tp3b` (from main): build+test green (320), runPhase4 151 checks, runPhase5 62/62. Merge `tp3b` into main instead of the WIP `tp3` commit. Open: second real client, Fabulous, production refmap check (see UNVERIFIED in LOG).
+
+## 2026-10-11: T1 voice bridge (branch `voice2`, local, not merged/pushed)
+Done: voice page with prepared hold-to-talk session (optional muted-track pre-warm), race-safe session replacement, fallbacks, volume meter, last-30 latency card, Lab card; `gradlew voiceLab`, `tools/gen_voice_fixtures.ps1`, `tools/voice_lab_e2e.mjs`, 26 Node tests, `VoicePageTest`. Build 324 tests green, fixtures 202/202 and 0/153 unchanged, no game run (no mod code changed). Real Chrome with synthetic speech: press to ready 0 ms (plain mic start 235 to 240 ms), recogniser end-of-speech wait about 0.7 to 1.0 s, page to game 3 to 7 ms. Open: real microphone and ja-JP are manual (`docs/VOICE_QA.md`); details and UNVERIFIED in `LOG.md` "T1 voice bridge", design notes `design/VOICE_BRIDGE_NOTES.md` (incl. kido extension notes).

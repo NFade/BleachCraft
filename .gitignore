@@ -31,3 +31,6 @@ mod/*.log
 .claude/worktrees/
 mod/tune_tmp/
 mod/gradle-home/
+
+# generated TTS fixtures (tools/gen_voice_fixtures.ps1)
+tests/voice/audio/

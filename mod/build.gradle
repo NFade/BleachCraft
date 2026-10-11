@@ -128,6 +128,16 @@ processResources {
 	}
 }
 
+// Development lab for the voice bridge page: the real HTTP bridge and matcher without a game (see docs/VOICE_QA.md)
+tasks.register("voiceLab", JavaExec) {
+	group = "verification"
+	description = "Serves voice-bridge/index.html with the real matcher in ungated mode on 127.0.0.1:47831 (no game)"
+	dependsOn "testClasses"
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "dev.minebleach.reiatsutest.voice.VoiceLabServer"
+	args = [project.findProperty("labPort") ?: "47831"]
+}
+
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
 	it.options.encoding = "UTF-8"

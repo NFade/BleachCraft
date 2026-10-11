@@ -17,6 +17,13 @@ Any external sample must be CC0 (or explicitly licensed) and listed below.
 | Noto Serif JP | https://github.com/notofonts/noto-cjk | SIL Open Font License 1.1 (copyright the Noto Project Authors) | NOT shipped. `design/VFX_STORYBOARD.md` names it for a pre-rendered bankai title plate; the code draws the kanji with the game's glyphs instead. If a plate rendered from this font is added to `assets/`, add the OFL text and the copyright line to the jar (`META-INF` or `assets/reiatsu_test/licenses/`) and keep the font itself out of the repository unless needed |
 | Models, textures, HUD sprites, effects, voice phrase tables | made for this project (Blender, `blender/scripts/`, `tools/*.py`) | declared CC0-1.0 in `fabric.mod.json` | the whole mod |
 
+## Consulted, not included
+
+| Source | License | Use |
+|---|---|---|
+| https://github.com/IzumiSatoshi/vox-arcana (read only, cloned outside the repository) | MIT, Copyright (c) 2026 IzumiSatoshi | Ideas only for the voice bridge (prepared recognition session on a muted audio track, waiting for end/abort before replacing a session, fallback to plain recognition, last-30 timing metrics without words, synthetic-speech lab, volume envelope). No code, text or asset was copied; `voice-bridge/index.html` and its tests are written for this project. Recorded here as a courtesy; see `design/VOICE_BRIDGE_NOTES.md` |
+| Windows System.Speech voices (Zira, Irina) | Windows | `tools/gen_voice_fixtures.ps1` renders test utterances locally into the git-ignored `tests/voice/audio/`; no synthesized audio is committed or shipped |
+
 Sounds: vanilla Minecraft sounds only (no audio file is bundled). No ripped game, anime or wiki asset is in the mod; the private
 reference images in `refs/` are git-ignored and never shipped.
 

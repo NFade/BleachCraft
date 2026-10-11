@@ -22,6 +22,24 @@ Opening `voice-bridge/index.html` from disk also works (`file://`); then the pag
 in the address: `index.html?port=47822`. The browser asks for the microphone permission on every visit in that case.
 `?lang=ru-RU` picks the language, `?autostart=1` starts listening at once.
 
+## Modes and settings (Settings card on the page)
+
+- **Always listening** (default): one continuous recognition session, restarted at once when the browser ends it (backoff only
+  after errors). Replacing a session (language switch, option change) waits for the old one to end, at most 1 s.
+- **Hold to talk**: hold the button (or Space while the page has focus); results only count while held plus a 0.5 s tail.
+  A session is kept ready in between, so the press costs no start-up time. Option **Pre-warm** runs that session on a muted
+  Web Audio track and the press only opens its volume; if the browser or the device does not cooperate the page falls back
+  to the plain microphone by itself and says so.
+- **Volume meter**: level bar and glow on the microphone circle; it also supplies the timing of your voice for the metrics.
+  It opens a second read-only microphone stream; switch it off if recognition misbehaves on your device.
+- **On-device recognition**: only when the browser reports the language pack as already installed. Nothing is ever downloaded.
+- **Latency** card: last 30 measurements, numbers only. **Copy JSON**, or `VoiceStats()` in the console.
+- **Lab** card: browser capability checks, a 3 s microphone measurement, and a runner for synthetic WAV fixtures
+  (`tools/gen_voice_fixtures.ps1`). Query switches: `?mode=ptt`, `?prewarm=1`, `?local=1`, `?meter=0`, `?lab=1`.
+
+Without the game: `cd mod && gradlew voiceLab` serves this page with the real bridge and matcher on `http://127.0.0.1:47831/`
+(no state rules, nothing fires). Real microphone checklist: `docs/VOICE_QA.md`. Design notes: `design/VOICE_BRIDGE_NOTES.md`.
+
 ## Notes
 
 - Chrome and Edge send the audio to their vendor's cloud for recognition: you need internet access and should be aware of

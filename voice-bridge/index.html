@@ -20,6 +20,7 @@
     --warn: #fbbf24;
     --bad: #f87171;
     --radius: 14px;
+    --lvl: 0;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--text); }
@@ -29,6 +30,7 @@
     background: radial-gradient(1200px 500px at 50% -10%, #16233a 0%, transparent 60%), var(--bg);
   }
   main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 16px; }
+  main > * { min-width: 0; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   h1 { margin: 0; font-size: 20px; letter-spacing: .02em; font-weight: 650; }
   h1 small { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 8px; }
@@ -51,24 +53,33 @@
     transition: background .2s, color .2s, transform .1s;
   }
   .mic:active { transform: scale(.96); }
-  .mic svg { width: 26px; height: 26px; fill: currentColor; }
+  .mic svg { width: 26px; height: 26px; fill: currentColor; position: relative; }
+  /* volume feedback: the glow follows the live microphone level (var --lvl, 0..1, set from the meter) */
+  .mic::before {
+    content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+    box-shadow: 0 0 calc(4px + 26px * var(--lvl)) calc(1px + 7px * var(--lvl)) rgba(124, 196, 255, calc(.08 + .8 * var(--lvl)));
+    transform: scale(calc(1 + .16 * var(--lvl)));
+  }
   .mic::after {
     content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid transparent; transition: border-color .2s;
   }
   .mic.on { background: #123a2a; color: var(--ok); }
   .mic.on::after { border-color: rgba(74, 222, 128, .45); animation: pulse 1.8s ease-out infinite; }
+  .mic.ready { background: #2a2a12; color: var(--warn); }
+  .mic.ready::after { border-color: rgba(251, 191, 36, .4); }
   .mic.hearing { background: #17304f; color: var(--accent); }
   .mic.hearing::after { border-color: rgba(124, 196, 255, .8); animation: pulse .9s ease-out infinite; }
   .mic.error { background: #3a1818; color: var(--bad); }
   @keyframes pulse { 0% { transform: scale(.92); opacity: 1; } 100% { transform: scale(1.28); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .mic::after { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .mic::after { animation: none !important; } .mic::before { transform: none; } }
 
   .start {
     appearance: none; border: 0; cursor: pointer; font: inherit; font-weight: 650; color: #07131f;
     background: linear-gradient(135deg, var(--accent), #5aa9ff); padding: 11px 24px; border-radius: 12px;
   }
   .start.stop { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
-  .start:focus-visible, .seg button:focus-visible, .mic:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .start:disabled { opacity: .45; cursor: default; }
+  .start:focus-visible, .seg button:focus-visible, .mic:focus-visible, input:focus-visible, summary:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
   .seg button {
     appearance: none; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer;
@@ -76,6 +87,19 @@
   }
   .seg button[aria-pressed="true"] { background: var(--accent); color: #07131f; font-weight: 650; }
   .spacer { flex: 1; }
+  .ptt {
+    appearance: none; border: 1px dashed var(--accent); background: var(--panel-2); color: var(--text); font: inherit; font-weight: 650;
+    border-radius: 12px; padding: 11px 22px; cursor: pointer; user-select: none; touch-action: none;
+  }
+  .ptt.down { background: var(--accent); color: #07131f; border-style: solid; }
+  .ptt[hidden] { display: none; }
+
+  .meter { margin-top: 14px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+  .meter .bar { height: 8px; border-radius: 99px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+  .meter .fill { height: 100%; width: calc(var(--lvl) * 100%); background: linear-gradient(90deg, var(--ok), var(--accent) 70%, var(--warn)); }
+  .meter .num { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 9ch; text-align: right; }
+  .meter .note { grid-column: 1 / -1; font-size: 12px; color: var(--muted); min-height: 1.2em; }
+  .meter[hidden] { display: none; }
 
   .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
   .heard { min-height: 3.2em; font-size: 22px; line-height: 1.35; word-break: break-word; }
@@ -98,18 +122,34 @@
   ul.log li .r { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   form.manual { display: flex; gap: 8px; }
-  form.manual input {
+  form.manual input[type=text] {
     flex: 1; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 10px;
     padding: 9px 12px; font: inherit;
   }
-  form.manual button {
+  form.manual button, .btn {
     appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); border-radius: 10px;
     padding: 9px 16px; font: inherit; cursor: pointer;
   }
+  .btn.small { padding: 5px 12px; font-size: 13px; }
   .banner { border: 1px solid #5b4514; background: #2a2210; color: #f3d98a; border-radius: var(--radius); padding: 12px 16px; display: none; }
   .banner.show { display: block; }
+  .banner.info { border-color: #1d3a5b; background: #10202e; color: #a9d2f5; }
   footer { color: #5f6b7d; font-size: 12px; }
   details summary { cursor: pointer; color: var(--muted); }
+  details[open] summary { margin-bottom: 10px; }
+  .opts { display: grid; gap: 10px; }
+  .opts label { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+  .opts label small { display: block; color: var(--muted); font-size: 12px; }
+  .opts .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; }
+
+  table.stats { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  table.stats th, table.stats td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.stats th:first-child, table.stats td:first-child { text-align: left; white-space: normal; }
+  table.stats th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .scroll { overflow-x: auto; }
+  .row-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  td.pass { color: var(--ok); } td.fail { color: var(--bad); }
+  code { background: var(--panel-2); border-radius: 5px; padding: 1px 5px; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -126,14 +166,23 @@
     This browser has no speech recognition. Open this page in Chrome or Edge (Firefox does not support it).
   </div>
   <div class="banner" id="micError"></div>
+  <div class="banner info" id="notice"></div>
 
-  <section class="card controls" aria-label="Controls">
-    <button class="mic" id="mic" type="button" aria-label="Microphone state" tabindex="-1">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
-    </button>
-    <button class="start" id="toggle" type="button">Start</button>
-    <div class="spacer"></div>
-    <div class="seg" role="group" aria-label="Language" id="langs"></div>
+  <section class="card" aria-label="Controls">
+    <div class="controls">
+      <button class="mic" id="mic" type="button" aria-label="Microphone state" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+      </button>
+      <button class="start" id="toggle" type="button">Start</button>
+      <button class="ptt" id="ptt" type="button" hidden>Hold to talk (Space)</button>
+      <div class="spacer"></div>
+      <div class="seg" role="group" aria-label="Language" id="langs"></div>
+    </div>
+    <div class="meter" id="meter" hidden>
+      <div class="bar"><div class="fill"></div></div>
+      <div class="num" id="meterNum">-</div>
+      <div class="note" id="meterNote"></div>
+    </div>
   </section>
 
   <section class="card" aria-live="polite">
@@ -172,6 +221,58 @@
     </form>
   </section>
 
+  <details class="card" id="settings">
+    <summary>Settings</summary>
+    <div class="opts">
+      <div class="row">
+        <span>Mode</span>
+        <div class="seg" role="group" aria-label="Mode" id="modes"></div>
+      </div>
+      <label><input type="checkbox" id="optMeter" checked>
+        <span>Volume meter<small>Opens a second read-only microphone stream to draw the level. If recognition misbehaves on your device, switch it off.</small></span></label>
+      <label><input type="checkbox" id="optPrewarm">
+        <span>Pre-warm with a silent audio track (hold to talk, experimental)<small>The recogniser runs on a muted track and the press only opens the volume. Falls back to the plain microphone by itself if the browser or the device does not cooperate.</small></span></label>
+      <label><input type="checkbox" id="optLocal">
+        <span>On-device recognition when the language pack is already installed<small>Never downloads anything. Japanese usually falls back to the browser service.</small></span></label>
+    </div>
+  </details>
+
+  <section class="card" id="statsCard">
+    <div class="label">Latency (last 30, no words, no audio, kept in this page only)</div>
+    <div class="scroll">
+      <table class="stats" id="statsTable">
+        <thead><tr><th>Phase</th><th>n</th><th>median</th><th>p90</th><th>last</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="hint" id="statsHint">Needs the volume meter for the "voice" phases. Budget from the game side: voice end to effect at most 400 ms (the recogniser's own end-of-speech wait is the part you cannot change).</p>
+    <div class="row-actions">
+      <button class="btn small" id="statsCopy" type="button">Copy JSON</button>
+      <button class="btn small" id="statsClear" type="button">Clear</button>
+      <span class="hint" id="statsMsg"></span>
+    </div>
+  </section>
+
+  <details class="card" id="lab">
+    <summary>Lab: browser checks, microphone level, synthetic speech fixtures</summary>
+    <div class="label">Browser capabilities</div>
+    <div class="scroll"><table class="stats" id="capTable"><tbody></tbody></table></div>
+    <div class="row-actions">
+      <button class="btn small" id="capRun" type="button">Run checks</button>
+      <button class="btn small" id="levelRun" type="button">Measure microphone (3 s)</button>
+      <span class="hint" id="levelOut"></span>
+    </div>
+    <div class="label" style="margin-top:18px">Fixtures (WAV files made by <code>tools/gen_voice_fixtures.ps1</code>)</div>
+    <p class="hint">Pick the WAV files from <code>tests/voice/audio/</code> (and <code>manifest.json</code> if you want expected commands compared). Each file is played through a muted Web Audio track into a fresh recogniser, so no speaker and no microphone are needed. The text is sent to the game only when the box below is ticked.</p>
+    <form class="manual" id="fxForm" autocomplete="off">
+      <input id="fxFiles" type="file" accept=".wav,audio/wav,.json,application/json" multiple aria-label="Fixture files">
+      <button type="button" id="fxRun">Run</button>
+    </form>
+    <label class="hint"><input type="checkbox" id="fxSend"> also send each result to the game (it will fire real commands)</label>
+    <div class="scroll"><table class="stats" id="fxTable"><thead><tr><th>file</th><th>lang</th><th>heard</th><th>start-&gt;audio</th><th>end-&gt;final</th><th>end-&gt;full interim</th><th>expect</th><th>game</th></tr></thead><tbody></tbody></table></div>
+    <p class="hint" id="fxMsg"></p>
+  </details>
+
   <footer>
     Speech recognition runs inside your browser vendor's cloud service (Chrome and Edge send the audio to it), so it needs
     internet access. This page talks only to the game on this computer (<span id="target"></span>).
@@ -179,10 +280,375 @@
 </main>
 
 <script>
+/* ===== SESSION-CORE-BEGIN =====
+ * Recognition session controller. No DOM access: the page and tests/voice/session_core.test.mjs both drive it.
+ * Ideas (not code) from IzumiSatoshi/vox-arcana (MIT): a prepared session on a muted track that a press opens,
+ * waiting for end/abort (1 s cap) before the next session starts, fallback to the plain microphone, metrics without text. */
+function createRecognizer(env, hooks, overrides) {
+  "use strict";
+  var cfg = { drainTimeoutMs: 1000, tailMs: 500, finalWaitMs: 1500, maxFails: 6, backoffBaseMs: 250, backoffMaxMs: 4000, localCheckMs: 1000 };
+  if (overrides) for (var k in overrides) cfg[k] = overrides[k];
+  hooks = hooks || {};
+
+  var want = false, mode = "always", lang = "en-US", preferLocal = false, prewarm = false;
+  var session = null, draining = null, drainTimer = null, queued = false, retryTimer = null;
+  var failStreak = 0, localFailed = {}, localAvail = {}, trackOk = null, nextId = 1, lastEndAt = null;
+  var pressState = null, finalTimer = null, tailTimer = null, probing = false;
+
+  function now() { return env.now(); }
+  function emit(name, data) { if (hooks.onEvent) hooks.onEvent(name, data || {}); }
+  function state(s) { if (hooks.onState) hooks.onState(s); }
+  function notice(m) { if (hooks.onNotice) hooks.onNotice(m); }
+  function useLocal() { return preferLocal && localAvail[lang] === "available" && !localFailed[lang]; }
+  function wantTrack() { return mode === "ptt" && prewarm && trackOk !== false && !!env.openInput; }
+
+  function closeInput(s) {
+    if (s && s.input) { try { s.input.close(); } catch (e) { /* already closed */ } s.input = null; }
+  }
+
+  // ---- retiring a session: abort, then WAIT for end before the replacement starts (shared service, lost chants otherwise)
+  function retire(s, why) {
+    if (!s || session !== s) return;
+    session = null;
+    draining = s;
+    try { s.rec.abort(); } catch (e) { draining = null; }
+    closeInput(s);
+    if (draining === s) {
+      drainTimer = env.setTimeout(function () { completeDrain(s, "timeout"); }, cfg.drainTimeoutMs);
+    }
+    emit("retire", { id: s.id, why: why || "" });
+  }
+  function completeDrain(s, how) {
+    if (draining !== s) return;
+    env.clearTimeout(drainTimer); drainTimer = null; draining = null;
+    emit("drain", { id: s.id, how: how });
+    if (queued) { queued = false; startSession(); }
+  }
+
+  function scheduleStart(delay) {
+    env.clearTimeout(retryTimer);
+    retryTimer = env.setTimeout(function () { retryTimer = null; startSession(); }, delay);
+  }
+  function backoff() {
+    return failStreak > 0 ? Math.min(cfg.backoffBaseMs * Math.pow(2, failStreak - 1), cfg.backoffMaxMs) : 0;
+  }
+  function fatal(code) {
+    want = false;
+    env.clearTimeout(retryTimer); env.clearTimeout(tailTimer); env.clearTimeout(finalTimer);
+    pressState = null; queued = false;
+    if (session) retire(session, "fatal");
+    state("error");
+    if (hooks.onFatal) hooks.onFatal(code);
+  }
+  function restartNow(why) {
+    if (session) retire(session, why);
+    queued = true; startSession();
+  }
+
+  // ---- starting a session
+  function startSession() {
+    env.clearTimeout(retryTimer); retryTimer = null;
+    if (!want || session) return;
+    if (draining) { queued = true; return; }
+    queued = false;
+
+    if (preferLocal && localAvail[lang] === undefined && env.checkLocal) {
+      var l = lang, done = false;
+      var t = env.setTimeout(function () { if (!done) { done = true; localAvail[l] = "unavailable"; startSession(); } }, cfg.localCheckMs);
+      var settle = function (st) { if (done) return; done = true; env.clearTimeout(t); localAvail[l] = st; startSession(); };
+      try { env.checkLocal(l).then(settle, function () { settle("unavailable"); }); } catch (e) { settle("unavailable"); }
+      return;
+    }
+    if (wantTrack() && trackOk === null && env.probeTrack && !probing) {
+      probing = true;
+      try { trackOk = env.probeTrack() ? true : false; } catch (e) { trackOk = false; }
+      probing = false;
+      if (trackOk === false) emit("trackFallback", { why: "probe" });
+    }
+    openSession(wantTrack());
+  }
+
+  function openSession(useTrack) {
+    var rec;
+    try { rec = new env.SR(); } catch (e) { onFail("construct"); return; }
+    var s = {
+      id: nextId++, rec: rec, lang: lang, local: useLocal(), input: null, track: false,
+      prepared: mode === "ptt", armed: mode === "always", stopping: false,
+      resultFloor: 0, idleSpeech: false, startedAt: now(), audioAt: null, firstTextAt: null, promote: "", ilog: []
+    };
+    rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1; rec.lang = lang;
+    if ("processLocally" in rec) rec.processLocally = s.local;
+    wire(s);
+    session = s;
+    try {
+      if (useTrack) {
+        var input = env.openInput();
+        s.input = input; input.setGain(0);
+        rec.start(input.track);
+        s.track = true;
+      } else {
+        rec.start();
+      }
+    } catch (e) {
+      session = null; closeInput(s);
+      if (useTrack) {                       // the track path is only an optimisation: never let it cost the session
+        trackOk = false; emit("trackFallback", { why: "start:" + (e && e.name) });
+        notice("Pre-warming is not available here; using the plain microphone.");
+        openSession(false);
+      } else {
+        onFail("start:" + (e && e.name));
+      }
+      return;
+    }
+    if (pressState && !pressState.session && mode === "ptt") arm(s);   // a press is waiting for this session
+    emit("sessionOpen", { id: s.id, track: s.track, local: s.local, lang: s.lang, prepared: s.prepared });
+  }
+
+  function onFail(code) {
+    failStreak++;
+    emit("fail", { code: code, streak: failStreak });
+    if (failStreak >= cfg.maxFails) { fatal("too-many-failures"); return; }
+    if (hooks.onError) hooks.onError(code);
+    if (want) scheduleStart(backoff());
+  }
+
+  function wire(s) {
+    var rec = s.rec;
+    rec.onstart = function () { if (session === s) { emit("start", { id: s.id }); state("starting"); } };
+    rec.onaudiostart = function () {
+      if (session !== s) return;
+      s.audioAt = now(); failStreak = 0;
+      emit("session", {
+        id: s.id, startToAudioMs: s.audioAt - s.startedAt, gapMs: lastEndAt == null ? null : s.audioAt - lastEndAt,
+        prepared: s.prepared, track: s.track, local: s.local, lang: s.lang
+      });
+      if (pressState && pressState.session === s && pressState.readyAt == null) pressState.readyAt = s.audioAt;
+      state(s.armed ? "listening" : "ready");
+    };
+    rec.onspeechstart = function () {
+      if (session !== s) return;
+      if (!s.armed) s.idleSpeech = true; else { state("hearing"); }
+      if (hooks.onSpeech) hooks.onSpeech(true);
+    };
+    rec.onspeechend = function () {
+      if (session !== s) return;
+      if (s.armed) state("listening");
+      if (hooks.onSpeech) hooks.onSpeech(false);
+    };
+    rec.onresult = function (ev) {
+      if (session !== s) return;
+      if (!s.armed) {
+        // prepared but not pressed: remember only where the results end, never the words
+        s.resultFloor = ev.results.length;
+        s.idleSpeech = ev.results.length > 0 && !ev.results[ev.results.length - 1].isFinal;
+        return;
+      }
+      var interim = "";
+      for (var i = Math.max(ev.resultIndex || 0, s.resultFloor); i < ev.results.length; i++) {
+        var r = ev.results[i];
+        var txt = ((r[0] && r[0].transcript) || "").trim();
+        if (!txt) continue;
+        if (s.firstTextAt == null) s.firstTextAt = now();
+        if (pressState) pressState.gotText = true;
+        if (r.isFinal) { s.promote = ""; deliverFinal(s, txt, false); }
+        else interim += (interim ? " " : "") + txt;
+      }
+      if (interim) { s.promote = interim; s.ilog.push({ t: interim.toLowerCase(), at: now() }); if (s.ilog.length > 20) s.ilog.shift(); if (hooks.onInterim) hooks.onInterim(interim, { id: s.id, firstTextAt: s.firstTextAt }); }
+    };
+    rec.onerror = function (ev) {
+      if (session !== s) return;
+      var e = ev && ev.error;
+      if (e === "no-speech" || e === "aborted") return;
+      emit("error", { code: e, local: s.local, track: s.track });
+      if (s.track) {                         // anything wrong on the muted-track path: plain microphone from now on
+        trackOk = false; emit("trackFallback", { why: "error:" + e });
+        notice("Pre-warming failed (" + e + "); using the plain microphone.");
+        restartNow("track-error"); return;
+      }
+      if (s.local && (e === "language-not-supported" || e === "service-not-allowed" || e === "network")) {
+        localFailed[s.lang] = true; emit("localFallback", { lang: s.lang, why: e });
+        notice("On-device recognition for " + s.lang + " failed (" + e + "); using the browser service.");
+        restartNow("local-error"); return;
+      }
+      if (e === "not-allowed" || e === "service-not-allowed" || e === "language-not-supported") { fatal(e); return; }
+      failStreak++; s.counted = true;
+      if (hooks.onError) hooks.onError(e);
+    };
+    rec.onend = function () {
+      if (draining === s) { completeDrain(s, "end"); return; }
+      if (session !== s) return;
+      closeInput(s);
+      session = null; lastEndAt = now();
+      if (s.audioAt == null && !s.counted) failStreak++;     // died before any audio: do not spin
+      emit("end", { id: s.id, livedMs: now() - s.startedAt });
+      if (pressState && pressState.session === s) {
+        if (s.stopping) { finishPress(pressState, "end"); return; }
+        pressState.session = null;             // service ended under a held press: re-arm a new one at once
+      }
+      if (!want) return;
+      if (failStreak >= cfg.maxFails) { fatal("too-many-failures"); return; }
+      state("idle");
+      scheduleStart(backoff());
+    };
+  }
+
+  // ---- results
+  function deliverFinal(s, text, promoted) {
+    var p = pressState && pressState.session === s ? pressState : null;
+    var meta = {
+      id: s.id, lang: s.lang, local: s.local, track: s.track, promoted: promoted, mode: mode,
+      firstTextAt: s.firstTextAt, finalAt: now(),
+      pressToReadyMs: p ? (p.readyAt == null ? null : Math.max(0, p.readyAt - p.at)) : null,
+      readyOnPress: p ? p.readyOnPress : null
+    };
+    // when did the interim text first equal the final one? (how early the whole phrase was already known)
+    var want = text.toLowerCase();
+    for (var q = 0; q < s.ilog.length; q++) if (s.ilog[q].t === want) { meta.stableAt = s.ilog[q].at; break; }
+    s.ilog = [];
+    s.firstTextAt = null;
+    if (hooks.onFinal) hooks.onFinal(text, meta);
+    if (p && s.stopping) finishPress(p, promoted ? "promoted" : "final");
+  }
+
+  // ---- push to talk (prepared session)
+  function arm(s) {
+    s.armed = true;
+    pressState.session = s;
+    pressState.readyOnPress = s.audioAt != null;
+    if (s.audioAt != null) pressState.readyAt = pressState.at;
+    if (s.input) s.input.setGain(1);
+    state(s.audioAt != null ? "listening" : "starting");
+    emit("arm", { id: s.id, readyOnPress: pressState.readyOnPress, track: s.track });
+  }
+  function press() {
+    if (!want || mode !== "ptt" || pressState) return false;
+    pressState = { at: now(), session: null, readyAt: null, readyOnPress: false, gotText: false, releasedAt: null };
+    var s = session;
+    if (s && s.prepared && !s.armed && !s.idleSpeech && !s.stopping && s.lang === lang && s.local === useLocal()) {
+      arm(s);
+    } else {
+      // mid-sentence idle speech, wrong language/engine, or no session yet: a fresh session that starts armed
+      if (s) retire(s, "press-replace");
+      queued = true; startSession();
+    }
+    return true;
+  }
+  function release() {
+    if (!pressState || pressState.releasedAt != null) return false;
+    var p = pressState;
+    p.releasedAt = now();
+    tailTimer = env.setTimeout(function () { endPress(p); }, cfg.tailMs);
+    return true;
+  }
+  function endPress(p) {
+    if (pressState !== p) return;
+    var s = p.session;
+    if (!s || session !== s) { finishPress(p, "no-session"); return; }
+    s.stopping = true;
+    // a supplied track cannot be stop()ped without losing buffered audio: silence it and let the engine finish
+    if (s.input) s.input.setGain(0);
+    else { try { s.rec.stop(); } catch (e) { /* already ending */ } }
+    finalTimer = env.setTimeout(function () {
+      if (pressState !== p) return;
+      if (s.promote && session === s) { var t = s.promote; s.promote = ""; deliverFinal(s, t, true); if (pressState !== p) return; }
+      finishPress(p, "timeout");
+    }, cfg.finalWaitMs);
+  }
+  function finishPress(p, why) {
+    if (pressState !== p) return;
+    env.clearTimeout(finalTimer); env.clearTimeout(tailTimer); finalTimer = null; tailTimer = null;
+    pressState = null;
+    var s = p.session;
+    var loud = hooks.loudSince ? !!hooks.loudSince(p.at) : false;
+    if (s && s.track && loud && !p.gotText && why === "timeout") {
+      trackOk = false; emit("trackFallback", { why: "silent" });
+      notice("The pre-warmed session heard sound but returned no text; switching to the plain microphone.");
+    }
+    emit("pressDone", { why: why, pressToReadyMs: p.readyAt == null ? null : Math.max(0, p.readyAt - p.at), readyOnPress: p.readyOnPress });
+    if (s && session === s) retire(s, "press-done");
+    if (want) { queued = true; startSession(); }
+  }
+
+  // ---- public
+  return {
+    start: function (m) {
+      mode = m || mode; want = true; failStreak = 0; state("starting");
+      startSession();
+    },
+    stop: function () {
+      want = false; queued = false; pressState = null;
+      env.clearTimeout(retryTimer); env.clearTimeout(tailTimer); env.clearTimeout(finalTimer);
+      if (session) retire(session, "stop");
+      state("off");
+    },
+    setLang: function (l) {
+      if (l === lang) return; lang = l;
+      pressState = null; env.clearTimeout(tailTimer); env.clearTimeout(finalTimer);
+      if (want) restartNow("lang");
+    },
+    setMode: function (m) {
+      if (m === mode) return; mode = m;
+      pressState = null; env.clearTimeout(tailTimer); env.clearTimeout(finalTimer);
+      if (want) restartNow("mode");
+    },
+    setOptions: function (o) {
+      var changed = false;
+      if (o.prewarm !== undefined && !!o.prewarm !== prewarm) { prewarm = !!o.prewarm; if (prewarm) trackOk = trackOk === false ? false : null; changed = true; }
+      if (o.local !== undefined && !!o.local !== preferLocal) { preferLocal = !!o.local; changed = true; }
+      if (changed && want && !pressState) restartNow("options");
+    },
+    press: press,
+    release: release,
+    status: function () {
+      return {
+        want: want, mode: mode, lang: lang, hasSession: !!session, draining: !!draining, queued: queued,
+        armed: !!(session && session.armed), prepared: !!(session && session.prepared), track: !!(session && session.track),
+        trackOk: trackOk, localFailed: JSON.parse(JSON.stringify(localFailed)), failStreak: failStreak, pressed: !!pressState
+      };
+    }
+  };
+}
+/* ===== SESSION-CORE-END ===== */
+
+/* ===== STATS-BEGIN ===== numbers only: the page never stores words or audio in the records */
+function createStats(max) {
+  var sessions = [], utts = [];
+  function push(a, r) { a.push(r); while (a.length > max) a.shift(); }
+  function nums(a, k) { return a.map(function (r) { return r[k]; }).filter(function (v) { return typeof v === "number" && isFinite(v); }); }
+  function pct(sorted, p) { if (!sorted.length) return null; var i = Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1)); return sorted[i]; }
+  function summarize(a, k) {
+    var v = nums(a, k), s = v.slice().sort(function (x, y) { return x - y; });
+    return { n: v.length, median: s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : null, p90: pct(s, 0.9), last: v.length ? v[v.length - 1] : null };
+  }
+  return {
+    addSession: function (r) { push(sessions, r); },
+    addUtt: function (r) { push(utts, r); },
+    sessions: sessions, utts: utts,
+    rows: function () {
+      var defs = [
+        ["Mic start to ready (session)", sessions, "startToAudioMs"],
+        ["Dead time between sessions", sessions, "gapMs"],
+        ["Press to ready (hold to talk)", utts, "pressToReadyMs"],
+        ["Voice onset to first text", utts, "soundToTextMs"],
+        ["Voice end to final text", utts, "endToFinalMs"],
+        ["Voice end to full interim text", utts, "endToStableMs"],
+        ["Page to game and back (HTTP)", utts, "rttMs"],
+        ["Game side (server)", utts, "gameMs"],
+        ["Voice end to game reply", utts, "endToReplyMs"]
+      ];
+      return defs.map(function (d) { var s = summarize(d[1], d[2]); s.name = d[0]; s.key = d[2]; return s; });
+    },
+    exportJson: function () { return JSON.stringify({ version: 1, sessions: sessions, utterances: utts }); },
+    clear: function () { sessions.length = 0; utts.length = 0; }
+  };
+}
+/* ===== STATS-END ===== */
+
 (function () {
   "use strict";
   var LANGS = ["ja-JP", "en-US", "ru-RU"];
   var LANG_LABEL = { "ja-JP": "日本語", "en-US": "English", "ru-RU": "Русский" };
+  var MODES = [["always", "Always listening"], ["ptt", "Hold to talk"]];
   var params = new URLSearchParams(location.search);
 
   // Port: ?port=NNNN, else the port this page was served from (the mod serves it), else the mod default.
@@ -193,38 +659,38 @@
   // Served by the mod (http://127.0.0.1:PORT/): same origin. Opened as a file: talk to 127.0.0.1:PORT.
   var servedByMod = location.protocol === "http:" && !params.get("port");
   var base = servedByMod ? location.origin : "http://127.0.0.1:" + port;
-  document.getElementById("target").textContent = base;
 
   var $ = function (id) { return document.getElementById(id); };
+  $("target").textContent = base;
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  var lang = "en-US";
-  try {
-    var saved = localStorage.getItem("reiatsu.lang");
-    if (saved && LANGS.indexOf(saved) >= 0) lang = saved;
-  } catch (e) { /* storage may be blocked */ }
-  var qlang = params.get("lang");
-  if (qlang && LANGS.indexOf(qlang) >= 0) lang = qlang;
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem("reiatsu." + k); localStorage.setItem("reiatsu." + k, v); } catch (e) { /* storage may be blocked */ } return null; }
+  var lang = "en-US", mode = "always";
+  var sl = store("lang"); if (sl && LANGS.indexOf(sl) >= 0) lang = sl;
+  var ql = params.get("lang"); if (ql && LANGS.indexOf(ql) >= 0) lang = ql;
+  var sm = store("mode"); if (sm === "ptt" || sm === "always") mode = sm;
+  var qm = params.get("mode"); if (qm === "ptt" || qm === "always") mode = qm;
+  var opt = {
+    meter: store("meter") !== "0",
+    prewarm: params.get("prewarm") === "1" || store("prewarm") === "1",
+    local: params.get("local") === "1" || store("local") === "1"
+  };
+  if (params.get("meter") === "0") opt.meter = false;
 
-  var wantOn = false;          // the user pressed Start and has not pressed Stop
-  var rec = null;
-  var utt = 0;                 // utterance counter: bumped after every final result
-  var restartTimer = null;
-  var failStreak = 0;
-  var interimInFlight = false;
-  var lastInterimSent = 0;
+  var wantOn = false;
+  var utt = 0;
+  var interimInFlight = false, lastInterimSent = 0;
+  var stats = createStats(30);
 
   // ------------------------------------------------------------ UI helpers
-  function setMic(cls) {
-    var m = $("mic");
-    m.className = "mic" + (cls ? " " + cls : "");
-  }
+  var micState = "";
+  function setMic(cls) { micState = cls; $("mic").className = "mic" + (cls ? " " + cls : ""); }
   function showHeard(finalText, interimText) {
     var h = $("heard");
     h.textContent = "";
     if (!finalText && !interimText) {
       var e = document.createElement("span"); e.className = "empty";
-      e.textContent = wantOn ? "Listening..." : "Press Start and say a phrase";
+      e.textContent = wantOn ? (mode === "ptt" ? "Hold the button and speak" : "Listening...") : "Press Start and say a phrase";
       h.appendChild(e); return;
     }
     if (finalText) { var f = document.createElement("span"); f.className = "final"; f.textContent = finalText; h.appendChild(f); }
@@ -233,28 +699,36 @@
       var i = document.createElement("span"); i.className = "interim"; i.textContent = interimText; h.appendChild(i);
     }
   }
-  function showError(msg) {
-    var b = $("micError");
-    b.textContent = msg || "";
-    b.classList.toggle("show", !!msg);
+  function showError(msg) { var b = $("micError"); b.textContent = msg || ""; b.classList.toggle("show", !!msg); }
+  var noticeTimer = null;
+  function showNotice(msg) {
+    var b = $("notice"); b.textContent = msg || ""; b.classList.toggle("show", !!msg);
+    clearTimeout(noticeTimer);
+    if (msg) noticeTimer = setTimeout(function () { b.classList.remove("show"); }, 12000);
   }
-  function buildLangs() {
-    var box = $("langs");
-    box.textContent = "";
-    LANGS.forEach(function (l) {
+  function segButtons(boxId, items, current, onPick) {
+    var box = $(boxId); box.textContent = "";
+    items.forEach(function (it) {
       var b = document.createElement("button");
-      b.type = "button"; b.textContent = LANG_LABEL[l]; b.setAttribute("aria-pressed", String(l === lang));
-      b.addEventListener("click", function () { setLang(l); });
+      b.type = "button"; b.textContent = it[1]; b.setAttribute("aria-pressed", String(it[0] === current));
+      b.addEventListener("click", function () { onPick(it[0]); });
       box.appendChild(b);
     });
   }
+  function buildLangs() { segButtons("langs", LANGS.map(function (l) { return [l, LANG_LABEL[l]]; }), lang, setLang); }
+  function buildModes() { segButtons("modes", MODES, mode, setMode); }
   function setLang(l) {
-    lang = l;
-    try { localStorage.setItem("reiatsu.lang", l); } catch (e) { /* ignore */ }
-    buildLangs();
-    if (wantOn && rec) { try { rec.abort(); } catch (e) { /* restarts from onend */ } }
+    lang = l; store("lang", l); buildLangs();
+    rz.setLang(l);
   }
-  function addLog(text, reply, rtt) {
+  function setMode(m) {
+    mode = m; store("mode", m); buildModes(); applyModeUi();
+    rz.setMode(m);
+    if (wantOn) showHeard("", "");
+  }
+  function applyModeUi() { $("ptt").hidden = mode !== "ptt"; }
+
+  function addLog(text, reply) {
     var li = document.createElement("li");
     var t = document.createElement("span"); t.className = "t"; t.textContent = text;
     var r = document.createElement("span"); r.className = "r";
@@ -302,12 +776,21 @@
       })
       .catch(function () { if (timer) clearTimeout(timer); then(null, null); });
   }
-
-  function sendFinal(text) {
+  function sendFinal(text, meta) {
     var myUtt = utt;
+    var sentAt = performance.now();
     post(text, true, function (reply, rtt) {
       showReply(reply, rtt);
-      addLog(text, reply, rtt);
+      addLog(text, reply);
+      if (meta) {
+        var u = meta.rec;
+        u.rttMs = rtt != null ? Math.round(rtt) : null;
+        u.gameMs = reply && reply.latencyMs != null ? Math.round(reply.latencyMs * 10) / 10 : null;
+        u.matched = !!(reply && reply.matched);
+        u.endToReplyMs = (u.endToFinalMs != null && rtt != null) ? u.endToFinalMs + u.rttMs : null;
+        u.sentAfterFinalMs = Math.round(sentAt - meta.finalAt);
+        stats.addUtt(u); renderStats();
+      }
       refreshStatus();
     });
     utt = myUtt + 1;
@@ -318,13 +801,13 @@
     interimInFlight = true; lastInterimSent = now;
     post(text, false, function (reply, rtt) {
       interimInFlight = false;
-      if (reply && reply.matched) { showReply(reply, rtt); addLog(text + " (interim)", reply, rtt); }
+      if (reply && reply.matched) { showReply(reply, rtt); addLog(text + " (interim)", reply); }
     });
   }
 
   // ------------------------------------------------------------ status polling
   function refreshStatus() {
-    fetch(base + "/status?mic=" + encodeURIComponent(($("mic").className || "mic").replace(/^mic ?/, "")), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (s) {
+    fetch(base + "/status?mic=" + encodeURIComponent(micState === "ready" ? "" : micState), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (s) {
       var gb = $("gameBadge");
       if (s.world === false) {
         gb.className = "badge bad"; $("gameText").textContent = "game: open a world";
@@ -352,84 +835,380 @@
     });
   }
 
-  // ------------------------------------------------------------ speech recognition
-  function startRecognition() {
-    if (!SR) return;
-    rec = new SR();
-    rec.lang = lang;
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.maxAlternatives = 1;
-    var finalShown = "";
+  // ------------------------------------------------------------ microphone level (volume feedback + timing of the voice itself)
+  var audio = { ctx: null, stream: null, source: null, analyser: null, buf: null, timer: null, opening: null };
+  var lvl = { raw: 0, env: 0, db: -100, lastLoudAt: -1e9, onsetAt: null, loudSinceMark: -1e9, quietSince: 0, silentNoted: false, lastTick: 0, peak: 0, floor: 1, sum: 0, n: 0, measuring: 0 };
+  var LOUD = 0.08;       // raw level (0..1) above which we call it "voice"
+  var ONSET_GAP = 600;   // ms of quiet that make the next loud sample a new onset
 
-    rec.onstart = function () { failStreak = 0; setMic("on"); showError(""); if (!finalShown) showHeard("", ""); };
-    rec.onspeechstart = function () { setMic("hearing"); };
-    rec.onspeechend = function () { setMic("on"); };
-    rec.onresult = function (ev) {
-      var interim = "";
-      for (var i = ev.resultIndex; i < ev.results.length; i++) {
-        var res = ev.results[i];
-        var text = (res[0] && res[0].transcript || "").trim();
-        if (!text) continue;
-        if (res.isFinal) {
-          finalShown = text; interim = "";
-          showHeard(finalShown, "");
-          sendFinal(text);
-        } else {
-          interim += (interim ? " " : "") + text;
-        }
-      }
-      if (interim) { setMic("hearing"); showHeard(finalShown, interim); sendInterim(interim); }
-    };
-    rec.onerror = function (ev) {
-      var e = ev.error;
-      if (e === "not-allowed" || e === "service-not-allowed") {
-        wantOn = false; setMic("error");
-        showError("The microphone is blocked. Allow it in the address bar (lock icon), then press Start again.");
-      } else if (e === "audio-capture") {
-        setMic("error"); showError("No microphone found.");
-      } else if (e === "network") {
-        setMic("error"); showError("Speech service unreachable (needs internet). Retrying...");
-      } else if (e === "language-not-supported") {
-        setMic("error"); showError("This browser has no recogniser for " + lang + ".");
-      }
-      failStreak++;
-    };
-    rec.onend = function () {
-      rec = null;
-      if (!wantOn) { setMic(""); return; }
-      // auto-restart: Chrome ends a session after silence or a few minutes; back off if it keeps failing
-      var delay = Math.min(250 * Math.pow(2, Math.max(0, failStreak - 1)), 4000);
-      restartTimer = setTimeout(function () { restartTimer = null; if (wantOn) startRecognition(); }, delay);
-    };
-    try { rec.start(); } catch (e) { showError("Could not start: " + e.message); }
+  function ensureAudio() {
+    if (audio.opening) return audio.opening;
+    if (audio.ctx && audio.stream) return Promise.resolve(true);
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.resolve(false);
+    audio.opening = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }).then(function (stream) {
+      audio.stream = stream;
+      audio.ctx = new AC();
+      audio.source = audio.ctx.createMediaStreamSource(stream);
+      audio.analyser = audio.ctx.createAnalyser(); audio.analyser.fftSize = 512;
+      audio.buf = new Float32Array(audio.analyser.fftSize);
+      audio.source.connect(audio.analyser);
+      if (audio.ctx.state === "suspended") audio.ctx.resume();
+      audio.timer = setInterval(meterTick, 40);
+      lvl.lastTick = performance.now();
+      audio.opening = null;
+      return true;
+    }).catch(function () { audio.opening = null; return false; });
+    return audio.opening;
   }
+  function closeAudio() {
+    clearInterval(audio.timer); audio.timer = null;
+    try { if (audio.source) audio.source.disconnect(); } catch (e) { /* ignore */ }
+    if (audio.stream) audio.stream.getTracks().forEach(function (t) { t.stop(); });
+    try { if (audio.ctx) audio.ctx.close(); } catch (e) { /* ignore */ }
+    audio.ctx = audio.stream = audio.source = audio.analyser = null;
+    lvl.env = 0; lvl.raw = 0; lvl.db = -100; drawMeter();
+  }
+  function meterTick() {
+    if (!audio.analyser) return;
+    var t = performance.now(), dt = Math.max(1, t - lvl.lastTick); lvl.lastTick = t;
+    audio.analyser.getFloatTimeDomainData(audio.buf);
+    var s = 0; for (var i = 0; i < audio.buf.length; i++) s += audio.buf[i] * audio.buf[i];
+    var rms = Math.sqrt(s / audio.buf.length);
+    lvl.db = rms > 1e-5 ? 20 * Math.log10(rms) : -100;
+    lvl.raw = Math.max(0, Math.min(1, (rms - 0.01) / 0.22));
+    // envelope: 25 ms attack, 120 ms release, independent of the timer rate
+    var tau = lvl.raw > lvl.env ? 25 : 120;
+    lvl.env += (lvl.raw - lvl.env) * (1 - Math.exp(-dt / tau));
+    if (lvl.raw > LOUD) {
+      if (t - lvl.lastLoudAt > ONSET_GAP) lvl.onsetAt = t;
+      lvl.lastLoudAt = t; lvl.quietSince = 0;
+    } else if (!lvl.quietSince) lvl.quietSince = t;
+    if (lvl.measuring) { lvl.peak = Math.max(lvl.peak, lvl.db); lvl.floor = Math.min(lvl.floor, lvl.db > -99 ? lvl.db : lvl.floor); lvl.sum += rms * rms; lvl.n++; }
+    // a muted or wrong device looks like total silence for a long time
+    if (wantOn && rms < 0.0005) {
+      if (!lvl.silentSince) lvl.silentSince = t;
+      if (t - lvl.silentSince > 8000 && !lvl.silentNoted) { lvl.silentNoted = true; $("meterNote").textContent = "No signal from the microphone for 8 s: muted, unplugged or the wrong input device?"; }
+    } else { lvl.silentSince = 0; if (lvl.silentNoted && rms >= 0.0005) { lvl.silentNoted = false; $("meterNote").textContent = ""; } }
+    drawMeter();
+  }
+  function drawMeter() {
+    document.documentElement.style.setProperty("--lvl", lvl.env.toFixed(3));
+    $("meterNum").textContent = lvl.db > -99 ? lvl.db.toFixed(0) + " dBFS" : "-";
+  }
+  function applyMeterUi() { $("meter").hidden = !(opt.meter && wantOn); if (!opt.meter) document.documentElement.style.setProperty("--lvl", "0"); }
 
-  function setOn(on) {
-    wantOn = on;
+  // ------------------------------------------------------------ recogniser wiring
+  var heardFinal = "";
+  var env = {
+    SR: SR,
+    now: function () { return performance.now(); },
+    setTimeout: function (f, ms) { return setTimeout(f, ms); },
+    clearTimeout: function (h) { clearTimeout(h); },
+    checkLocal: function (l) {
+      if (!SR || typeof SR.available !== "function") return Promise.resolve("unsupported");
+      try { if (!("processLocally" in new SR())) return Promise.resolve("unsupported"); } catch (e) { return Promise.resolve("unsupported"); }
+      return Promise.resolve(SR.available({ langs: [l], processLocally: true })).then(function (st) { return typeof st === "string" ? st : (st && st.status) || "unavailable"; });
+    },
+    probeTrack: function () {
+      // An ended track MUST make start(track) throw InvalidStateError when the overload exists; engines that lack it ignore the argument.
+      if (!audio.ctx) return false;
+      var dest = audio.ctx.createMediaStreamDestination(), track = dest.stream.getAudioTracks()[0];
+      track.stop();
+      var probe = new SR(), ok = false;
+      probe.onerror = function () {};
+      try { probe.start(track); try { probe.abort(); } catch (e2) { /* ignore */ } } catch (e) { ok = e && e.name === "InvalidStateError"; }
+      try { dest.disconnect(); } catch (e3) { /* ignore */ }
+      return ok;
+    },
+    openInput: function () {
+      if (!audio.ctx || !audio.source || audio.ctx.state !== "running") throw new DOMException("no running audio graph", "InvalidStateError");
+      var gain = audio.ctx.createGain(), dest = audio.ctx.createMediaStreamDestination();
+      gain.gain.value = 0; audio.source.connect(gain); gain.connect(dest);
+      var track = dest.stream.getAudioTracks()[0];
+      return {
+        track: track,
+        setGain: function (v) { gain.gain.value = v; },
+        close: function () { try { gain.gain.value = 0; audio.source.disconnect(gain); gain.disconnect(); dest.disconnect(); track.stop(); } catch (e) { /* graph already gone */ } }
+      };
+    }
+  };
+  var hooks = {
+    onState: function (s) {
+      if (s === "listening") setMic("on");
+      else if (s === "hearing") setMic("hearing");
+      else if (s === "ready") setMic("ready");
+      else if (s === "error") setMic("error");
+      else if (s === "off") setMic("");
+      else if (s === "starting" || s === "idle") { if (micState === "hearing") setMic("on"); }
+      if (s === "ready" || s === "listening") showError("");
+      if ((s === "listening" || s === "ready") && !heardFinal) showHeard("", "");
+    },
+    onSpeech: function () {},
+    onInterim: function (text, meta) {
+      setMic("hearing"); showHeard(heardFinal, text); sendInterim(text);
+      curFirstText = meta.firstTextAt;
+    },
+    onFinal: function (text, meta) {
+      heardFinal = text; showHeard(text, "");
+      var finalAt = meta.finalAt;
+      var u = {
+        id: ++uttCount, t: Date.now(), lang: meta.lang, mode: meta.mode, engine: meta.local ? "local" : "browser", track: meta.track,
+        promoted: meta.promoted, readyOnPress: meta.readyOnPress, pressToReadyMs: meta.pressToReadyMs
+      };
+      var onset = lvl.onsetAt;
+      if (audio.ctx && onset != null && meta.firstTextAt != null && meta.firstTextAt >= onset) u.soundToTextMs = Math.round(meta.firstTextAt - onset);
+      if (audio.ctx && lvl.lastLoudAt > 0 && finalAt >= lvl.lastLoudAt) u.endToFinalMs = Math.round(finalAt - lvl.lastLoudAt);
+      if (audio.ctx && meta.stableAt != null && lvl.lastLoudAt > 0 && meta.stableAt >= lvl.lastLoudAt) u.endToStableMs = Math.round(meta.stableAt - lvl.lastLoudAt);
+      if (meta.firstTextAt != null) u.textToFinalMs = Math.round(finalAt - meta.firstTextAt);
+      lvl.onsetAt = null;
+      sendFinal(text, { rec: u, finalAt: finalAt });
+    },
+    onEvent: function (name, d) {
+      if (name === "session") {
+        stats.addSession({ id: d.id, startToAudioMs: Math.round(d.startToAudioMs), gapMs: d.gapMs == null ? null : Math.round(d.gapMs), prepared: d.prepared, track: d.track, local: d.local, lang: d.lang });
+        renderStats();
+      }
+    },
+    onNotice: showNotice,
+    onError: function (code) {
+      if (code === "audio-capture") { setMic("error"); showError("No microphone found."); }
+      else if (code === "network") { setMic("error"); showError("Speech service unreachable (needs internet). Retrying..."); }
+      else { setMic("error"); showError("Recognition error: " + code + ". Retrying..."); }
+    },
+    onFatal: function (code) {
+      wantOn = false; syncToggle(); closeAudio();
+      if (code === "not-allowed" || code === "service-not-allowed") showError("The microphone or the speech service is blocked. Allow it in the address bar (lock icon), then press Start again.");
+      else if (code === "language-not-supported") showError("This browser has no recogniser for " + lang + ".");
+      else showError("Recognition stopped after repeated failures (" + code + "). Press Start to try again.");
+    },
+    loudSince: function (t) { return lvl.lastLoudAt >= t; }
+  };
+  var uttCount = 0, curFirstText = null;
+  var rz = createRecognizer(env, hooks);
+  rz.setLang(lang); rz.setMode(mode); rz.setOptions({ prewarm: opt.prewarm, local: opt.local });
+
+  function syncToggle() {
     var b = $("toggle");
-    b.textContent = on ? "Stop" : "Start";
-    b.classList.toggle("stop", on);
+    b.textContent = wantOn ? "Stop" : "Start";
+    b.classList.toggle("stop", wantOn);
+    applyMeterUi();
+  }
+  function setOn(on) {
+    wantOn = on; syncToggle();
     if (on) {
-      showError("");
-      if (!rec && !restartTimer) startRecognition();
+      showError(""); heardFinal = ""; showHeard("", "");
+      var needAudio = opt.meter || (mode === "ptt" && opt.prewarm);
+      // Recognition starts right away; the level meter (and the muted track) come up in parallel and never block it.
+      // Exception: pre-warming needs the audio graph first, so wait for it (bounded) instead of silently skipping it.
+      if (needAudio && mode === "ptt" && opt.prewarm) {
+        ensureAudio().then(function (ok) { if (!wantOn) { if (!opt.meter) closeAudio(); return; } if (!ok) showNotice("Could not open the microphone for pre-warming; using the plain microphone."); rz.start(mode); });
+      } else {
+        rz.start(mode);
+        if (needAudio) ensureAudio().then(function (ok) { if (!ok && opt.meter) $("meterNote").textContent = "Volume meter unavailable (second microphone stream refused)."; });
+      }
     } else {
-      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
-      if (rec) { try { rec.stop(); } catch (e) { /* ignore */ } }
-      setMic("");
-      showHeard("", "");
+      rz.stop(); setMic(""); showHeard("", "");
+      closeAudio();
     }
   }
 
+  // ------------------------------------------------------------ hold to talk
+  var pttDown = false;
+  function pttPress() { if (pttDown || !wantOn || mode !== "ptt") return; pttDown = true; $("ptt").classList.add("down"); heardFinal = ""; showHeard("", ""); rz.press(); }
+  function pttRelease() { if (!pttDown) return; pttDown = false; $("ptt").classList.remove("down"); rz.release(); }
+  $("ptt").addEventListener("pointerdown", function (e) { e.preventDefault(); try { $("ptt").setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } pttPress(); });
+  $("ptt").addEventListener("pointerup", pttRelease);
+  $("ptt").addEventListener("pointercancel", pttRelease);
+  document.addEventListener("keydown", function (e) {
+    if (e.code !== "Space" || e.repeat || mode !== "ptt") return;
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
+    e.preventDefault(); pttPress();
+  });
+  document.addEventListener("keyup", function (e) { if (e.code === "Space") pttRelease(); });
+  window.addEventListener("blur", pttRelease);
+
+  // ------------------------------------------------------------ latency table
+  function fmt(v) { return v == null ? "-" : String(Math.round(v)) + " ms"; }
+  function renderStats() {
+    var tb = document.querySelector("#statsTable tbody"); tb.textContent = "";
+    stats.rows().forEach(function (r) {
+      var tr = document.createElement("tr");
+      [r.name, r.n, fmt(r.median), fmt(r.p90), fmt(r.last)].forEach(function (c) { var td = document.createElement("td"); td.textContent = c; tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+  }
+  $("statsCopy").addEventListener("click", function () {
+    var txt = stats.exportJson();
+    var done = function (m) { $("statsMsg").textContent = m; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done("copied"); }, function () { done("clipboard blocked; use VoiceStats() in the console"); });
+    else done("clipboard unavailable; use VoiceStats() in the console");
+  });
+  $("statsClear").addEventListener("click", function () { stats.clear(); renderStats(); $("statsMsg").textContent = ""; });
+  window.VoiceStats = function () { var o = JSON.parse(stats.exportJson()); if (window.console && console.table) { console.table(o.sessions); console.table(o.utterances); } return o; };
+  window.__voiceDebug = { status: function () { return rz.status(); }, lvl: function () { return JSON.parse(JSON.stringify(lvl)); } };
+
+  // ------------------------------------------------------------ settings
+  function setOpt(name, v) {
+    opt[name] = v; store(name, v ? "1" : "0");
+    if (name === "meter") {
+      applyMeterUi();
+      if (wantOn) { if (v) ensureAudio(); else if (!(mode === "ptt" && opt.prewarm)) closeAudio(); }
+    } else rz.setOptions({ prewarm: opt.prewarm, local: opt.local });
+  }
+  $("optMeter").checked = opt.meter; $("optPrewarm").checked = opt.prewarm; $("optLocal").checked = opt.local;
+  $("optMeter").addEventListener("change", function (e) { setOpt("meter", e.target.checked); });
+  $("optPrewarm").addEventListener("change", function (e) { setOpt("prewarm", e.target.checked); });
+  $("optLocal").addEventListener("change", function (e) { setOpt("local", e.target.checked); });
+
+  // ------------------------------------------------------------ lab
+  function capRow(name, val, cls) {
+    var tr = document.createElement("tr");
+    var a = document.createElement("td"); a.textContent = name;
+    var b = document.createElement("td"); b.textContent = val; if (cls) b.className = cls;
+    tr.appendChild(a); tr.appendChild(b); document.querySelector("#capTable tbody").appendChild(tr);
+  }
+  async function runCaps() {
+    var tb = document.querySelector("#capTable tbody"); tb.textContent = "";
+    capRow("Page", location.protocol + "//" + location.host + (window.isSecureContext ? " (secure context)" : " (NOT a secure context: microphone may be refused)"), window.isSecureContext ? "pass" : "fail");
+    capRow("Browser", (navigator.userAgent.match(/(Edg|Chrome|Firefox|Safari)\/[\d.]+/g) || ["unknown"]).join(" "));
+    capRow("SpeechRecognition", SR ? "yes" : "NO", SR ? "pass" : "fail");
+    capRow("getUserMedia / Web Audio", (navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? "yes" : "NO") + " / " + (window.AudioContext || window.webkitAudioContext ? "yes" : "NO"));
+    if (SR) {
+      var r0; try { r0 = new SR(); } catch (e) { r0 = null; }
+      capRow("processLocally property", r0 && ("processLocally" in r0) ? "yes" : "no");
+      capRow("SpeechRecognition.available()", typeof SR.available === "function" ? "yes" : "no");
+      for (var i = 0; i < LANGS.length; i++) {
+        var l = LANGS[i], st = "n/a";
+        if (typeof SR.available === "function") {
+          try { var v = await SR.available({ langs: [l], processLocally: true }); st = typeof v === "string" ? v : JSON.stringify(v); } catch (e) { st = "error " + (e && e.name); }
+        }
+        capRow("On-device pack " + l, st, st === "available" ? "pass" : "");
+      }
+      if (await ensureAudio()) {
+        var tk = false; try { tk = env.probeTrack(); } catch (e) { tk = false; }
+        capRow("start(track) overload (pre-warm)", tk ? "supported" : "not supported (plain microphone is used)", tk ? "pass" : "fail");
+        capRow("AudioContext", audio.ctx.state + ", " + audio.ctx.sampleRate + " Hz");
+        if (!wantOn && !opt.meter) closeAudio();
+      } else capRow("Microphone stream", "could not be opened (permission?)", "fail");
+    }
+  }
+  $("capRun").addEventListener("click", function () { runCaps(); });
+  $("levelRun").addEventListener("click", async function () {
+    var out = $("levelOut");
+    if (!(await ensureAudio())) { out.textContent = "microphone unavailable"; return; }
+    out.textContent = "measuring, say a phrase now...";
+    lvl.measuring = 1; lvl.peak = -100; lvl.floor = 1; lvl.sum = 0; lvl.n = 0;
+    await new Promise(function (r) { setTimeout(r, 3000); });
+    lvl.measuring = 0;
+    var avg = lvl.n ? 20 * Math.log10(Math.sqrt(lvl.sum / lvl.n)) : -100;
+    out.textContent = "peak " + lvl.peak.toFixed(0) + " dBFS, average " + avg.toFixed(0) + " dBFS. Speech should peak above about -30 dBFS; below -50 the voice is too quiet for the recogniser.";
+    if (!wantOn && !opt.meter) closeAudio();
+  });
+
+  // fixtures: WAV -> muted MediaStream track -> a fresh recogniser, one file at a time
+  var FX_LANG_RE = /^(ja-JP|en-US|ru-RU)_/;
+  function fxRow(cells, passCls) {
+    var tr = document.createElement("tr");
+    cells.forEach(function (c, i) { var td = document.createElement("td"); td.textContent = c == null ? "-" : String(c); if (i === cells.length - 1 && passCls) td.className = passCls; tr.appendChild(td); });
+    document.querySelector("#fxTable tbody").appendChild(tr);
+    return tr;
+  }
+  // time (ms) of the last sample louder than 5% of the file's peak: the real end of the voice, not of the file
+  function voiceEndMs(buf) {
+    var d = buf.getChannelData(0), peak = 0, i;
+    for (i = 0; i < d.length; i++) { var a = Math.abs(d[i]); if (a > peak) peak = a; }
+    var thr = peak * 0.05;
+    for (i = d.length - 1; i > 0; i--) if (Math.abs(d[i]) > thr) break;
+    return (i / buf.sampleRate) * 1000;
+  }
+  function runFixture(ctx, buf, fileLang) {
+    return new Promise(function (resolve) {
+      var rec = new SR(), dest = ctx.createMediaStreamDestination(), track = dest.stream.getAudioTracks()[0];
+      var src = ctx.createBufferSource(); src.buffer = buf; src.connect(dest);
+      var vend = voiceEndMs(buf);
+      var t0 = performance.now(), audioAt = null, playAt = null, firstAt = null, finalAt = null, text = "", err = null, finished = false, ilog = [], stableAt = null;
+      rec.lang = fileLang; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
+      function done() {
+        if (finished) return; finished = true;
+        try { src.stop(); } catch (e) { /* not started */ }
+        try { rec.abort(); } catch (e) { /* ignore */ }
+        clearTimeout(guard);
+        var endAt = playAt == null ? null : playAt + vend;
+        resolve({ text: text, err: err, startToAudio: audioAt == null ? null : Math.round(audioAt - t0), endToFinal: (finalAt != null && endAt != null) ? Math.round(finalAt - endAt) : null, endToStable: (stableAt != null && endAt != null) ? Math.round(stableAt - endAt) : null, firstTextMs: (firstAt != null && playAt != null) ? Math.round(firstAt - playAt) : null });
+      }
+      var guard = setTimeout(done, 12000 + buf.duration * 1000);
+      rec.onaudiostart = function () { audioAt = performance.now(); playAt = performance.now(); src.start(); };
+      rec.onresult = function (ev) {
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          var r = ev.results[i], tx = (r[0] && r[0].transcript || "").trim();
+          if (!tx) continue;
+          if (firstAt == null) firstAt = performance.now();
+          if (r.isFinal) {
+            text = text ? text + " " + tx : tx; finalAt = performance.now();
+            for (var q = 0; q < ilog.length; q++) if (ilog[q].t === tx.toLowerCase()) { stableAt = ilog[q].at; break; }
+          } else ilog.push({ t: tx.toLowerCase(), at: performance.now() });
+        }
+        if (finalAt != null) setTimeout(done, 50);
+      };
+      rec.onerror = function (ev) { if (ev.error !== "aborted" && ev.error !== "no-speech") err = ev.error; if (ev.error === "no-speech") err = "no-speech"; };
+      rec.onend = function () { setTimeout(done, 0); };
+      try { rec.start(track); } catch (e) { err = "start:" + (e && e.name); done(); }
+    });
+  }
+  $("fxForm").addEventListener("submit", function (e) { e.preventDefault(); });
+  $("fxRun").addEventListener("click", async function () {
+    var msg = $("fxMsg"), tb = document.querySelector("#fxTable tbody"); tb.textContent = "";
+    var files = Array.prototype.slice.call($("fxFiles").files || []);
+    if (!SR) { msg.textContent = "no SpeechRecognition in this browser"; return; }
+    var man = {};
+    for (var i = 0; i < files.length; i++) if (/manifest\.json$/i.test(files[i].name)) {
+      try { var j = JSON.parse(await files[i].text()); (j.files || []).forEach(function (f) { man[f.file] = f; }); } catch (e) { msg.textContent = "manifest.json unreadable"; }
+    }
+    var wavs = files.filter(function (f) { return /\.wav$/i.test(f.name); }).sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+    if (!wavs.length) { msg.textContent = "pick .wav files first"; return; }
+    var AC = window.AudioContext || window.webkitAudioContext, ctx = new AC();
+    if (ctx.state === "suspended") await ctx.resume();
+    var send = $("fxSend").checked, ok = 0, bad = 0, known = 0;
+    for (var k = 0; k < wavs.length; k++) {
+      var f = wavs[k], m = man[f.name] || {}, fl = m.lang || ((f.name.match(FX_LANG_RE) || [])[1]);
+      msg.textContent = "running " + (k + 1) + "/" + wavs.length + " " + f.name;
+      if (!fl) { fxRow([f.name, "?", "", "", "", "", "", "no language in the name or manifest"], "fail"); continue; }
+      var buf; try { buf = await ctx.decodeAudioData(await f.arrayBuffer()); } catch (e) { fxRow([f.name, fl, "", "", "", "", "", "cannot decode"], "fail"); bad++; continue; }
+      var res = await runFixture(ctx, buf, fl);
+      var expect = m.expect === undefined ? "" : (m.expect === null ? "(none)" : m.expect), game = "";
+      if (send && res.text) {
+        var savedLang = lang; lang = fl;
+        game = await new Promise(function (resolve) { post(res.text, true, function (reply) { resolve(reply); }); });
+        utt++;   // one command per utterance index on the game side: every fixture is its own utterance
+        lang = savedLang;
+        game = game ? (game.matched ? game.command + " " + (game.result || "") : "no match") : "no reply";
+      }
+      var verdict = res.err ? "error " + res.err : (res.text ? "" : "no text");
+      var pass = "";
+      if (m.expect !== undefined && send && res.text) {
+        known++;
+        var got = (game && game !== "no match" && game !== "no reply") ? game.split(" ")[0] : null;
+        pass = (m.expect === null ? got === null : got === m.expect) ? "pass" : "fail";
+        if (pass === "pass") ok++; else bad++;
+      }
+      fxRow([f.name, fl, res.text || verdict, res.startToAudio, res.endToFinal, res.endToStable, expect, game], pass);
+    }
+    try { ctx.close(); } catch (e) { /* ignore */ }
+    msg.textContent = "done: " + wavs.length + " files" + (known ? ", expected commands: " + ok + " ok, " + bad + " not" : "") + ". end->final = the recogniser's own end-of-speech wait, exact because the audio length is known.";
+  });
+  if (params.get("lab") === "1") $("lab").open = true;
+
   // ------------------------------------------------------------ wiring
-  buildLangs();
+  buildLangs(); buildModes(); applyModeUi(); renderStats();
   $("toggle").addEventListener("click", function () { setOn(!wantOn); });
   $("manual").addEventListener("submit", function (ev) {
     ev.preventDefault();
     var v = $("manualText").value.trim();
     if (!v) return;
     showHeard(v, "");
-    sendFinal(v);
+    sendFinal(v, null);
     $("manualText").value = "";
   });
   if (!SR) {
