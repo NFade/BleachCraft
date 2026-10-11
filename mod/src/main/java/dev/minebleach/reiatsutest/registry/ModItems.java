@@ -59,6 +59,7 @@ public final class ModItems {
 			entries.add(new ItemStack(SODE_NO_SHIRAYUKI));
 			entries.add(new ItemStack(SENBONZAKURA));
 		});
+		ModBooks.init();
 	}
 
 	/** Character of a stack's item, or NONE. */

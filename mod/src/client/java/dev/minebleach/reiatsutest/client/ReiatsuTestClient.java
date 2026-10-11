@@ -26,6 +26,7 @@ public class ReiatsuTestClient implements ClientModInitializer {
 		ClientNet.register();
 		ReiatsuKeys.init();
 		ReiatsuHud.init();
+		dev.minebleach.reiatsutest.client.book.SpellbookScreen.register();
 		ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(DrawTracker::tick);
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientNet.onJoin());

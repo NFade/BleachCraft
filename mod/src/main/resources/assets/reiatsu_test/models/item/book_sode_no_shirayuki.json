@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "reiatsu_test:item/book_sode_no_shirayuki"
+  }
+}
