@@ -944,3 +944,8 @@ One code batch, then the harness scenario `fxfix` (`Phase6FxFix`; `gradlew runPh
 ## 2026-10-11 Voice v3 (live session log)
 - Log showed: Rukia fine; Byakuya ru-RU `senbonzakura` never fired alone (rule 3.2) and `chire` came as sire/siro/cere. Now: lone `Senbonzakura` = weak shikai release in BASE (Byakuya sword only), lone garbles shire/шире/щире/чьере/чере, garble+name combos, kageyoshi/hakuteiken/senkei/банкой aliases (305 variants). Lone `siro/щиро` deliberately silent (= "silo"). `heard` log line now prints alts.
 - Engine research: recommended = keep Web Speech + phonetic matcher, add feature-detected `recognition.phrases` biasing (not built); Vosk/Whisper rejected for now. Report design/results/voice_v3.md. New fixture tests/voice/live_fixture_2026_10_11.json + LiveSessionFixtureTest. `gradlew test`: 380 run, 0 failed; old fixture 202/202.
+
+## 2026-10-11: shunpo micro-fix (afterimage scale, screen rush)
+- `ShunpoFx`: afterimage model scale now `shunpo.afterimageScale` (default 1.0, was a fixed 0.9375 = vanilla player scale; set 0.9375 to match the live player). Alpha and LIFE unchanged.
+- Screen rush for the caster only: `ScreenFx.shunpoRush` draws the radial speed lines (existing speed_lines.png, own slot) and a FOV kick added in `GameRendererMixin` to `getFov` (world camera only, not the hand). Keys: `shunpo.speedFx` 0.6, `shunpo.speedFxTime` 0.3, `shunpo.fovKick` 10. Off with reduceMotion / photosensitiveSafe; scaled by screenFxScale.
+- `gradlew test`: 380 run, 0 failed. Game not run. UNVERIFIED: look of the 2.0-block copies at default scale, speed_lines.png as radial lines (preview was blank), kick feel at 10 deg. Details: `design/results/shunpo_fx.md`.

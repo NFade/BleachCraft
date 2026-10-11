@@ -109,6 +109,13 @@ public final class ShunpoFx {
 		played++;
 		lastDistance = dist;
 
+		// ---- screen rush (first person of the caster only): radial speed lines and a short FOV kick.
+		// Tunable by run/fx_override.json: shunpo.speedFx (line level), shunpo.speedFxTime (seconds), shunpo.fovKick (degrees).
+		// ScreenFx turns both off with reduceMotion / photosensitiveSafe and scales them by screenFxScale.
+		if (client.player != null && client.player.getId() == e.casterId()) {
+			ScreenFx.shunpoRush(FxTune.d("shunpo.speedFx", 0.6), FxTune.d("shunpo.fovKick", 10.0), FxTune.d("shunpo.speedFxTime", 0.3));
+		}
+
 		// ---- afterimages
 		Identifier texture = null;
 		boolean isSlim = false;
@@ -231,6 +238,8 @@ public final class ShunpoFx {
 		Vec3d cam = ctx.camera().getPos();
 		MatrixStack ms = ctx.matrixStack();
 		int drawn = 0;
+		// model scale of an afterimage: 1.0 = the model as it is (the live player is drawn at vanilla 0.9375, so set 0.9375 to match it)
+		float ascale = (float) FxMath.clamp(FxTune.d("shunpo.afterimageScale", 1.0), 0.25, 2.0);
 		for (Iterator<Image> it = LIVE.iterator(); it.hasNext();) {
 			Image im = it.next();
 			double t = (now - im.born) / LIFE;
@@ -255,7 +264,7 @@ public final class ShunpoFx {
 			ms.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-im.lean));
 			ms.translate(0.0F, -0.9F, 0.0F);
 			ms.scale(-1.0F, -1.0F, 1.0F);
-			ms.scale(0.9375F, 0.9375F, 0.9375F);
+			ms.scale(ascale, ascale, ascale);
 			ms.translate(0.0F, -1.501F, 0.0F);
 			VertexConsumer vc = vcp.getBuffer(RenderLayer.getEntityTranslucent(im.texture));
 			int argb = (Math.round(alpha * 255f) << 24) | im.rgb;

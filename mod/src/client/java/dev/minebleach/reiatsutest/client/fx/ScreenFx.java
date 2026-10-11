@@ -112,6 +112,11 @@ public final class ScreenFx {
 	private static double speedDur;
 	private static float speedX = 0.5f;
 	private static float speedY = 0.5f;
+	/** SHUNPO RUSH state: lines level (already times screenFxScale), FOV kick in degrees (already times screenFxScale), start and length. */
+	private static double rushStart = -10;
+	private static double rushDur = 0.3;
+	private static double rushLines;
+	private static double rushFov;
 	/** Dev/stat: number of FLASH requests refused or downgraded by the photosensitivity limiter. */
 	public static int limiterDowngrades;
 	/** Dev/stat: number of real impact frames (white then ink) started since the start (the harness checks it is 0 with reduce motion). */
@@ -130,6 +135,8 @@ public final class ScreenFx {
 		BIG_FLASH_TIMES.clear();
 		impactActive = false;
 		speedLevel = 0;
+		rushLines = 0;
+		rushFov = 0;
 	}
 
 	// ------------------------------------------------------------------------------------------------ requests
@@ -247,6 +254,47 @@ public final class ScreenFx {
 		speedY = sy;
 	}
 
+	/**
+	 * SHUNPO RUSH (first person of the caster): radial speed lines that fade out over {@code duration} seconds, and a FOV kick of
+	 * {@code fovDeg} degrees that rises in about 0.06 s and eases back to 0 at the end. Both are off with reduce motion and
+	 * photosensitive safe; both are scaled by {@code screenFxScale}. Duration is clamped to 0.1..1.0 s.
+	 */
+	public static void shunpoRush(double lineLevel, double fovDeg, double duration) {
+		if (FxConfig.reduceMotion || FxConfig.photosensitiveSafe) {
+			return;
+		}
+		rushStart = FxClock.now;
+		rushDur = FxMath.clamp(duration, 0.1, 1.0);
+		rushLines = Math.max(0, lineLevel) * FxConfig.screenFxScale;
+		rushFov = Math.max(0, fovDeg) * FxConfig.screenFxScale;
+	}
+
+	/** Lines alpha of the rush: up in 0.04 s, then linear fade to 0 at the end; 0 when not running. */
+	private static double rushLinesAlpha() {
+		if (rushLines <= 0) {
+			return 0;
+		}
+		double t = FxClock.now - rushStart;
+		if (t < 0 || t >= rushDur) {
+			return 0;
+		}
+		return rushLines * Math.min(Math.min(1.0, t / 0.04), 1.0 - t / rushDur);
+	}
+
+	/** FOV addition in degrees for the current frame (SHUNPO RUSH); 0 when not running. Read by the getFov mixin for the world camera. */
+	public static double fovKickDeg() {
+		if (rushFov <= 0) {
+			return 0;
+		}
+		double t = FxClock.now - rushStart;
+		if (t < 0 || t >= rushDur) {
+			return 0;
+		}
+		double rise = Math.min(0.06, rushDur * 0.25);
+		double k = t < rise ? t / rise : 1.0 - FxMath.ios((t - rise) / (rushDur - rise));
+		return rushFov * k;
+	}
+
 	// ------------------------------------------------------------------------------------------------ shake hook
 
 	/** Current view offsets in degrees, summed and clamped to 1.5 (SHAKE). Index 0 yaw, 1 pitch. */
@@ -277,7 +325,8 @@ public final class ScreenFx {
 
 	/** Under the HUD (InGameHud#render HEAD): vignettes, flashes, impact frame, speed lines. */
 	public static void renderUnderHud(DrawContext ctx) {
-		if (FLASHES.isEmpty() && VIGNETTES.isEmpty() && !impactActive && speedLevel <= 0) {
+		double rushA = rushLinesAlpha();
+		if (FLASHES.isEmpty() && VIGNETTES.isEmpty() && !impactActive && speedLevel <= 0 && rushA <= 0) {
 			return;
 		}
 		MinecraftClient mc = MinecraftClient.getInstance();
@@ -347,6 +396,12 @@ public final class ScreenFx {
 				RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
 				quadTexAt(m, SPEED_LINES, w, h, s, speedX, speedY, new float[] {1, 1, 1}, (float) speedLevel);
 			}
+		}
+		if (rushA > 0.002) {
+			double t = FxClock.now - rushStart;
+			float s = (float) (1.0 + 0.12 * t / rushDur);
+			RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
+			quadTexAt(m, SPEED_LINES, w, h, s, 0.5f, 0.5f, new float[] {1, 1, 1}, (float) Math.min(1.0, rushA));
 		}
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.depthMask(true);
