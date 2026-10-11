@@ -433,8 +433,11 @@ final class Phase6FxFix {
 			cCheck(prefix + " t " + ms + ": no row blade has erupted yet (bursts " + (RowsFx.bursts - bursts0) + ")", () -> RowsFx.bursts - bursts0 == 0 ? null : "bursts " + (RowsFx.bursts - bursts0));
 		}
 		if (ms >= 2200) {
-			cCheck(prefix + " t " + ms + ": the hilt stays in the ground, " + f(h + BankaiCurves.HILT_LENGTH * hs) + " blocks of it above (rows bursts " + (RowsFx.bursts - bursts0) + ")",
-					() -> Math.abs(h + BankaiCurves.HILT_LENGTH * hs - FxTune.d("bankai.hiltRemain", 0.38)) < 0.02 && RowsFx.bursts - bursts0 > 0 ? null : "remain " + (h + BankaiCurves.HILT_LENGTH * hs));
+			// G1: the sword has sunk completely (nothing above the ground unless bankai.hiltRemain > 0)
+			double remain = Math.max(0.0, FxTune.d("bankai.hiltRemain", 0.0));
+			cCheck(prefix + " t " + ms + ": the sword has vanished into the ground, " + f(h + BankaiCurves.HILT_LENGTH * hs) + " blocks of it above (rows bursts " + (RowsFx.bursts - bursts0) + ")",
+					() -> (remain > 0.0 ? Math.abs(h + BankaiCurves.HILT_LENGTH * hs - remain) < 0.02 : !BankaiCurves.swordVisible(h, BankaiCurves.HILT_LENGTH * hs)) && RowsFx.bursts - bursts0 > 0 ? null
+							: "remain " + (h + BankaiCurves.HILT_LENGTH * hs));
 		}
 	}
 

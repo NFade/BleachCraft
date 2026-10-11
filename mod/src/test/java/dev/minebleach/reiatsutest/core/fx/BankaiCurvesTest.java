@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.core.fx;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -73,5 +74,19 @@ class BankaiCurvesTest {
 		assertEquals(3.5, BankaiCurves.splashRadius(0, c + 2, c, 1.0), 1e-9);
 		assertEquals(0.0, BankaiCurves.splashAlpha(0, c + 1.0, c), 1e-9);
 		assertTrue(BankaiCurves.splashAlpha(1, c + 0.5, c) > 0.5);
+	}
+
+	@Test
+	void swordVanishesCompletelyWhenSunk() {
+		double len = BankaiCurves.HILT_LENGTH * 1.8;
+		double end = -len - BankaiCurves.SWORD_HIDE_MARGIN; // swordEndY with bankai.hiltRemain = 0
+		assertTrue(BankaiCurves.swordVisible(BankaiCurves.swordHeight(0.4, 1.0, end), len));
+		// at the ground contact the sword is still above the ground; after the sinking nothing of it is
+		double c = BankaiCurves.swordContactTime(1.0, end);
+		assertTrue(BankaiCurves.swordVisible(BankaiCurves.swordHeight(c, 1.0, end), len));
+		assertFalse(BankaiCurves.swordVisible(BankaiCurves.swordHeight(BankaiCurves.SWORD_SINK_END, 1.0, end), len));
+		assertFalse(BankaiCurves.swordVisible(BankaiCurves.swordHeight(5.0, 1.0, end), len));
+		// a remainder (bankai.hiltRemain > 0, the old behaviour) stays visible
+		assertTrue(BankaiCurves.swordVisible(-(len - 0.38), len));
 	}
 }

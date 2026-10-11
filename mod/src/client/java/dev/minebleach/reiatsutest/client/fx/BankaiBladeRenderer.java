@@ -399,7 +399,8 @@ public final class BankaiBladeRenderer {
 					double pz = FxMath.lerp(hz0, hz, flight);
 					double py = FxMath.lerp(feetNow.y + 1.2, hy, flight);
 					fillBasis(yawDeg, hs * FxMath.lerp(0.55, 1.0, flight));
-					if (sw >= 0) {
+					// G1: once the sword has sunk completely under the ground it is not drawn (the splash rings stay)
+					if (sw >= 0 && BankaiCurves.swordVisible(hy - hg, BankaiCurves.HILT_LENGTH * hs)) {
 						hilt.write(hb, M, px - cp.x, py - cp.y, pz - cp.z, WHITE, light);
 					}
 				}

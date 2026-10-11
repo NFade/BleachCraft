@@ -190,9 +190,13 @@ public final class RowsFx {
 		return FxTune.d("bankai.swordHang", 1.0);
 	}
 
-	/** Height of the sword point when it has sunk: below the ground by the hilt length minus the part that stays visible. */
+	/**
+	 * Height of the sword point when it has sunk: below the ground by the whole hilt length plus a small margin, so the sword disappears completely (G1).
+	 * {@code bankai.hiltRemain} (hot reload, default 0) = the part of the hilt that stays visible above the ground; 0 = nothing remains.
+	 */
 	public static double swordEndY(double hiltScale) {
-		return -(BankaiCurves.HILT_LENGTH * hiltScale - FxTune.d("bankai.hiltRemain", 0.38));
+		double remain = Math.max(0.0, FxTune.d("bankai.hiltRemain", 0.0));
+		return -(BankaiCurves.HILT_LENGTH * hiltScale - remain) - (remain > 0.0 ? 0.0 : BankaiCurves.SWORD_HIDE_MARGIN);
 	}
 
 	public static double swordContact(double hiltScale) {

@@ -909,3 +909,9 @@ One code batch, then the harness scenario `fxfix` (`Phase6FxFix`; `gradlew runPh
 - A4 numbers (1.5 / 5.0 / 0.12 / 0.35) are a first guess judged on screenshots; the barrier dome seen from inside is thinned the same way.
 - A1/A3: "she does not slide" was read as "no ice block under her and no change of friction". If the user meant that she should slide on the ice, this is not done.
 - Late join during the sword throw: the hilt is shown already sunk (`swordT0` far in the past).
+
+## 2026-10-11: G1 the Byakuya bankai sword vanishes completely in the ground
+- `RowsFx.swordEndY`: the sword now sinks by the whole hilt length plus `BankaiCurves.SWORD_HIDE_MARGIN` (0.05) instead of leaving 0.38 blocks above the ground. `bankai.hiltRemain` (hot reload) stays tunable but its default is now 0 (visible part that remains; 0 = nothing; >0 restores the old behaviour).
+- `BankaiBladeRenderer.drawExtras`: the sword is not drawn once `BankaiCurves.swordVisible(height, HILT_LENGTH * hiltScale)` is false (its top is under the surface). The ground-contact time, the three splash rings, motes and sounds are unchanged (the contact is still the point touching the ground).
+- Seal (`endAt`): the sword still rises from `hg + swordEnd` to the hand, so it now emerges from under the ground (the part below is hidden by the terrain). Late join: the sword is not shown at all (it is already gone).
+- `Phase6FxFix.swordCheck` (t >= 2200 ms) now expects "nothing above the ground". New unit test `BankaiCurvesTest.swordVanishesCompletelyWhenSunk`. Not run in game (rules); visual result UNVERIFIED. The 0.62..1.5 s sink timing is unchanged, so the sword is gone at about 1.5 s.

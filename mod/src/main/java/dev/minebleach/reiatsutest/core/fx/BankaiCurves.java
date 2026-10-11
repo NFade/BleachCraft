@@ -105,7 +105,18 @@ public final class BankaiCurves {
 		return h0 + (endY - h0) * e;
 	}
 
-	/** Sword time at which the point touches the ground (height 0); {@link #SWORD_SINK_END} when it never does. */
+	/** Margin (blocks) by which the sunk sword's top ends below the ground when nothing of it is to remain (G1). */
+	public static final double SWORD_HIDE_MARGIN = 0.05;
+
+	/**
+	 * G1: true while any part of the sword is above the ground. {@code height} = height of the point above the ground, {@code length} = scaled sword length.
+	 * Once the top has gone under the surface the sword is not drawn at all.
+	 */
+	public static boolean swordVisible(double height, double length) {
+		return height + length > 1e-4;
+	}
+
+	/** Sword time at which the point touches the ground (height 0);{@link #SWORD_SINK_END} when it never does. */
 	public static double swordContactTime(double hang, double endY) {
 		double lo = SWORD_HANG_END;
 		double hi = SWORD_SINK_END;
