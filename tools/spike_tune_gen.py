@@ -497,7 +497,7 @@ sets["sw2"] = sweep_draw("a", POSEA, frames=(0.0, 0.3, 0.55, 0.7, 0.85, 1.0)) + 
      pv("al_base", "base", POSEA, "fp_left"), pv("al_sealed", "sealed", POSEA, "fp_left")]
 
 
-# ---- T2 / T3 / T4 (branch tp3): third person scabbard, draw transition, slash. "ext" views (see SpikeHarness.extSteps): who self|other,
+# ---- T2 / T3 (branch tp3): third person scabbard, draw transition (T4, the slash, was removed in BC5). "ext" views (see SpikeHarness.extSteps): who self|other,
 # angle = camera azimuth around the subject (0 front, 90 wearer's left, 180 back, 270 wearer's right). Self carries the item under
 # test, the "other" client side player the other character. Everything with "pose" so no resource reload happens.
 def ext(name, who="self", state="sealed", angle=90, pose=None, **kw):
@@ -535,16 +535,7 @@ for who, st in (("self", "base"), ("other", "base")):
 T3.append(ext("t3_other_lefty_front", "other", "base", 0, arm="left", ps=list(PS), dist=2.8))
 sets["t3"] = T3
 
-SW = [1, 2, 3, 4, 5]
-T4 = []
-for who, st in (("self", "base"), ("other", "base"), ("self", "shikai"), ("other", "shikai")):
-    for ang, an in ((270, "right"), (0, "front"), (90, "left")):
-        T4.append(ext("t4_%s_%s_%s" % (who, st, an), who, st, ang, swings=SW, dist=3.0))
-T4.append(ext("t4_other_lefty_front", "other", "base", 0, arm="left", swings=SW, dist=3.0))
-T4.append(ext("t4_other_sealed_right", "other", "sealed", 270, swings=SW, dist=3.0))
-sets["t4"] = T4
-
-# ---- tp: one combined run of T2 + T3 + T4 (branch tp3b); trimmed so that the whole run stays well under the watchdog
+# ---- tp: one combined run of T2 + T3 (branch tp3b; the T4 swing scenes were removed in BC5, Better Combat plays the strike now); trimmed so that the whole run stays well under the watchdog
 TP = []
 for who, st in (("other", "sealed"), ("self", "base")):
     for ang, an in ((0, "front"), (90, "left"), (180, "back"), (270, "right")):
@@ -561,44 +552,15 @@ PS2 = (0.0, 0.4, 0.55, 0.7, 0.82, 0.92, 0.97, 1.0)
 for who, st, ang, an in (("self", "base", 90, "left"), ("self", "base", 0, "front"), ("other", "base", 270, "right"), ("other", "base", 0, "front")):
     TP.append(ext("t3_%s_%s" % (who, an), who, st, ang, ps=list(PS2), dist=2.8))
 TP.append(ext("t3_other_lefty_front", "other", "base", 0, arm="left", ps=list(PS2), dist=2.8))
-for who, st, ang, an in (("self", "base", 270, "right"), ("self", "base", 0, "front"), ("other", "base", 270, "right"), ("other", "base", 0, "front"),
-                         ("other", "shikai", 270, "right"), ("self", "shikai", 90, "left")):
-    TP.append(ext("t4_%s_%s_%s" % (who, st, an), who, st, ang, swings=[1, 2, 3, 4, 5], dist=3.0))
-TP.append(ext("t4_other_lefty_front", "other", "base", 0, arm="left", swings=[1, 2, 3, 4, 5], dist=3.0))
 sets["tp"] = TP
 
-# ---- tp2: swing wrist / arm variants (hot pose override, no reload), other player, state base
-def swv(name, **sw):
-    out = []
-    for ang, an in ((270, "right"), (0, "front")):
-        out.append(ext("sw_%s_%s" % (name, an), "other", "base", ang, swings=[2, 3, 4], dist=3.0, pose={"swing": sw}))
-    return out
-
-
+# ---- tp2 / tp4: back-view checks of the draw end (the swing variant sweeps were removed in BC5)
 TP2 = []
-TP2 += swv("v0")
-TP2 += swv("v1", wrist_pitch_strike=90.0)
-TP2 += swv("v2", wrist_pitch_strike=-45.0)
-TP2 += swv("v3", wrist_roll_strike=80.0)
-TP2 += swv("v4", wrist_pitch_wind=0.0, wrist_pitch_strike=90.0, pitch_strike=-80.0)
-TP2 += swv("v5", wrist_yaw_strike=80.0)
 for ang, an in ((270, "right"), (0, "front"), (90, "left")):
     TP2.append(ext("t3b_other_%s" % an, "other", "base", ang, ps=[0.0, 0.55, 0.8, 0.92, 0.97, 1.0], dist=2.8))
 sets["tp2"] = TP2
 
-# ---- tp4: forward strike wrist variants (negative wrist pitch turns the blade forward) + the draw end check
-def swv2(name, **sw):
-    out = []
-    for ang, an in ((270, "right"), (0, "front")):
-        out.append(ext("sw_%s_%s" % (name, an), "other", "base", ang, swings=[2, 3, 4, 5], dist=3.0, pose={"swing": sw}))
-    return out
-
-
 TP4 = []
-TP4 += swv2("w1", wrist_pitch_strike=-100.0, pitch_strike=-70.0)
-TP4 += swv2("w2", wrist_pitch_strike=-130.0, pitch_strike=-70.0)
-TP4 += swv2("w3", wrist_pitch_wind=20.0, wrist_pitch_strike=-120.0, pitch_strike=-80.0)
-TP4 += swv2("w4", wrist_pitch_wind=-60.0, wrist_pitch_strike=-150.0, pitch_strike=-60.0)
 TP4.append(ext("t3c_other_right", "other", "base", 270, ps=[0.9, 0.97, 1.0], dist=2.8, pose={}))
 TP4.append(ext("t3c_other_front", "other", "base", 0, ps=[0.9, 0.97, 1.0], dist=2.8, pose={}))
 sets["tp4"] = TP4

@@ -71,4 +71,17 @@ class WeaponAttributesPresetTest {
 			assertEquals("bettercombat:katana", parent, id + ": katana preset expected");
 		}
 	}
+
+	/** BC5 decision 1: an empty (non-null, so it overrides the parent) pose means no Better Combat katana stance, the sword is held one handed as usual. */
+	@Test
+	void presetsOverrideThePoseWithAnEmptyString() throws IOException {
+		for (String id : swordIds()) {
+			JsonObject o = JsonParser.parseString(Files.readString(DIR.resolve(id + ".json"), StandardCharsets.UTF_8)).getAsJsonObject();
+			assertTrue(o.has("attributes") && o.get("attributes").isJsonObject(), id + ": attributes object missing");
+			JsonObject attrs = o.getAsJsonObject("attributes");
+			assertTrue(attrs.has("pose") && attrs.get("pose").isJsonPrimitive(), id + ": pose missing");
+			assertEquals("", attrs.get("pose").getAsString(), id + ": pose must be empty");
+			assertFalse(attrs.has("attacks"), id + ": attacks stay inherited from the katana preset");
+		}
+	}
 }

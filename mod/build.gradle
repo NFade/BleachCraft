@@ -119,6 +119,9 @@ dependencies {
 	modLocalRuntime "maven.modrinth:cloth-config:15.0.140+fabric"
 	// tiny-config is jar-in-jar inside Better Combat; Loom does not load nested jars in dev, so add it explicitly (same version as nested).
 	modLocalRuntime "maven.modrinth:tiny-config:3.1.0-fabric"
+	// Compile only (BC5): public APIs we call or hook (BC CombatFlags, playerAnimator stack/FirstPersonMode). Not embedded, not in the jar.
+	modCompileOnly "maven.modrinth:better-combat:2.4.0+1.21.1-fabric"
+	modCompileOnly "maven.modrinth:playeranimator:2.0.4+1.21.1-fabric"
 
 	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
 	testImplementation "org.junit.jupiter:junit-jupiter"

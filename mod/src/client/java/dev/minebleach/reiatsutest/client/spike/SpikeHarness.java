@@ -102,7 +102,6 @@ public final class SpikeHarness {
 	private static void tick(MinecraftClient client) {
 		mc = client;
 		totalTicks++;
-		extTick();
 		if (totalTicks > 20 * 60 * 14) {
 			ReiatsuTest.LOGGER.error(P + "global watchdog fired, stopping");
 			client.scheduleStop();
@@ -733,13 +732,11 @@ public final class SpikeHarness {
 	private static Drive extSubject;
 	private static Drive extCam;
 	private static net.minecraft.entity.LivingEntity extEntity;
-	private static int extFreezeSwing = -1;
 	private static boolean extSneakKey;
 	/** Own player scenes: the third person camera sits behind the view direction, the BODY is turned so that the camera sees it from this azimuth (NaN = off). */
 	private static double extSelfAngle = Double.NaN;
 	private static int extOldFov = -1;
 
-	/** Every tick: freezes the vanilla hand swing of the subject at k ticks (progress k/6) while a swing frame is wanted. */
 	/** Every frame before the world renders: turns the own body (and head) to the wanted azimuth against the camera. */
 	private static void extFrame() {
 		if (!Double.isNaN(extSelfAngle) && mc != null && mc.player != null) {
@@ -748,15 +745,6 @@ public final class SpikeHarness {
 			mc.player.prevBodyYaw = b;
 			mc.player.headYaw = b;
 			mc.player.prevHeadYaw = b;
-		}
-	}
-
-	private static void extTick() {
-		if (extFreezeSwing >= 0 && extEntity != null) {
-			extEntity.handSwinging = true;
-			extEntity.preferredHand = net.minecraft.util.Hand.MAIN_HAND;
-			extEntity.handSwingTicks = Math.max(0, extFreezeSwing - 1);
-			extEntity.handSwingProgress = extFreezeSwing / 6f;
 		}
 	}
 
@@ -867,7 +855,6 @@ public final class SpikeHarness {
 	}
 
 	private static void cleanupExt() {
-		extFreezeSwing = -1;
 		extSelfAngle = Double.NaN;
 		if (extOldFov >= 0) {
 			mc.options.getFov().setValue(extOldFov);
@@ -895,7 +882,7 @@ public final class SpikeHarness {
 	/**
 	 * Candidate with {@code "view": "ext"}: {@code who} self|other, {@code state}, {@code motion} idle|walk|sprint|sneak|sneakwalk|swim,
 	 * {@code arm}, {@code angle} (camera azimuth around the subject), {@code dist}, {@code eye}, {@code pitch}, {@code draw_p},
-	 * {@code swings} [k..] (frozen vanilla swing ticks 1..5 of 6, one shot each) or {@code ps} [p..] (draw progress, one shot each),
+	 * {@code ps} [p..] (draw progress, one shot each),
 	 * {@code shots} n with {@code gap} ticks (several shots in a row), {@code ticks} (settle ticks before the shot, default 25),
 	 * {@code slim}, {@code item} (other).
 	 */
@@ -903,14 +890,7 @@ public final class SpikeHarness {
 		step("ext " + name + ": setup", 30, () -> setupExt(c));
 		step("ext " + name + ": camera", 4, () -> camExt(c));
 		int settle = c.has("ticks") ? c.get("ticks").getAsInt() : 25;
-		if (c.has("swings")) {
-			step("ext " + name + ": settle", settle, () -> { });
-			for (com.google.gson.JsonElement el : c.getAsJsonArray("swings")) {
-				int k = el.getAsInt();
-				step("ext " + name + ": swing " + k, 4, () -> extFreezeSwing = k);
-				step("ext " + name + ": shot swing " + k, 2, () -> shot("tune_" + name + "_s" + k));
-			}
-		} else if (c.has("ps")) {
+		if (c.has("ps")) {
 			step("ext " + name + ": settle", settle, () -> { });
 			for (com.google.gson.JsonElement el : c.getAsJsonArray("ps")) {
 				float pr = el.getAsFloat();

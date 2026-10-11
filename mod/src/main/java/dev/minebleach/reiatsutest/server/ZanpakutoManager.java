@@ -84,6 +84,7 @@ public final class ZanpakutoManager {
 		ServerPlayNetworking.registerGlobalReceiver(ShunpoC2S.ID, (payload, ctx) ->
 				performShunpo(ctx.player(), RequestSource.fromCode(payload.source()), Math.max(0, payload.clientSeq())));
 		ServerTickEvents.END_SERVER_TICK.register(ZanpakutoManager::tick);
+		BcCombatGate.init(); // BC5: no Better Combat strike while sheathed or blocking
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, srv) -> onJoin(handler.player));
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) -> onLeave(handler.player));
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {

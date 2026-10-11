@@ -15,7 +15,8 @@ import net.fabricmc.loader.api.FabricLoader;
  * {@code <game dir>/pose_override.json} replaces any of them and is re-read when it changes (checked a few times a second), so
  * a pose can be tuned without restarting the game or reloading resources:
  * {@code {"lift": [x, y, z], "arm": [x, y, z], "roll_stow": 80, "roll_held": 0}} (all keys optional, hand frame blocks of the
- * right-handed numbers, degrees).
+ * right-handed numbers, degrees). The key {@code "bc_item"} tunes the sword in the hand while a Better Combat strike plays
+ * (see {@link BcItemPose}).
  */
 public final class HeldPose {
 	public record Values(float[] lift, float[] arm, float rollStow, float rollHeld) {
