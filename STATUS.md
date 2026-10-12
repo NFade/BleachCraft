@@ -90,3 +90,6 @@ User feedback after playing (full text in `design/PLAN_2026-10-11.md` section G)
 G1 done 2026-10-11, commit 4ca1320 (local, not pushed): the bankai sword now sinks fully under the ground and no hilt remains (hiltRemain default 0, sword not drawn while submerged); splash rings unchanged. Not verified in game (UNVERIFIED until the shared scenario run). Details: design/results/g1.md.
 Next order: G3, then rage (B4), kido (B5), spellbooks (B3), sword combat/parry (`design/PARRY_PLAN.md`, `PARRY_PLAN_BC.md`, defaults accepted), then Phase 7 QA and Gate D (last Opus call). Roblox question: assessment in `design/PLAN_2026-10-11.md` section E; spike after Gate D if the goal is a public PvP game.
 Handoff tips: read STATUS, `design/PLAN_2026-10-11.md`, LOG tail. In Git Bash use `GRADLE_USER_HOME=D:/gradle-home` (forward slashes). One game window at a time (`bash /d/MineBleach-locks/game_lock.sh`, lock dir is outside the repo; recreate on another machine). dev_monitor override in `%GRADLE_USER_HOME%\gradle.properties`.
+
+## mech2 (2026-10-12, branch `mech2`, local, not merged)
+Barrier control immunity, one bankai cleanup for every end reason, no full-bar rule for bankai, Absolute Zero replaced by the passive Rukia frost territory. See `design/results/mech2.md` and LOG "mech2".
