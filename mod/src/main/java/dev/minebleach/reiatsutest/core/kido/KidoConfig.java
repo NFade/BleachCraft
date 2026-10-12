@@ -46,10 +46,10 @@ public final class KidoConfig {
 	public static KidoConfig defaults() {
 		EnumMap<KidoId, KidoSpec> m = new EnumMap<>(KidoId.class);
 		// Hado 4: instant thin beam, 6 hp (3 hearts), 30 blocks, 3 s cooldown
-		m.put(KidoId.BYAKURAI, new KidoSpec(KidoId.BYAKURAI, true, 100, 60, 30.0, 6.0, 0.0, 0, 0, 0.0, 0.35));
+		m.put(KidoId.BYAKURAI, new KidoSpec(KidoId.BYAKURAI, true, 100, 100, 30.0, 2.5, 0.0, 0, 0, 0.0, 0.35));
 		// Hado 31: a ball at 1.2 blocks/tick (24 blocks/s) to the first block or target within 24 blocks, burst radius 3.5,
 		// 10 hp in the centre falling to 40 percent at the edge, targets burn 3 s, no block damage, 7 s cooldown
-		m.put(KidoId.SHAKKAHO, new KidoSpec(KidoId.SHAKKAHO, true, 200, 140, 24.0, 10.0, 3.5, 0, 60, 1.2, 0.5));
+		m.put(KidoId.SHAKKAHO, new KidoSpec(KidoId.SHAKKAHO, true, 200, 200, 24.0, 4.0, 3.5, 0, 60, 1.2, 0.5));
 		// Bakudo 1: first target within 8 blocks cannot move for 3 s (slowness to a standstill), no damage, 5 s cooldown
 		m.put(KidoId.SAI, new KidoSpec(KidoId.SAI, true, 60, 100, 8.0, 0.0, 0.0, 60, 0, 0.0, 0.4));
 		return new KidoConfig(true, 10, m);

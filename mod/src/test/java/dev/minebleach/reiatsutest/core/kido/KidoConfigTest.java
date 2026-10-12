@@ -48,15 +48,15 @@ class KidoConfigTest {
 		assertEquals(10, c.gcdTicks());
 		KidoSpec b = c.spec(KidoId.BYAKURAI);
 		assertEquals(100, b.costTenths());
-		assertEquals(60, b.cooldownTicks());
+		assertEquals(100, b.cooldownTicks());
 		assertEquals(30.0, b.range());
-		assertEquals(6.0, b.damage());
+		assertEquals(2.5, b.damage());
 		assertEquals(0.0, b.speed(), "instant");
 		KidoSpec s = c.spec(KidoId.SHAKKAHO);
 		assertEquals(200, s.costTenths());
-		assertEquals(140, s.cooldownTicks());
+		assertEquals(200, s.cooldownTicks());
 		assertEquals(24.0, s.range());
-		assertEquals(10.0, s.damage());
+		assertEquals(4.0, s.damage());
 		assertEquals(3.5, s.radius());
 		assertEquals(1.2, s.speed());
 		assertEquals(60, s.fireTicks());
@@ -93,7 +93,7 @@ class KidoConfigTest {
 		KidoConfig c = KidoConfig.fromRoot(root);
 		assertEquals(20.0, c.spec(KidoId.SHAKKAHO).damage());
 		assertEquals(300, c.spec(KidoId.SHAKKAHO).costTenths());
-		assertEquals(140, c.spec(KidoId.SHAKKAHO).cooldownTicks(), "the rest keeps its default");
+		assertEquals(200, c.spec(KidoId.SHAKKAHO).cooldownTicks(), "the rest keeps its default");
 		assertEquals(KidoConfig.defaults().spec(KidoId.BYAKURAI), c.spec(KidoId.BYAKURAI));
 	}
 
@@ -107,8 +107,8 @@ class KidoConfigTest {
 		KidoSpec b = c.spec(KidoId.BYAKURAI);
 		assertEquals(1000, b.costTenths());
 		assertEquals(1.0, b.range());
-		assertEquals(6.0, b.damage(), "a string keeps the default");
-		assertEquals(60, b.cooldownTicks());
+		assertEquals(2.5, b.damage(), "a string keeps the default");
+		assertEquals(100, b.cooldownTicks());
 		assertFalse(b.enabled());
 		assertEquals(KidoConfig.defaults().spec(KidoId.SAI), c.spec(KidoId.SAI));
 		KidoSpec s = c.spec(KidoId.SHAKKAHO);

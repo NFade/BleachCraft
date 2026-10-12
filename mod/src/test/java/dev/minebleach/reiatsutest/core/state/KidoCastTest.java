@@ -69,8 +69,8 @@ class KidoCastTest {
 		f.adv(f.sm.kidoConfig().gcdTicks());
 		TransitionResult again = kido(f, KidoId.BYAKURAI);
 		assertEquals(RejectReason.ON_COOLDOWN, again.reason(), "the same spell is still cooling");
-		f.adv(60);
-		assertTrue(kido(f, KidoId.BYAKURAI).ok(), "after its cooldown of 60 ticks");
+		f.adv(100);
+		assertTrue(kido(f, KidoId.BYAKURAI).ok(), "after its cooldown of 100 ticks");
 	}
 
 	@Test
@@ -84,12 +84,12 @@ class KidoCastTest {
 	void cooldownIsReportedForTheSync() {
 		Fx f = new Fx();
 		kido(f, KidoId.SHAKKAHO);
-		assertEquals(140, f.sm.kidoCooldownRemaining(KidoId.SHAKKAHO));
+		assertEquals(200, f.sm.kidoCooldownRemaining(KidoId.SHAKKAHO));
 		assertEquals(0, f.sm.kidoCooldownRemaining(KidoId.SAI));
 		f.adv(40);
-		assertEquals(100, f.sm.kidoCooldownRemaining(KidoId.SHAKKAHO));
+		assertEquals(160, f.sm.kidoCooldownRemaining(KidoId.SHAKKAHO));
 		assertEquals(List.of(KidoId.SHAKKAHO), List.copyOf(f.sm.kidoCooldownRemainingAll().keySet()));
-		f.adv(100);
+		f.adv(160);
 		assertTrue(f.sm.kidoCooldownRemainingAll().isEmpty());
 	}
 

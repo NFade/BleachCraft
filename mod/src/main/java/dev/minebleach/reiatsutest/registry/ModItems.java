@@ -32,7 +32,7 @@ public final class ModItems {
 	 * multiplies it by its per-attack {@code damage_multiplier} (katana preset 0.8 / 1.2), and the swing cooldown from the speed.
 	 * Katana speed is a separate later step, so the speed stays the vanilla sword one here.
 	 */
-	public static final double ATTACK_DAMAGE_BONUS = 6.0;
+	public static final double ATTACK_DAMAGE_BONUS = 3.0;
 	public static final double ATTACK_SPEED_BONUS = -2.4;
 
 	private static AttributeModifiersComponent meleeAttributes() {

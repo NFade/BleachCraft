@@ -237,7 +237,7 @@ class BankaiTest {
 		assertTrue(sc.num(AbilityParams.TORNADO_RADIUS) >= 12 && sc.num(AbilityParams.TORNADO_RADIUS) <= 16);
 		assertTrue(sc.num(AbilityParams.RADIUS) >= 12 && sc.num(AbilityParams.RADIUS) <= 16);
 		assertTrue(sc.intNum(AbilityParams.MAX_TARGETS) >= 32, "group damage: dozens of targets");
-		assertTrue(sc.num(AbilityParams.DAMAGE) > 12.0);
+		assertTrue(sc.num(AbilityParams.DAMAGE) > 5.0);
 		AbilitySpec hk = CFG.spec(AbilityId.HAKUTEIKEN);
 		assertTrue(hk.num(AbilityParams.RADIUS) >= 10 && hk.num(AbilityParams.RADIUS) <= 16);
 		assertTrue(hk.num(AbilityParams.LENGTH) > 20.0 && hk.num(AbilityParams.HALF_WIDTH) > 1.0);

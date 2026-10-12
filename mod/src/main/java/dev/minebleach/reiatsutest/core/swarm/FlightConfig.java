@@ -45,7 +45,7 @@ public record FlightConfig(boolean enabled, boolean steerEnabled, int startDelay
 	 * not held (whole cycle about 1.4 s), at tick 32 in any case (held: about 2.0 s with the return). UNVERIFIED by play: damage 1.0 per hit against 2.0 per landing hit.
 	 */
 	public static FlightConfig defaults() {
-		return new FlightConfig(true, true, 3, 40.0, 40.0, 240.0, 1.5, 18, 32, 1.6, 1.0, 8, 6, 8, 6.0, 6, 20, 35.0, 2);
+		return new FlightConfig(true, true, 3, 40.0, 40.0, 240.0, 1.5, 18, 32, 1.6, 0.5, 8, 6, 8, 6.0, 6, 20, 35.0, 2);
 	}
 
 	public double speedPerTick() {
