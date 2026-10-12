@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.ClientOptions;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
+import dev.minebleach.reiatsutest.core.combat.ArmIk;
 import dev.minebleach.reiatsutest.core.combat.FpClamp;
 import dev.minebleach.reiatsutest.core.combat.FpGeometry;
 import dev.minebleach.reiatsutest.core.combat.FpParams;
@@ -94,6 +95,15 @@ public final class FpMotion {
 		}
 	};
 
+	/** A tunable number of the fp_* sections of the dev override (default when absent), for the arm code of this package. */
+	static float num(String key, float def) {
+		return PARAMS.num(key, def);
+	}
+
+	static float[] vec(String key, float[] def) {
+		return PARAMS.vec(key, def);
+	}
+
 	// ---- clocks and state (render thread; the BC event and the effect event also run on the main thread)
 	private static long lastNanos;
 	private static float weight;
@@ -110,7 +120,6 @@ public final class FpMotion {
 	private static FpPose current = FpPose.ZERO;
 	private static boolean frameValid;
 	private static float frameLeftWeight;
-	private static boolean sealedFrame;
 	/** Two handed hold (BC5c): weight of the stance, whether this frame uses the two handed keys, pivot shift, left hand on the hilt. */
 	private static float twoWeight;
 	private static boolean twoKeys;
@@ -131,8 +140,6 @@ public final class FpMotion {
 	private static FpPose liveFadeFrom = FpPose.ZERO;
 	private static float liveMax;
 	private static int liveLogged;
-	/** Block with the sheathed sword (SEALED): smoothed weight (the scabbard hand and the scabbard follow the pose), this frame. */
-	private static float sealedBlock;
 	/** Reach limit of the ability gestures (round 5): smoothed factors of the main hand row and of the free hand row. */
 	private static float kRight = 1f;
 	private static float kLeft = 1f;
@@ -243,7 +250,6 @@ public final class FpMotion {
 		frameLeftTwo = false;
 		frameGest = null;
 		frameBase = FpPose.ZERO;
-		sealedBlock = 0f;
 		kRight = 1f;
 		kLeft = 1f;
 		liveRest = null;
@@ -286,7 +292,7 @@ public final class FpMotion {
 		FpPose base = rest;
 		// round 6: the strike of the two handed hold follows the live third person animation (fp_swing.live.enabled 0: the profiles of round 5 only)
 		boolean leftHander = player.getMainArm() == Arm.LEFT;
-		boolean liveOn = twoKeys && enabled("swing") && PARAMS.num("swing.live.enabled", 1f) > 0.5f && !useBcFirstPerson();
+		boolean liveOn = twoKeys && enabled("swing") && PARAMS.num("swing.live.enabled", 0f) > 0.5f && !useBcFirstPerson();
 		LiveSwing.Gains gains = liveOn ? LiveSwing.Gains.of(PARAMS) : LiveSwing.Gains.DEFAULT;
 		if (!liveOn) {
 			liveRest = null;
@@ -377,20 +383,24 @@ public final class FpMotion {
 			}
 		}
 		float time = (float) ((now % 100_000_000_000L) / 1.0e9);
-		// round 5: with the sheathed sword the block carries the scabbard and the sword in it as one body (the scabbard and the hand that holds
-		// it follow the pose, see pushSaya); strikes, recoils and gestures stay a hint (guard.sealed_scale), they must not pull the sword out of the scabbard
-		sealedFrame = sealed;
+		// fp2: the sheathed sword rests in its own pose (scabbard forward left, hands on the hilt and under the mouth); the pose goes back to the hold
+		// while the sword is drawn (draw progress 0 .. sealed.idle_until) and comes again when it is sheathed. The block with the sheathed sword
+		// carries the scabbard and the sword in it as one body (the scabbard hand follows it, see pushSaya); strikes, recoils and gestures stay a hint
+		// (guard.sealed_scale), they must not pull the sword out of the scabbard.
 		float ss = PARAMS.num("guard.sealed_scale", 0.4f);
+		float prog = DrawTracker.effectiveProgress(player, main);
+		float idleW = prog >= 1f ? 0f : 1f - dev.minebleach.reiatsutest.core.combat.FpEase.smooth(prog / Math.max(0.05f, PARAMS.num("sealed.idle_until", 0.45f)));
+		if (idleW > 0f && handModel(player, main) != null) {
+			base = base.lerp(GuardMotion.sealedIdle(PARAMS), idleW);
+		}
 		FpPose guardPose = twoKeys ? TwoHandMotion.guard(PARAMS) : GuardMotion.stance(PARAMS, 1f);
 		FpPose baseUse = base;
 		if (sealed) {
 			guardPose = GuardMotion.sealedGuard(PARAMS);
-			baseUse = base.scaled(ss);
 			parry = parry.scaled(ss);
 			hit = hit.scaled(ss);
 		}
 		FpPose pose = GuardMotion.pose(PARAMS, baseUse, guardPose, weight, time, parry, hit);
-		sealedBlock = sealed ? dev.minebleach.reiatsutest.core.combat.FpEase.smooth(weight) : 0f;
 		// ability gesture (FpCast): a delta on the stance, rigid with the sword about the pivot between the fists; the breath gives way to it
 		dev.minebleach.reiatsutest.core.combat.CastGesture.Sample gs = FpCast.fpSample();
 		if (twoKeys) {
@@ -468,29 +478,6 @@ public final class FpMotion {
 	}
 
 	/**
-	 * Shift of the right arm against the sword for this frame (hand frame blocks, a left hander mirrored; weight of the two handed hold applied),
-	 * or null: the fist sits flush under the tsuba in the two handed hold. Called by {@link FirstPersonHand} inside the pose push.
-	 */
-	public static float[] armShift(boolean left) {
-		if (!frameValid || !twoKeys || twoWeight <= 0.001f) {
-			return null;
-		}
-		float w = dev.minebleach.reiatsutest.core.combat.FpEase.smooth(twoWeight);
-		float[] a = TwoHandMotion.armShift(PARAMS, left);
-		return new float[] {a[0] * w, a[1] * w, a[2] * w};
-	}
-
-	/** Turn of the right arm about its fist for this frame (degrees x y z, mirrored for a left hander, weight applied), or null. */
-	public static float[] armRot(boolean left) {
-		if (!frameValid || !twoKeys || twoWeight <= 0.001f) {
-			return null;
-		}
-		float w = dev.minebleach.reiatsutest.core.combat.FpEase.smooth(twoWeight);
-		float[] a = TwoHandMotion.armRot(PARAMS, left);
-		return new float[] {a[0] * w, a[1] * w, a[2] * w};
-	}
-
-	/**
 	 * The scabbard of the sheathed sword follows the same rigid pose as the sword in it (round 5: the block with the sheathed sword; before, the
 	 * sword moved alone and left the scabbard). Pushes the pose onto the stack in the resting hand frame, before the lift and the display
 	 * transform; returns true when a matrix was pushed (the caller pops it).
@@ -510,37 +497,6 @@ public final class FpMotion {
 		m.multiply(new Quaternionf(qq[0], qq[1], qq[2], qq[3]));
 		m.translate(-pv[0], -pv[1], -pv[2]);
 		return true;
-	}
-
-	/** Weight (0..1) of the block with the sheathed sword: the left hand slides to its place on the scabbard, the forearm turns. */
-	public static float sealedBlockWeight() {
-		return frameValid && sealedFrame ? sealedBlock : 0f;
-	}
-
-	/** Place of the left hand on the scabbard (metres from the grip): {@code nearest} (the hand's own place) blended into the block place. */
-	public static float sealedLeftS(float nearest) {
-		float w = sealedBlockWeight();
-		if (w <= 0f) {
-			return nearest;
-		}
-		float s = GuardMotion.sealedLeftS(PARAMS);
-		return nearest + (s - nearest) * w;
-	}
-
-	/**
-	 * Turns the left forearm about its fist in the camera frame of the left hand (the matrix is at the left hand frame, already moved to the
-	 * fist) while the sealed block is up: it comes in from the lower left. Weighted by {@link #sealedBlockWeight}.
-	 */
-	public static void turnSealedLeftArm(MatrixStack m, boolean mainLeft) {
-		float w = sealedBlockWeight();
-		if (w <= 0.001f) {
-			return;
-		}
-		float[] a = GuardMotion.sealedLeftArmRot(PARAMS, mainLeft);
-		int i = mainLeft ? -1 : 1;
-		m.translate(-i * FIST_X, FIST_Y, FIST_Z);
-		m.multiply(new Quaternionf().rotationXYZ(a[0] * w * RAD, a[1] * w * RAD, a[2] * w * RAD));
-		m.translate(i * FIST_X, -FIST_Y, -FIST_Z);
 	}
 
 	/** Grip of the held sword in the hand frame (display transform plus the held lift): the pivot of the motion. */
@@ -593,16 +549,48 @@ public final class FpMotion {
 	}
 
 	/**
+	 * Matrix of the pose of the hand motion ({@link #push}) as a transform of the hand frame: {@code translate(pos) translate(pivot) rotate
+	 * translate(-pivot)}; identity for no pose. Used to find where the sword is for the arms.
+	 */
+	static Matrix4f poseMatrix(FpPose pose, float[] pivot, boolean leftHanded) {
+		FpPose q = leftHanded ? pose.mirrored() : pose;
+		float[] qq = q.quaternion();
+		return new Matrix4f().translate(q.pos()[0], q.pos()[1], q.pos()[2]).translate(pivot[0], pivot[1], pivot[2])
+				.rotate(new Quaternionf(qq[0], qq[1], qq[2], qq[3])).translate(-pivot[0], -pivot[1], -pivot[2]);
+	}
+
+	/** The current pose of this frame as a matrix of the hand frame (identity when there is none). */
+	static Matrix4f currentPoseMatrix(ObjItemBakedModel obj, ItemStack stack, AbstractClientPlayerEntity player, Transformation tr, boolean leftHanded,
+			Matrix4f toHand) {
+		if (!frameValid || current.isNearZero()) {
+			return new Matrix4f();
+		}
+		return poseMatrix(current, pivot(obj, stack, player, tr, leftHanded, toHand), leftHanded);
+	}
+
+	/** Item model space to base space of the sword for an arbitrary pose of this frame (the free hand keeps to the stance, for example). */
+	private static Matrix4f swordMatrixFor(FpPose pose, ObjItemBakedModel obj, ItemStack stack, ClientPlayerEntity player, Transformation tr, boolean left,
+			Matrix4f toHand) {
+		Matrix4f m = FpArms.hand().mul(poseMatrix(pose, pivot(obj, stack, player, tr, left, toHand), left));
+		Vector3f lift = FirstPersonHand.lift(obj, stack, player, left);
+		if (lift != null) {
+			m.translate(lift);
+		}
+		return m.mul(toHand);
+	}
+
+	/**
 	 * The free hand (drawn with the hands, before the buffer is flushed, same frame as the scabbard hand of {@link ScabbardRenderer}).
-	 * Two handed hold (BC5c, default): it rides on the hilt below the right hand (rigid with the sword through strikes and guard) and comes
-	 * up from below the screen after the draw. One handed fallback ({@code fp_two.enabled} 0): it supports the blade while the guard is up.
-	 * Only when the scabbard is gone (after the draw): before that the other hand holds it.
+	 * Two handed hold (BC5c, default): the fist is a point of the hilt below the right fist ({@code two.left.s}), rigid with the sword through strikes
+	 * and guard, and the hand comes up from below the screen after the draw; the arm is placed by {@link ArmIk} (fp2). One handed fallback
+	 * ({@code fp_two.enabled} 0): it supports the blade while the guard is up. Only when the scabbard is gone (after the draw): before that the other
+	 * hand holds it.
 	 */
 	public static void renderLeftGuard(MatrixStack m, VertexConsumerProvider vcp, ClientPlayerEntity player, int light, ItemStack shown,
 			float equip) {
 		FpCast.renderFreeHands(m, vcp, player, light, shown, equip); // the empty hands of the Byakuya bankai (nothing for a sword in the hand)
 		if (!frameValid || frameLeftWeight <= 0.01f || !ClientOptions.showFirstPersonHand || player.isInvisible()
-				|| shown != player.getMainHandStack() || !(shown.getItem() instanceof ZanpakutoItem)) {
+				|| shown != player.getMainHandStack() || !(shown.getItem() instanceof ZanpakutoItem) || !FpArms.hasSword() || !FpArms.hasHand()) {
 			return;
 		}
 		MinecraftClient mc = MinecraftClient.getInstance();
@@ -617,65 +605,32 @@ public final class FpMotion {
 		ModelTransformationMode mode = left ? ModelTransformationMode.FIRST_PERSON_LEFT_HAND : ModelTransformationMode.FIRST_PERSON_RIGHT_HAND;
 		Transformation tr = model.getTransformation().getTransformation(mode);
 		Matrix4f toHand = HandMath.modelToHand(tr, left);
-		float[] pv = pivot(obj, shown, player, tr, left, toHand);
-		float s = frameLeftTwo ? PARAMS.num("two.left.s", TwoHandMotion.LEFT_S) : PARAMS.num("guard.left.s", 0.30f);
-		Vector3f bp = toHand.transformPosition(new Vector3f(0.5f, 0.5f + s, 0.5f));
-		Vector3f lift = FirstPersonHand.lift(obj, shown, player, left);
-		if (lift != null) {
-			bp.add(lift);
-		}
-		FpPose q = left ? current.mirrored() : current;
-		float[] bladePoint = new float[] {bp.x, bp.y, bp.z};
-		float[] t = frameLeftTwo ? TwoHandMotion.leftFist(PARAMS, q, pv, bladePoint, left) : GuardMotion.leftFist(PARAMS, q, pv, bladePoint);
-		float eqY = -0.6f * (1f - Math.max(0f, Math.min(1f, equip)));
 		int i = left ? -1 : 1;
+		float s = frameLeftTwo ? PARAMS.num("two.left.s", TwoHandMotion.LEFT_S) : PARAMS.num("guard.left.s", 0.30f);
+		float[] off = frameLeftTwo ? PARAMS.vec("two.left.offset", TwoHandMotion.LEFT_OFFSET) : new float[3];
+		float sc = tr.scale.x();
+		Matrix4f sword = FpArms.sword();
+		Vector3f fist = sword.transformPosition(new Vector3f(0.5f + i * off[0] / sc, 0.5f + s + off[1] / sc, 0.5f + off[2] / sc));
+		Vector3f blade = sword.transformDirection(new Vector3f(0f, 1f, 0f)).normalize();
 		// ability gesture: the free hand leaves the hilt (free = 1: it keeps the stance place instead of riding with the sword) and moves by its row
 		dev.minebleach.reiatsutest.core.combat.CastGesture.Sample gs = frameLeftTwo ? frameGest : null;
 		float[] gl = gs == null ? null : gs.l();
+		float roll = 0f;
 		if (gl != null) {
 			float free = Math.max(0f, Math.min(1f, gl[6]));
 			if (free > 0.001f) {
-				float[] tb = TwoHandMotion.leftFist(PARAMS, left ? frameBase.mirrored() : frameBase, pv, bladePoint, left);
-				for (int k = 0; k < 3; k++) {
-					t[k] += (tb[k] - t[k]) * free;
-				}
+				Matrix4f sb = swordMatrixFor(frameBase, obj, shown, player, tr, left, toHand);
+				Vector3f fb = sb.transformPosition(new Vector3f(0.5f + i * off[0] / sc, 0.5f + s + off[1] / sc, 0.5f + off[2] / sc));
+				fist.lerp(fb, free);
+				blade.lerp(sb.transformDirection(new Vector3f(0f, 1f, 0f)).normalize(), free).normalize();
 			}
-			t[0] += i * gl[0];
-			t[1] += gl[1];
-			t[2] += gl[2];
+			fist.add(i * gl[0], gl[1], gl[2]);
+			roll = i * gl[5];
 		}
-		// absolute (camera frame of the hand code) positions: the main hand frame, the empty fist of the other hand, the target
-		Vector3f target = new Vector3f(i * 0.56f + t[0], -0.52f + eqY + t[1], -0.72f + t[2]);
-		Vector3f rest = new Vector3f(-i * (0.56f + FIST_X), -0.52f + eqY + FIST_Y, -0.72f + FIST_Z);
+		// it comes up from below the screen edge, from below the hilt (where the scabbard hand left)
 		float e = dev.minebleach.reiatsutest.core.combat.FpEase.smooth(frameLeftWeight);
-		// it comes up from below the screen edge, outside of the sword (two handed: from below the hilt, where the scabbard hand left)
-		Vector3f from = frameLeftTwo
-				? new Vector3f(target).add(-i * PARAMS.num("two.left.in_dx", 0.30f), PARAMS.num("two.left.in_dy", -0.90f), PARAMS.num("two.left.in_dz", 0.10f))
-				: new Vector3f(rest).add(-i * PARAMS.num("guard.left.in_dx", 0.25f), PARAMS.num("guard.left.in_dy", -0.8f), 0f);
-		Vector3f pos = new Vector3f(from).lerp(target, e);
-		Vector3f delta = pos.sub(rest);
-		m.push();
-		m.translate(-i * 0.56f, -0.52f + eqY, -0.72f);
-		m.translate(delta.x, delta.y, delta.z);
-		if (frameLeftTwo) {
-			// round3: the vanilla off hand arm points from the fist to the lower right of the screen; turned about the fist it comes in from the
-			// lower left, under the right arm, like the left hand of the third person pose. Camera frame, a left hander mirrors y and z.
-			float[] ar = TwoHandMotion.leftArmRot(PARAMS, left);
-			if (gl != null) {
-				ar = new float[] {ar[0] + gl[3], ar[1] + i * gl[4], ar[2] + i * gl[5]};
-			}
-			// round 5: the arm is rigid with the sword like the right one: it turns with the pose (about the fist), the standing turn is given in the sword frame
-			float[] pq = q.quaternion();
-			if (gl != null && gl[6] > 0.001f) {
-				// a hand that stays at its stance place (free) does not follow the sword's turn either
-				pq = FpGeometry.slerp(pq, (left ? frameBase.mirrored() : frameBase).quaternion(), Math.max(0f, Math.min(1f, gl[6])));
-			}
-			Quaternionf turn = new Quaternionf(pq[0], pq[1], pq[2], pq[3]).mul(new Quaternionf().rotationXYZ(ar[0] * RAD, ar[1] * RAD, ar[2] * RAD));
-			m.translate(-i * FIST_X, FIST_Y, FIST_Z);
-			m.multiply(turn);
-			m.translate(i * FIST_X, -FIST_Y, -FIST_Z);
-		}
-		FirstPersonHand.renderVanillaArmAt(mc, player, !left, m, vcp, light);
-		m.pop();
+		Vector3f from = new Vector3f(fist).add(-i * PARAMS.num("two.left.in_dx", 0.30f), PARAMS.num("two.left.in_dy", -0.90f), PARAMS.num("two.left.in_dz", 0.10f));
+		fist = new Vector3f(from).lerp(fist, e);
+		FpArms.draw(mc, player, !left, fist, blade, roll, vcp, light);
 	}
 }

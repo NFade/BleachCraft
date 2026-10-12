@@ -57,6 +57,7 @@ public abstract class HeldItemRendererMixin {
 		// BC5b: strike, block stance and parry recoil move the whole hand (arm and sword) as one rigid body, before the arm is drawn
 		reiatsu$fpMoved = false;
 		if (mode.isFirstPerson() && stack.getItem() instanceof ZanpakutoItem && entity == client.player) {
+			dev.minebleach.reiatsutest.client.model.FpArms.captureHand(matrices); // fp2: the hand frame before the pose is pushed
 			reiatsu$fpMoved = dev.minebleach.reiatsutest.client.model.FpMotion.push(client.player, stack, mode, leftHanded, matrices);
 		}
 		FirstPersonHand.render(entity, stack, mode, leftHanded, matrices, vertexConsumers, light);
@@ -119,6 +120,7 @@ public abstract class HeldItemRendererMixin {
 			at = @At("HEAD"))
 	private void reiatsu$fpFrame(float tickDelta, MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers,
 			net.minecraft.client.network.ClientPlayerEntity player, int light, CallbackInfo ci) {
+		dev.minebleach.reiatsutest.client.model.FpArms.begin(matrices); // fp2: base space of the hand pass (camera with bobbing and sway)
 		dev.minebleach.reiatsutest.client.model.FpMotion.frame(player, tickDelta);
 	}
 

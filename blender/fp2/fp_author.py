@@ -16,22 +16,24 @@ def euler_xyz(R):
     return [math.degrees(a), math.degrees(b), math.degrees(c)]
 
 
-def rest_info(char, left_handed=False, pivot_s=0.0):
+def rest_info(char, left_handed=False, pivot_s=0.0, rig=None):
     disp = fm.load_display(char)
     m2h = fm.model_to_hand(disp, left_handed)
     i = -1.0 if left_handed else 1.0
     lift = np.array(fm.LIFT) * np.array([i, 1, 1])
-    C = T(lift) @ m2h  # model -> hand frame, no pose
+    C0 = T(lift) @ m2h  # model -> hand frame, no pose, no rig
+    C = C0 @ rig if rig is not None else C0
     Rrest = C[:3, :3] / disp["scale"][0]
-    grip_h = pt(C, [0.5, 0.5, 0.5])
+    grip_h = pt(C0, [0.5, 0.5, 0.5])  # the pivot of the pose does not depend on the stow rig (FpMotion.pivot)
     along = pt(m2h, [0.5, 0.5 + pivot_s, 0.5]) - pt(m2h, [0.5, 0.5, 0.5])
     return C, Rrest, grip_h, grip_h + along
 
 
-def solve(char, grip_cam, blade_dir, roll_deg=0.0, pivot_s=0.0, grip_s=0.0, left_handed=False):
+def solve(char, grip_cam, blade_dir, roll_deg=0.0, pivot_s=0.0, grip_s=0.0, left_handed=False, sealed=False):
     """grip_cam: camera space position of the model point (0.5, 0.5+grip_s, 0.5); blade_dir: camera space unit vector of the blade (model +Y).
     Returns dict(pos=[3], rot=[3]) in the right-hander layout of FpPose."""
-    C, Rrest, grip_h, pv = rest_info(char, left_handed, pivot_s)
+    rig = fp_scene.stow_model(fm.load_display(char)) if sealed else None
+    C, Rrest, grip_h, pv = rest_info(char, left_handed, pivot_s, rig)
     H0 = fm.hand_origin(left_handed)
     D0 = Rrest @ np.array([0, 1.0, 0])
     D = np.asarray(blade_dir, float)

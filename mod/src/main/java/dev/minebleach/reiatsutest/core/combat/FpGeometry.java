@@ -68,28 +68,30 @@ public final class FpGeometry {
 		return r;
 	}
 
-	// ------------------------------------------------------------------ the hands of the stance
+	// ------------------------------------------------------------------ the hands of the stance (fp2: arms are placed by ArmIk)
+
+	/** Longest the arm may stretch to reach a far fist (see {@link ArmIk#place}). */
+	public static final float MAX_STRETCH = 1.8f;
+	/** Default place of the right fist on the hilt, model units from the grip along the blade (the cube sits under the tsuba with a visible hilt above it). */
+	public static final float RIGHT_S = TwoHandMotion.RIGHT_S;
 
 	/**
-	 * Description of how the hands hold the sword for a pose: the pivot of the rotations, the right arm (offset from the vanilla fist,
-	 * extra turn about the fist), the place and turn of the free left fist on the hilt.
+	 * Description of how the hands hold the sword for a pose: the pivot of the rotations, where the right fist is on the hilt, the place of the
+	 * free left fist on the hilt and the sword it is all measured on.
 	 *
 	 * @param pivot pivot of the pose rotations, hand frame
-	 * @param armOffset shift of the right arm from the vanilla empty hand (held offset plus {@code two.arm.shift}), hand frame
-	 * @param armRot turn of the right arm about its fist (degrees, Rx*Ry*Rz), sword frame
+	 * @param rightS place of the right fist, model units along the blade from the grip
 	 * @param leftPoint the hilt point of the left fist at rest, hand frame (lift included)
 	 * @param leftOffset shift of the left fist from the hilt point, turns with the sword
-	 * @param leftArmRot turn of the left arm about its fist (degrees), sword frame: it turns with the sword on top of this
 	 * @param left whether the left hand is on the hilt
+	 * @param rig the held sword
 	 */
-	public record Hold(float[] pivot, float[] armOffset, float[] armRot, float[] leftPoint, float[] leftOffset, float[] leftArmRot, boolean left) {
+	public record Hold(float[] pivot, float rightS, float[] leftPoint, float[] leftOffset, boolean left, FpRig rig) {
 		/** The two handed hold of the drawn sword with the shipped numbers of {@link TwoHandMotion} laid on {@code rig}. */
 		public static Hold twoHanded(FpParams pr, FpRig rig) {
-			float[] shift = pr.vec("two.arm.shift", TwoHandMotion.ARM_SHIFT);
-			float[] off = {HELD_ARM[0] + shift[0], HELD_ARM[1] + shift[1], HELD_ARM[2] + shift[2]};
-			return new Hold(rig.along(pr.num("two.pivot_s", TwoHandMotion.PIVOT_S)), off, pr.vec("two.arm.rot", TwoHandMotion.ARM_ROT),
+			return new Hold(rig.along(pr.num("two.pivot_s", TwoHandMotion.PIVOT_S)), pr.num("arm.right_s", RIGHT_S),
 					rig.along(pr.num("two.left.s", TwoHandMotion.LEFT_S)), pr.vec("two.left.offset", TwoHandMotion.LEFT_OFFSET),
-					pr.vec("two.left.arm.rot", TwoHandMotion.LEFT_ARM_ROT), pr.num("two.left.enabled", 1f) > 0.5f);
+					pr.num("two.left.enabled", 1f) > 0.5f, rig);
 		}
 	}
 
@@ -98,23 +100,37 @@ public final class FpGeometry {
 		return new float[] {p[0] + BASE[0], p[1] + BASE[1], p[2] + BASE[2]};
 	}
 
-	/** The right arm corners (hand frame) for a hold and a pose: the pose moves them rigidly with the sword. */
-	public static float[][] rightArm(Hold h, FpPose pose) {
-		float[] fist = {FIST[0] + h.armOffset[0], FIST[1] + h.armOffset[1], FIST[2] + h.armOffset[2]};
-		FpPose turn = FpPose.of(0f, 0f, 0f, h.armRot[0], h.armRot[1], h.armRot[2]);
-		float[][] src = RIGHT_ARM;
-		float[][] r = new float[8][];
-		for (int i = 0; i < 8; i++) {
-			float[] v = turn.applyDir(new float[] {src[i][0] - FIST[0], src[i][1] - FIST[1], src[i][2] - FIST[2]});
-			float[] p = {fist[0] + v[0], fist[1] + v[1], fist[2] + v[2]};
-			r[i] = pose.apply(h.pivot, p);
-		}
-		return r;
+	/** Centre of the right fist (hand frame) for a hold and a pose: a point of the hilt carried by the pose. */
+	public static float[] rightFist(Hold h, FpPose pose) {
+		return pose.apply(h.pivot, h.rig.along(h.rightS));
 	}
 
-	/** Centre of the right fist (hand frame) for a hold and a pose. */
-	public static float[] rightFist(Hold h, FpPose pose) {
-		return pose.apply(h.pivot, new float[] {FIST[0] + h.armOffset[0], FIST[1] + h.armOffset[1], FIST[2] + h.armOffset[2]});
+	/** Unit direction of the blade (camera space) for a pose. */
+	public static float[] bladeDir(Hold h, FpPose pose) {
+		return pose.applyDir(h.rig.axis());
+	}
+
+	/** The eight corners (camera space) of the arm box of a placement, in the corner order of {@link #corners}. */
+	public static float[][] armBox(boolean leftArm, ArmIk.Placement p) {
+		float[] lo = ArmIk.boxMin(leftArm, false);
+		float[] hi = ArmIk.boxMax(leftArm, false);
+		float[][] c = new float[8][];
+		int n = 0;
+		for (int xi = 0; xi < 2; xi++) {
+			for (int yi = 0; yi < 2; yi++) {
+				for (int zi = 0; zi < 2; zi++) {
+					c[n++] = ArmIk.place(p, new float[] {xi == 0 ? lo[0] : hi[0], yi == 0 ? lo[1] : hi[1], zi == 0 ? lo[2] : hi[2]});
+				}
+			}
+		}
+		return c;
+	}
+
+	/** The right arm corners (camera space) for a hold and a pose: the fist on the hilt, the arm to the shoulder. */
+	public static float[][] rightArm(Hold h, FpPose pose) {
+		float[] fist = cam(rightFist(h, pose));
+		ArmIk.Placement pl = ArmIk.place(false, false, fist, ArmIk.shoulder(false), bladeDir(h, pose), 0f, MAX_STRETCH);
+		return armBox(false, pl);
 	}
 
 	/**
@@ -140,25 +156,12 @@ public final class FpGeometry {
 		return t;
 	}
 
-	/**
-	 * The left arm corners (camera space, absolute) for a fist at {@code fist} (hand frame of the main hand): the vanilla left arm moved from
-	 * its empty fist to the target and turned about the fist: first by the standing arm turn {@code turnArm} plus the gesture's
-	 * {@code extraArm} (degrees Rx*Ry*Rz, sword frame), then by the rotation of the pose (the arm is rigid with the sword).
-	 */
-	public static float[][] leftArm(float[] fist, FpPose pose, FpPose stanceBase, float free, float[] turnArm, float[] extraArm) {
-		float[] target = cam(fist);
-		float[] rest = {-(BASE[0] + FIST[0]), BASE[1] + FIST[1], BASE[2] + FIST[2]};
-		float[] d = {target[0] - rest[0], target[1] - rest[1], target[2] - rest[2]};
-		float[] fl = {-FIST[0], FIST[1], FIST[2]};
+	/** The left arm corners (camera space, absolute) for a fist at {@code fist} (hand frame of the main hand): the arm is placed by {@link ArmIk}. */
+	public static float[][] leftArm(Hold h, float[] fist, FpPose pose, FpPose stanceBase, float free) {
 		float[] qp = slerp(pose.quaternion(), stanceBase.quaternion(), Math.max(0f, Math.min(1f, free)));
-		float[] qa = FpPose.of(0f, 0f, 0f, turnArm[0] + extraArm[0], turnArm[1] + extraArm[1], turnArm[2] + extraArm[2]).quaternion();
-		float[] q = FpPose.mul(qp, qa);
-		float[][] r = new float[8][];
-		for (int i = 0; i < 8; i++) {
-			float[] v = FpPose.rotate(q, new float[] {LEFT_ARM[i][0] - fl[0], LEFT_ARM[i][1] - fl[1], LEFT_ARM[i][2] - fl[2]});
-			r[i] = new float[] {-BASE[0] + d[0] + fl[0] + v[0], BASE[1] + d[1] + fl[1] + v[1], BASE[2] + d[2] + fl[2] + v[2]};
-		}
-		return r;
+		float[] axis = FpPose.rotate(qp, h.rig.axis());
+		float[] f = cam(fist);
+		return armBox(true, ArmIk.place(true, false, f, ArmIk.shoulder(true), axis, 0f, MAX_STRETCH));
 	}
 
 	/** Spherical interpolation of two unit quaternions (x, y, z, w) by the shortest way. */

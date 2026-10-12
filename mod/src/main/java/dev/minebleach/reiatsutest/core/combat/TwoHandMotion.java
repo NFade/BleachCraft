@@ -13,8 +13,8 @@ package dev.minebleach.reiatsutest.core.combat;
  * sword turns about the hands like a real two handed cut and the left hand barely moves while the right one sweeps.
  *
  * <ul>
- * <li>{@link #STANCE}: hands low and close to the player, the blade leaning about 27 degrees forward and a little to the right, the right fist
- * flush under the tsuba ({@link #ARM_SHIFT}, {@link #ARM_ROT}), the left fist right under it on the hilt.</li>
+ * <li>{@link #STANCE}: hands low and close to the player, the blade rising forward and to the right (about 40 degrees from the vertical), the tip in
+ * the upper part of the screen, the right fist under the tsuba with a stretch of hilt above it, the left fist right under it on the hilt.</li>
  * <li>{@link #keys}: wind, hit, follow and arc of the six strike profiles of {@link SwingMotion}; the sword returns to the stance.</li>
  * <li>{@link #guard}: the two handed block: the blade across the view, tip up to the left.</li>
  * </ul>
@@ -23,13 +23,12 @@ package dev.minebleach.reiatsutest.core.combat;
  */
 public final class TwoHandMotion {
 	/**
-	 * Two handed hold (round 5): hands low and close to the player, the blade leaning about 27 degrees forward and 15 degrees to the right
-	 * (the tip is in the upper third of the screen right of the middle), the right fist in the lower quarter near the middle (ndc 0.2, -0.56).
-	 * Laid out in a python model of the projection (vertical FOV 70) against the real sword model, UNVERIFIED in game.
+	 * Two handed hold (fp2): authored in Blender as camera space targets (grip at ndc 0.22 / -0.45, one block away, blade 40 degrees from the vertical forward
+	 * and 12 to the right, rolled so the curve of the blade shows), see blender/fp2/author_poses.py and design/results/fp2.md.
 	 */
-	public static final FpPose STANCE = FpPose.of(-0.47f, 0.105f, 0.06f, -36f, 0f, -8f);
-	/** Two handed block pose. */
-	public static final FpPose GUARD = FpPose.of(-0.32f, 0.22f, -0.06f, -14f, -16f, 54f);
+	public static final FpPose STANCE = FpPose.of(-0.413f, 0.211f, 0.179f, -44.38f, 61.77f, 3.76f);
+	/** Two handed block pose: the blade crosses the view from the lower right to the upper left (fp2, authored in Blender). */
+	public static final FpPose GUARD = FpPose.of(-0.26f, 0.337f, 0.191f, -63.88f, 10.68f, 51.1f);
 	/** Pivot of the rotations, model units along the blade from the grip (negative: towards the pommel). */
 	public static final float PIVOT_S = -0.10f;
 	/**
@@ -40,21 +39,8 @@ public final class TwoHandMotion {
 	public static final float LEFT_S = -0.115f;
 	/** Left fist shifted off the hilt (hand frame blocks, right hander layout, turns with the sword): zero, the hilt runs through the fist. */
 	public static final float[] LEFT_OFFSET = {0f, 0f, 0f};
-	/**
-	 * Turn of the free arm about its fist (degrees x y z, sword frame, right hander layout, a left hander mirrors y and z; the arm turns with the
-	 * sword on top of it): the box of the fist lies square to the hilt and the forearm comes in from the lower left (a mirror of {@link #ARM_ROT}).
-	 */
-	public static final float[] LEFT_ARM_ROT = {-15f, -30f, -35f};
-	/**
-	 * Shift of the right arm against the sword (hand frame blocks, right hander layout, turns with the sword): the fist moves up the hilt until
-	 * its box touches the underside of the tsuba (a gap of 0.004 blocks, nothing inside the tsuba).
-	 */
-	public static final float[] ARM_SHIFT = {0.0176f, 0.1436f, 0.0205f};
-	/** Turn of the right arm about its fist (degrees x y z, sword frame): the top of the fist square to the hilt, the forearm comes in from the lower right. */
-	public static final float[] ARM_ROT = {-15f, 30f, 35f};
-
-	private static final FpPose ARC_H = FpPose.of(0f, -0.03f, -0.10f, -10f, 0f, 0f);
-	private static final FpPose ARC_V = FpPose.of(0f, 0.08f, -0.12f, 0f, 0f, 0f);
+	/** Place of the right fist on the hilt, model units along the blade from the grip: the cube sits under the tsuba with a visible stretch of hilt above it. */
+	public static final float RIGHT_S = -0.03f;
 
 	private TwoHandMotion() {
 	}
@@ -108,24 +94,6 @@ public final class TwoHandMotion {
 		return new float[] {p[0] + r[0], p[1] + r[1], p[2] + r[2]};
 	}
 
-	/** Extra turn of the free arm about its fist (degrees x y z, already mirrored for a left hander with {@code mirrored}). */
-	public static float[] leftArmRot(FpParams pr, boolean mirrored) {
-		float[] a = pr.vec("two.left.arm.rot", LEFT_ARM_ROT);
-		return new float[] {a[0], mirrored ? -a[1] : a[1], mirrored ? -a[2] : a[2]};
-	}
-
-	/** Shift of the right arm against the sword (hand frame, mirrored x for a left hander), full weight. */
-	public static float[] armShift(FpParams pr, boolean mirrored) {
-		float[] a = pr.vec("two.arm.shift", ARM_SHIFT);
-		return new float[] {mirrored ? -a[0] : a[0], a[1], a[2]};
-	}
-
-	/** Turn of the right arm about its fist (degrees, mirrored y and z for a left hander), full weight. */
-	public static float[] armRot(FpParams pr, boolean mirrored) {
-		float[] a = pr.vec("two.arm.rot", ARM_ROT);
-		return new float[] {a[0], mirrored ? -a[1] : a[1], mirrored ? -a[2] : a[2]};
-	}
-
 	/** Strike keys of a profile for the two handed hold (absolute poses; {@code two.swing.scale} scales the deviation from the stance). */
 	public static SwingMotion.Keys keys(FpParams pr, SwingMotion.Profile p) {
 		FpPose[] d = defaults(p);
@@ -138,30 +106,30 @@ public final class TwoHandMotion {
 
 	private static FpPose key(FpParams pr, String base, FpPose def, FpPose stance, float k) {
 		FpPose v = FpPose.of(pr.vec(base + ".pos", def.pos()), pr.vec(base + ".rot", def.rot()));
-		return stance.plus(v.plus(stance.scaled(-1f)).scaled(k));
+		return k == 1f ? v : stance.lerp(v, k);
 	}
 
-	/** wind, hit, follow, arc of a profile. */
+	/** wind, hit, follow, arc of a profile (absolute poses authored in camera space, blender/fp2/author_poses.py; arcs: the slerp of the keys already curves). */
 	private static FpPose[] defaults(SwingMotion.Profile p) {
 		return switch (p) {
-			// from the right to the left across the view: the sword sweeps like a wiper through the vertical, tip ends forward-left
-			case H_R -> new FpPose[] {FpPose.of(0.00f, 0.14f, 0.10f, -4f, 6f, -40f), FpPose.of(-0.52f, 0.10f, -0.20f, -18f, -28f, 66f),
-					FpPose.of(-0.64f, 0.12f, -0.16f, -18f, -34f, 82f), ARC_H};
+			// from the right to the left across the view: blade up on the right, sweeping horizontally, ends pointing to the left
+			case H_R -> new FpPose[] {FpPose.of(0.047f, 0.353f, 0.138f, -6.77f, 63.7f, -9.51f), FpPose.of(-0.13f, 0.344f, -0.123f, -67.41f, -14.59f, 69.02f),
+					FpPose.of(-0.873f, 0.444f, -0.175f, 2.47f, 14.23f, 93.11f), FpPose.ZERO};
 			// backhand, from the left to the right
-			case H_L -> new FpPose[] {FpPose.of(-0.52f, 0.14f, 0.10f, -4f, -6f, 50f), FpPose.of(0.12f, 0.10f, -0.20f, -18f, 28f, -60f),
-					FpPose.of(0.22f, 0.12f, -0.16f, -18f, 34f, -76f), ARC_H};
-			// overhead chop from the upper right, ends forward-left and low
-			case V_R -> new FpPose[] {FpPose.of(0.04f, 0.40f, 0.10f, 10f, 0f, -18f), FpPose.of(-0.30f, 0.00f, -0.30f, -92f, 0f, 30f),
-					FpPose.of(-0.38f, -0.08f, -0.34f, -104f, 0f, 42f), ARC_V};
-			// overhead chop from the upper left, ends forward-right and low
-			case V_L -> new FpPose[] {FpPose.of(-0.40f, 0.40f, 0.10f, 10f, 0f, 20f), FpPose.of(0.04f, 0.00f, -0.30f, -92f, 0f, -30f),
-					FpPose.of(0.12f, -0.08f, -0.34f, -104f, 0f, -42f), ARC_V};
+			case H_L -> new FpPose[] {FpPose.of(-1.377f, 0.353f, 0.138f, -7.5f, -62.56f, 22.96f), FpPose.of(-1.2f, 0.344f, -0.123f, -63.46f, 16.59f, -55.54f),
+					FpPose.of(-0.457f, 0.444f, -0.175f, -4.28f, -14.52f, -81.78f), FpPose.ZERO};
+			// overhead chop from the upper right, a diagonal down to the lower left
+			case V_R -> new FpPose[] {FpPose.of(-0.327f, 0.561f, 0.148f, -20.93f, 63.19f, 3.81f), FpPose.of(-0.135f, 0.547f, -0.069f, -88.52f, -37f, 68.64f),
+					FpPose.of(-0.519f, 0.448f, -0.113f, -12.22f, -6.81f, 122.04f), FpPose.ZERO};
+			// overhead chop from the upper left
+			case V_L -> new FpPose[] {FpPose.of(-1.002f, 0.561f, 0.148f, -21.1f, -61.72f, 10.18f), FpPose.of(-1.195f, 0.547f, -0.069f, -78.31f, 40.84f, -59.89f),
+					FpPose.of(-0.811f, 0.448f, -0.113f, -17.6f, 9.31f, -108.19f), FpPose.ZERO};
 			// thrust: hands pulled back, then pushed forward with the blade nearly level
-			case STAB -> new FpPose[] {FpPose.of(-0.20f, 0.02f, 0.22f, -34f, 0f, 10f), FpPose.of(-0.20f, 0.04f, -0.52f, -84f, 0f, 8f),
-					FpPose.of(-0.20f, 0.04f, -0.58f, -88f, 0f, 8f), FpPose.ZERO};
+			case STAB -> new FpPose[] {FpPose.of(-0.321f, 0.34f, 0.401f, 10.44f, 64.18f, -72.83f), FpPose.of(0.074f, 0.304f, -0.151f, -108.32f, 43.29f, 32.99f),
+					FpPose.of(0.078f, 0.299f, -0.25f, -108.04f, 44.81f, 32.23f), FpPose.ZERO};
 			// rising cut
-			case UPPER -> new FpPose[] {FpPose.of(-0.34f, -0.10f, 0.06f, 10f, 0f, -36f), FpPose.of(-0.06f, 0.28f, -0.22f, -34f, 0f, 40f),
-					FpPose.of(-0.04f, 0.34f, -0.26f, -40f, 0f, 50f), FpPose.ZERO};
+			case UPPER -> new FpPose[] {FpPose.of(-0.535f, 0.296f, 0.191f, -73f, -37.59f, 72.54f), FpPose.of(-0.43f, 0.319f, 0.011f, -78.01f, 42.12f, 30.58f),
+					FpPose.of(-0.338f, 0.536f, 0.026f, 3.16f, 58.22f, -19.41f), FpPose.ZERO};
 		};
 	}
 }

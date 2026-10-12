@@ -79,7 +79,7 @@ public final class FpClamp {
 	public static float margin(FpGeometry.Hold h, FpRig rig, FpPose pose, FpPose stanceBase, float[] l, Limits lim) {
 		float min = Float.MAX_VALUE;
 		for (float[] c : FpGeometry.rightArm(h, pose)) {
-			min = Math.min(min, -(c[2] + FpGeometry.BASE[2]) - lim.near);
+			min = Math.min(min, -c[2] - lim.near);
 		}
 		min = Math.min(min, bladeMargin(h, rig, pose, lim.near, lim.aspect));
 		min = Math.min(min, screenMargin(FpGeometry.ndc(FpGeometry.cam(FpGeometry.rightFist(h, pose)), lim.aspect), lim));
@@ -130,9 +130,8 @@ public final class FpClamp {
 		float free = l == null ? 0f : l[6];
 		float[] shift = l == null ? null : new float[] {l[0], l[1], l[2]};
 		float[] fist = FpGeometry.leftFist(h, pose, stanceBase, free, shift);
-		float[] extra = l == null ? new float[3] : new float[] {l[3], l[4], l[5]};
 		float min = Float.MAX_VALUE;
-		for (float[] c : FpGeometry.leftArm(fist, pose, stanceBase, free, h.leftArmRot(), extra)) {
+		for (float[] c : FpGeometry.leftArm(h, fist, pose, stanceBase, free)) {
 			min = Math.min(min, -c[2] - lim.near);
 		}
 		return Math.min(min, screenMargin(FpGeometry.ndc(FpGeometry.cam(fist), lim.aspect), lim));

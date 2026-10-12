@@ -16,15 +16,17 @@ package dev.minebleach.reiatsutest.core.combat;
 public final class GuardMotion {
 	public static final FpPose GUARD = FpPose.of(-0.22f, 0.14f, -0.04f, -12f, -22f, 62f);
 	/**
-	 * Block with the sheathed sword (SEALED, round 5): the scabbard with the sword in it is carried as one body in both hands across the view,
-	 * the mouth near the right fist, the scabbard rising to the upper left at about 30 degrees on the screen (blade tilt 20 forward, 36 about the
-	 * view axis); the pivot is the grip. Laid out in a python model of the projection (vertical FOV 70) against the stow pose, UNVERIFIED in game.
+	 * Block with the sheathed sword (SEALED, fp2): the scabbard with the sword in it is carried as one body in both hands across the view, the blade
+	 * rising forward to the upper left (authored in Blender, blender/fp2/author_poses.py); the pivot is the grip.
 	 */
-	public static final FpPose SEALED_GUARD = FpPose.of(-0.212f, -0.15f, 0f, -20f, 0f, -36f);
-	/** Where the left hand holds the scabbard in the sealed block, model units (metres) from the grip along the scabbard. */
-	public static final float SEALED_LEFT_S = 0.18f;
-	/** Turn of the left forearm about its fist in the sealed block (degrees x y z, camera frame, right hander layout; a left hander mirrors y and z): the arm comes in from the lower left. */
-	public static final float[] SEALED_LEFT_ARM_ROT = {0f, -75f, 0f};
+	public static final FpPose SEALED_GUARD = FpPose.of(-0.278f, -0.116f, 0.201f, -10.6f, -43.29f, -31.1f);
+	/**
+	 * Resting pose of the sheathed sword (SEALED, fp2): the scabbard points forward to the left, the right hand on the hilt, the left hand under the
+	 * mouth of the scabbard. It is an absolute pose of the hand frame like the others; the draw takes it back to the hold ({@code sealed.idle_until}).
+	 */
+	public static final FpPose SEALED_IDLE = FpPose.of(-0.261f, -0.186f, 0.318f, -16.26f, -68.96f, -33.14f);
+	/** Where the left hand holds the scabbard, model units from the grip along the scabbard (just above the mouth, which is at 0.066). */
+	public static final float SEALED_LEFT_S = 0.12f;
 	private static final FpPose PARRY_KICK = FpPose.of(0f, 0.04f, -0.14f, -16f, 0f, 5f);
 	private static final FpPose HIT_KICK = FpPose.of(0f, -0.01f, 0.05f, 7f, 0f, -2f);
 	private static final float[] LEFT_OFFSET = {0f, -0.02f, 0.06f};
@@ -63,20 +65,14 @@ public final class GuardMotion {
 		return FpPose.ZERO.lerp(g, FpEase.smooth(w));
 	}
 
+	/** The resting pose of the sheathed sword (absolute), numbers from {@code guard.sealed_idle.pos / guard.sealed_idle.rot}. */
+	public static FpPose sealedIdle(FpParams pr) {
+		return FpPose.of(pr.vec("guard.sealed_idle.pos", SEALED_IDLE.pos()), pr.vec("guard.sealed_idle.rot", SEALED_IDLE.rot()));
+	}
+
 	/** The sealed block pose of the main hand and the scabbard (absolute), numbers from {@code guard.sealed.pos / guard.sealed.rot}. */
 	public static FpPose sealedGuard(FpParams pr) {
 		return FpPose.of(pr.vec("guard.sealed.pos", SEALED_GUARD.pos()), pr.vec("guard.sealed.rot", SEALED_GUARD.rot()));
-	}
-
-	/** Place of the left hand on the scabbard (metres from the grip) while the sealed block is up, {@code guard.sealed.left_s}. */
-	public static float sealedLeftS(FpParams pr) {
-		return pr.num("guard.sealed.left_s", SEALED_LEFT_S);
-	}
-
-	/** Turn of the left forearm about its fist in the sealed block ({@code guard.sealed.left_arm_rot}), mirrored for a left hander. */
-	public static float[] sealedLeftArmRot(FpParams pr, boolean mirrored) {
-		float[] a = pr.vec("guard.sealed.left_arm_rot", SEALED_LEFT_ARM_ROT);
-		return new float[] {a[0], mirrored ? -a[1] : a[1], mirrored ? -a[2] : a[2]};
 	}
 
 	/** Slow hold breathing of the sword while the guard is up (zero without the guard). */

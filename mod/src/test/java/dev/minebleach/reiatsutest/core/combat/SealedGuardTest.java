@@ -107,10 +107,5 @@ class SealedGuardTest {
 			}
 		};
 		assertArrayEquals(new float[] {1, 2, 3}, GuardMotion.sealedGuard(o).rot(), 0f);
-		assertEquals(0.3f, GuardMotion.sealedLeftS(o), 0f);
-		float[] r = GuardMotion.sealedLeftArmRot(FpParams.DEFAULTS, false);
-		float[] m = GuardMotion.sealedLeftArmRot(FpParams.DEFAULTS, true);
-		assertEquals(-r[1], m[1], 1e-6f);
-		assertTrue(r[1] < -30f, "the forearm comes in from the lower left");
 	}
 }

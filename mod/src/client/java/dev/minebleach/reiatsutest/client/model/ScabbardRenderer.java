@@ -125,32 +125,13 @@ public final class ScabbardRenderer {
 		drawMesh(om.sayaMesh(), m.peek(), vc, light);
 
 		if (ClientOptions.showFirstPersonHand) {
-			// the other hand holds the scabbard: the point of the axis nearest to the vanilla fist of that side
+			// fp2: the other hand holds the scabbard at a point of its axis (rigid with it through the draw, the pull back and the block); the arm
+			// comes from the shoulder (ArmIk)
 			Matrix4f pm = new Matrix4f(baseInv).mul(m.peek().getPositionMatrix());
-			Vector3f g = pm.transformPosition(new Vector3f(0.5f, 0.5f, 0.5f));
-			Vector3f tip = pm.transformPosition(new Vector3f(0.5f, 1.5f, 0.5f));
-			Vector3f d = new Vector3f(tip).sub(g);
-			float unit = d.length(); // one metre of blade in camera space
-			d.div(unit);
-			Vector3f fist = new Vector3f(-i * FIST_X, FIST_Y, FIST_Z);
-			float s = new Vector3f(fist).sub(g).dot(d) / unit; // metres from the grip along the blade
-			s = Math.max(0.12f, Math.min(0.70f, s));
-			s = FpMotion.sealedLeftS(s); // the block: the hand takes its own place on the scabbard
-			Vector3f hold = new Vector3f(g).fma(s * unit, d);
-			Vector3f delta = hold.sub(fist);
-			if (DEBUG && (System.nanoTime() / 1_000_000_000L) % 2 == 0) {
-				dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[scabbard] g={} d={} unit={} s={} delta={}", g, d, unit, s, delta);
-			}
-			if (posed) {
-				m.pop();
-				posed = false;
-			}
-			m.pop();
-			m.push();
-			m.translate(-i * 0.56f, -0.52f + eqY, -0.72f);
-			m.translate(delta.x, delta.y, delta.z);
-			FpMotion.turnSealedLeftArm(m, left); // the block: the forearm comes in from the lower left
-			FirstPersonHand.renderVanillaArmAt(MinecraftClient.getInstance(), player, !left, m, vcp, light);
+			float s = FpMotion.num("guard.sealed.left_s", dev.minebleach.reiatsutest.core.combat.GuardMotion.SEALED_LEFT_S);
+			Vector3f fist = pm.transformPosition(new Vector3f(0.5f, 0.5f + s, 0.5f));
+			Vector3f d = pm.transformDirection(new Vector3f(0f, 1f, 0f)).normalize();
+			FpArms.draw(MinecraftClient.getInstance(), player, !left, fist, d, 0f, vcp, light);
 		}
 		if (posed) {
 			m.pop();

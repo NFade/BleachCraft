@@ -48,7 +48,7 @@ class TwoHandMotionTest {
 		FpParams d = FpParams.DEFAULTS;
 		assertTrue(TwoHandMotion.stance(d, 0f).isNearZero());
 		assertArrayEquals(TwoHandMotion.STANCE.pos(), TwoHandMotion.stance(d, 1f).pos(), EPS);
-		assertArrayEquals(TwoHandMotion.STANCE.rot(), TwoHandMotion.stance(d, 1f).rot(), EPS);
+		assertArrayEquals(TwoHandMotion.STANCE.rot(), TwoHandMotion.stance(d, 1f).rot(), 0.01f);
 		// halfway the smoothstep is exactly half
 		float[] h = TwoHandMotion.stance(d, 0.5f).pos();
 		assertEquals(TwoHandMotion.STANCE.pos()[0] * 0.5f, h[0], EPS);
@@ -60,9 +60,9 @@ class TwoHandMotionTest {
 		float[] d = TwoHandMotion.stance(FpParams.DEFAULTS, 1f).applyDir(FpRig.DEFAULT.axis());
 		float forward = (float) Math.toDegrees(Math.asin(-d[2]));
 		float right = (float) Math.toDegrees(Math.asin(d[0]));
-		assertTrue(forward > 20f && forward < 32f, "leans forward about 25 degrees: " + forward);
+		assertTrue(forward > 35f && forward < 50f, "leans forward about 40 degrees: " + forward);
 		assertTrue(right > 3f && right < 20f, "a little to the right: " + right);
-		assertTrue(d[1] > 0.8f, "still upright: " + d[1]);
+		assertTrue(d[1] > 0.65f, "still upright-ish: " + d[1]);
 		// the rest of the one handed hold leans back towards the camera
 		assertTrue(FpRig.DEFAULT.axis()[2] > 0f);
 	}
@@ -82,8 +82,6 @@ class TwoHandMotionTest {
 			float[] lf = FpGeometry.ndc(FpGeometry.cam(FpGeometry.leftFist(h, st, st, 0f, null)), aspect);
 			assertTrue(lf[1] < rf[1] - 0.2f && lf[1] > -1.15f, "the left fist below the right one, at the bottom edge: " + lf[1]);
 		}
-		// hands lower and nearer to the player than the old stance (0.27 up, level)
-		assertTrue(TwoHandMotion.STANCE.pos()[1] < 0.15f && TwoHandMotion.STANCE.pos()[2] > 0f);
 	}
 
 	@Test
@@ -114,28 +112,14 @@ class TwoHandMotionTest {
 	}
 
 	@Test
-	void leftFistGripsTheHiltAndTheArmComesFromTheLowerLeft() {
+	void leftFistGripsTheHilt() {
 		FpParams d = FpParams.DEFAULTS;
 		float[] pivot = along(TwoHandMotion.PIVOT_S);
 		float[] on = along(TwoHandMotion.LEFT_S);
-		// round 5: the hilt runs through the fist (no sideways offset); the arm is turned square to the hilt and comes in from the lower left
+		// the hilt runs through the fist (no sideways offset); the arm is placed by ArmIk
 		assertArrayEquals(on, TwoHandMotion.leftFist(d, FpPose.ZERO, pivot, on), 1e-6f);
-		float[] r = TwoHandMotion.leftArmRot(d, false);
-		float[] m = TwoHandMotion.leftArmRot(d, true);
-		assertTrue(r[1] < -15f && r[2] < -15f, "forearm swung to the left: " + r[1]);
-		assertEquals(-r[1], m[1], EPS);
-		assertEquals(-r[2], m[2], EPS);
-		assertEquals(r[0], m[0], EPS);
-		// the arm shift and the right forearm turn mirror the other way for a left hander
-		float[] sh = TwoHandMotion.armShift(d, false);
-		assertEquals(-sh[0], TwoHandMotion.armShift(d, true)[0], EPS);
-		assertEquals(sh[1], TwoHandMotion.armShift(d, true)[1], EPS);
-		float[] ar = TwoHandMotion.armRot(d, false);
-		assertTrue(ar[1] > 15f && ar[2] > 15f, "right forearm from the lower right: " + ar[1]);
-		assertEquals(-ar[1], TwoHandMotion.armRot(d, true)[1], EPS);
 		// a sideways offset is carried by the rotation of the sword and mirrors for a left hander
-		FpParams o = params(Map.of("two.left.arm.rot", new float[] {5f, -50f, 3f}, "two.left.offset", new float[] {-0.1f, 0f, 0f}));
-		assertArrayEquals(new float[] {5f, -50f, 3f}, TwoHandMotion.leftArmRot(o, false), EPS);
+		FpParams o = params(Map.of("two.left.offset", new float[] {-0.1f, 0f, 0f}));
 		float[] side = TwoHandMotion.leftFist(o, FpPose.ZERO, pivot, on);
 		assertEquals(on[0] - 0.1f, side[0], 1e-5f);
 		assertEquals(on[0] + 0.1f, TwoHandMotion.leftFist(o, FpPose.ZERO, pivot, on, true)[0], 1e-5f);

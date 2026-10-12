@@ -181,7 +181,7 @@ def arm_dir_vanilla(left=False):
     return dirv(arm_vanilla_chain(left), [0, -1, 0])
 
 
-def arm_place(left, fist, shoulder_pt, blade_dir=None, roll=0.0, slim=False):
+def arm_place(left, fist, shoulder_pt, blade_dir=None, roll=0.0, slim=False, max_stretch=1.8):
     """Model matrix (arm model space -> camera space) that puts the fist centre at `fist` and points the arm axis to `shoulder_pt`."""
     lo, hi, fm = arm_geom(left, slim)
     RV = arm_vanilla_chain(left).copy()
@@ -207,5 +207,7 @@ def arm_place(left, fist, shoulder_pt, blade_dir=None, roll=0.0, slim=False):
             R = axis_angle(d, best) @ R
     if roll:
         R = axis_angle(d, roll) @ R
-    M = T(fist) @ R @ T(-fm[0], -fm[1], -fm[2])
+    dist = float(np.linalg.norm(np.asarray(shoulder_pt, float) - np.asarray(fist, float)))
+    k = max(1.0, min(max_stretch, 1.0 + max(0.0, dist - 1.0) / 0.625))
+    M = T(fist) @ R @ np.diag([1.0, k, 1.0, 1.0]) @ T(-fm[0], -fm[1], -fm[2])
     return M

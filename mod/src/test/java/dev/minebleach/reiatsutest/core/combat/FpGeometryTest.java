@@ -56,69 +56,70 @@ class FpGeometryTest {
 		assertEquals(0.257f, c0[2], 2e-3f);
 	}
 
-	@Test
-	void rightFistIsFlushUnderTheTsubaWithoutEnteringIt() {
-		FpParams p = FpParams.DEFAULTS;
-		FpGeometry.Hold h = FpGeometry.Hold.twoHanded(p, RIG);
-		float[][] c = FpGeometry.rightArm(h, FpPose.ZERO);
-		float[] axis = RIG.axis();
-		float[] grip = RIG.along(0f);
-		float tsubaBottom = dot(sub(RIG.hand(0.5f, FpRig.TSUBA_Y, 0.5f), grip), axis);
-		float top = -9f;
-		float topWide = -9f;
-		for (int a = 0; a <= 12; a++) {
-			for (int b = 0; b <= 24; b++) {
-				for (int d = 0; d <= 12; d++) {
-					float[] q = sub(boxPoint(c, a / 12f, b / 24f, d / 12f), grip);
+	/** Height along the blade (blocks above the grip) of the highest and lowest point of an arm box within {@code rad} blocks of the blade axis. */
+	private static float[] heightRange(float[][] corners, float[] gripCam, float[] axis, float rad) {
+		float lo = 9f;
+		float hi = -9f;
+		for (int a = 0; a <= 10; a++) {
+			for (int b = 0; b <= 20; b++) {
+				for (int d = 0; d <= 10; d++) {
+					float[] q = sub(boxPoint(corners, a / 10f, b / 20f, d / 10f), gripCam);
 					float height = dot(q, axis);
-					float rad = (float) Math.sqrt(Math.max(0f, dot(q, q) - height * height));
-					if (rad < FpRig.TSUBA_RADIUS) {
-						top = Math.max(top, height - tsubaBottom);
-					}
-					if (rad < 0.14f) {
-						topWide = Math.max(topWide, height - tsubaBottom);
+					float r = (float) Math.sqrt(Math.max(0f, dot(q, q) - height * height));
+					if (r < rad) {
+						lo = Math.min(lo, height);
+						hi = Math.max(hi, height);
 					}
 				}
 			}
 		}
-		assertTrue(top <= 0f, "nothing of the fist inside the tsuba: " + top);
-		assertTrue(top > -0.02f, "no visible gap under the tsuba: " + top);
-		// the top of the fist is flat against the tsuba: the wide tsuba of Senbonzakura (0.13 blocks across the blade) is not entered either
-		assertTrue(topWide <= 0.004f, "nothing of the fist inside a wide tsuba: " + topWide);
+		return new float[] {lo, hi};
+	}
+
+	@Test
+	void rightFistIsUnderTheTsubaWithAStretchOfHiltAbove() {
+		FpParams p = FpParams.DEFAULTS;
+		FpGeometry.Hold h = FpGeometry.Hold.twoHanded(p, RIG);
+		FpPose st = TwoHandMotion.stance(p, 1f);
+		float[][] c = FpGeometry.rightArm(h, st);
+		float[] axis = FpGeometry.bladeDir(h, st);
+		float[] grip = FpGeometry.cam(st.apply(h.pivot(), RIG.along(0f)));
+		float tsuba = dot(sub(FpGeometry.cam(st.apply(h.pivot(), RIG.hand(0.5f, FpRig.TSUBA_Y, 0.5f))), grip), axis);
+		float[] range = heightRange(c, grip, axis, 0.05f);
+		assertTrue(range[1] < tsuba - 0.02f, "the top of the fist is under the tsuba: " + range[1] + " vs " + tsuba);
+		assertTrue(range[1] > tsuba - 0.12f, "but not far under it (a visible stretch of hilt, not a gap in the grip): " + range[1]);
 	}
 
 	@Test
 	void leftFistIsUnderTheRightOneAndThePommelSticksOutBelow() {
 		FpParams p = FpParams.DEFAULTS;
 		FpGeometry.Hold h = FpGeometry.Hold.twoHanded(p, RIG);
-		FpPose zero = FpPose.ZERO;
-		float[] axis = RIG.axis();
-		float[] grip = RIG.along(0f);
-		float[] fist = FpGeometry.leftFist(h, zero, zero, 0f, null);
-		float[][] lc = FpGeometry.leftArm(fist, zero, zero, 0f, h.leftArmRot(), new float[3]);
-		float lowL = 9f;
-		float highL = -9f;
-		for (int a = 0; a <= 8; a++) {
-			for (int b = 0; b <= 24; b++) {
-				for (int d = 0; d <= 8; d++) {
-					float[] q = boxPoint(lc, a / 8f, b / 24f, d / 8f);
-					q = new float[] {q[0] - FpGeometry.BASE[0], q[1] - FpGeometry.BASE[1], q[2] - FpGeometry.BASE[2]};
-					q = sub(q, grip);
-					float height = dot(q, axis);
-					float rad = (float) Math.sqrt(Math.max(0f, dot(q, q) - height * height));
-					if (rad < 0.04f) {
-						lowL = Math.min(lowL, height);
-						highL = Math.max(highL, height);
-					}
-				}
-			}
-		}
-		float pommel = dot(sub(RIG.hand(0.5f, FpRig.POMMEL_Y, 0.5f), grip), axis);
-		assertTrue(highL > lowL, "the hilt runs through the left fist");
-		assertTrue(lowL > pommel, "the pommel sticks out below the left fist: " + lowL + " vs " + pommel);
+		FpPose st = TwoHandMotion.stance(p, 1f);
+		float[] axis = FpGeometry.bladeDir(h, st);
+		float[] grip = FpGeometry.cam(st.apply(h.pivot(), RIG.along(0f)));
+		float[] fist = FpGeometry.leftFist(h, st, st, 0f, null);
+		float[][] lc = FpGeometry.leftArm(h, fist, st, st, 0f);
+		float[] range = heightRange(lc, grip, axis, 0.04f);
+		float pommel = dot(sub(FpGeometry.cam(st.apply(h.pivot(), RIG.hand(0.5f, FpRig.POMMEL_Y, 0.5f))), grip), axis);
+		assertTrue(range[1] > range[0], "the hilt runs through the left fist");
+		float fistHeight = dot(sub(FpGeometry.cam(fist), grip), axis);
+		assertTrue(fistHeight - 0.125f > pommel - 0.01f, "the pommel sticks out below the left fist cube: " + (fistHeight - 0.125f) + " vs " + pommel);
 		// the left fist is below the right one on the hilt
-		float[] rc = FpGeometry.rightFist(h, zero);
-		assertTrue(dot(sub(fist, grip), axis) < dot(sub(rc, grip), axis) - 0.15f);
+		float[] rc = FpGeometry.cam(FpGeometry.rightFist(h, st));
+		assertTrue(dot(sub(FpGeometry.cam(fist), grip), axis) < dot(sub(rc, grip), axis) - 0.15f);
+	}
+
+	@Test
+	void bothArmsComeFromTheBodyNotFromTheAir() {
+		FpParams p = FpParams.DEFAULTS;
+		FpGeometry.Hold h = FpGeometry.Hold.twoHanded(p, RIG);
+		for (FpPose pose : new FpPose[] {TwoHandMotion.stance(p, 1f), TwoHandMotion.guard(p), GuardMotion.sealedIdle(p)}) {
+			float[][] r = FpGeometry.rightArm(h, pose);
+			// the far end of the arm (y = 0 face) is lower than the fist and nearer to the camera: it leaves the picture at the bottom
+			float[] far = boxPoint(r, 0.5f, 0f, 0.5f);
+			float[] near = boxPoint(r, 0.5f, 1f, 0.5f);
+			assertTrue(far[1] < near[1] && far[2] > near[2], "the arm comes from below and behind the fist");
+		}
 	}
 
 	@Test

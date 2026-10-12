@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.client.model;
 
 import dev.minebleach.reiatsutest.client.ClientOptions;
+import dev.minebleach.reiatsutest.core.combat.FpGeometry;
 import dev.minebleach.reiatsutest.core.obj.DrawRig;
 import dev.minebleach.reiatsutest.core.obj.ItemManifest.ArmPose;
 import dev.minebleach.reiatsutest.registry.ZanpakutoItem;
@@ -65,11 +66,6 @@ public final class FirstPersonHand {
 		renderVanillaArm(mc, player, left, new ArmPose(new float[3], 0f, new float[3], new float[3], 1f, true), m, vcp, light);
 	}
 
-	/** Where the vanilla fist of an empty hand is, in the hand frame of a held item (from HeldItemRenderer#renderArmHoldingItem), blocks. */
-	private static final float FIST_X = 0.134f;
-	private static final float FIST_Y = -0.018f;
-	private static final float FIST_Z = -0.316f;
-
 	/**
 	 * Hand frame lift of the sword and the scabbard (manifest or dev override) for a first person zanpakuto stack of the main
 	 * hand with a scabbard rig, else null. The left hand mirrors x.
@@ -80,34 +76,6 @@ public final class FirstPersonHand {
 		}
 		float[] l = HeldPose.of(obj.manifest()).lift();
 		return new Vector3f((left ? -1f : 1f) * l[0], l[1], l[2]);
-	}
-
-	/**
-	 * Offset (hand frame) of the fist from the vanilla empty-hand fist F at the current draw progress, or null when the item has
-	 * no scabbard rig. In the held pose it is the manifest {@code held.arm} offset; the fist keeps its place along the hilt
-	 * (a fixed point of the sword model, the held fist position taken back into the model space), so it travels with the sword
-	 * through the draw and the sword can be lifted against the hand. {@code rollOut} receives the forearm roll in degrees.
-	 */
-	private static Vector3f gripOffset(ObjItemBakedModel obj, ItemStack stack, AbstractClientPlayerEntity player,
-			Transformation tr, boolean left, boolean leftHanded, float[] rollOut) {
-		Vector3f lift = lift(obj, stack, player, left);
-		if (lift == null) {
-			return null;
-		}
-		float mx = left ? -1f : 1f;
-		HeldPose.Values hv = HeldPose.of(obj.manifest());
-		float p = DrawTracker.effectiveProgress(player, stack);
-		DrawRig rig = obj.rig(left);
-		rollOut[0] = rig.armRoll(p, hv.rollStow(), hv.rollHeld());
-		Matrix4f toHand = HandMath.modelToHand(tr, leftHanded);
-		Vector3f fist = new Vector3f(mx * FIST_X, FIST_Y, FIST_Z);
-		Vector3f armHeld = new Vector3f(fist).add(mx * hv.arm()[0], hv.arm()[1], hv.arm()[2]); // fist position in the held pose
-		Vector3f heldGrip = toHand.transformPosition(new Vector3f(0.5f, 0.5f, 0.5f)).add(lift);
-		// the fist as a fixed offset (model space) from the grip point of the sword
-		Vector3f cm = new Matrix3f(toHand).invert().transform(new Vector3f(armHeld).sub(heldGrip));
-		float[] pt = rig.at(p).apply(new float[] {0.5f + cm.x, 0.5f + cm.y, 0.5f + cm.z});
-		Vector3f now = toHand.transformPosition(new Vector3f(pt[0], pt[1], pt[2])).add(lift);
-		return now.sub(fist);
 	}
 
 	public static void render(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, boolean leftHanded,
@@ -128,27 +96,19 @@ public final class FirstPersonHand {
 		boolean slim = player.getSkinTextures().model() == SkinTextures.Model.SLIM;
 
 		if (pose.vanilla()) {
-			// B4 step 2: while the sword is drawn or sheathed the fist follows the grip of the sword (draw rig)
-			float[] roll = new float[1];
-			Vector3f follow = gripOffset(obj, stack, player, tr, left, leftHanded, roll);
-			if (follow != null) {
-				m.push();
-				m.translate(follow.x, follow.y, follow.z);
-				// round 5, two handed hold: the fist sits flush under the tsuba (shift up the hilt) and its box is turned square to the hilt
-				float[] shift = FpMotion.armShift(leftHanded);
-				if (shift != null) {
-					m.translate(shift[0], shift[1], shift[2]);
-				}
-				// the forearm comes in from the edge of the screen on the side of the hand: roll it about the view axis through the fist
-				m.translate(mx * FIST_X, FIST_Y, FIST_Z);
-				m.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(mx * roll[0]));
-				float[] turn = FpMotion.armRot(leftHanded);
-				if (turn != null) {
-					m.multiply(new Quaternionf().rotationXYZ(turn[0] * DEG, turn[1] * DEG, turn[2] * DEG));
-				}
-				m.translate(-mx * FIST_X, -FIST_Y, -FIST_Z);
-				renderVanillaArm(mc, player, left, pose, m, vcp, light);
-				m.pop();
+			Vector3f lift = lift(obj, stack, player, left);
+			if (lift != null && FpArms.hasHand()) {
+				// fp2: the right fist is a point of the hilt (rigid with the sword and its draw rig), the arm comes from the shoulder (ArmIk)
+				Matrix4f toHand = HandMath.modelToHand(tr, leftHanded);
+				Matrix4f pose4 = FpMotion.currentPoseMatrix(obj, stack, player, tr, leftHanded, toHand);
+				Matrix4f sword = FpArms.hand().mul(pose4).translate(lift).mul(toHand);
+				FpArms.setSword(sword);
+				float p = DrawTracker.effectiveProgress(player, stack);
+				Matrix4f withRig = new Matrix4f(sword).mul(HandMath.toMatrix(obj.rig(left).at(p)));
+				float s = FpMotion.num("arm.right_s", FpGeometry.RIGHT_S);
+				Vector3f fist = withRig.transformPosition(new Vector3f(0.5f, 0.5f + s, 0.5f));
+				Vector3f blade = withRig.transformDirection(new Vector3f(0f, 1f, 0f)).normalize();
+				FpArms.draw(mc, player, left, fist, blade, (left ? -1f : 1f) * FpMotion.num("arm.right_roll", 0f), vcp, light);
 			} else {
 				renderVanillaArm(mc, player, left, pose, m, vcp, light);
 			}

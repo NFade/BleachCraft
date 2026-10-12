@@ -20,24 +20,57 @@ public record FpPose(float[] pos, float[] rot) {
 		return new FpPose(pos.clone(), rot.clone());
 	}
 
+	/**
+	 * Interpolation of two poses: the shift linearly, the rotation by a spherical interpolation of the two orientations (the shortest great arc;
+	 * a straight line between Euler angles bends and turns the blade through odd attitudes when the poses are far apart, fp2).
+	 */
 	public FpPose lerp(FpPose b, float t) {
 		float[] p = new float[3];
-		float[] r = new float[3];
 		for (int i = 0; i < 3; i++) {
 			p[i] = pos[i] + (b.pos[i] - pos[i]) * t;
-			r[i] = rot[i] + (b.rot[i] - rot[i]) * t;
 		}
-		return new FpPose(p, r);
+		return new FpPose(p, eulerOf(FpGeometry.slerp(quaternion(), b.quaternion(), t)));
 	}
 
+	/**
+	 * Adds a delta: the shifts add, the delta rotation is applied after this rotation about the camera axes (the same as adding the Euler angles
+	 * while the delta is small, and well behaved when the pose already is turned a lot).
+	 */
 	public FpPose plus(FpPose b) {
 		float[] p = new float[3];
-		float[] r = new float[3];
 		for (int i = 0; i < 3; i++) {
 			p[i] = pos[i] + b.pos[i];
-			r[i] = rot[i] + b.rot[i];
 		}
-		return new FpPose(p, r);
+		boolean zero = Math.abs(b.rot[0]) < 1e-6f && Math.abs(b.rot[1]) < 1e-6f && Math.abs(b.rot[2]) < 1e-6f;
+		if (zero) {
+			return new FpPose(p, rot.clone());
+		}
+		return new FpPose(p, eulerOf(mul(b.quaternion(), quaternion())));
+	}
+
+	/** Euler angles (degrees x y z, {@code Rx * Ry * Rz}) of a unit quaternion (x, y, z, w). */
+	public static float[] eulerOf(float[] q) {
+		double x = q[0];
+		double y = q[1];
+		double z = q[2];
+		double w = q[3];
+		double r02 = 2 * (x * z + y * w);
+		double a;
+		double b;
+		double c;
+		if (Math.abs(r02) > 0.999999) {
+			b = r02 > 0 ? Math.PI / 2 : -Math.PI / 2;
+			// gimbal: only a + c (or a - c) is defined, put it all in a
+			double r10 = 2 * (x * y + z * w);
+			double r11 = 1 - 2 * (x * x + z * z);
+			a = r02 > 0 ? Math.atan2(r10, r11) : Math.atan2(-r10, r11);
+			c = 0;
+		} else {
+			b = Math.asin(r02);
+			a = Math.atan2(-2 * (y * z - x * w), 1 - 2 * (x * x + y * y));
+			c = Math.atan2(-2 * (x * y - z * w), 1 - 2 * (y * y + z * z));
+		}
+		return new float[] {(float) Math.toDegrees(a), (float) Math.toDegrees(b), (float) Math.toDegrees(c)};
 	}
 
 	public FpPose scaled(float k) {

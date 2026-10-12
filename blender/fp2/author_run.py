@@ -11,16 +11,16 @@ from fp_author import unit, ndc_to_cam
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BLENDER = "D:/SteamLibrary/steamapps/common/Blender/blender.exe"
-SP = open("/tmp/sp.txt").read().strip() if os.path.exists("/tmp/sp.txt") else HERE
+SP = os.environ.get("FP_SP", HERE)
 
 
 def spec_for(char, state, grip_ndc, depth, blade, roll, right_s, left_s, pivot_s=-0.10, left_on=True, extra=None):
     g = ndc_to_cam(grip_ndc[0], grip_ndc[1], depth)
-    pose = fa.solve(char, g, unit(*blade), roll, pivot_s=pivot_s)
+    pose = fa.solve(char, g, unit(*blade), roll, pivot_s=pivot_s, grip_s=(extra or {}).get("grip_s", 0.0), sealed=(state == "sealed"))
     spec = {"char": char, "state": state, "pose": pose, "pivot_s": pivot_s,
             "arms": {"mode": "ik", "right": {"on": True, "s": right_s}, "left": {"on": left_on, "s": left_s}}}
     if extra:
-        spec.update(extra)
+        spec.update({k: v for k, v in extra.items() if k != "grip_s"})
     return spec
 
 
@@ -37,3 +37,17 @@ def render(specs, outdir):
 
 if __name__ == "__main__":
     pass
+
+
+def overlay(path, out=None):
+    """Hotbar and the HUD plate footprint (GUI scale 3 at 1280x720) on a render, for the readability check."""
+    from PIL import Image, ImageDraw
+    im = Image.open(path).convert("RGB")
+    d = ImageDraw.Draw(im, "RGBA")
+    w, h = im.size
+    hb_w, hb_h = 182 * 3, 22 * 3
+    d.rectangle([w // 2 - hb_w // 2, h - hb_h, w // 2 + hb_w // 2, h], outline=(255, 255, 255, 140), fill=(0, 0, 0, 60))
+    d.rectangle([6 * 3, 6 * 3, 6 * 3 + 160 * 3, 6 * 3 + 40 * 3], outline=(255, 255, 255, 120))
+    d.line([w // 2 - 8, h // 2, w // 2 + 8, h // 2], fill=(255, 255, 255, 200), width=2)
+    d.line([w // 2, h // 2 - 8, w // 2, h // 2 + 8], fill=(255, 255, 255, 200), width=2)
+    im.save(out or path)

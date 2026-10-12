@@ -4,6 +4,6 @@
 	"package": "dev.minebleach.reiatsutest.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"priority": 1100,
-	"client": ["HeldItemRendererMixin", "GameRendererMixin", "InGameHudMixin", "BossBarHudAccessor", "PostEffectProcessorAccessor", "BcFirstPersonModeMixin", "PlayerEntityModelMixin"],
+	"client": ["HeldItemRendererMixin", "GameRendererMixin", "InGameHudMixin", "BossBarHudAccessor", "PostEffectProcessorAccessor", "BcFirstPersonModeMixin", "PlayerEntityModelMixin", "PlayerEntityRendererMixin"],
 	"injectors": { "defaultRequire": 1 }
 }
