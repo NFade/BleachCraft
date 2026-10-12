@@ -43,9 +43,16 @@ public final class BladeRowLayout {
 
 	/** Layout scale (rows.scale): spacing, corridor half width, rank step and stagger are multiplied by it. 1.0 = the original numbers. */
 	public final double space;
+	/** Distance from the axis to the innermost rank, blocks (the open lane around the caster is twice this wide). */
+	public final double halfWidth;
 
 	private BladeRowLayout(int ranks, int perRank, long seed, double space) {
+		this(ranks, perRank, seed, SPACING * space, RANK_BASE * space, RANK_STEP * space, STAGGER * space, START_AHEAD, space);
+	}
+
+	private BladeRowLayout(int ranks, int perRank, long seed, double spacing, double rankBase, double rankStep, double stagger, double startAhead, double space) {
 		this.space = space;
+		this.halfWidth = rankBase;
 		this.ranks = ranks;
 		this.perRank = perRank;
 		this.n = 2 * ranks * perRank;
@@ -61,8 +68,8 @@ public final class BladeRowLayout {
 		for (int s = -1; s <= 1; s += 2) {
 			for (int k = 0; k < ranks; k++) {
 				for (int j = 0; j < perRank; j++) {
-					double a = START_AHEAD - space * (SPACING * j + STAGGER * k);
-					double off = space * (RANK_BASE + RANK_STEP * k);
+					double a = startAhead - (spacing * j + stagger * k);
+					double off = rankBase + rankStep * k;
 					along[i] = (float) a;
 					across[i] = (float) (s * off);
 					side[i] = (byte) s;
@@ -89,6 +96,16 @@ public final class BladeRowLayout {
 		int r = Math.max(2, Math.min(5, (req + 199) / 200));
 		int per = Math.max(1, req / (2 * r));
 		return new BladeRowLayout(r, per, seed, sp);
+	}
+
+	/**
+	 * The open lane of the Byakuya bankai (vfx2): ONE rank per side, {@code perSide} blades on each, {@code halfWidth} blocks either side of the axis
+	 * (a clear lane around the caster), {@code spacing} blocks between neighbours, the first blade {@code startAhead} blocks ahead of the feet and the
+	 * rest running behind. About 10 blades in all by default (5 per side), not the 200 of the old two rank corridor.
+	 */
+	public static BladeRowLayout lane(int perSide, long seed, double halfWidth, double spacing, double startAhead) {
+		int per = Math.max(1, Math.min(250, perSide));
+		return new BladeRowLayout(1, per, seed, Math.max(0.5, spacing), Math.max(1.0, halfWidth), RANK_STEP, 0.0, startAhead, 1.0);
 	}
 
 	/** Time at which the last blade has settled (2.2 s for 200 blades, 2.8 s for 1000). */
@@ -137,7 +154,7 @@ public final class BladeRowLayout {
 
 	/** Half width of the corridor up to the innermost rank, blocks. */
 	public double corridorHalfWidth() {
-		return RANK_BASE * space;
+		return halfWidth;
 	}
 
 	/** World position of the base of blade i: rows frame to world for a release yaw in degrees (Minecraft convention) and feet. */

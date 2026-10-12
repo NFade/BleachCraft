@@ -72,6 +72,9 @@ final class Phase6Rows {
 			// the rows are static at the release point: the player flies to the tower after the release (the first shot is at 0.5 s or later)
 			step(prefix + " (to the tower)", 1, Phase6Rows::towerView);
 		}
+		if (view.equals("topdown")) {
+			step(prefix + " (to the sky)", 1, Phase6Rows::topView);
+		}
 		stepUntil(prefix + " (frozen 0)", 2, 20 * 12, () -> { }, () -> FxClock.frozen);
 		step(prefix + " (shot 0)", 3, () -> shot(prefix + "_t" + ms[0]));
 		for (int k = 1; k < ms.length; k++) {
@@ -88,6 +91,14 @@ final class Phase6Rows {
 			FxClock.unfreeze();
 			FxTimelines.setFreezeAt(-1);
 		});
+	}
+
+	/** Straight down from 22 blocks above the release point (the camera of the third person back view is a few blocks further up). */
+	static void topView() {
+		mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+		mc.player.getAbilities().flying = true;
+		mc.player.sendAbilitiesUpdate();
+		cmd("tp @s 0.5 -38 0.5 0 90");
 	}
 
 	/** Side tower 20 blocks up and 15 blocks to the side of the corridor, looking across it. */

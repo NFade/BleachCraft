@@ -100,4 +100,29 @@ class BladeRowLayoutTest {
 		assertEquals(3.6, Math.abs(s.across[s.perRank]), 1e-5, "second rank 1.2 x 0.5 further out");
 		assertEquals(0.2, BladeRowLayout.of(200, 1, 0.0).space, 1e-9, "clamped");
 	}
+
+	@Test
+	void laneIsOneRankPerSideWithAWideOpenCorridor() {
+		BladeRowLayout l = BladeRowLayout.lane(5, 1, 6.5, 2.5, 5.0);
+		assertEquals(10, l.n, "about 10 blades in all");
+		assertEquals(1, l.ranks);
+		assertEquals(5, l.perRank);
+		for (int i = 0; i < l.n; i++) {
+			assertEquals(6.5, Math.abs(l.across[i]), 1e-5, "one rank: every blade on the same line each side");
+			assertEquals(1.0, l.scale[i], 1e-5);
+		}
+		assertEquals(5.0, l.along[0], 1e-5);
+		assertEquals(-5.0, l.along[4], 1e-5);
+		assertEquals(10.0, l.length(), 1e-5);
+		assertEquals(6.5, l.corridorHalfWidth(), 1e-9);
+		assertTrue(l.completionTime() < 2.0, "short rows complete quickly: " + l.completionTime());
+		assertEquals(-6.5, l.across[0], 1e-5, "left side first");
+		assertEquals(6.5, l.across[5], 1e-5);
+	}
+
+	@Test
+	void laneClampsItsInputs() {
+		assertEquals(2, BladeRowLayout.lane(0, 1, 6, 2.5, 5).n);
+		assertEquals(500, BladeRowLayout.lane(10000, 1, 6, 2.5, 5).n);
+	}
 }

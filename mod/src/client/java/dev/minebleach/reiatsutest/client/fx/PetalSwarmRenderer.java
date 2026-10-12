@@ -164,10 +164,15 @@ public final class PetalSwarmRenderer {
 		double fpSize = FxTune.d("swarm.fpSize", 0.35);
 		double fpGlowMin = FxTune.d("swarm.fpGlowMin", 0.15);
 		double petalScale = FxTune.d("swarm.petalScale", 1.8);
+		boolean ribbonOn = FxTune.d("swarm.ribbon", 1.0) > 0.5;
+		if (ribbonOn) {
+			tuneRibbon();
+		}
 		double glintPower = FxTune.d("swarm.glintPower", 16);
 		float uc = mesh != null ? mesh.centreU : 0.313f;
 		float vc = mesh != null ? mesh.centreV : 0.055f;
 		boolean allStreaks = FxConfig.effectQuality > 0.4;
+		int haloMask = ribbonOn ? (int) FxTune.d("swarm.rbHaloMask", 15) : 7;
 		int streakStride = FxConfig.effectQuality >= 1.0 ? 10 : FxConfig.effectQuality >= 0.5 ? 20 : 0;
 		for (SwarmFx.State st : states.values()) {
 			Entity owner = world.getEntityById(st.ownerId);
@@ -186,6 +191,10 @@ public final class PetalSwarmRenderer {
 			boolean fp = st.ownerId == (mc.player != null ? mc.player.getId() : -1) && !FxClient.forceRemote() && mc.options.getPerspective().isFirstPerson()
 					&& FxTune.d("swarm.fpClearing", 1.0) > 0.5;
 			anyFp |= fp;
+			// third person (others, and the owner in F5): dense spiral ribbons around the body; the owner's first person keeps the classic orbit (vfx2)
+			boolean ownerFirstPerson = st.ownerId == (mc.player != null ? mc.player.getId() : -1) && !FxClient.forceRemote() && mc.options.getPerspective().isFirstPerson();
+			boolean ribbon = ribbonOn && !ownerFirstPerson;
+			updateVelocity(st, feet);
 			int stride = dOwner <= 16 ? 1 : dOwner <= 32 ? 2 : 4;
 			double t = st.time();
 			st.t = t;
@@ -204,6 +213,12 @@ public final class PetalSwarmRenderer {
 			mode.feet(feet.x, feet.y, feet.z); // steerable attack: the server head path is in world axes, positions are feet relative
 			if (prev != null) {
 				prev.feet(feet.x, feet.y, feet.z);
+			}
+			mode.ribbonIdle = ribbon;
+			mode.velocity(st.vx, st.vy, st.vz);
+			if (prev != null) {
+				prev.ribbonIdle = ribbon;
+				prev.velocity(st.vx, st.vy, st.vz);
 			}
 			double blend = prev != null ? SwarmMath.blendWeight(t - mode.t0) : 1.0;
 			int n = st.n;
@@ -253,6 +268,9 @@ public final class PetalSwarmRenderer {
 					continue;
 				}
 				double sc = SwarmMath.scale(st.slots, i, t, mode) * shrink;
+				if (ribbon) {
+					sc *= SwarmMath.ribbonScale(st.slots, i, t, mode);
+				}
 				if (sc <= 0.001) {
 					continue;
 				}
@@ -354,7 +372,7 @@ public final class PetalSwarmRenderer {
 					}
 				}
 				// halo: 1 petal in 8 gets a soft glow
-				if ((i & 7) == 0 && dl < 30) {
+				if ((i & haloMask) == 0 && dl < 30) {
 					addItem(2, x, y, z, 0, 0, 0, 1f, fade);
 				}
 			}
@@ -374,6 +392,50 @@ public final class PetalSwarmRenderer {
 		lastMs = (System.nanoTime() - t0) / 1.0e6;
 		sumMs += lastMs;
 		frames++;
+	}
+
+	/** Reads the third person ribbon numbers from fx_override.json (swarm.rb*), defaults = the shipped look. */
+	private static void tuneRibbon() {
+		SwarmMath.RibbonParams p = SwarmMath.RIBBON;
+		p.streams = Math.max(1, (int) FxTune.d("swarm.rbStreams", 5));
+		p.turns = FxTune.d("swarm.rbTurns", 1.5);
+		p.hMid = FxTune.d("swarm.rbHMid", 1.1);
+		p.rangeMin = FxTune.d("swarm.rbRangeMin", 1.3);
+		p.rangeMax = FxTune.d("swarm.rbRangeMax", 2.3);
+		p.rBody = FxTune.d("swarm.rbRBody", 0.85);
+		p.rEnd = FxTune.d("swarm.rbREnd", 1.55);
+		p.flow = FxTune.d("swarm.rbFlow", 0.22);
+		p.flowVar = FxTune.d("swarm.rbFlowVar", 0.45);
+		p.spin = FxTune.d("swarm.rbSpin", 0.10);
+		p.sigmaV = FxTune.d("swarm.rbSigmaV", 0.22);
+		p.sigmaR = FxTune.d("swarm.rbSigmaR", 0.07);
+		p.lag = FxTune.d("swarm.rbLag", 0.35);
+		p.sizeMin = FxTune.d("swarm.rbSizeMin", 0.6);
+		p.sizeMax = FxTune.d("swarm.rbSizeMax", 1.5);
+	}
+
+	/** Smoothed owner velocity from the interpolated feet (the ribbon ends trail behind a moving owner). */
+	private static void updateVelocity(SwarmFx.State st, Vec3d feet) {
+		double dt = FxClock.dt;
+		if (st.velFeet == null) {
+			st.velFeet = feet;
+			return;
+		}
+		if (dt < 1e-4 || FxClock.frozen) {
+			return;
+		}
+		double k = 1.0 - Math.exp(-dt * 8.0);
+		double rx = (feet.x - st.velFeet.x) / dt;
+		double ry = (feet.y - st.velFeet.y) / dt;
+		double rz = (feet.z - st.velFeet.z) / dt;
+		double sp = Math.sqrt(rx * rx + ry * ry + rz * rz);
+		if (sp > 14.0) {
+			rx = ry = rz = 0; // a teleport, not a run
+		}
+		st.vx += (rx - st.vx) * k;
+		st.vy += (ry - st.vy) * k;
+		st.vz += (rz - st.vz) * k;
+		st.velFeet = feet;
 	}
 
 	private static int shade(int argb, float k) {

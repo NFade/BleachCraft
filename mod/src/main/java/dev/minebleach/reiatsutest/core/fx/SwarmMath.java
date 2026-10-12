@@ -30,6 +30,14 @@ public final class SwarmMath {
 		public double fx;
 		public double fy;
 		public double fz;
+		/**
+		 * Third person (vfx2): the resting swarm is a few dense petal ribbons that wrap the body ({@link #ribbonIdle}) instead of the loose orbit. The renderer sets it
+		 * per frame (false for the owner's first person, which keeps the classic orbit); {@code vx, vy, vz} = owner velocity in blocks per second (the ribbon ends trail behind a moving owner).
+		 */
+		public boolean ribbonIdle;
+		public double vx;
+		public double vy;
+		public double vz;
 
 		public Mode(Kind kind, double t0) {
 			this.kind = kind;
@@ -47,6 +55,12 @@ public final class SwarmMath {
 			fx = x;
 			fy = y;
 			fz = z;
+		}
+
+		public void velocity(double x, double y, double z) {
+			vx = x;
+			vy = y;
+			vz = z;
 		}
 
 		/** True when the attack ribbon follows a recorded server head path. */
@@ -176,10 +190,10 @@ public final class SwarmMath {
 	/** Position of petal i at swarm time t in the given mode; {@code yaw} is the owner body yaw in radians (0 = +Z). */
 	public static void position(Slots s, int i, double t, Mode m, double yaw, double[] out) {
 		switch (m.kind) {
-			case RELEASE -> release(s, i, t - m.t0, t, yaw, out);
+			case RELEASE -> release(s, i, t - m.t0, t, m, yaw, out);
 			case ATTACK -> attack(s, i, t - m.t0, t, m, yaw, out);
 			case BARRIER -> barrier(s, i, t - m.t0, t, m, out);
-			default -> orbit(s, i, t, out);
+			default -> idle(s, i, t, m, out);
 		}
 	}
 
@@ -212,6 +226,116 @@ public final class SwarmMath {
 		out[2] = Math.sin(ang) * r + nz;
 	}
 
+	// ------------------------------------------------------------------------------------------ third person ribbons (vfx2)
+
+	/** Numbers of the third person petal ribbons (the client tunes them from fx_override.json {@code swarm.rb*}). */
+	public static final class RibbonParams {
+		/** Number of ribbons that wrap the body. */
+		public int streams = 5;
+		/** Windings around the body along one ribbon. */
+		public double turns = 1.5;
+		/** Height of the middle of the ribbons and how far a ribbon climbs or falls from its start to its end. */
+		public double hMid = 1.1;
+		public double rangeMin = 1.3;
+		public double rangeMax = 2.3;
+		/** Radius at the waist of the ribbon and at its two ends (the ribbon flares out and trails off there). */
+		public double rBody = 0.85;
+		public double rEnd = 1.55;
+		/** Flow along the ribbon in ribbons per second, and the spread of the speed between petals (0.45 = from 55 to 145 percent). */
+		public double flow = 0.22;
+		public double flowVar = 0.45;
+		/** Turn of the whole pattern in revolutions per second. */
+		public double spin = 0.10;
+		/** Thickness of the band: vertical and radial sigma at the waist (half of it at the ends). */
+		public double sigmaV = 0.22;
+		public double sigmaR = 0.07;
+		/** Seconds that the ribbon ends lag behind a moving owner. */
+		public double lag = 0.35;
+		/** Size of a petal as a multiple of the base size, per petal from min to max. */
+		public double sizeMin = 0.6;
+		public double sizeMax = 1.5;
+	}
+
+	public static final RibbonParams RIBBON = new RibbonParams();
+
+	private static double ribbonPhase(Slots s, int i, double t) {
+		RibbonParams p = RIBBON;
+		double f = 1.0 + p.flowVar * (2.0 * s.r2[i] - 1.0);
+		double x = s.u[i] + t * p.flow * f;
+		return x - Math.floor(x);
+	}
+
+	/** 0 at the two ends of a ribbon, 1 in the middle. */
+	private static double ribbonEnv(double s01) {
+		return Math.sin(Math.PI * s01);
+	}
+
+	/**
+	 * Resting swarm in the third person: petal i flows along one of {@code streams} spiral ribbons that start low (or high), wrap the body one and a half times,
+	 * pass close to the waist and trail off again, in a band a few centimetres thick. Pure function of (seed, i, t), feet relative.
+	 */
+	public static void ribbonIdle(Slots s, int i, double t, double[] out) {
+		RibbonParams p = RIBBON;
+		int k = i % Math.max(1, p.streams);
+		double s01 = ribbonPhase(s, i, t);
+		double env = ribbonEnv(s01);
+		long sd = s.seed;
+		double th0 = 2 * Math.PI * k / Math.max(1, p.streams) + 0.3 * FxHash.signed(sd, k, 91);
+		double turns = p.turns * (1.0 + 0.18 * FxHash.signed(sd, k, 92));
+		double range = p.rangeMin + (p.rangeMax - p.rangeMin) * FxHash.unit(sd, k, 93);
+		double dirV = (k & 1) == 0 ? 1.0 : -1.0;
+		double ang = th0 + 2 * Math.PI * (turns * s01 + p.spin * t);
+		double h = p.hMid + dirV * (s01 - 0.5) * range + 0.10 * FxHash.signed(sd, k, 94) + 0.07 * Math.sin(2 * Math.PI * (2.0 * s01) + th0);
+		double r = (p.rBody + (p.rEnd - p.rBody) * (1.0 - Math.pow(env, 0.8))) * (1.0 + 0.07 * FxHash.signed(sd, k, 95));
+		double rr = r + s.g1[i] * p.sigmaR * (0.5 + 0.5 * env);
+		double hh = h + s.g2[i] * p.sigmaV * (0.5 + 0.5 * env);
+		out[0] = Math.cos(ang) * rr;
+		out[1] = Math.max(0.03, hh);
+		out[2] = Math.sin(ang) * rr;
+	}
+
+	/** Weight 0..1 of the lag behind a moving owner: 1 at the ribbon ends, 0 in the middle. */
+	private static double ribbonTrail(Slots s, int i, double t) {
+		double env = ribbonEnv(ribbonPhase(s, i, t));
+		return Math.pow(1.0 - env, 1.5);
+	}
+
+	/**
+	 * Size factor of petal i in the ribbon: a fixed size per petal (small and large ones) and, at rest, shrinking to nothing where the ribbon starts and ends so
+	 * petals do not pop in or out. The mode decides whether the petal sits on its ribbon (petals in flight keep their size).
+	 */
+	public static double ribbonScale(Slots s, int i, double t, Mode m) {
+		RibbonParams p = RIBBON;
+		double sizeVar = p.sizeMin + (p.sizeMax - p.sizeMin) * s.uh[i];
+		boolean resting = m.kind == Kind.IDLE || (m.kind == Kind.ATTACK && !s.ribbon(i));
+		if (!resting) {
+			return sizeVar;
+		}
+		double env = Math.pow(ribbonEnv(ribbonPhase(s, i, t)), 0.6);
+		double w = m.kind == Kind.IDLE ? smooth(0, 0.6, t - m.t0) : 1.0;
+		return sizeVar * lerp(1.0, env, w);
+	}
+
+	/** The resting position of petal i: the third person ribbons when {@code m.ribbonIdle}, else the classic orbit (first person of the owner). */
+	public static void idle(Slots s, int i, double t, Mode m, double[] out) {
+		idle(s, i, t, m.ribbonIdle, m.vx, m.vy, m.vz, out);
+	}
+
+	/** Same with the view given directly; {@code vx, vy, vz} = owner velocity (blocks per second) for the trailing ends. */
+	public static void idle(Slots s, int i, double t, boolean ribbon, double vx, double vy, double vz, double[] out) {
+		if (!ribbon) {
+			orbit(s, i, t, out);
+			return;
+		}
+		ribbonIdle(s, i, t, out);
+		if (vx != 0 || vy != 0 || vz != 0) {
+			double k = RIBBON.lag * ribbonTrail(s, i, t);
+			out[0] -= vx * k;
+			out[1] = Math.max(0.03, out[1] - vy * k);
+			out[2] -= vz * k;
+		}
+	}
+
 	/** Feet relative position of the hand (right 0.35, up 1.15, forward 0.45 of the body yaw). */
 	public static void hand(double yaw, double[] out) {
 		double fx = -Math.sin(yaw);
@@ -225,7 +349,7 @@ public final class SwarmMath {
 
 	// ------------------------------------------------------------------------------------------ release / Chire (4.1)
 
-	private static void release(Slots s, int i, double tm, double t, double yaw, double[] out) {
+	private static void release(Slots s, int i, double tm, double t, Mode m, double yaw, double[] out) {
 		double ti = 0.4 * i / Math.max(1, s.n);
 		double tau = tm - ti;
 		double[] hand = new double[3];
@@ -244,7 +368,7 @@ public final class SwarmMath {
 			return;
 		}
 		if (tau >= 0.5) {
-			orbit(s, i, t, out);
+			idle(s, i, t, m, out);
 			return;
 		}
 		// 25 degree cone around forward (half angle 12.5), the stream
@@ -262,7 +386,7 @@ public final class SwarmMath {
 		double sz = tipZ + dz * dist;
 		double w = smooth(0.2, 0.5, tau);
 		double[] o = new double[3];
-		orbit(s, i, t, o);
+		idle(s, i, t, m, o);
 		out[0] = lerp(sx, o[0], w);
 		out[1] = lerp(sy, o[1], w);
 		out[2] = lerp(sz, o[2], w);
@@ -306,7 +430,7 @@ public final class SwarmMath {
 	 */
 	private static void attackTracked(Slots s, int i, double t, Mode m, double[] out) {
 		double[] o = new double[3];
-		orbit(s, i, t, o);
+		idle(s, i, t, m, o);
 		HeadTrack tr = m.track;
 		if (!s.ribbon(i)) {
 			out[0] = o[0];
@@ -382,7 +506,7 @@ public final class SwarmMath {
 			return;
 		}
 		double[] o = new double[3];
-		orbit(s, i, t, o);
+		idle(s, i, t, m, o);
 		if (!s.ribbon(i) || tm < 0) {
 			out[0] = o[0];
 			out[1] = o[1];
@@ -497,7 +621,7 @@ public final class SwarmMath {
 
 	private static void barrier(Slots s, int i, double tm, double t, Mode m, double[] out) {
 		double[] o = new double[3];
-		orbit(s, i, t, o);
+		idle(s, i, t, m, o);
 		if (tm < 0) {
 			out[0] = o[0];
 			out[1] = o[1];

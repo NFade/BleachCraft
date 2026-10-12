@@ -58,6 +58,11 @@ public final class SwarmFx {
 		double trackT0;
 		/** Last head position received (world), for the glow and sparks of the attack. */
 		public Vec3d headWorld;
+		/** Owner velocity (blocks per second, smoothed) for the trailing ribbon ends of the third person swarm, and the feet of the last sample. */
+		public double vx;
+		public double vy;
+		public double vz;
+		public Vec3d velFeet;
 
 		State(int ownerId, long seed, int n, double epoch) {
 			this.ownerId = ownerId;
