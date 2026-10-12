@@ -6,7 +6,7 @@ import java.util.List;
  * Decides which effect anchors the server spawns, ends or re-phases for an {@code effect_event} id (VFX_STORYBOARD 1.2
  * "Anchor rules", S1 to S3). Pure data: {@code ServerFx} glue executes the commands with real entities.
  * <ul>
- * <li>SWARM (Byakuya shikai petals): spawned by id 3, follows the owner, ended by 4 (the sword is dropped), 10, 11 and every reset.</li>
+ * <li>SWARM (Byakuya shikai petals): spawned by id 3, follows the owner, ended by 10, 11 and every reset. It is NOT ended by 4 (the bankai drop) nor by the bankai falling back to shikai (r7).</li>
  * <li>ROWS (Byakuya bankai blades): spawned by id 4, STATIC at the release point (S2), ended by 10, 11 and every reset.</li>
  * <li>ROWS phase (S3): id 32 sets {@link #PHASE_SCATTERED}, id 33 {@link #PHASE_CONSUMED} with the current game time.</li>
  * </ul>
@@ -35,7 +35,8 @@ public final class AnchorPlan {
 	public static List<Command> forEffect(int effectId) {
 		return switch (effectId) {
 			case 3 -> List.of(Command.of(Op.END_SWARM), Command.of(Op.END_ROWS), Command.of(Op.SPAWN_SWARM));
-			case 4 -> List.of(Command.of(Op.END_SWARM), Command.of(Op.END_ROWS), Command.of(Op.SPAWN_ROWS));
+			// r7: the petal swarm of the shikai and the big bankai blades are two different effects: the swarm stays through the bankai, only the rows are (re)spawned
+			case 4 -> List.of(Command.of(Op.END_ROWS), Command.of(Op.SPAWN_ROWS));
 			case 10, 11 -> List.of(Command.of(Op.END_SWARM), Command.of(Op.END_ROWS));
 			case 32 -> List.of(new Command(Op.ROWS_PHASE, PHASE_SCATTERED));
 			case 33 -> List.of(new Command(Op.ROWS_PHASE, PHASE_CONSUMED));
@@ -46,6 +47,14 @@ public final class AnchorPlan {
 	/** Death, logout, dimension change, hand lost, seal without an event: everything of that owner ends. */
 	public static List<Command> forReset() {
 		return List.of(Command.of(Op.END_SWARM), Command.of(Op.END_ROWS));
+	}
+
+	/**
+	 * The bankai is over. When it falls back to SHIKAI (the 45 s timer) the zanpakuto stays released: only the big blades end and the petal swarm
+	 * around the owner goes on (r7 fix: the swarm used to be dropped with the rest and never came back). Any other end is a full reset.
+	 */
+	public static List<Command> forBankaiEnd(boolean backToShikai) {
+		return backToShikai ? List.of(Command.of(Op.END_ROWS)) : forReset();
 	}
 
 	/** Flat look yaw in degrees (Minecraft convention: 0 = +Z, 90 = -X) of a look vector, 0 for a vertical look. */

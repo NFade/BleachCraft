@@ -177,4 +177,13 @@ class BladeRowLayoutTest {
 		assertEquals(10, med.n);
 		assertEquals(2.0, med.along[0] - med.along[1], 1e-5);
 	}
+
+	@Test
+	void theDefaultRowsStandBehindTheCharacter() {
+		// r7 user request: the big blades appear behind the character (the first blade 2 blocks behind the feet, the rest further back)
+		BladeRowLayout l = BladeRowLayout.laneDefault(BladeRowLayout.DEFAULT_PER_SIDE, 1);
+		for (int i = 0; i < l.n; i++) {
+			assertTrue(l.along[i] <= -2.0 + 1e-6, "blade " + i + " at " + l.along[i]);
+		}
+	}
 }

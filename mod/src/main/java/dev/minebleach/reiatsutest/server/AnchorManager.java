@@ -57,6 +57,31 @@ final class AnchorManager {
 		BY_OWNER.remove(p.getUuid());
 	}
 
+	/**
+	 * The bankai of the owner is over. Back to SHIKAI (the timer): only the big blades end, the petal swarm around the owner goes on; a Byakuya
+	 * whose swarm anchor is missing gets a new one (r7: the swarm used to vanish with the bankai and never came back). Any other end resets everything.
+	 */
+	static void onBankaiEnd(ServerPlayerEntity p, boolean backToShikai, boolean byakuya) {
+		if (!backToShikai) {
+			reset(p);
+			return;
+		}
+		for (AnchorPlan.Command c : AnchorPlan.forBankaiEnd(true)) {
+			end(p, c.op() == AnchorPlan.Op.END_SWARM);
+		}
+		Anchors a = BY_OWNER.get(p.getUuid());
+		boolean swarmAlive = a != null && a.swarm() != null && find(p.getServer(), a.swarm()) != null;
+		if (byakuya && !swarmAlive) {
+			spawn(p, FxAnchorKind.SWARM, p.getId() * 31 + p.age);
+		}
+	}
+
+	/** Number of ROWS anchors alive for a player (the bankai audit: the swarm of the shikai is allowed to live on after the bankai). */
+	static int countRows(ServerPlayerEntity p) {
+		Anchors a = BY_OWNER.get(p.getUuid());
+		return a != null && a.rows() != null && find(p.getServer(), a.rows()) != null ? 1 : 0;
+	}
+
 	static void clearAll() {
 		BY_OWNER.clear();
 	}

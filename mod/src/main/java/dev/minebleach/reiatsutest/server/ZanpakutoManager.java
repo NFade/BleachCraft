@@ -519,7 +519,8 @@ public final class ZanpakutoManager {
 
 	/**
 	 * THE cleanup of a bankai. Every end reason (45 s timer, seal, death, logout, dimension change, spectator, dev reset) reaches it
-	 * through {@link StateEvent.BankaiEnded}, which the machine emits exactly once per bankai: effect anchors (rows, swarm) and the Rukia
+	 * through {@link StateEvent.BankaiEnded}, which the machine emits exactly once per bankai: the rows anchor (and the shikai swarm anchor unless the
+	 * bankai only falls back to SHIKAI, r7: then the petal swarm around the owner goes on) and the Rukia
 	 * field anchor are discarded now, the frost territory starts to thaw now (fast when the owner is dead, gone or elsewhere), scheduled
 	 * phases of bankai abilities are dropped, and the clients get {@link EffectIds#BANKAI_CLEANUP} so every bankai effect of that owner
 	 * ends there too. Idempotent: running it twice finds nothing left.
@@ -529,7 +530,8 @@ public final class ZanpakutoManager {
 		UUID id = p.getUuid();
 		boolean fast = why == Trigger.DEATH || why == Trigger.LOGOUT || why == Trigger.DIMENSION_CHANGE;
 		int anchors = AnchorManager.count(p);
-		AnchorManager.reset(p);
+		// r7: back to SHIKAI (the timer) the petal swarm around the owner goes on, only the big blades end; every other end resets both
+		AnchorManager.onBankaiEnd(p, why == Trigger.BANKAI_CAP, who == CharacterId.BYAKUYA);
 		int fieldAnchors = RukiaServerFx.endOf(id);
 		boolean territory = BankaiField.end(id);
 		int fields = p.getServer() == null ? 0 : FrostField.endOf(p.getServer(), id, fast);
@@ -554,7 +556,7 @@ public final class ZanpakutoManager {
 	 */
 	public static int[] bankaiLeftovers(ServerPlayerEntity p) {
 		int phases = SCHEDULER.countFor(p.getUuid(), a -> a.requiredState == ZanpakutoState.BANKAI);
-		return new int[] {AnchorManager.count(p), RukiaServerFx.liveOf(p.getUuid()), FrostField.liveFields(p.getUuid()), phases, BankaiField.live(p.getUuid())};
+		return new int[] {AnchorManager.countRows(p), RukiaServerFx.liveOf(p.getUuid()), FrostField.liveFields(p.getUuid()), phases, BankaiField.live(p.getUuid())};
 	}
 
 	// ------------------------------------------------------------------ barrier: control immunity (mech2 task 1)

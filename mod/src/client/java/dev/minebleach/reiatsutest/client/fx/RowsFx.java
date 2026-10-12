@@ -228,7 +228,7 @@ public final class RowsFx {
 
 	/**
 	 * The wall of slab blades of the Byakuya bankai (r7): ONE rank per side, {@code rows.perSide} 10 blades each at {@code rows.halfWidth} 7 blocks from the axis,
-	 * {@code rows.spacing} 1.0 between neighbours (they almost touch: the slab is 0.28 thick, 1.5 wide), from {@code rows.startAhead} 6 ahead to behind. The count follows
+	 * {@code rows.spacing} 1.0 between neighbours (they almost touch: the slab is 0.28 thick, 1.5 wide), from {@code rows.startAhead} -2 (2 blocks BEHIND the feet, r7 user request) further back. The count follows
 	 * the quality tier ({@code bankaiBladeCount} 200 / 100 / 50 = 10 / 5 / 3 per side, the pitch widens for the lower tiers). {@code rows.legacy} 1 brings back the old two rank corridor.
 	 */
 	public static BladeRowLayout makeLayout(long seed) {

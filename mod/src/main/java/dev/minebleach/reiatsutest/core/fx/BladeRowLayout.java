@@ -40,8 +40,8 @@ public final class BladeRowLayout {
 	public static final double DEFAULT_HALF_WIDTH = 7.0;
 	/** Distance between neighbours along the row (rows.spacing): 0.28 thick slabs, so the gap is 0.72 blocks = 0.48 of the blade width (neighbours almost touch). */
 	public static final double DEFAULT_PITCH = 1.0;
-	/** First blade this many blocks ahead of the feet (rows.startAhead): the corridor runs in front of the caster too. */
-	public static final double DEFAULT_START_AHEAD = 6.0;
+	/** First blade this many blocks ahead of the feet (rows.startAhead). r7 user request: the big blades appear BEHIND the character, so it is negative: the first blade 2 blocks behind the feet, the rest run further back. */
+	public static final double DEFAULT_START_AHEAD = -2.0;
 
 	public final int n;
 	public final int ranks;

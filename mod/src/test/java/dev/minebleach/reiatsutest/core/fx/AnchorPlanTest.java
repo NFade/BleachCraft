@@ -18,11 +18,22 @@ class AnchorPlanTest {
 	}
 
 	@Test
-	void bankaiReleaseDropsTheSwarmAndSpawnsStaticRows() {
+	void bankaiReleaseKeepsTheSwarmAndSpawnsStaticRows() {
 		List<Command> c = AnchorPlan.forEffect(4);
-		assertTrue(c.stream().anyMatch(x -> x.op() == Op.END_SWARM));
+		assertTrue(c.stream().noneMatch(x -> x.op() == Op.END_SWARM), "the petals around the owner and the big blades are different effects");
 		assertEquals(Op.SPAWN_ROWS, c.get(c.size() - 1).op());
 		assertTrue(c.stream().noneMatch(x -> x.op() == Op.SPAWN_SWARM));
+	}
+
+	@Test
+	void bankaiFallingBackToShikaiEndsOnlyTheRows() {
+		List<Command> c = AnchorPlan.forBankaiEnd(true);
+		assertEquals(List.of(new Command(Op.END_ROWS, (byte) 0)), c, "the swarm goes on in shikai");
+	}
+
+	@Test
+	void anyOtherBankaiEndIsAFullReset() {
+		assertEquals(AnchorPlan.forReset(), AnchorPlan.forBankaiEnd(false));
 	}
 
 	@Test

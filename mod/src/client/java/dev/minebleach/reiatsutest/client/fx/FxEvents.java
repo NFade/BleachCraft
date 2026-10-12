@@ -77,7 +77,7 @@ public final class FxEvents {
 			handled++;
 			if (id == 4) {
 				// the quiet drop (6.1): no flash, ring or burst; the ripples, the night and the rows are the release
-				SwarmFx.end(e.casterId());
+				// (r7: the petal swarm around the owner and the big blades are different effects, the swarm is NOT ended here any more)
 				RowsFx.onRelease(e);
 			} else if (id == 3 && FxTune.d("release.pinkTime", 0.4) > 0.01) {
 				// plan A6: the blade in the hand turns pink for 0.4 s (ReleaseHold tints the item model), then the flash, ring and petals start

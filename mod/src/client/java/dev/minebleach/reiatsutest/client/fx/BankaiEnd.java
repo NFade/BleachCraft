@@ -65,7 +65,7 @@ public final class BankaiEnd {
 	public static void onEvent(EffectEventS2C e) {
 		float[] p = e.params();
 		Trigger t = p.length > 0 && (int) p[0] >= 0 && (int) p[0] < Trigger.values().length ? Trigger.values()[(int) p[0]] : Trigger.REQUEST;
-		end(e.casterId(), instantFor(t), "server " + t);
+		end(e.casterId(), instantFor(t), "server " + t, t == Trigger.BANKAI_CAP);
 	}
 
 	/** Death, logout and a dimension change drop everything at once; the timer, the seal and the dev reset let the rows sink as designed. */
@@ -75,6 +75,14 @@ public final class BankaiEnd {
 
 	/** Ends every bankai effect of an owner. Idempotent. */
 	public static void end(int ownerId, boolean instant, String why) {
+		end(ownerId, instant, why, false);
+	}
+
+	/**
+	 * As above; {@code keepSwarm}: the bankai only falls back to SHIKAI (the timer), so the petal swarm around the owner goes on (r7: it used to be
+	 * dropped with the big blades). The swarm is a different effect from the rows.
+	 */
+	public static void end(int ownerId, boolean instant, String why, boolean keepSwarm) {
 		Double last = LAST_END.get(ownerId);
 		if (last != null && FxClock.now - last < DEDUPE) {
 			return;
@@ -86,7 +94,9 @@ public final class BankaiEnd {
 		boolean storm = StormFx.endOwner(ownerId);
 		boolean hak = HakuteikenFx.endOwner(ownerId);
 		boolean rukia = RukiaBankaiClient.endOwner(ownerId, instant);
-		SwarmFx.end(ownerId);
+		if (!keepSwarm) {
+			SwarmFx.end(ownerId);
+		}
 		int timelines = FxTimelines.cancelCaster(ownerId, BankaiEnd::bankaiEffect);
 		int layers = ScreenFx.releaseOwner(ownerId, instant ? 0.4 : 1.0);
 		MinecraftClient mc = MinecraftClient.getInstance();
@@ -124,7 +134,8 @@ public final class BankaiEnd {
 					LIVE.add(id);
 				}
 			} else if (LIVE.contains(id)) {
-				end(id, false, "state left BANKAI");
+				// (back in SHIKAI: the petal swarm around the owner goes on)
+				end(id, false, "state left BANKAI", z != null && z.zanpakutoState() == ZanpakutoState.SHIKAI);
 			}
 		}
 		if (!LIVE.isEmpty()) {
