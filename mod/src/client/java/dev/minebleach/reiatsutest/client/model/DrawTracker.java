@@ -87,7 +87,7 @@ public final class DrawTracker {
 			return debugProgress;
 		}
 		Anim a = ACTIVE.get(e.getId());
-		return a == null ? -1f : a.progress(System.nanoTime(), seconds());
+		return a == null ? -1f : a.progress(FpClock.nanos(), seconds());
 	}
 
 	/** Animation progress of an entity's main hand zanpakuto (player, or any entity under the dev override), -1 = none running. */
@@ -99,7 +99,7 @@ public final class DrawTracker {
 			return debugProgress;
 		}
 		Anim a = ACTIVE.get(e.getId());
-		return a == null ? -1f : a.progress(System.nanoTime(), seconds());
+		return a == null ? -1f : a.progress(FpClock.nanos(), seconds());
 	}
 
 	/**
@@ -130,7 +130,7 @@ public final class DrawTracker {
 		if (w == null) {
 			return;
 		}
-		long now = System.nanoTime();
+		long now = FpClock.nanos();
 		boolean animate = ClientOptions.drawSeconds > 0f;
 		Map<Integer, ZanpakutoState> seen = new HashMap<>();
 		for (AbstractClientPlayerEntity p : w.getPlayers()) {

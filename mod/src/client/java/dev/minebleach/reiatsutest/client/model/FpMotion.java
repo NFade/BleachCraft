@@ -199,7 +199,7 @@ public final class FpMotion {
 			swingProfile = SwingMotion.profileFor(anim, combo);
 			swingUp = up;
 			swingTiming = tm;
-			swingStart = System.nanoTime();
+			swingStart = FpClock.nanos();
 			swinging = true;
 		} catch (RuntimeException e) {
 			ReiatsuTest.LOGGER.warn("[fpmotion] strike start failed: {}", e.toString());
@@ -217,13 +217,13 @@ public final class FpMotion {
 
 	/** The local player parried a hit (effect event 41): the sword jerks forward. {@code side} > 0: the attacker stands on the right. */
 	public static void onParry(float side) {
-		parryAt = System.nanoTime();
+		parryAt = FpClock.nanos();
 		parrySide = side;
 	}
 
 	/** The local player blocked a hit with reduced damage: the sword is pushed back. */
 	public static void onBlockedHit(float side) {
-		hitAt = System.nanoTime();
+		hitAt = FpClock.nanos();
 		hitSide = side;
 	}
 
@@ -259,7 +259,8 @@ public final class FpMotion {
 
 	/** Once per frame at the head of the first person hand pass: advances the clocks and computes the pose of this frame. */
 	public static void frame(ClientPlayerEntity player, float tickDelta) {
-		long now = System.nanoTime();
+		FpClock.onFrame();
+		long now = FpClock.nanos();
 		float dt = lastNanos == 0L ? 0f : Math.min(0.1f, (now - lastNanos) / 1.0e9f);
 		lastNanos = now;
 		ItemStack main = player.getMainHandStack();

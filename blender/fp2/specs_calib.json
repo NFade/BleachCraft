@@ -1,0 +1,2 @@
+{"calib_rest_rukia": {"char":"rukia","state":"drawn","pose":{"pos":[0,0,0],"rot":[0,0,0]},"arms":{"mode":"vanilla","right":{"on":true}}},
+ "calib_rest_rukia_ik": {"char":"rukia","state":"drawn","pose":{"pos":[0,0,0],"rot":[0,0,0]},"arms":{"mode":"ik","right":{"on":true,"follow":true}}}}

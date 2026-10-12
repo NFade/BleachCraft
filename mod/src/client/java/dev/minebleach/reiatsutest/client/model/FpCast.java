@@ -259,7 +259,7 @@ public final class FpCast {
 			if (CastGestures.BYAKUYA_SHIKAI.equals(id)) {
 				g = CastGestures.withPinkHold(g, FxTune.d("release.pinkTime", CastGestures.PINK_HOLD));
 			}
-			start(e.casterId(), g, System.nanoTime());
+			start(e.casterId(), g, FpClock.nanos());
 		} catch (RuntimeException ex) {
 			ReiatsuTest.LOGGER.warn("[fpcast] start failed: {}", ex.toString());
 		}
@@ -324,7 +324,7 @@ public final class FpCast {
 
 	/** Recomputes the sample of the local player when the frame is new (the world pass and the hand pass share it). */
 	private static void update() {
-		long now = System.nanoTime();
+		long now = FpClock.nanos();
 		if (cacheValid && now - cacheNanos < 1_000_000L) {
 			return;
 		}
@@ -403,7 +403,7 @@ public final class FpCast {
 		if (!on("tp") || !enabled()) {
 			return null;
 		}
-		long now = System.nanoTime();
+		long now = FpClock.nanos();
 		MinecraftClient mc = MinecraftClient.getInstance();
 		if (mc.player != null && mc.player.getId() == entityId) {
 			update();
@@ -499,7 +499,7 @@ public final class FpCast {
 	 * {@code item instanceof ZanpakutoItem} of the held arm code does not stand in its way).
 	 */
 	static void renderFreeHands(MatrixStack m, VertexConsumerProvider vcp, ClientPlayerEntity player, int light, ItemStack shown, float equip) {
-		long now = System.nanoTime();
+		long now = FpClock.nanos();
 		float dt = freeLast == 0L ? 0f : Math.min(0.1f, (now - freeLast) / 1.0e9f);
 		freeLast = now;
 		boolean candidate = dev.minebleach.reiatsutest.client.ClientOptions.showFirstPersonHand && !player.isInvisible() && !player.isUsingSpyglass()
