@@ -212,6 +212,20 @@ public final class RowsFx {
 		return FxMath.clamp(FxTune.d("rows.scale", 0.65), 0.2, 3.0);
 	}
 
+	/**
+	 * The open lane of the Byakuya bankai (vfx2): ONE rank per side, 5 blades each (10 in all) at {@code rows.halfWidth} 6.5 blocks from the axis, {@code rows.spacing} 2.5 between
+	 * neighbours, from {@code rows.startAhead} 5 ahead to behind. The count follows the quality tier ({@code bankaiBladeCount} 200 / 100 / 50 = 5 / 3 / 3 per side).
+	 * {@code rows.perSide} sets the High count, {@code rows.legacy} 1 brings back the old two rank corridor (rows.scale).
+	 */
+	public static BladeRowLayout makeLayout(long seed) {
+		if (FxTune.d("rows.legacy", 0.0) > 0.5) {
+			return BladeRowLayout.of(FxConfig.bankaiBladeCount, seed, rowsScaleSetting());
+		}
+		int per = (int) Math.round(FxTune.d("rows.perSide", 5.0) * FxConfig.bankaiBladeCount / 200.0);
+		per = Math.max(3, Math.min(250, per));
+		return BladeRowLayout.lane(per, seed, FxTune.d("rows.halfWidth", 6.5), FxTune.d("rows.spacing", 2.5), FxTune.d("rows.startAhead", 5.0));
+	}
+
 	/** The rows (fault lines, eruption) start this long after the throw of the sword, which needs about 1.5 s to hang and sink. */
 	public static double rowsDelay() {
 		return FxTune.d("bankai.rowsDelay", 0.8);
@@ -433,7 +447,7 @@ public final class RowsFx {
 	}
 
 	private static State create(int owner, long seed, double epoch, double yawDeg, double x, double y, double z, ClientWorld w) {
-		BladeRowLayout layout = BladeRowLayout.of(FxConfig.bankaiBladeCount, seed, rowsScaleSetting());
+		BladeRowLayout layout = makeLayout(seed);
 		State st = new State(owner, seed, layout, epoch, yawDeg, x, y, z, w);
 		st.hiltGround = FxGround.sample(w, st.hiltX(), st.hiltZ(), y);
 		STATES.put(owner, st);
@@ -633,17 +647,23 @@ public final class RowsFx {
 	}
 
 	private static void haze(State st, Vec3d cam, Random r) {
-		double along = -r.nextDouble() * 30 + 4;
-		double across = (r.nextDouble() - 0.5) * 9;
+		BladeRowLayout l = st.layout;
+		double minAlong = Double.MAX_VALUE;
+		double maxAlong = -Double.MAX_VALUE;
+		for (int i = 0; i < l.n; i++) {
+			minAlong = Math.min(minAlong, l.along[i]);
+			maxAlong = Math.max(maxAlong, l.along[i]);
+		}
+		// inside the lane between the rows, over the whole length of the rows
+		double along = minAlong - 1.0 + r.nextDouble() * (maxAlong - minAlong + 2.0);
+		double across = (r.nextDouble() - 0.5) * 2.0 * l.corridorHalfWidth() * 0.85;
 		double yaw = Math.toRadians(st.yawDeg);
 		double fx = -Math.sin(yaw);
 		double fz = Math.cos(yaw);
 		double rx = -fz;
 		double rz = fx;
-		// near the camera along the corridor
-		double ca = (cam.x - st.fx) * fx + (cam.z - st.fz) * fz;
-		double px = st.fx + fx * (ca + along * 0.5) + rx * across;
-		double pz = st.fz + fz * (ca + along * 0.5) + rz * across;
+		double px = st.fx + fx * along + rx * across;
+		double pz = st.fz + fz * along + rz * across;
 		double py = st.hiltGround + 0.5 + r.nextDouble() * 3.0;
 		FxGlowBatch.sprite(GlowSprite.PETAL_GLOW).at(px, py, pz).vel((r.nextDouble() - 0.5) * 0.4, 0.15 + r.nextDouble() * 0.2, (r.nextDouble() - 0.5) * 0.4).lifeTicks(60).size(0.5)
 				.color("#F9C8F6").peak(0.25).rot(r.nextDouble() * 6.28, (r.nextDouble() - 0.5) * 2).twinkle().spawn();

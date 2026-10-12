@@ -558,7 +558,7 @@ public final class ShikaiDissolve {
 					double nz = r.oz[j] + (e1[2] * o[0] + e2[2] * o[2] + uz * o[1]) * lf;
 					double wBlend = blend ? FxMath.smoothstep(0.45, 1.0, tau / life) : 0;
 					if (wBlend > 0) {
-						SwarmMath.orbit(sw.slots, r.slot[j] % sw.n, sw.time(), orb);
+						SwarmMath.idle(sw.slots, r.slot[j] % sw.n, sw.time(), !r.fpOwner && FxTune.d("swarm.ribbon", 1.0) > 0.5, sw.vx, sw.vy, sw.vz, orb);
 						nx += (feet.x + orb[0] - nx) * wBlend;
 						ny += (feet.y + orb[1] - ny) * wBlend;
 						nz += (feet.z + orb[2] - nz) * wBlend;
@@ -571,7 +571,7 @@ public final class ShikaiDissolve {
 					double gz = r.oz[j] + (e1[2] * o[0] + e2[2] * o[2] + uz * o[1]) * lf;
 					double w2 = blend ? FxMath.smoothstep(0.45, 1.0, tau2 / life) : 0;
 					if (w2 > 0) {
-						SwarmMath.orbit(sw.slots, r.slot[j] % sw.n, sw.time() + 0.02, orb);
+						SwarmMath.idle(sw.slots, r.slot[j] % sw.n, sw.time() + 0.02, !r.fpOwner && FxTune.d("swarm.ribbon", 1.0) > 0.5, sw.vx, sw.vy, sw.vz, orb);
 						gx += (feet.x + orb[0] - gx) * w2;
 						gy += (feet.y + orb[1] - gy) * w2;
 						gz += (feet.z + orb[2] - gz) * w2;

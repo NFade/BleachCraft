@@ -34,6 +34,8 @@ class StormMathTest {
 		assertEquals(1, StormMath.petalsPerBlade(10, 1000));
 		assertEquals(10, StormMath.condensePerBlade(200));
 		assertEquals(2, StormMath.condensePerBlade(1000));
+		assertEquals(300, StormMath.petalsPerBlade(3000, 10), "the open lane has few blades: many petals each, same total");
+		assertEquals(200, StormMath.condensePerBlade(10));
 	}
 
 	@Test

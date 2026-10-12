@@ -180,6 +180,10 @@ final class Phase6Swarm {
 				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
 				cmd("tp @s 0.5 -60 0.5 90 8");
 			}
+			case "first" -> {
+				mc.options.setPerspective(Perspective.FIRST_PERSON);
+				cmd("tp @s 0.5 -60 0.5 0 6");
+			}
 			case "top" -> {
 				mc.options.setPerspective(Perspective.THIRD_PERSON_BACK);
 				cmd("tp @s 0.5 -60 0.5 0 55");
@@ -367,6 +371,11 @@ final class Phase6Swarm {
 				Phase6Rows.bankaiSeries(w[1], ms, w[2]);
 			}
 			case "bkshot" -> clockShot(w[2], Double.parseDouble(w[1]));
+			case "walk" -> step("console: walk " + w[1], 2, () -> {
+				mc.options.forwardKey.setPressed(!w[1].equals("off"));
+				mc.options.sprintKey.setPressed(w[1].equals("sprint"));
+			});
+			case "pview" -> step("console: pview " + w[1], 20, () -> view(w[1]));
 			case "tp" -> step("console: tp", 30, () -> cmd("tp @s " + w[1] + " " + w[2] + " " + w[3] + " " + w[4] + " " + w[5]));
 			case "persp" -> step("console: perspective", 4, () -> mc.options.setPerspective(w[1].equals("first") ? Perspective.FIRST_PERSON
 					: w[1].equals("front") ? Perspective.THIRD_PERSON_FRONT : Perspective.THIRD_PERSON_BACK));

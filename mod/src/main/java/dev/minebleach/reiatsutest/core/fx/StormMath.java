@@ -92,14 +92,17 @@ public final class StormMath {
 		return a;
 	}
 
-	/** Number of petals per blade: {@code min(15, floor(maxPetals x Q / N))} (6.2). */
+	/** Largest petal count per blade: the open lane (vfx2) has about 10 blades, so each one carries many petals (the storm keeps its total). */
+	public static final int MAX_PER_BLADE = 400;
+
+	/** Number of petals per blade: {@code min(400, floor(maxPetals x Q / N))} (6.2; the cap was 15 with 200 blades, the total stays the same with 10). */
 	public static int petalsPerBlade(int maxPetalsTimesQuality, int blades) {
-		return Math.max(1, Math.min(15, maxPetalsTimesQuality / Math.max(1, blades)));
+		return Math.max(1, Math.min(MAX_PER_BLADE, maxPetalsTimesQuality / Math.max(1, blades)));
 	}
 
-	/** Petals per blade of the Hakuteiken condensation: {@code min(10, floor(2000 / N))} (6.3). */
+	/** Petals per blade of the Hakuteiken condensation: {@code min(200, floor(2000 / N))} (6.3, the cap was 10 with 200 blades). */
 	public static int condensePerBlade(int blades) {
-		return Math.max(1, Math.min(10, 2000 / Math.max(1, blades)));
+		return Math.max(1, Math.min(200, 2000 / Math.max(1, blades)));
 	}
 
 	/** One storm: the per-petal seeded numbers and all curves. */
