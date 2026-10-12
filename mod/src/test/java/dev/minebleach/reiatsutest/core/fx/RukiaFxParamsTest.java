@@ -36,7 +36,7 @@ class RukiaFxParamsTest {
 		assertEquals(20.0, p[4] * p[5], 1e-3);
 		assertEquals(2.5, RukiaFxParams.HAKUREN_STEP_LENGTH, 1e-9);
 		// the server passes the real step count of the spec
-		float[] q = RukiaFxParams.extend(AbilityId.HAKUREN, base(12f), 0, 5, 26);
+		float[] q = RukiaFxParams.extend(AbilityId.HAKUREN, base(12f), 0, 5);
 		assertEquals(2.4f, q[4], 1e-4);
 		assertEquals(5f, q[5], 0);
 	}
@@ -44,22 +44,22 @@ class RukiaFxParamsTest {
 	@Test
 	void hakurenCarriesTheServerHalfWidth() {
 		var spec = BalanceConfig.defaults().spec(AbilityId.HAKUREN);
-		float[] p = RukiaFxParams.extend(AbilityId.HAKUREN, base((float) spec.num("length")), 0, spec.phaseOffsets().size(), 26, spec.num("halfWidth"));
+		float[] p = RukiaFxParams.extend(AbilityId.HAKUREN, base((float) spec.num("length")), 0, spec.phaseOffsets().size(), spec.num("halfWidth"));
 		assertEquals(7, p.length);
 		assertEquals((float) spec.num("halfWidth"), p[6], 1e-4);
 		assertEquals(spec.num("length"), p[4] * p[5], 1e-3);
 		// without a width the old six numbers stay
-		assertEquals(6, RukiaFxParams.extend(AbilityId.HAKUREN, base(12f), 0, 5, 26, Double.NaN).length);
+		assertEquals(6, RukiaFxParams.extend(AbilityId.HAKUREN, base(12f), 0, 5, Double.NaN).length);
 		assertEquals(2.0, RukiaFxParams.param(new float[] {1f, 2f, 3f, 4f, 5f, 6f}, 6, RukiaFxParams.HAKUREN_HALF_WIDTH), 0);
 	}
 
 	@Test
 	void effectsScaleWithTheServerRadius() {
-		// the balance numbers (radius 12 for absolute zero, 7 for Tsukishiro) are what the client scales to
-		var az = BalanceConfig.defaults().spec(AbilityId.ABSOLUTE_ZERO);
-		double k = RukiaFxParams.radiusScale(az.num("radius"), RukiaFxParams.REF_ABSOLUTE_ZERO_RADIUS, 0.3);
-		assertEquals(1.2, k, 1e-9);
-		assertEquals(1.44, RukiaFxParams.areaScale(az.num("radius"), RukiaFxParams.REF_ABSOLUTE_ZERO_RADIUS, 0.2, 3.0), 1e-9);
+		// the balance numbers (radius 7 for Tsukishiro against the reference 4) are what the client scales to
+		var ts = BalanceConfig.defaults().spec(AbilityId.TSUKISHIRO);
+		double k = RukiaFxParams.radiusScale(ts.num("radius"), RukiaFxParams.REF_TSUKISHIRO_RADIUS, 0.3);
+		assertEquals(1.75, k, 1e-9);
+		assertEquals(3.0, RukiaFxParams.areaScale(ts.num("radius"), RukiaFxParams.REF_TSUKISHIRO_RADIUS, 0.2, 3.0), 1e-9);
 		assertEquals(3.0, RukiaFxParams.areaScale(40, 10, 0.2, 3.0), 0);
 		assertEquals(0.3, RukiaFxParams.radiusScale(0.5, 10, 0.3), 0);
 		assertEquals(0.2, RukiaFxParams.areaScale(0.1, 10, 0.2, 3.0), 0);
@@ -73,17 +73,7 @@ class RukiaFxParamsTest {
 	}
 
 	@Test
-	void absoluteZeroCarriesThePauseSeconds() {
-		float[] p = RukiaFxParams.extend(AbilityId.ABSOLUTE_ZERO, base(10f), 0);
-		assertEquals(10f, p[3], 0);
-		assertEquals(3.0f, p[4], 1e-4);
-	}
-
-	@Test
-	void pauseMatchesTheServerPhaseTimes() {
-		// the server shatters absolute zero at tick 100 after the freeze at tick 40, a 3 s freeze (BalanceConfig)
-		var phases = BalanceConfig.defaults().spec(AbilityId.ABSOLUTE_ZERO).phaseOffsets();
-		assertEquals(RukiaFxParams.ABSOLUTE_ZERO_PAUSE_TICKS, phases.get(1) - phases.get(0));
+	void stepsMatchTheServerPhaseTimes() {
 		// Hakuren: steps at ticks 20, 22, ..., 34 = 8 steps (FIXES_B4)
 		assertEquals(RukiaFxParams.HAKUREN_STEPS, BalanceConfig.defaults().spec(AbilityId.HAKUREN).phaseOffsets().size());
 	}
@@ -97,7 +87,7 @@ class RukiaFxParamsTest {
 		float[] shortArr = {1f, 2f};
 		assertSame(shortArr, RukiaFxParams.extend(AbilityId.TSUKISHIRO, shortArr, 0));
 		assertFalse(RukiaFxParams.handles(AbilityId.SCATTER));
-		assertTrue(RukiaFxParams.handles(AbilityId.ABSOLUTE_ZERO));
+		assertTrue(RukiaFxParams.handles(AbilityId.ICE_SPIKE));
 	}
 
 	@Test
@@ -109,7 +99,7 @@ class RukiaFxParamsTest {
 	@Test
 	void effectIdsMapToAbilities() {
 		assertEquals(AbilityId.TSUKISHIRO, RukiaFxParams.abilityOf(20));
-		assertEquals(AbilityId.ABSOLUTE_ZERO, RukiaFxParams.abilityOf(23));
+		assertNull(RukiaFxParams.abilityOf(23), "effect 23 (absolute zero) is gone");
 		assertNull(RukiaFxParams.abilityOf(30));
 		for (AbilityId a : AbilityId.values()) {
 			if (RukiaFxParams.handles(a)) {

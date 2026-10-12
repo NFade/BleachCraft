@@ -29,7 +29,7 @@ FILLERS = ["please", "now", "okay", "ok", "пожалуйста", "давай", 
            "эм", "ага", "так", "вот", "ладно", "тогда"]
 
 # Commands that may fire from a stable interim result (VOICE_PHRASES 5.4 early-OK set). Never: bankai releases,
-# scatter, hakuteiken, absolute zero, senkei (expensive or irreversible).
+# scatter, hakuteiken, senkei (expensive or irreversible).
 INTERIM_SAFE = {
     "rukia.shikai.release", "rukia.shikai.tsukishiro", "rukia.shikai.hakuren", "rukia.shikai.shirafune",
     "byakuya.shikai.release", "byakuya.shikai.mode_attack", "byakuya.shikai.mode_barrier", "common.seal",
@@ -66,7 +66,6 @@ EXTRA_ALIASES = {
     # "bankai" is 6 letters (exact-only), so the vowel slips of real recognisers are explicit aliases
     "rukia.bankai.release": [("bankay", False), ("bunkay", False), ("bonkay", False), ("bang kai", False),
                              ("bung kai", False)],
-    "rukia.bankai.absolute_zero": [("absolute zeros", False)],
     # Kageyoshi: the ey fold shortens its key to 6 letters ("kagesi", exact-only); the spaced spellings keep eight
     # letters and so one slip of tolerance
     "byakuya.bankai.release": [("kage yoshi", False), ("kaga yoshi", False), ("kagayoshi", False),

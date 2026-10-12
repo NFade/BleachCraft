@@ -56,7 +56,7 @@ class DirtyPhraseFixtureTest {
 
 	@Test
 	void fixtureHasTheAgreedSize() throws IOException {
-		assertEquals(270, positives().size());
+		assertEquals(251, positives().size()); // 270 before the Absolute Zero phrases were removed (mech2 task 4)
 		assertEquals(81, neutrals().size());
 	}
 

@@ -28,13 +28,8 @@ public final class RukiaEntityFx {
 	private RukiaEntityFx() {
 	}
 
-	/** True while an Absolute zero timeline (effect id 23) runs: its shells snap on in 0.12 s and burst into 12 shards at 8 b/s (5.4), the others use 0.25 s and 8 shards at 5 b/s (5.3). */
+	/** Absolute zero (effect 23, shells that snap on in 0.12 s) was removed with the ability in mech2 task 4: always false, kept for the shell tunables. */
 	static boolean azActive() {
-		for (EffectTimeline t : FxTimelines.active()) {
-			if (t.effectId == 23 && !t.isEnded()) {
-				return true;
-			}
-		}
 		return false;
 	}
 

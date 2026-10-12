@@ -96,15 +96,11 @@ class CastGestureTest {
 	}
 
 	@Test
-	void absoluteZeroFreezesForASecondAtTheServerFreeze() {
-		CastGesture g = CastGestures.defaults().get("rukia.bankai.absolute_zero");
-		assertEquals(1, g.holds().size());
-		assertEquals(2.0f, g.holds().get(0).at(), EPS);
-		assertEquals(1.0f, g.holds().get(0).len(), EPS);
-		assertArrayEquals(g.sampleReal(2.05f).r(), g.sampleReal(2.95f).r(), EPS);
-		assertArrayEquals(g.sampleReal(2.05f).c(), g.sampleReal(2.95f).c(), EPS);
-		// and it moves again afterwards (the break)
-		assertTrue(Math.abs(g.sampleReal(3.0f + 0.4f).r()[5] - g.sampleReal(2.95f).r()[5]) > 5f);
+	void absoluteZeroIsGoneWithItsGestureAndItsEffectId() {
+		// mech2 task 4: the ability, its gesture and effect id 23 were removed (the second Rukia bankai slot is the passive frost territory)
+		assertNull(CastGestures.defaults().get("rukia.bankai.absolute_zero"));
+		assertNull(CastGestures.idForEffect(23));
+		assertNotNull(CastGestures.defaults().get("rukia.bankai.ice_spike"));
 	}
 
 	@Test
@@ -243,7 +239,6 @@ class CastGestureTest {
 		assertEquals("rukia.shikai.tsukishiro", CastGestures.idForEffect(20));
 		assertEquals("rukia.shikai.hakuren", CastGestures.idForEffect(21));
 		assertEquals("rukia.shikai.shirafune", CastGestures.idForEffect(22));
-		assertEquals("rukia.bankai.absolute_zero", CastGestures.idForEffect(23));
 		assertEquals("byakuya.shikai.mode_attack", CastGestures.idForEffect(30));
 		assertEquals("byakuya.shikai.mode_barrier", CastGestures.idForEffect(31));
 		assertEquals("byakuya.bankai.scatter", CastGestures.idForEffect(32));

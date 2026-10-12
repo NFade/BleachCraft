@@ -42,7 +42,7 @@ class LiveSessionFixtureTest {
 
 	@Test
 	void fixtureHasTheAgreedSize() throws IOException {
-		assertEquals(49, load("positives").size());
+		assertEquals(48, load("positives").size()); // 49 before the Absolute Zero phrase was removed (mech2 task 4)
 		assertEquals(48, load("neutrals").size());
 	}
 

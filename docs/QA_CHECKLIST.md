@@ -98,8 +98,10 @@ flat arena). Say each phrase once and press the key once.
 
 ## 5. Bankai abilities and the way back to sealed (4 min)
 
-- [ ] **Rukia, Absolute Zero** (`Z`, "Absolute zero"): wide frozen area around you (about 10 blocks in the new numbers), mobs held
-      then shattered, ice crystals, ice blocks vanish by themselves. Passive: hostile mobs close to you are slowed.
+- [ ] **Rukia, ice spike** (`U`): a thrust of ice spikes along the look direction. Key `I` does nothing for Rukia (Absolute Zero was removed).
+- [ ] **Rukia, frost territory (passive)**: stand your ground in her bankai with zombies (a skeleton, a player with pvp on) 5 to 25 blocks
+      away: they are slowed (Slowness I) and lose exactly one heart every 3 s even in full netherite armor; cows and villagers are not
+      touched; you and your team are not touched; everything stops the moment the bankai ends (V, 45 s, death, leaving the world).
 - [ ] **Byakuya, petal storm / scatter** (`Z`, "Chire" or "Petal storm") (if built): storm of petals around you, impact at the aim point.
 - [ ] **Byakuya, Hakuteiken** (`H`, "Hakuteiken") (if built): bright line along the look direction, impact burst at its end.
 - [ ] Shikai abilities in bankai (the planned rule makes them usable on top; write what happened): ______________
@@ -139,7 +141,7 @@ The budget: 60 FPS on an average PC with 1000 bankai blades and 3000 petals, wit
 |---|---|---|---|
 | Idle, sword in hand (baseline) | ____ FPS | ____ | ____ |
 | Rukia shikai release and aura | ____ | ____ | ____ |
-| Rukia Absolute Zero (peak) | ____ | ____ | ____ |
+| Rukia bankai with 30 mobs in the territory (peak) | ____ | ____ | ____ |
 | Byakuya bankai with 1000 blades standing (if built) | ____ | ____ | ____ |
 | Byakuya scatter, 3000 petals (if built) | ____ | ____ | ____ |
 | Hakuteiken (if built) | ____ | ____ | ____ |

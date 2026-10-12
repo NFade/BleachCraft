@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 class MatcherFixtureTest {
 	@Test
 	void fixtureHasTheAgreedSize() throws IOException {
-		assertEquals(232, VoiceTestSupport.positives().size());
+		assertEquals(218, VoiceTestSupport.positives().size()); // 232 before the Absolute Zero phrases were removed (mech2 task 4)
 		assertEquals(153, VoiceTestSupport.neutrals().size());
 	}
 

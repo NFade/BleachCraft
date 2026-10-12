@@ -41,7 +41,6 @@ final class AbilityExecutor {
 			case TSUKISHIRO -> tsukishiro(p, phase, ctx);
 			case HAKUREN -> hakuren(p, phase, ctx);
 			case SHIRAFUNE -> shirafune(p, ctx);
-			case ABSOLUTE_ZERO -> absoluteZero(p, phase, ctx);
 			case ICE_SPIKE -> iceSpike(p, phase, ctx);
 			case CAGE -> cage(p, ctx);
 			case MODE_ATTACK -> modeAttack(p, ctx);
@@ -125,28 +124,6 @@ final class AbilityExecutor {
 		}
 	}
 
-	private static void absoluteZero(ServerPlayerEntity p, int phase, CastContext ctx) {
-		AbilitySpec sp = ctx.spec;
-		if (phase == 0) {
-			double radius = sp.num(AbilityParams.RADIUS);
-			Vec3d center = ctx.origin.add(0, 1.0, 0);
-			List<LivingEntity> targets = Targeting.sphere(p, center, radius, sp.intNum(AbilityParams.MAX_TARGETS));
-			for (LivingEntity e : targets) {
-				Targeting.chill(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
-				ctx.frozen.add(e.getId());
-			}
-			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
-			// no temporary ice any more (round 6): vanilla ice slides, the territory freeze (FrostField) changes the ground instead
-		} else {
-			List<LivingEntity> hit = frozenStillNear(p, ctx);
-			for (LivingEntity e : hit) {
-				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
-				e.setFrozenTicks(0);
-			}
-			ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit);
-		}
-	}
-
 	/**
 	 * Ice spike (Rukia bankai, round 6): a thrust of ice spikes along the look ray, one segment per phase (the wave front), up to the
 	 * first block. Each target is hit once: damage, Slowness and the frozen look. Block free: the spikes are only visual.
@@ -186,20 +163,6 @@ final class AbilityExecutor {
 			}
 		}
 		return out;
-	}
-
-	/** Passive of the Rukia bankai: hostile mobs within 3 blocks are slowed (every 10 ticks, no damage, players excluded). */
-	static void rukiaBankaiPassive(ServerPlayerEntity p) {
-		ServerWorld world = p.getServerWorld();
-		Box box = p.getBoundingBox().expand(3.0);
-		for (HostileEntity e : world.getEntitiesByClass(HostileEntity.class, box, h -> Targeting.valid(p, h))) {
-			if (e.squaredDistanceTo(p) <= 9.0) {
-				e.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 15, 0, false, false, true), p);
-				if (e.getFrozenTicks() < 100) {
-					e.setFrozenTicks(100); // below the 140 tick damage threshold
-				}
-			}
-		}
 	}
 
 	// ------------------------------------------------------------------ Byakuya

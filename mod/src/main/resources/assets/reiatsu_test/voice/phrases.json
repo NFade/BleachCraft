@@ -126,22 +126,6 @@
       ]
     },
     {
-      "id": "rukia.bankai.absolute_zero", "states": ["BANKAI"], "item": "rukia",
-      "interimSafe": false, "optional": false, "say": "Absolute zero",
-      "variants": [
-        {"text": "絶対零度", "origin": "M"},
-        {"text": "ぜったいれいど", "origin": "M"},
-        {"text": "Zettai reido", "origin": "M"},
-        {"text": "Absolute zero", "origin": "M"},
-        {"text": "Абсолютный ноль", "origin": "M"},
-        {"text": "Абсолютный нуль", "origin": "M"},
-        {"text": "absolute 0", "origin": "A"},
-        {"text": "absolute zeal", "origin": "A"},
-        {"text": "абсолютного нуля", "origin": "A"},
-        {"text": "absolute zeros", "origin": "A"}
-      ]
-    },
-    {
       "id": "rukia.bankai.ice_spike", "states": ["BANKAI"], "item": "rukia",
       "interimSafe": false, "optional": false, "say": "Ice spike",
       "variants": [

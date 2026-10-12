@@ -15,7 +15,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `C` | canon. Documented in `research/` as a spoken phrase, name or kanji (confidence high or med in the source file). |
 | `T` | wiki/VIZ translation. An English translation of a canon name taken from the wiki or the VIZ release (research tables "English sub"). Not necessarily spoken on screen. |
 | `G` | game-sourced, not canon. Appears only in a game (Brave Souls line), per `research/rukia_bankai.md`. Gate A decision 9: accepted as the trigger, flagged as not canon. |
-| `M` | mod-defined. Invented by the mod because no canon phrase exists (modes, absolute zero, seal, petal storm aliases). Free to change by editing this file. |
+| `M` | mod-defined. Invented by the mod because no canon phrase exists (modes, seal, petal storm aliases). Free to change by editing this file. |
 | `X` | own transcription. Cyrillic transcription written by the research agents or by me. No external source exists; these are estimates for ru-RU speech. |
 | `A` | ASR alias. Recorded ASR output that the fuzzy matcher cannot reach on its own (section 2, tier A). Must be added to the variant table verbatim. |
 
@@ -36,7 +36,6 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `rukia.shikai.hakuren` | SHIKAI | Rukia's zanpakuto | Tsugi no mai, Hakuren | no | Dance 2 (ice wave). Same prefix rules. |
 | `rukia.shikai.shirafune` | SHIKAI | Rukia's zanpakuto | San no mai, Shirafune | no | Dance 3 (ice blade). Same prefix rules. |
 | `rukia.bankai.release` | SHIKAI | Rukia's zanpakuto | Bankai, Hakka no Togame | no | SHIKAI to BANKAI. Server requires 80 Rage (no full reiatsu bar since mech2 task 3). Phrase is game-sourced (Gate A 9). |
-| `rukia.bankai.absolute_zero` | BANKAI | Rukia's zanpakuto | (mod-defined) Absolute zero | no | Active area freeze. No canon phrase exists: mod-defined. |
 | `rukia.bankai.ice_spike` | BANKAI | Rukia's zanpakuto | (mod-defined) Ice spike | no | Round 6: thrust of ice spikes along the look. No canon phrase exists: mod-defined. |
 | `byakuya.shikai.release` | BASE | Byakuya's zanpakuto | Chire, Senbonzakura | no | BASE to SHIKAI (the sword must be drawn first, B4 step 3). Canon. Lone "Chire" and "Scatter" are weak (see 3). |
 | `byakuya.shikai.mode_attack` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Attack mode | no | Swarm follows the aim. Mod-defined phrase. |
@@ -162,22 +161,6 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 |  | Банкай, Хакка но Тогаме | `X` | `bankai haka no togame` |
 |  | Банкай | `X` | `bankai` |
 |  | Хакка но Тогамэ | `X` | `haka no togame` |
-
-### 1.6 `rukia.bankai.absolute_zero`
-
-- **Required state:** BANKAI. **Item:** Rukia's zanpakuto in the main hand.
-- **Canonical phrase:** (mod-defined) Absolute zero
-- **Notes:** Research (`rukia_bankai.md` section 4): the wiki describes the bankai ability as widening the area where she can drop temperature to absolute zero; there is no separate spoken name. The mod needs a second bankai command for the active freeze, so it uses the English physics term and its Japanese and Russian equivalents.
-
-| Group | Phrase | Origin | Key form |
-|---|---|---|---|
-| Japanese script (ja-JP ASR form) | 絶対零度 | `M` | `setai redo` |
-|  | ぜったいれいど | `M` | `setairedo` |
-| Romaji | Zettai reido | `M` | `setai redo` |
-| English sub | Absolute zero | `M` | `absorute sero` |
-| English dub | n/a (mod-defined, no dub exists) | - | - |
-| Russian (Cyrillic) | Абсолютный ноль | `M` | `absoryutni nor` |
-|  | Абсолютный нуль | `M` | `absoryutni nur` |
 
 ### 1.7 `byakuya.shikai.release`
 
@@ -571,21 +554,6 @@ Tier column: `F` = the fuzzy matcher of section 5 reaches this string using only
 | ja-JP | 万海 白霞の咎め | `bankai haka no togame` | F |
 | ja-JP | 挽回 白霞の咎め | `bankai haka no togame` | F |
 
-### 2.6 `rukia.bankai.absolute_zero`
-
-| lang | ASR output | key form | tier |
-|---|---|---|---|
-| en-US | absolute 0 | `absorute 0` | A |
-| en-US | absolutely zero | `absorutery sero` | F |
-| en-US | apsolute zero | `apsorute sero` | F |
-| en-US | absolute zeal | `absorute sear` | A |
-| ru-RU | абсолютный ноль | `absoryutni nor` | F |
-| ru-RU | абсолютный нуль | `absoryutni nur` | F |
-| ru-RU | абсолютного нуля | `absoryutnogo nurya` | A |
-| ru-RU | абсолютный нол | `absoryutni nor` | F |
-| ja-JP | 絶対零度 | `setai redo` | F |
-| ja-JP | ぜったいれいど | `setairedo` | F |
-
 ### 2.7 `byakuya.shikai.release`
 
 | lang | ASR output | key form | tier |
@@ -749,7 +717,6 @@ Totals: 160 ASR rows, 115 tier F (fuzzy reaches them), 45 tier A (alias required
 | `rukia.shikai.hakuren` | `Hakuren` (alone) or `Tsugi no mai Hakuren`; English `Next dance, white ripple`. | "Tsugi no mai" alone, "next dance" alone. |
 | `rukia.shikai.shirafune` | `Shirafune` (alone) or `San no mai Shirafune`; English `Third dance, white sword`. | "San no mai" alone, "third dance" alone. |
 | `rukia.bankai.release` | `Bankai` (alone) or `Hakka no Togame` (alone) or both. English `Censure of the White Haze` accepted. | "Hakka" alone, "togame" alone. |
-| `rukia.bankai.absolute_zero` | `Absolute zero` / `Абсолютный ноль` / 絶対零度 (full phrase). | "zero" alone, "absolute" alone, "ноль" alone. `Hakka no Togame` and `Bankai` are **ignored** in BANKAI state. |
 | `byakuya.shikai.release` | `Chire Senbonzakura` (any ASR spelling) **or** the lone word `Chire` / `Scatter` / `Чире` / 散れ as a whole utterance, **or** `Senbonzakura` as a whole utterance (any spelling with the key `senbonsakura`: "sen bonzakura", "сэм бонзакура", 千本桜), or the lone ASR garbles of Chire `shire` / `sire` / `шире` / `щире` / `чьере` / `чере` (whole utterance), or a garble glued to the name (`щиро сен-бонзакура`, `что сэмбонзакура`). | "Senbonzakura" inside a sentence ("I like senbonzakura music"), lone `siro` / `щиро` (the key of "silo"), "Bankai", "cherry blossoms". |
 | `byakuya.shikai.mode_attack` | `Attack mode` / `Режим атаки` / 攻撃モード (two words). | "attack" alone, "атака" alone. |
 | `byakuya.shikai.mode_barrier` | `Barrier mode` / `Dome mode` / `Режим барьера` / `Режим купола` / 防御モード. | "barrier" alone, "dome" alone, "барьер" alone. |
@@ -808,8 +775,6 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | some no mai | SHIKAI | rukia | none |
 | hakuren | SHIKAI | rukia | `rukia.shikai.hakuren` |
 | shirafune | SHIKAI | rukia | `rukia.shikai.shirafune` |
-| absolute zero | BANKAI | rukia | `rukia.bankai.absolute_zero` |
-| absolute zero | SHIKAI | rukia | none |
 | chire senbonzakura | BASE | rukia | none |
 | bankai | SHIKAI | rukia | `rukia.bankai.release` |
 | hakuteiken | SHIKAI | byakuya | none |
@@ -859,8 +824,6 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | zero | BANKAI | rukia | none |
 | absolute | BANKAI | rukia | none |
 | ноль | BANKAI | rukia | none |
-| абсолютный ноль | BANKAI | rukia | `rukia.bankai.absolute_zero` |
-| zettai reido | BANKAI | rukia | `rukia.bankai.absolute_zero` |
 | chire | SHIKAI | rukia | none |
 | атака | SHIKAI | byakuya | none |
 | dome | SHIKAI | byakuya | none |
@@ -893,7 +856,7 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 - **"Hakka no Togame" in BANKAI state** is ignored on purpose. Otherwise the second half of "Bankai, Hakka no Togame" could re-fire as a different command if the first half fired from an interim result.
 - **"Chire" collisions:** English "cherry" (key `cery`) and Russian "чирей" (boil, key `cire`) are the only real words close to the key. "Cherry" does not fire; "чирей" fires as a lone word in BASE (Byakuya) and BANKAI. Accepted as a known, very rare collision.
 - **Lone "Senbonzakura" and the garbled "Chire" (2026-10-11, first live session).** Chrome ru-RU wrote "chire" as шире, щиро, чьере, сире and rarely correctly, and en-US as sire, shire, siro. Decision: the sword name alone and the lone garbles `shire`/`sire`/`шире`/`щире`/`чьере`/`чере` fire the shikai release in BASE (and, for the garbles, the petal storm in BANKAI), always as weak variants (whole utterance only). `siro`/`shiro`/`щиро` alone stay silent (key `siro` = the Minecraft word "silo"); glued to the name they count. `cherry`, `cheery`, `chili`, `тире` stay silent. Known price: "шире" and "sire" as a one-word utterance spoken while Byakuya's drawn sword is in hand. The z to s fold (`senbonzakura` = `senbonsakura`) was already in the normaliser (5.1) and needed no change.
-- **"Absolute zero"** is also ordinary physics talk. It only matters when Rukia holds her bankai sword in BANKAI state, so no further rule is applied.
+- (`rukia.bankai.absolute_zero` was removed in mech2 task 4: the second Rukia bankai slot became a passive frost territory, there is no phrase for it.)
 - **Rukia vs Byakuya "Bankai":** the same word triggers whichever character the held item belongs to. Nothing to disambiguate.
 
 ## 4. Neutral phrases (must never trigger)
@@ -906,7 +869,7 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 |---|---|---|---|---|---|
 | 1 | en-US | bank eye | `bank e` | `rukia.bankai.release` | 0.93 |
 | 2 | en-US | my sofa | `my soha` | `rukia.shikai.tsukishiro` | 0.71 |
-| 3 | en-US | cherry blossoms are pretty | `cery brosoms are prety` | `rukia.bankai.absolute_zero` | 0.78 |
+| 3 | en-US | cherry blossoms are pretty | `cery brosoms are prety` | none (the command was removed in mech2 task 4) | 0.78 |
 | 4 | en-US | hack a tome | `hack a tome` | `rukia.bankai.release` | 0.85 |
 | 5 | en-US | bonsai tree | `bonsai tre` | `rukia.bankai.release` | 0.80 |
 | 6 | en-US | banzai | `bansai` | `rukia.bankai.release` | 0.92 |
@@ -917,7 +880,7 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | 11 | en-US | the seal is broken | `the sear is broken` | `common.seal` | 1.00 |
 | 12 | en-US | seal the deal | `sear the dear` | `common.seal` | 1.00 |
 | 13 | en-US | sea lion | `sea rion` | `common.seal` | 0.94 |
-| 14 | en-US | absolute power | `absorute power` | `rukia.bankai.absolute_zero` | 0.93 |
+| 14 | en-US | absolute power | `absorute power` | none (the command was removed in mech2 task 4) | 0.93 |
 | 15 | en-US | it is zero degrees | `it is sero degres` | `common.seal` | 0.87 |
 | 16 | en-US | attack that zombie | `atack that sonbie` | `byakuya.shikai.mode_attack` | 0.91 |
 | 17 | en-US | switch to creative mode | `swic to creative mode` | `common.seal` | 0.92 |
@@ -964,7 +927,7 @@ Computed with the prototype: `text` is fed to the matcher with the given state a
 | 58 | ru-RU | сакура цветёт | `sakura cvetyot` | `byakuya.bankai.scatter` | 0.90 |
 | 59 | ru-RU | тысяча клинков | `tisaca krinkov` | `common.seal` | 0.70 |
 | 60 | ru-RU | ноль градусов | `nor gradusov` | `common.seal` | 0.78 |
-| 61 | ru-RU | абсолютно ничего | `absoryutno nicego` | `rukia.bankai.absolute_zero` | 0.95 |
+| 61 | ru-RU | абсолютно ничего | `absoryutno nicego` | none (the command was removed in mech2 task 4) | 0.95 |
 | 62 | ru-RU | режим выживания | `resim visivaniya` | `byakuya.shikai.mode_attack` | 0.90 |
 | 63 | ru-RU | купол дома | `kupor doma` | `byakuya.shikai.mode_barrier` | 0.80 |
 | 64 | ru-RU | барьерный риф | `barerni rih` | `byakuya.shikai.mode_barrier` | 0.83 |
@@ -1120,5 +1083,5 @@ Generator contract: for each command, positive cases = every row of section 1 (a
 - All ASR forms (section 2): predicted, not recorded.
 - The kanji spelling 白霞罸 is rare; ja-JP ASR output for it is predicted (白霞の咎め).
 
-**Mod-defined (free to change):** `rukia.bankai.absolute_zero` (all variants), `byakuya.shikai.mode_attack`, `byakuya.shikai.mode_barrier`, `common.seal`, the petal-storm aliases of `byakuya.bankai.scatter` (Petal storm, Шторм лепестков, 桜吹雪), and the weak lone-word handling.
+**Mod-defined (free to change):** `byakuya.shikai.mode_attack`, `byakuya.shikai.mode_barrier`, `common.seal`, the petal-storm aliases of `byakuya.bankai.scatter` (Petal storm, Шторм лепестков, 桜吹雪), and the weak lone-word handling.
 

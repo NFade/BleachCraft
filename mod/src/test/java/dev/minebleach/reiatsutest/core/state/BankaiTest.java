@@ -74,7 +74,7 @@ class BankaiTest {
 	@Test
 	void timerRunsIndependentlyOfCastsAndEndsInShikai() {
 		Fx f = inBankai(R);
-		assertTrue(f.cast(AbilityId.ABSOLUTE_ZERO, R).ok());
+		assertTrue(f.cast(AbilityId.ICE_SPIKE, R).ok());
 		f.adv(840); // 44 + 840 = 884 since entry
 		assertEquals(ZanpakutoState.BANKAI, f.sm.state());
 		long endTick = f.sm.snapshot().bankaiEndTick();
@@ -89,7 +89,7 @@ class BankaiTest {
 		f.adv(10);
 		assertTrue(f.cast(AbilityId.SHIRAFUNE, R).ok());
 		f.adv(12);
-		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.ABSOLUTE_ZERO, R).reason());
+		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.ICE_SPIKE, R).reason());
 	}
 
 	@Test
@@ -131,15 +131,15 @@ class BankaiTest {
 			}
 		}
 		// hammering one ability: exactly one cast per cooldown
-		Fx f = inBankai(R);
+		Fx f = inBankai(B);
 		int accepted = 0;
 		for (int i = 0; i < 200; i++) {
-			if (f.cast(AbilityId.ABSOLUTE_ZERO, R).ok()) {
+			if (f.cast(AbilityId.SCATTER, B).ok()) {
 				accepted++;
 			}
 			f.adv(1);
 		}
-		assertEquals(1, accepted, "200 ticks of spamming give one cast (cooldown 800 after round 6)");
+		assertEquals(1, accepted, "200 ticks of spamming give one cast (scatter cooldown 300)");
 	}
 
 	@Test
@@ -170,8 +170,7 @@ class BankaiTest {
 		f.sm.devSetReiatsu(200); // Tsukishiro costs 25.0
 		assertEquals(RejectReason.NOT_ENOUGH_REIATSU, f.cast(AbilityId.TSUKISHIRO, R).reason());
 		assertEquals(0, f.sm.cooldownRemaining(AbilityId.TSUKISHIRO), "a refused cast starts no cooldown");
-		assertEquals(RejectReason.NOT_ENOUGH_REIATSU, f.cast(AbilityId.ABSOLUTE_ZERO, R).reason(), "the heavy bankai ability needs half the bar (round 6)");
-		assertTrue(f.cast(AbilityId.ICE_SPIKE, R).ok(), "the cheaper bankai ability works with the same low bar");
+		assertTrue(f.cast(AbilityId.ICE_SPIKE, R).ok(), "the ice spike (15.0) works with the same low bar");
 		f.sm.devSetReiatsu(900);
 		assertEquals(RejectReason.GCD, f.cast(AbilityId.HAKUREN, R).reason());
 		f.adv(12);
@@ -222,16 +221,14 @@ class BankaiTest {
 	}
 
 	@Test
-	void absoluteZeroCoversTenPlusBlocksWithAStrongerFreeze() {
-		AbilitySpec s = CFG.spec(AbilityId.ABSOLUTE_ZERO);
-		assertTrue(s.num(AbilityParams.RADIUS) >= 10.0 && s.num(AbilityParams.RADIUS) <= 16.0, "radius " + s.num(AbilityParams.RADIUS));
-		assertEquals(6, s.intNum(AbilityParams.SLOW_AMP), "Slowness VII, the strongest useful level");
-		assertTrue(s.intNum(AbilityParams.STATUS_TICKS) > 26, "the freeze lasts longer than the old 26 ticks and covers the shatter");
-		assertTrue(s.intNum(AbilityParams.STATUS_TICKS) >= s.phaseOffsets().get(1) - s.phaseOffsets().get(0));
-		assertTrue(s.num(AbilityParams.DAMAGE) > 14.0, "shatter is stronger than the old 14 HP");
-		assertTrue(s.num(AbilityParams.SPLIT_RADIUS) > s.num(AbilityParams.RADIUS), "frozen targets stay shatterable inside the radius");
-		assertTrue(s.intNum(AbilityParams.MAX_BLOCKS) <= 64, "temp ice keeps the TempBlocks limits");
-		assertTrue(s.intNum(AbilityParams.MAX_TARGETS) >= 32);
+	void theRukiaBankaiTerritoryIsOneHeartEveryThreeSecondsAndSlownessOne() {
+		// mech2 task 4: the passive frost territory replaces Absolute Zero; numbers: bankai.field.slowAmplifier / tickDamage / periodTicks
+		BankaiFieldSpec f = CFG.bankaiField();
+		assertEquals(0, f.slowAmplifier(), "Slowness I");
+		assertEquals(2.0F, f.tickDamage(), 0.0F, "exactly one heart (2.0 HP)");
+		assertEquals(60, f.periodTicks(), "every 3 s");
+		assertEquals(20, f.refreshTicks(), "Slowness renewed every 20 ticks");
+		assertTrue(f.slowTicks() > f.refreshTicks() && f.slowTicks() <= 60, "a short Slowness that outlives one refresh gap");
 	}
 
 	@Test

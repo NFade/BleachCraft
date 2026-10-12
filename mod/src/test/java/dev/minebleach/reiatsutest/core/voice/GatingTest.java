@@ -87,7 +87,7 @@ class GatingTest {
 	void stateGate() {
 		assertNull(fire("hakuren", CharacterId.RUKIA, ZanpakutoState.SEALED));
 		assertNull(fire("hakuren", CharacterId.RUKIA, ZanpakutoState.BANKAI));
-		assertEquals("rukia.bankai.absolute_zero", fire("absolute zero", CharacterId.RUKIA, ZanpakutoState.BANKAI));
+		assertNull(fire("absolute zero", CharacterId.RUKIA, ZanpakutoState.BANKAI), "the command was removed (mech2 task 4)");
 		assertNull(fire("absolute zero", CharacterId.RUKIA, ZanpakutoState.SHIKAI));
 		assertEquals("byakuya.bankai.hakuteiken", fire("hakuteiken", CharacterId.BYAKUYA, ZanpakutoState.BANKAI));
 		assertNull(fire("hakuteiken", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI));

@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.core.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
@@ -9,9 +10,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Round 6 (design/results/rukia_bankai_round6.md): the two Rukia bankai abilities are now different (ice spike, absolute zero) and
- * Byakuya's shikai has a third ability, the petal cage. Balance rules: the bankai pair together does less damage per second than the
- * Rukia shikai set, the cage less than the attack mode, and the costs and cooldowns differ.
+ * Round 6 (design/results/rukia_bankai_round6.md): Rukia's bankai has the ice spike (the second ability, Absolute Zero, was removed in
+ * mech2 task 4) and Byakuya's shikai has a third ability, the petal cage. Balance rules: the bankai does less damage per second than the
+ * Rukia shikai set, the cage less than the attack mode.
  */
 class Round6AbilityTest {
 	private static final BalanceConfig CFG = BalanceConfig.defaults();
@@ -28,47 +29,39 @@ class Round6AbilityTest {
 	}
 
 	@Test
-	void theTwoRukiaBankaiAbilitiesAreDifferentInEverything() {
+	void rukiaHasOneBankaiAbilityAndTheSecondSlotIsEmpty() {
+		// mech2 task 4: Absolute Zero (key I) was the same effect as Tsukishiro and is gone; the frost territory is a passive (BankaiFieldSpec)
 		AbilitySpec spike = s(AbilityId.ICE_SPIKE);
-		AbilitySpec zero = s(AbilityId.ABSOLUTE_ZERO);
 		assertEquals(0, AbilityId.ICE_SPIKE.slot());
-		assertEquals(1, AbilityId.ABSOLUTE_ZERO.slot());
-		assertNotEquals(spike.effectId(), zero.effectId());
-		assertNotEquals(spike.costTenths(), zero.costTenths());
-		assertNotEquals(spike.cooldownTicks(), zero.cooldownTicks());
-		assertNotEquals(spike.phaseOffsets(), zero.phaseOffsets());
-		// different mechanics: a long narrow line against a big sphere with a delayed shatter
+		assertEquals(AbilityId.ICE_SPIKE, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
+		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 1), "no second Rukia bankai ability");
+		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 2));
+		assertNull(AbilityId.fromCommandId("rukia.bankai.absolute_zero"));
+		assertNull(AbilityId.fromCode((byte) 4), "code 4 stays unused");
+		for (AbilityId a : AbilityId.values()) {
+			if (a.character == R && a.requiredState == ZanpakutoState.BANKAI) {
+				assertEquals(AbilityId.ICE_SPIKE, a, "the only Rukia bankai ability");
+			}
+		}
+		// a long narrow line, no area
 		assertTrue(spike.num(AbilityParams.LENGTH) >= 30.0 && spike.num(AbilityParams.HALF_WIDTH) <= 2.5);
 		assertEquals(0.0, spike.num(AbilityParams.RADIUS), 0.0, "the spike has no area, only a line");
-		assertTrue(zero.num(AbilityParams.RADIUS) >= 10.0);
-		assertEquals(0.0, zero.num(AbilityParams.LENGTH), 0.0);
-		assertTrue(zero.phaseOffsets().get(1) - zero.phaseOffsets().get(0) >= 60, "absolute zero holds the targets frozen for 3 s");
-		assertTrue(zero.intNum(AbilityParams.STATUS_TICKS) >= 60, "frozen for at least 3 s");
 		assertEquals("rukia.bankai.ice_spike", AbilityId.ICE_SPIKE.commandId);
 		assertEquals(AbilityId.ICE_SPIKE, AbilityId.fromCommandId("rukia.bankai.ice_spike"));
 	}
 
 	@Test
-	void absoluteZeroIsTheHeavyOneAndTheSpikeTheLightOne() {
-		AbilitySpec spike = s(AbilityId.ICE_SPIKE);
-		AbilitySpec zero = s(AbilityId.ABSOLUTE_ZERO);
-		assertTrue(zero.costTenths() >= 400 && zero.costTenths() <= 600, "about half the bar");
-		assertTrue(zero.cooldownTicks() >= 600, "a long cooldown: 30 s or more");
-		assertTrue(spike.costTenths() >= 100 && spike.costTenths() <= 250);
-		assertTrue(spike.cooldownTicks() >= 100 && spike.cooldownTicks() <= 300);
-		assertTrue(zero.costTenths() > 2 * spike.costTenths());
-		assertTrue(zero.cooldownTicks() > 3 * spike.cooldownTicks());
-	}
-
-	@Test
 	void rukiaBankaiDamagePerSecondStaysBelowTheShikaiSet() {
 		double shikai = dps(AbilityId.TSUKISHIRO, 1) + dps(AbilityId.HAKUREN, 1) + dps(AbilityId.SHIRAFUNE, 1);
-		double bankai = dps(AbilityId.ICE_SPIKE, 1) + dps(AbilityId.ABSOLUTE_ZERO, 1);
-		assertTrue(bankai <= shikai, "bankai pair " + bankai + " HP/s must not exceed the shikai set " + shikai + " HP/s");
-		// and no single bankai ability beats the best single shikai one
+		double bankai = dps(AbilityId.ICE_SPIKE, 1);
+		assertTrue(bankai <= shikai, "bankai ability " + bankai + " HP/s must not exceed the shikai set " + shikai + " HP/s");
+		// and it does not beat the best single shikai one
 		double best = Math.max(dps(AbilityId.TSUKISHIRO, 1), Math.max(dps(AbilityId.HAKUREN, 1), dps(AbilityId.SHIRAFUNE, 1)));
 		assertTrue(dps(AbilityId.ICE_SPIKE, 1) <= best);
-		assertTrue(dps(AbilityId.ABSOLUTE_ZERO, 1) <= best);
+		// the passive territory adds one heart per 3 s per enemy: 0.67 HP/s, still below any single shikai ability
+		BankaiFieldSpec f = CFG.bankaiField();
+		double field = f.tickDamage() / (f.periodTicks() / 20.0);
+		assertTrue(field + dps(AbilityId.ICE_SPIKE, 1) <= shikai, "bankai total with the field " + (field + dps(AbilityId.ICE_SPIKE, 1)) + " HP/s");
 	}
 
 	@Test
@@ -127,20 +120,6 @@ class Round6AbilityTest {
 		assertEquals(24, Fx.events(r.events(), StateEvent.BroadcastEffect.class).get(0).effectId());
 		assertEquals(6, Fx.events(r.events(), StateEvent.ScheduledPhase.class).size());
 		assertEquals(s(AbilityId.ICE_SPIKE).cooldownTicks(), f.sm.cooldownRemaining(AbilityId.ICE_SPIKE));
-		assertEquals(0, f.sm.cooldownRemaining(AbilityId.ABSOLUTE_ZERO), "the other bankai ability has its own cooldown");
-	}
-
-	@Test
-	void absoluteZeroNeedsHalfTheBarAndHasItsLongCooldown() {
-		Fx f = new Fx().toShikai(R).toBankai(R);
-		f.adv(44);
-		f.sm.devSetReiatsu(400);
-		assertEquals(RejectReason.NOT_ENOUGH_REIATSU, f.cast(AbilityId.ABSOLUTE_ZERO, R).reason());
-		f.sm.devSetReiatsu(1000);
-		TransitionResult r = f.cast(AbilityId.ABSOLUTE_ZERO, R);
-		assertTrue(r.ok(), String.valueOf(r.reason()));
-		assertEquals(1000 - s(AbilityId.ABSOLUTE_ZERO).costTenths(), f.sm.reiatsu().value());
-		assertEquals(800, f.sm.cooldownRemaining(AbilityId.ABSOLUTE_ZERO));
 	}
 
 	@Test
@@ -166,7 +145,7 @@ class Round6AbilityTest {
 	void iceSpikeParamsCarryTheStepsTheWidthAndTheFirstSegmentTime() {
 		AbilitySpec sp = s(AbilityId.ICE_SPIKE);
 		float[] base = {1f, 2f, 3f, (float) sp.num(AbilityParams.LENGTH)};
-		float[] p = RukiaFxParams.extend(AbilityId.ICE_SPIKE, base, 20.0, sp.phaseOffsets().size(), 60, sp.num(AbilityParams.HALF_WIDTH),
+		float[] p = RukiaFxParams.extend(AbilityId.ICE_SPIKE, base, 20.0, sp.phaseOffsets().size(), sp.num(AbilityParams.HALF_WIDTH),
 				sp.phaseOffsets().get(1) - sp.phaseOffsets().get(0), sp.phaseOffsets().get(0));
 		assertEquals(9, p.length);
 		assertEquals(36f, p[3], 1e-4);
@@ -175,7 +154,7 @@ class Round6AbilityTest {
 		assertEquals(0.1f, p[6], 1e-4, "2 ticks per segment");
 		assertEquals(1.5f, p[7], 1e-4);
 		assertEquals(0.7f, p[8], 1e-4, "the first segment at tick 14");
-		assertEquals(36f, RukiaFxParams.extend(AbilityId.ICE_SPIKE, base, 99.0, 6, 60, Double.NaN)[4], 1e-4, "never longer than the reach");
+		assertEquals(36f, RukiaFxParams.extend(AbilityId.ICE_SPIKE, base, 99.0, 6, Double.NaN)[4], 1e-4, "never longer than the reach");
 		assertTrue(RukiaFxParams.handles(AbilityId.ICE_SPIKE));
 		assertEquals(AbilityId.ICE_SPIKE, RukiaFxParams.abilityOf(24));
 	}

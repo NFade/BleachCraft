@@ -180,9 +180,6 @@ class VoiceProcessorTest {
 				assertFalse(p.process(interim(phrase, 2), bankai).fired(), phrase + " from an interim");
 			}
 		}
-		for (int i = 0; i < 5; i++) {
-			assertFalse(p.process(interim("absolute zero", 3), GateContext.of(CharacterId.RUKIA, ZanpakutoState.BANKAI, true)).fired());
-		}
 	}
 
 	@Test

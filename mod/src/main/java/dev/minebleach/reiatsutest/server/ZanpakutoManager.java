@@ -119,6 +119,7 @@ public final class ZanpakutoManager {
 		ServerLifecycleEvents.SERVER_STOPPING.register(srv -> {
 			TempBlocks.onServerStopping(srv);
 			SCHEDULER.clear();
+			BankaiField.clearAll();
 			SESSIONS.clear();
 			server = null;
 		});
@@ -417,8 +418,8 @@ public final class ZanpakutoManager {
 			}
 			apply(p, s, ev, null);
 
-			if (sm.state() == ZanpakutoState.BANKAI && sm.character() == CharacterId.RUKIA && now % 10 == 0) {
-				AbilityExecutor.rukiaBankaiPassive(p);
+			if (sm.state() == ZanpakutoState.BANKAI && sm.character() == CharacterId.RUKIA) {
+				BankaiField.tick(p, sm.config().bankaiField(), now); // the passive frost territory (mech2 task 4)
 			}
 			if ((now + p.getId()) % 20 == 0) {
 				applyMirror(p, sm); // invariant check (ADR section 3)
@@ -530,11 +531,17 @@ public final class ZanpakutoManager {
 		int anchors = AnchorManager.count(p);
 		AnchorManager.reset(p);
 		int fieldAnchors = RukiaServerFx.endOf(id);
+		boolean territory = BankaiField.end(id);
 		int fields = p.getServer() == null ? 0 : FrostField.endOf(p.getServer(), id, fast);
 		int phases = SCHEDULER.cancelIf(id, a -> a.requiredState == ZanpakutoState.BANKAI);
 		ServerFx.bankaiEnd(p, who, why);
-		ReiatsuTest.LOGGER.info("[bankai-end] {} {} ended ({}): {} anchor(s), {} field anchor(s), {} frost field(s) thawing{}, {} scheduled phase(s) dropped",
-				p.getName().getString(), who, why, anchors, fieldAnchors, fields, fast ? " fast" : "", phases);
+		ReiatsuTest.LOGGER.info("[bankai-end] {} {} ended ({}): {} anchor(s), {} field anchor(s), territory {}, {} frost field(s) thawing{}, {} scheduled phase(s) dropped",
+				p.getName().getString(), who, why, anchors, fieldAnchors, territory ? "ended" : "-", fields, fast ? " fast" : "", phases);
+	}
+
+	/** Slowness and damage pulses of the Rukia bankai territory since the server started: {slow, damage} (dev audit and the harness). */
+	public static int[] fieldPulses() {
+		return new int[] {BankaiField.slowPulses(), BankaiField.damagePulses()};
 	}
 
 	public static int bankaiCleanups() {
@@ -543,11 +550,11 @@ public final class ZanpakutoManager {
 
 	/**
 	 * Server side leftovers of a player's bankai, for the audit after an end: anchors alive, Rukia field anchors, frost fields (not
-	 * the manual dev ones) and scheduled bankai phases. Everything must be 0 once the bankai is over.
+	 * the manual dev ones), scheduled bankai phases and the passive territory (index 4). Everything must be 0 once the bankai is over.
 	 */
 	public static int[] bankaiLeftovers(ServerPlayerEntity p) {
 		int phases = SCHEDULER.countFor(p.getUuid(), a -> a.requiredState == ZanpakutoState.BANKAI);
-		return new int[] {AnchorManager.count(p), RukiaServerFx.liveOf(p.getUuid()), FrostField.liveFields(p.getUuid()), phases};
+		return new int[] {AnchorManager.count(p), RukiaServerFx.liveOf(p.getUuid()), FrostField.liveFields(p.getUuid()), phases, BankaiField.live(p.getUuid())};
 	}
 
 	// ------------------------------------------------------------------ barrier: control immunity (mech2 task 1)

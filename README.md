@@ -2,7 +2,7 @@
 
 A Fabric mod for Minecraft Java 1.21.1 based on Bleach. Two zanpakuto, each with a sealed (sheathed), drawn, shikai and bankai form:
 
-- **Kuchiki Rukia: Sode no Shirayuki** (ice, white blade and ribbon): Tsukishiro, Hakuren, Shirafune, bankai Hakka no Togame (Absolute Zero).
+- **Kuchiki Rukia: Sode no Shirayuki** (ice, white blade and ribbon): Tsukishiro, Hakuren, Shirafune, bankai Hakka no Togame (ice spike and a passive frost territory).
 - **Kuchiki Byakuya: Senbonzakura** (blade petals): attack and barrier modes, bankai Senbonzakura Kageyoshi (scatter, Hakuteiken).
 
 Every sword is a model built in Blender and loaded as an OBJ item model, with a reiatsu bar, server-side abilities, a HUD, custom
@@ -90,7 +90,7 @@ Keys are rebindable in Options, Controls, category **Reiatsu Test**. The mod ign
 | `Z`, `H`, `B` | ability 1, 2, 3 of the current character and form |
 | shunpo | see in-game **Controls** (Options, Controls, Reiatsu Test); the key is listed there once the ability is in your build |
 
-Abilities (key): Rukia shikai: Tsukishiro `Z`, Hakuren `H`, Shirafune `B`; Rukia bankai: Absolute Zero `Z`; Byakuya shikai: attack
+Abilities (key): Rukia shikai: Tsukishiro `Z`, Hakuren `H`, Shirafune `B`; Rukia bankai: ice spike `U` (the second bankai key `I` is empty for her: the frost territory is a passive, see below); Byakuya shikai: attack
 mode `Z`, barrier mode `H`; Byakuya bankai: scatter (petal storm) `Z`, Hakuteiken `H`. Senkei exists but is disabled. Costs,
 cooldowns, damage and radii are numbers in `BalanceConfig` (`core/state`) and are listed in `design/STATE_MACHINE.md`.
 
@@ -110,6 +110,15 @@ SEALED is the sheathed sword, BASE is the drawn sword without release.
 - Shikai costs 15 reiatsu and 40 Rage. Bankai costs no reiatsu and no full bar: it needs 80 Rage (spent on entry); each form regenerates
   or drains the bar at its own rate, and bankai lasts at most 45 seconds and then returns to SHIKAI (re-entry locked for 60 s). What the server refuses (state, item, bar, cooldown) is shown as a
   short HUD message. Balance is still being tuned (`design/FIXES_B4.md`: bankai timer, bigger radii, shunpo).
+- **Rukia bankai, passive frost territory.** While her bankai lasts, every enemy standing in the land it froze (radius 30 around the
+  place of the release, growing with the freeze wave) is slowed (Slowness I, renewed every second) and loses one heart (2.0 HP, armor
+  ignored) every 3 seconds. Enemies are hostile mobs and, where player damage is allowed (`/reiatsu pvp`, server `pvp`), other players;
+  never her, her team, her pets, Creative players or passive animals. A Byakuya barrier on the target keeps the slowness off. It ends in
+  the same moment as the bankai (45 s, seal, death, logout, dimension change). Numbers: `BalanceConfig` `bankaiField`
+  (`bankai.field.slowAmplifier`, `bankai.field.tickDamage`, `bankai.field.periodTicks`).
+- **Byakuya barrier (`H`).** For 5 seconds he takes 80 percent less damage (no pool that runs out) and no control lands on him: slowness,
+  mining fatigue, weakness, nausea, blindness, darkness, levitation, freezing and knockback are refused. Numbers: `BalanceConfig`
+  `barrierReductionPercent`, `barrierPoolTenths` (0 = no cap), `barrierControlImmune`; check in the world with `/reiatsu dev barrier_check`.
 - Abilities change the world only with temporary ice or snow that is rolled back on timeout, seal, death, logout or server stop
   (at most 128 blocks per player). They never hurt the caster, villagers, wandering traders or, by default, other players
   (`/reiatsu pvp true` allows player damage for testing).
@@ -143,7 +152,6 @@ voice command: use `J` or a right click.
 | Rukia | shikai | "Tsugi no mai, Hakuren" (or "Hakuren") | second dance, Hakuren |
 | Rukia | shikai | "San no mai, Shirafune" (or "Shirafune") | third dance, Shirafune |
 | Rukia | shikai | "Bankai, Hakka no Togame" (or just "Bankai"), 卍解, "Банкай" | bankai (needs 80 Rage) |
-| Rukia | bankai | "Absolute zero", 絶対零度, "Абсолютный ноль" | absolute zero |
 | Byakuya | drawn | "Chire, Senbonzakura" (or "Chire", "Scatter"), 散れ千本桜, "Чире" | release (shikai) |
 | Byakuya | shikai | "Attack mode", 攻撃モード, "Режим атаки" | swarm attack mode |
 | Byakuya | shikai | "Barrier mode" or "Dome mode", 防御モード, "Режим барьера" | barrier dome |

@@ -540,67 +540,53 @@ public final class Phase4Harness {
 		step("A9 checks: settle lock", 3, () -> {
 			cCheck("A9 Z during settle is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
 		});
-		step("cows for absolute zero + hostile for passive", 50, () -> {
-			spawnCows(3.0, 5.0, 7.0);
-			cmd("summon minecraft:zombie 1.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,ArmorItems:[{},{},{},{id:\"minecraft:leather_helmet\",count:1}]}");
-			// B4 step 4 acceptance: a group more than 10 blocks from the caster (10.5 to 11.6 blocks, all around)
-			spawnFar("11.0 -60 0.5", "-11.0 -60 1.0", "2.0 -60 -11.0", "-7.0 -60 -8.0");
+		// mech2 task 4: the passive frost territory (replaces Absolute zero): Slowness I + 2.0 HP (one heart, armor ignored) every 3 s on enemies
+		// inside the radius; passive animals, the caster and everything outside are left alone
+		step("territory: zombies in full netherite (near and 14 blocks away), one outside the radius, cows", 40, () -> {
+			String netherite = "ArmorItems:[{id:\"minecraft:netherite_boots\",count:1},{id:\"minecraft:netherite_leggings\",count:1},{id:\"minecraft:netherite_chestplate\",count:1},{id:\"minecraft:netherite_helmet\",count:1}]";
+			spawnCows(3.0, 5.0);
+			cmd("summon minecraft:zombie 1.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,Tags:[\"field\"]," + netherite + "}",
+					"summon minecraft:zombie 14.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,Tags:[\"field\"]," + netherite + "}",
+					"summon minecraft:zombie 45.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,Tags:[\"outside\"],ArmorItems:[{},{},{},{id:\"minecraft:leather_helmet\",count:1}]}");
 			view(0.5, -60, 0.5, 0, 25);
 		});
-		step("A10 checks: bankai passive slows hostile mobs", 12, () -> {
-			sCheck("A10 zombie slowed by the passive", p -> {
-				for (var z : p.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.ZombieEntity.class, Box.of(p.getPos(), 20, 10, 20), e -> true)) {
-					return z.hasStatusEffect(StatusEffects.SLOWNESS) ? null : "zombie without slowness";
-				}
-				return "no zombie";
-			});
-		});
-		step("press U (absolute zero, bankai row)", 42, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
-		step("A11 checks: absolute zero ice", 3, () -> {
-			shot("10_absolute_zero_ice");
-			sCheck("A11 temp ice placed", p -> TempBlocks.count(p.getUuid()) > 0 ? null : "no temp blocks");
-			sCheck("A11 temp ice within the TempBlocks per-player limit (128)", p -> TempBlocks.count(p.getUuid()) <= 128 ? null : "count " + TempBlocks.count(p.getUuid()));
-			sCheck("A11 bankai ability cost no reiatsu", p -> sm(p).reiatsu().value() >= 990 ? null : "reiatsu " + sm(p).reiatsu().value());
-			sCheck("A11 all 7 cows immobilised (Slowness VII)", p -> {
-				for (CowEntity c : cows(p)) {
-					var s = c.getStatusEffect(StatusEffects.SLOWNESS);
-					if (s == null || s.getAmplifier() < 6) {
-						return "cow slowness " + s;
+		step("territory: wait for the pulses", 150, () -> { });
+		step("territory checks", 3, () -> {
+			sCheck("territory: the two zombies in netherite lost whole hearts (2.0 per pulse, armor ignored) and were slowed (Slowness I)", p -> {
+				int seen = 0;
+				for (var z : p.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.ZombieEntity.class, Box.of(p.getPos(), 80, 20, 80), e -> e.getCommandTags().contains("field"))) {
+					seen++;
+					float lost = z.getMaxHealth() - z.getHealth();
+					int hearts = Math.round(lost / 2.0F);
+					if (hearts < 1 || Math.abs(lost - hearts * 2.0F) > 0.01F) {
+						return "zombie lost " + lost + " (not whole 2.0 pulses)";
+					}
+					var slow = z.getStatusEffect(StatusEffects.SLOWNESS);
+					if (slow == null || slow.getAmplifier() != 0) {
+						return "slowness " + slow;
 					}
 				}
-				return cows(p).size() == 7 ? null : "cows " + cows(p).size();
+				return seen == 2 ? null : "field zombies " + seen;
 			});
-			sCheck("A11 ACCEPTANCE: the 4 cows 10+ blocks away are in the frozen group", p -> {
-				int far = 0;
+			sCheck("territory: the zombie outside the radius is untouched", p -> {
+				for (var z : p.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.ZombieEntity.class, Box.of(p.getPos(), 120, 20, 120), e -> e.getCommandTags().contains("outside"))) {
+					return z.getHealth() >= z.getMaxHealth() - 0.01F && !z.hasStatusEffect(StatusEffects.SLOWNESS) ? null : "outside zombie health " + z.getHealth() + " slow " + z.getStatusEffect(StatusEffects.SLOWNESS);
+				}
+				return "no outside zombie";
+			});
+			sCheck("territory: passive cows are not enemies (full health, not slowed)", p -> {
 				for (CowEntity c : cows(p)) {
-					if (c.getCommandTags().contains("far")) {
-						double d = Math.hypot(c.getX() - p.getX(), c.getZ() - p.getZ());
-						if (d < 10.0) {
-							return "far cow only " + d + " blocks away";
-						}
-						if (c.hasStatusEffect(StatusEffects.SLOWNESS)) {
-							far++;
-						}
+					if (c.getHealth() < c.getMaxHealth() - 0.01F || c.hasStatusEffect(StatusEffects.SLOWNESS)) {
+						return "cow health " + c.getHealth() + " slow " + c.getStatusEffect(StatusEffects.SLOWNESS);
 					}
 				}
-				return far == 4 ? null : "far cows frozen " + far;
+				return cows(p).size() == 2 ? null : "cows " + cows(p).size();
 			});
-			sCheck("A11 sanity: the radius of the frozen group is 10 to 16 blocks", p -> {
-				double max = 0;
-				for (CowEntity c : cows(p)) {
-					max = Math.max(max, Math.hypot(c.getX() - p.getX(), c.getZ() - p.getZ()));
-				}
-				return max >= 10.0 && max <= 16.0 ? null : "farthest cow " + max;
-			});
+			sCheck("territory: the caster is not hurt by her own field", p -> p.getHealth() >= p.getMaxHealth() - 0.01F ? null : "health " + p.getHealth());
+			sCheck("territory: the [dmg] counters show slow and damage pulses", p -> ZanpakutoManager.fieldPulses()[0] > 0 && ZanpakutoManager.fieldPulses()[1] > 0 ? null : java.util.Arrays.toString(ZanpakutoManager.fieldPulses()));
+			shot("10_frost_territory");
 		});
-		step("wait shatter", 30, () -> { });
-		step("A11 checks: shatter", 3, () -> {
-			sCheck("A11 all cows dead after the 18 HP shatter (near and far)", p -> cows(p).isEmpty() ? null : "cows alive " + cows(p).size());
-		});
-		step("wait ice rollback", 110, () -> { });
-		step("A11 checks: ice rolled back", 3, () -> {
-			sCheck("A11 all temp ice gone", p -> TempBlocks.size() == 0 ? null : "still " + TempBlocks.size());
-		});
+		step("territory: clean up the test mobs", 3, () -> cmd("kill @e[type=minecraft:zombie]", "kill @e[type=minecraft:cow]"));
 		// B4 step 4: shikai abilities stay available inside bankai, with their normal cost and cooldown
 		step("A11b cow near, full reiatsu", 20, () -> {
 			spawnCows(2.5);
@@ -622,14 +608,22 @@ public final class Phase4Harness {
 			});
 			cCheck("A11b shikai cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.TSUKISHIRO) > 100
 					? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.TSUKISHIRO));
-			cCheck("A11b bankai ability cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.ABSOLUTE_ZERO) > 100
-					? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.ABSOLUTE_ZERO));
 			shot("10b_bankai_strip_both_rows");
 		});
+		// the only bankai ability of Rukia is the ice spike (U); key I is empty for her now
+		step("A11c press U (ice spike)", 12, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
+		step("A11c checks: ice spike OK, cooldown running, key I is empty", 3, () -> {
+			cCheck("A11c ice spike action_result OK", () -> lastResultIs("OK") ? null : "last result " + lastResult());
+			cCheck("A11c ice spike cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.ICE_SPIKE) > 100 ? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.ICE_SPIKE));
+		});
 		step("A11c press U again (cooldown, no spam)", 12, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
-		step("A11c checks", 3, () -> {
-			cCheck("A11c second absolute zero is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
-			sCheck("A11c nothing was spent", p -> sm(p).reiatsu().value() >= 700 ? null : "reiatsu " + sm(p).reiatsu().value());
+		step("A11c checks: second ice spike", 3, () -> {
+			cCheck("A11c second ice spike is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
+		});
+		step("A11d checks: the second bankai slot of Rukia (key I) is empty", 3, () -> {
+			cCheck("A11d no ability in the Rukia bankai slot 2", () -> AbilityId.forSlot(CharacterId.RUKIA, ZanpakutoState.BANKAI, 1) == null ? null : "ability " + AbilityId.forSlot(CharacterId.RUKIA, ZanpakutoState.BANKAI, 1));
+			cCheck("A11d AbilityId has no absolute zero any more", () -> AbilityId.fromCommandId("rukia.bankai.absolute_zero") == null ? null : "still there");
+			sCheck("A11d still BANKAI", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.RUKIA));
 		});
 		step("press V (seal)", 8, () -> press(ReiatsuKeys.SEAL));
 		step("A12 checks: sealed", 3, () -> {

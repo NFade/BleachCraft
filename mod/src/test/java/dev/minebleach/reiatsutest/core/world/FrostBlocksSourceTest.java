@@ -52,11 +52,12 @@ class FrostBlocksSourceTest {
 	}
 
 	@Test
-	void absoluteZeroNoLongerPlacesSlipperyTemporaryIce() throws IOException {
+	void theBankaiTerritoryAndTheIceSpikePlaceNoTemporaryIce() throws IOException {
+		// Absolute Zero (removed in mech2 task 4) used to place random slippery ice; the passive territory only slows and hurts
 		String exec = code(read("server/AbilityExecutor.java"));
-		int a = exec.indexOf("private static void absoluteZero(");
+		assertFalse(exec.contains("absoluteZero("), "the old ability code is gone");
 		int b = exec.indexOf("private static void iceSpike(");
-		assertTrue(a > 0 && b > a);
-		assertFalse(exec.substring(a, b).contains("TempBlocks.place"), "the old random ice blocks are gone");
+		assertTrue(b > 0);
+		assertFalse(code(read("server/BankaiField.java")).contains("TempBlocks.place"));
 	}
 }

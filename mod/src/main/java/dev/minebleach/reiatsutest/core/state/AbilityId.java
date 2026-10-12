@@ -8,13 +8,15 @@ public enum AbilityId {
 	TSUKISHIRO(1, "rukia.shikai.tsukishiro", CharacterId.RUKIA, ZanpakutoState.SHIKAI),
 	HAKUREN(2, "rukia.shikai.hakuren", CharacterId.RUKIA, ZanpakutoState.SHIKAI),
 	SHIRAFUNE(3, "rukia.shikai.shirafune", CharacterId.RUKIA, ZanpakutoState.SHIKAI),
-	ABSOLUTE_ZERO(4, "rukia.bankai.absolute_zero", CharacterId.RUKIA, ZanpakutoState.BANKAI),
 	MODE_ATTACK(5, "byakuya.shikai.mode_attack", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI),
 	MODE_BARRIER(6, "byakuya.shikai.mode_barrier", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI),
 	SCATTER(7, "byakuya.bankai.scatter", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
 	HAKUTEIKEN(8, "byakuya.bankai.hakuteiken", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
 	SENKEI(9, "byakuya.bankai.senkei", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
-	/** Rukia bankai, first slot: a long thrust of ice spikes along the look ray (round 6; Absolute Zero moved to the second slot). */
+	/**
+	 * Rukia bankai, first slot: a long thrust of ice spikes along the look ray. Her second bankai slot is empty since mech2 task 4: Absolute Zero was
+	 * the same effect as Tsukishiro and is replaced by the passive frost territory (not an ability: {@code server/BankaiField}). Code 4 stays unused.
+	 */
 	ICE_SPIKE(10, "rukia.bankai.ice_spike", CharacterId.RUKIA, ZanpakutoState.BANKAI),
 	/** Byakuya shikai, third slot: the petal cage around the aimed target or point (round 6). */
 	CAGE(11, "byakuya.shikai.cage", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI);
@@ -54,7 +56,7 @@ public enum AbilityId {
 	public int slot() {
 		return switch (this) {
 			case TSUKISHIRO, ICE_SPIKE, MODE_ATTACK, SCATTER -> 0;
-			case HAKUREN, ABSOLUTE_ZERO, MODE_BARRIER, HAKUTEIKEN -> 1;
+			case HAKUREN, MODE_BARRIER, HAKUTEIKEN -> 1;
 			case SHIRAFUNE, SENKEI, CAGE -> 2;
 		};
 	}

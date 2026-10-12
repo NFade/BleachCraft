@@ -40,7 +40,7 @@ import net.minecraft.client.option.Perspective;
 
 /**
  * Phase 6 steps 6 and 7 scenarios: the Rukia shikai abilities (3.1 to 3.3), the bankai release (5.1), the passive (5.2) and
- * Absolute zero (5.4) with zombies as targets, plus the frame cost scenarios F6 (absolute zero, 32 encased zombies) and F7 (three
+ * the ice spike with zombies as targets, plus the frame cost scenarios F6 (ice spike, 32 zombies) and F7 (three
  * abilities within 2 s). Scenario names for {@code -Phold}: {@code rk6}, {@code rk7}, {@code rkperf}; console lines are
  * {@code rk <tsuki|hak|shira|abs|rb|passive> <ms> <name> [night] [front] [up] [down] [far]} and {@code rkperf <f6|f7>}.
  */
@@ -111,7 +111,7 @@ final class Phase6Rukia {
 		return c;
 	}
 
-	// sized for the balance numbers: Tsukishiro radius 7, Hakuren 20 x 7 wide, Shirafune reach 14, Absolute zero radius 12
+	// sized for the balance numbers: Tsukishiro radius 7, Hakuren 20 x 7 wide, Shirafune reach 14
 	private static final double[][] CIRCLE5 = {{-3.2, 3.0}, {3.4, 3.6}, {0, 5.5}, {-5.0, 0.6}, {5.2, 1.2}};
 	private static final double[][] PATH = {{0, 3.0}, {-2.4, 7.0}, {2.4, 8.5}, {0, 12.0}, {-1.5, 16.0}, {2.0, 18.5}};
 	private static final double[][] ONE_AHEAD = {{0, 5.5}};
@@ -206,7 +206,7 @@ final class Phase6Rukia {
 		press(ReiatsuKeys.SLOTS[slot]);
 	}
 
-	/** Bankai row (U I O): Absolute zero is the first one. */
+	/** Bankai row (U I O): the ice spike is the first one. */
 	private static void castBankai(int slot) {
 		press(ReiatsuKeys.BANKAI_SLOTS[slot]);
 	}
@@ -237,13 +237,6 @@ final class Phase6Rukia {
 		ReiatsuTest.LOGGER.info("[phase6] SHOT {} kind {} t {} ms: desat {} (fallback {}), shells {}, crystals {}, shards {}, decals {}, particles {}, glow {}, shapes {}", name, kind, ms,
 				String.format(Locale.ROOT, "%.3f", FreezeDesat.level()), FreezeDesat.usingFallback, FxMeshPass.shells().size(), FxMeshPass.crystalCount(), FxMeshPass.shardCount(), FxDecals.count(),
 				FxParticles.live(), FxGlowBatch.live(), FxShapes.lastDrawn);
-		if (kind.equals("abs") && ms >= 3000 && ms < 3300 && !name.contains("fallback")) {
-			// the pause: 0.45 of the desaturation (x the caster factor 1)
-			cCheck(name + ": desat " + String.format(Locale.ROOT, "%.2f", FreezeDesat.level()) + " ~ 0.45 in the pause", () -> Math.abs(FreezeDesat.level() - 0.45) < 0.03 ? null : "level " + FreezeDesat.level());
-		}
-		if (kind.equals("abs") && ms >= 3350) {
-			cCheck(name + ": colour flooding back (desat " + String.format(Locale.ROOT, "%.2f", FreezeDesat.level()) + " below 0.45)", () -> FreezeDesat.level() < 0.45 ? null : "level " + FreezeDesat.level());
-		}
 	}
 
 	private static void bankaiReleaseShot(String name, int ms, boolean night, String view) {
@@ -335,30 +328,7 @@ final class Phase6Rukia {
 		passiveShot("07_passive_midnight", true, "back", 100);
 		passiveShot("07_passive_front_noon", false, "front", 100);
 		passiveShot("07_passive_down_noon", false, "down", 100);
-		for (int ms : new int[] {400, 1000, 2000, 3000, 3350, 4500}) {
-			abilityShot("07_abszero_t" + ms, "abs", ms, false, ms >= 3000 ? "back" : "down");
-		}
-		step("rk7: abs zero checks", 2, () -> {
-			cCheck("abs zero: post pass ran (frames " + FreezeDesat.passFrames + ")", () -> FreezeDesat.passFrames > 0 ? null : "no pass");
-			cCheck("abs zero: real post effect, not the fallback", () -> FreezeDesat.usingFallback ? "fallback in use" : null);
-			cCheck("abs zero: hits seen (" + RukiaEntityFx.hitsSeen + ")", () -> RukiaEntityFx.hitsSeen > 0 ? null : "no HIT");
-			cCheck("abs zero: client radius " + RukiaBankaiFx.lastAbsoluteZeroRadius + " = server spec radius " + specNum(AbilityId.ABSOLUTE_ZERO, AbilityParams.RADIUS),
-					() -> Math.abs(RukiaBankaiFx.lastAbsoluteZeroRadius - specNum(AbilityId.ABSOLUTE_ZERO, AbilityParams.RADIUS)) < 1e-3 ? null : "radius " + RukiaBankaiFx.lastAbsoluteZeroRadius);
-			cCheck("abs zero: pause " + RukiaBankaiFx.lastAbsoluteZeroPause + " s = server gap of the phase offsets", () -> {
-				var offs = BalanceConfig.defaults().spec(AbilityId.ABSOLUTE_ZERO).phaseOffsets();
-				return Math.abs(RukiaBankaiFx.lastAbsoluteZeroPause - (offs.get(1) - offs.get(0)) / 20.0) < 1e-3 ? null : "pause " + RukiaBankaiFx.lastAbsoluteZeroPause;
-			});
-		});
-		abilityShot("07_abszero_back_t2000", "abs", 2000, false, "back");
-		abilityShot("07_abszero_night_t2000", "abs", 2000, true, "back");
-		abilityShot("07_abszero_night_t3350", "abs", 3350, true, "back");
-		// the grey quad fallback of the post effect
-		scene("07_abszero_fallback_t2000", "bankai", zombiesAt(ring32()), "noon", "back", 90);
-		armShot("07_abszero_fallback_t2000", 2000, () -> {
-			FreezeDesat.forceFallback = true;
-			castBankai(0);
-		});
-		step("rk7: fallback reset", 2, () -> FreezeDesat.forceFallback = false);
+		// (the Absolute zero shots, their desaturation checks and the grey quad fallback shot were removed with the ability, mech2 task 4)
 	}
 
 	// ------------------------------------------------------------------------------------------------ performance
@@ -400,7 +370,7 @@ final class Phase6Rukia {
 		return peakGlow * 4;
 	}
 
-	/** F6: absolute zero with 32 encased zombies; F7: three Rukia abilities within 2 seconds. */
+	/** F6: the ice spike with 32 zombies; F7: three Rukia abilities within 2 seconds. */
 	static void perfSteps() {
 		step("perf: unlimited fps, baseline", 4, () -> {
 			mc.options.getMaxFps().setValue(260);
@@ -425,8 +395,8 @@ final class Phase6Rukia {
 			startRecording();
 			castBankai(0);
 		});
-		step("perf F6: 5 s of absolute zero", 20 * 5, () -> { });
-		step("perf F6: report", 1, () -> report("F6 absolute zero, 32 zombies", 60, 45));
+		step("perf F6: 5 s of ice spike", 20 * 5, () -> { });
+		step("perf F6: report", 1, () -> report("F6 ice spike, 32 zombies", 60, 45));
 	}
 
 	private static void perfF7() {
