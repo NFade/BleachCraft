@@ -27,7 +27,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ## 1. Command list
 
-**17 commands** (16 required, 1 optional: `byakuya.bankai.senkei`). The last three (`kido.*`, B5) are valid in every state with any sword or none.
+**19 commands** (18 required, 1 optional: `byakuya.bankai.senkei`). Round 6 added `rukia.bankai.ice_spike` and `byakuya.shikai.cage`. The last three (`kido.*`, B5) are valid in every state with any sword or none.
 
 | id | state | item in hand | canonical phrase | weak | notes |
 |---|---|---|---|---|---|
@@ -37,9 +37,11 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `rukia.shikai.shirafune` | SHIKAI | Rukia's zanpakuto | San no mai, Shirafune | no | Dance 3 (ice blade). Same prefix rules. |
 | `rukia.bankai.release` | SHIKAI | Rukia's zanpakuto | Bankai, Hakka no Togame | no | SHIKAI to BANKAI. Server requires full reiatsu. Phrase is game-sourced (Gate A 9). |
 | `rukia.bankai.absolute_zero` | BANKAI | Rukia's zanpakuto | (mod-defined) Absolute zero | no | Active area freeze. No canon phrase exists: mod-defined. |
+| `rukia.bankai.ice_spike` | BANKAI | Rukia's zanpakuto | (mod-defined) Ice spike | no | Round 6: thrust of ice spikes along the look. No canon phrase exists: mod-defined. |
 | `byakuya.shikai.release` | BASE | Byakuya's zanpakuto | Chire, Senbonzakura | no | BASE to SHIKAI (the sword must be drawn first, B4 step 3). Canon. Lone "Chire" and "Scatter" are weak (see 3). |
 | `byakuya.shikai.mode_attack` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Attack mode | no | Swarm follows the aim. Mod-defined phrase. |
 | `byakuya.shikai.mode_barrier` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Barrier mode | no | Dome mode. Mod-defined phrase. |
+| `byakuya.shikai.cage` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Petal cage | no | Round 6: sphere of petals around the aimed target. Mod-defined phrase; `Chire no ori` is the alias. |
 | `byakuya.bankai.release` | SHIKAI | Byakuya's zanpakuto | Bankai, Senbonzakura Kageyoshi | no | SHIKAI to BANKAI. Server requires full reiatsu. "Chire" never triggers it (Gate A 8). |
 | `byakuya.bankai.scatter` | BANKAI | Byakuya's zanpakuto | Chire (same word as shikai) / mod: Petal storm | no | Giant blades to petal storm. Canon word "Chire" (same word as shikai, different state) + mod aliases. |
 | `byakuya.bankai.hakuteiken` | BANKAI | Byakuya's zanpakuto | Shukei: Hakuteiken | no | Final strike. Canon name. |
@@ -352,7 +354,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
-| Japanese script (ja-JP ASR form) | 破道の四 白雷 | `C` | `hado no byakurai` |
+| Japanese script (ja-JP ASR form) | 破道の四 白雷 | `C` | `hado no yon byakurai` |
 |  | 白雷 | `C` | `byakurai` |
 |  | びゃくらい | `C` | `byakurai` |
 |  | はどうのよん びゃくらい | `C` | `hadonoyon byakurai` |
@@ -383,7 +385,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
-| Japanese script (ja-JP ASR form) | 破道の三十一 赤火砲 | `C` | `hado no sakaho` |
+| Japanese script (ja-JP ASR form) | 破道の三十一 赤火砲 | `C` | `hado no sansuici sakaho` |
 |  | 赤火砲 | `C` | `sakaho` |
 |  | しゃっかほう | `C` | `sakaho` |
 |  | はどうのさんじゅういち しゃっかほう | `C` | `hadonosansuici sakaho` |
@@ -415,7 +417,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
-| Japanese script (ja-JP ASR form) | 縛道の一 塞 | `C` | `bakudo no sai` |
+| Japanese script (ja-JP ASR form) | 縛道の一 塞 | `C` | `bakudo no ici sai` |
 |  | ばくどう さい | `C` | `bakudo sai` |
 |  | 塞 (weak: whole utterance) | `C` | `sai` |
 |  | さい (weak: whole utterance) | `C` | `sai` |
@@ -440,6 +442,47 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 |  | Сай (weak: whole utterance) | `X` | `sai` |
 |  | Бакудо (weak: whole utterance) | `X` | `bakudo` |
 
+
+### 1.18 `rukia.bankai.ice_spike`
+
+- **Required state:** BANKAI. **Item:** Rukia's zanpakuto in the main hand.
+- **Canonical phrase:** (mod-defined) Ice spike
+- **Notes:** Round 6 (design/results/rukia_bankai_round6.md): the first bankai ability, a long thrust of ice spikes. No canon phrase exists, so the mod uses the plain English name and its Japanese and Russian equivalents. Two-word phrases only; "ice" alone never fires. Not interim-safe. Kana only in the table on purpose: the normaliser keeps just the kanji it knows, so 氷の棘 would reduce to the bare particle の and fire on half of Japanese speech (the book text may still show the kanji).
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Japanese script (ja-JP ASR form) | こおりのとげ | `M` | `korinotoge` |
+|  | アイススパイク | `M` | `aisusupaiku` |
+| Romaji | Koori no toge | `M` | `kori no toge` |
+| English sub | Ice spike | `M` | `ice spike` |
+|  | Ice spikes | `M` | `ice spikes` |
+|  | Ice thorn | `M` | `ice thorn` |
+| English dub | n/a (mod-defined, no dub exists) | - | - |
+| Russian (Cyrillic) | Ледяной шип | `M` | `redyanoi sip` |
+|  | Ледяные шипы | `M` | `redyanie sipi` |
+|  | Шип льда | `M` | `sip rda` |
+
+### 1.19 `byakuya.shikai.cage`
+
+- **Required state:** SHIKAI. **Item:** Byakuya's zanpakuto in the main hand.
+- **Canonical phrase:** (mod-defined) Petal cage
+- **Notes:** Round 6: the petal cage (also usable inside the Byakuya bankai). Mod-defined name; `Chire no ori` (the release word 散れ plus "cage") is an alias, not canon. Not weak, not interim-safe: the whole phrase has to be heard. Kana only in the table (see ice_spike: unknown kanji reduce to a bare particle).
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Japanese script (ja-JP ASR form) | ちれのおり | `M` | `cirenori` |
+|  | はなびらのおり | `M` | `hanabiranori` |
+|  | ペタルケージ | `M` | `petarukesi` |
+| Romaji | Chire no ori | `M` | `cire no ori` |
+|  | Hanabira no ori | `M` | `hanabira no ori` |
+| English sub | Petal cage | `M` | `petar cage` |
+|  | Petal prison | `M` | `petar prison` |
+|  | Senbonzakura petal cage | `M` | `senbonsakura petar cage` |
+| English dub | n/a (mod-defined, no dub exists) | - | - |
+| Russian (Cyrillic) | Лепестковая клетка | `M` | `repestkovaya kretka` |
+|  | Клетка из лепестков | `M` | `kretka is repestkov` |
+|  | Чире но ори | `X` | `cire no ori` |
+|  | Сенбонзакура лепестковая клетка | `M` | `senbonsakura repestkovaya kretka` |
 
 ## 2. Typical ASR mis-recognitions
 

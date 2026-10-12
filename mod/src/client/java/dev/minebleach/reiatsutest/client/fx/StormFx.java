@@ -259,6 +259,7 @@ public final class StormFx {
 		double yaw = Math.atan2(-dir.x, dir.z);
 		long seed = e.seed() * 0x2545F4914F6CDD1DL + 32;
 		StormMath.Storm storm = new StormMath.Storm(p, seed, blades, per, dist, yaw, pos.distanceTo(aim));
+		storm.heightScale = haveRows ? rs.bladeScale : 1.0;
 		EffectTimeline t = FxTimelines.create(32, e.seed(), pos, dir, e.params(), e.casterId(), FxClient.forceRemote());
 		double life = Math.max(6.0, p.rows.end(haveRows ? rs.maxDist : 50) + 0.4);
 		State st = new State(e.casterId(), seed, t.slot, storm, pos, !haveRows, blades, bx, by, bz, life);

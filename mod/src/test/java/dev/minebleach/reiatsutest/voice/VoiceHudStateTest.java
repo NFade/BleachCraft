@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.voice;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,6 +42,28 @@ class VoiceHudStateTest {
 		assertEquals(VoiceHudState.Mic.LISTENING, s.mic()); // hearing ends with the result
 		assertTrue(s.seq() >= s0 + 2);
 		VoiceHudState.reset();
+	}
+
+	/** v4: the HUD indicator is wanted as soon as the bridge runs (dim, crossed out), and "connected" ends 6 s after the last contact. */
+	@Test
+	void indicatorIsWantedWheneverTheBridgeRunsAndGoesOffAfterSixSeconds() {
+		VoiceHudState.reset();
+		assertFalse(VoiceHudState.get().indicatorWanted(), "no bridge, no contact: hidden (dedicated server, voice disabled)");
+		VoiceHudState.setBridgeUp(true);
+		assertTrue(VoiceHudState.get().indicatorWanted(), "bridge up, no page yet: shown as not connected");
+		assertEquals(VoiceHudState.Mic.OFF, VoiceHudState.get().effectiveMic(System.currentTimeMillis()));
+		VoiceHudState.contact("on");
+		long t = VoiceHudState.get().lastContactMs();
+		assertEquals(VoiceHudState.Mic.LISTENING, VoiceHudState.get().effectiveMic(t + 100));
+		assertEquals(VoiceHudState.Mic.LISTENING, VoiceHudState.get().effectiveMic(t + VoiceHudState.CONTACT_TIMEOUT_MS));
+		assertEquals(VoiceHudState.Mic.OFF, VoiceHudState.get().effectiveMic(t + VoiceHudState.CONTACT_TIMEOUT_MS + 1), "page gone");
+		VoiceHudState.contact("restarting"); // the page's watchdog state: connected, not listening
+		assertEquals(VoiceHudState.Mic.IDLE, VoiceHudState.get().effectiveMic(VoiceHudState.get().lastContactMs()));
+		VoiceHudState.setBridgeUp(false);
+		assertTrue(VoiceHudState.get().indicatorWanted(), "a page has been in touch: still shown");
+		VoiceHudState.reset();
+		assertFalse(VoiceHudState.bridgeUp());
+		assertFalse(VoiceHudState.get().indicatorWanted());
 	}
 
 	@Test

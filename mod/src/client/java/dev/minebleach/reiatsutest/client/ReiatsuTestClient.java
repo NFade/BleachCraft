@@ -19,10 +19,17 @@ public class ReiatsuTestClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ClientOptions.load();
+		// frost blocks of the Rukia bankai territory freeze (round 6): cut out leaves and sprigs, translucent thin ice
+		net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap.INSTANCE.putBlocks(net.minecraft.client.render.RenderLayer.getCutout(),
+				dev.minebleach.reiatsutest.registry.ModBlocks.FROST_LEAVES, dev.minebleach.reiatsutest.registry.ModBlocks.FROST_SPRIG);
+		net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap.INSTANCE.putBlock(dev.minebleach.reiatsutest.registry.ModBlocks.FROST_FILM,
+				net.minecraft.client.render.RenderLayer.getTranslucent());
 		FxClient.init();
 		DevWindowPlacement.init();
 		ObjModelPlugin.register();
 		dev.minebleach.reiatsutest.client.model.ScabbardFeature.register();
+		dev.minebleach.reiatsutest.client.model.TpPoseLayer.register();
+		dev.minebleach.reiatsutest.client.model.FpMotion.init();
 		ClientNet.register();
 		ReiatsuKeys.init();
 		ReiatsuHud.init();

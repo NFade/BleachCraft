@@ -7,12 +7,10 @@ import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.client.fx.FxMath;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
-import dev.minebleach.reiatsutest.voice.VoiceHudState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 
 /** The spirit plate (VFX_STORYBOARD 7.2): emblem with timer ring, name line, reiatsu bar, value line, voice row. */
 final class PlateHud {
@@ -37,6 +35,7 @@ final class PlateHud {
 	static void draw(HudGfx g, MinecraftClient mc, TextRenderer font, int w, int h, int x0, int y0, boolean compact, float tickDelta) {
 		double now = HudModel.now;
 		float alpha = (float) HudModel.plateAlpha;
+		rageOnScreen = false;
 		if (alpha <= 0.01f) {
 			return;
 		}
@@ -89,7 +88,6 @@ final class PlateHud {
 		PROF[1] += q2 - q1;
 		PROF[2] += q3 - q2;
 		ms.pop();
-		drawVoiceRow(g, mc, font, w, x0, y0, accent, alpha);
 	}
 
 	// ------------------------------------------------------------------------------------------ emblem
@@ -124,7 +122,7 @@ final class PlateHud {
 		double ia = now - HudModel.iconFlash;
 		if (ia >= 0 && ia < 0.6) {
 			float fa2 = (float) (1.0 - ia / 0.6) * alpha;
-			g.sprite(ABILITY_ICONS, 64, 48, x0 + 7, y0 + 7, 16 * 2, 32 - 32 + 32, 16, 16, new float[] {1f, 0.45f, 0.4f}, fa2);
+			g.sprite(ABILITY_ICONS, 64, 64, x0 + 7, y0 + 7, 16 * 2, 32 - 32 + 32, 16, 16, new float[] {1f, 0.45f, 0.4f}, fa2);
 		}
 		ms.pop();
 	}
@@ -449,120 +447,210 @@ final class PlateHud {
 
 	// ------------------------------------------------------------------------------------------ rage
 
-	private static final int RAGE_H = 4;
+	private static final int RAGE_H = 9;
+	private static final int RAGE_ICON = 9;
+	private static final int RAGE_NUM_W = 22;
+	private static final float[] RAGE_INK = FxMath.hex("#0B0F1A");
+	private static final float[] RAGE_RIM = FxMath.hex("#8A3A1C");
 	private static final float[] RAGE_BACK = FxMath.hex("#2A0E0A");
-	private static final float[] RAGE_FILL = FxMath.hex("#C2410C");
-	private static final float[] RAGE_HOT = FxMath.hex("#FF6A2B");
-	private static final float[] RAGE_FULL = FxMath.hex("#FFC27A");
-	private static double rageShown;
-	private static double rageLastNow = -1;
+	private static final float[] RAGE_LOW = FxMath.hex("#A81E0B");
+	private static final float[] RAGE_MID = FxMath.hex("#F0541A");
+	private static final float[] RAGE_HIGH = FxMath.hex("#FFB02E");
+	private static final float[] RAGE_GLOW = FxMath.hex("#FFC27A");
+	private static final float[] RAGE_TRAIL = FxMath.hex("#FFE0B0");
+	private static final float[] RAGE_TEXT = FxMath.hex("#FF8A3C");
+	private static final float[] RAGE_TEXT_FULL = FxMath.hex("#FFE9A8");
+	private static final float[] RAGE_CAPTION = FxMath.hex("#D98A5A");
+	/** 9x9 flame: o outline, r red, y orange, w pale yellow core, dot transparent. */
+	private static final String[] FLAME = {
+			"....o....",
+			"...oro...",
+			"...orro..",
+			"..orryro.",
+			".orryyyro",
+			".orywyyro",
+			".orywwyro",
+			"..orwwro.",
+			"..ooooo.."};
+	private static final float[] FLAME_O = FxMath.hex("#5A1408");
+	private static final float[] FLAME_R = FxMath.hex("#E04214");
+	private static final float[] FLAME_Y = FxMath.hex("#FF8A1E");
+	private static final float[] FLAME_W = FxMath.hex("#FFE6A0");
 
-	/**
-	 * Rage bar (B4): a thin dark-orange bar under the reiatsu value line, plain filled rectangles (no atlas sheet). Hidden while
-	 * the bar is empty and has settled. The shown value eases to the synced one; at a full bar it pulses (not with reduceMotion).
-	 */
-	private static void drawRage(HudGfx g, TextRenderer font, int bx, int by, int barW, float alpha, double now) {
-		var r = dev.minebleach.reiatsutest.client.ClientState.rage();
-		double max = Math.max(1, r.max());
-		double target = Math.min(1.0, r.value() / max);
-		double dt = rageLastNow < 0 ? 1.0 : Math.min(0.25, Math.max(0.0, now - rageLastNow));
-		rageLastNow = now;
-		rageShown = FxConfig.reduceMotion ? target : rageShown + (target - rageShown) * Math.min(1.0, dt * 10.0);
-		if (target <= 0.0 && rageShown < 0.004) {
-			rageShown = 0;
-			return;
-		}
-		boolean full = r.value() >= r.max() && r.max() > 0;
-		float pulse = full && !FxConfig.reduceMotion ? (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.5 * now)) : 0f;
-		g.fill(bx, by, bx + barW, by + RAGE_H, HudGfx.argb(RAGE_BACK, 0.85f * alpha));
-		int len = (int) Math.round((barW - 2) * rageShown);
-		if (len > 0) {
-			float[] c = full ? FxMath.mix(RAGE_HOT, RAGE_FULL, pulse) : FxMath.mix(RAGE_FILL, RAGE_HOT, (float) rageShown);
-			g.fill(bx + 1, by + 1, bx + 1 + len, by + RAGE_H - 1, HudGfx.argb(c, alpha));
-		}
-		String label = HudText.tr("hud.reiatsu_test.rage") + " " + Math.round(r.value() / 10.0);
-		g.text(font, label, bx, by + RAGE_H + 1, (full ? HudGfx.argb(RAGE_FULL, 1f) : HudGfx.argb(RAGE_HOT, 0.8f)) & 0x00FFFFFF | alphaInt(alpha) << 24, true);
+	/** Eased fill fraction (fast), the pale "just lost" trail (slow, only above the fill), gain flash 0..1, fade-in 0..1. */
+	private static double rageShown;
+	private static double rageTrail;
+	private static double rageFlash;
+	private static double rageFade;
+	private static double rageYOff;
+	private static int rageLastValue;
+	private static double rageLastNow = -1;
+	/** Round 5: time (HudModel.now seconds) of the last refused shikai/bankai for lack of Rage, and the needed fraction of the bar. */
+	private static double rageDenyAt = -99;
+	private static double rageDenyFrac;
+	private static final double RAGE_DENY_LIFE = 1.0;
+
+	/** Flashes the Rage bar after a refused release: the missing part up to the needed mark turns red and the mark blinks. */
+	static void flashRageDenied(double neededFraction) {
+		rageDenyAt = HudModel.now;
+		rageDenyFrac = FxMath.clamp(neededFraction);
 	}
 
-	// ------------------------------------------------------------------------------------------ voice row
+	/** Set by {@link #draw} for the frame: the bar is on screen (the plate is visible and the bar has not faded out). */
+	private static boolean rageOnScreen;
 
-	private static void drawVoiceRow(HudGfx g, MinecraftClient mc, TextRenderer font, int w, int x0, int y0, float[] accent, float alpha) {
-		if (!FxConfig.voiceHud) {
+	/**
+	 * Rage bar (round 3): flame icon, framed bar with an orange gradient, top gloss and a slow sheen, quarter ticks, the value on
+	 * the right and the caption under the bar. The fill eases up fast and down slower, a pale trail shows what was just lost,
+	 * every gain flashes the fill, a full bar pulses (glow rim, brighter fill, number and icon; static with reduceMotion). It
+	 * fades in when the first rage arrives and out when it is spent. While the voice toast is on screen the whole row steps
+	 * below it, so the toast never covers the bar. Occupies {@code RAGE_H + 7} px below {@code by0} (the voice status line
+	 * moves to y0+54 while the bar is visible, see {@link #rageVisible}).
+	 */
+	private static void drawRage(HudGfx g, TextRenderer font, int bx, int by0, int barW, float alpha, double now) {
+		var r = dev.minebleach.reiatsutest.client.ClientState.rage();
+		boolean rm = FxConfig.reduceMotion;
+		double max = Math.max(1, r.max());
+		double target = FxMath.clamp(r.value() / max);
+		double dt = rageLastNow < 0 ? 1.0 : Math.min(0.25, Math.max(0.0, now - rageLastNow));
+		rageLastNow = now;
+		if (r.value() > rageLastValue) {
+			rageFlash = 1.0;
+		}
+		rageLastValue = r.value();
+		rageFlash = Math.max(0.0, rageFlash - dt * 2.8);
+		if (rm) {
+			rageShown = target;
+			rageTrail = target;
+			rageFlash = 0;
+		} else {
+			rageShown += (target - rageShown) * Math.min(1.0, dt * (target > rageShown ? 14.0 : 6.0));
+			rageTrail = rageShown >= rageTrail ? rageShown : rageTrail + (rageShown - rageTrail) * Math.min(1.0, dt * 2.2);
+		}
+		boolean denying = now - rageDenyAt >= 0 && now - rageDenyAt < RAGE_DENY_LIFE;
+		boolean want = target > 0.0 || rageShown > 0.004 || rageTrail > 0.004 || denying;
+		rageFade = rm ? (want ? 1.0 : 0.0) : FxMath.clamp(rageFade + (want ? 1 : -1) * dt * 5.0);
+		if (!want && rageFade <= 0.01) {
+			rageShown = 0;
+			rageTrail = 0;
+			rageFade = 0;
 			return;
 		}
-		VoiceHudState v = VoiceHudState.get();
-		if (v.lastContactMs() <= 0) {
-			return;
+		rageOnScreen = true;
+		float a = alpha * (float) rageFade;
+		// below the voice toast while it is up (the toast is 16 px, 25 with a verdict line)
+		double yWant = toastHeight(now);
+		rageYOff = rm ? yWant : rageYOff + (yWant - rageYOff) * Math.min(1.0, dt * 12.0);
+		int y = by0 + (int) Math.round(rageYOff);
+		boolean full = r.value() >= r.max() && r.max() > 0;
+		float pulse = full ? (rm ? 0.6f : (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.6 * now))) : 0f;
+
+		int x = bx + RAGE_ICON + 2;
+		int bw = Math.max(24, barW - RAGE_ICON - 2 - RAGE_NUM_W);
+		int ix0 = x + 2;
+		int innerW = bw - 4;
+		int len = (int) Math.round(innerW * rageShown);
+		int trailLen = (int) Math.round(innerW * rageTrail);
+
+		// glow rim on a full bar
+		if (full) {
+			int ga = HudGfx.argb(RAGE_GLOW, a * (0.25f + 0.5f * pulse));
+			g.fill(x - 1, y - 1, x + bw + 1, y, ga);
+			g.fill(x - 1, y + RAGE_H, x + bw + 1, y + RAGE_H + 1, ga);
+			g.fill(x - 1, y, x, y + RAGE_H, ga);
+			g.fill(x + bw, y, x + bw + 1, y + RAGE_H, ga);
 		}
-		double now = HudModel.now;
-		long wall = System.currentTimeMillis();
-		VoiceHudState.Mic mic = wall - v.lastContactMs() > 6000 ? VoiceHudState.Mic.OFF : v.mic();
-		int mx = x0 + 9;
-		int my = y0 + 38;
-		int frame;
-		float[] tint;
-		switch (mic) {
-			case OFF -> {
-				frame = 0;
-				tint = DIM;
+		// frame: ink outline, copper rim, dark well
+		g.fill(x, y, x + bw, y + RAGE_H, HudGfx.argb(RAGE_INK, 0.9f * a));
+		g.fill(x + 1, y + 1, x + bw - 1, y + RAGE_H - 1, HudGfx.argb(RAGE_RIM, a));
+		g.fill(ix0, y + 2, ix0 + innerW, y + RAGE_H - 2, HudGfx.argb(RAGE_BACK, a));
+		// the pale trail of what was just lost
+		if (trailLen > len) {
+			g.fill(ix0 + len, y + 2, ix0 + trailLen, y + RAGE_H - 2, HudGfx.argb(RAGE_TRAIL, 0.55f * a));
+		}
+		// fill: position based gradient red -> orange -> amber in 3 px steps
+		for (int px = 0; px < len; px += 3) {
+			double t = (px + 1.5) / innerW;
+			float[] c = t < 0.5 ? FxMath.mix(RAGE_LOW, RAGE_MID, t * 2.0) : FxMath.mix(RAGE_MID, RAGE_HIGH, (t - 0.5) * 2.0);
+			if (full) {
+				c = FxMath.mix(c, RAGE_GLOW, 0.25 + 0.4 * pulse);
 			}
-			case IDLE -> {
-				frame = 1;
-				tint = STEEL;
+			g.fill(ix0 + px, y + 2, ix0 + Math.min(len, px + 3), y + RAGE_H - 2, HudGfx.argb(c, a));
+		}
+		if (len > 0) {
+			g.fill(ix0, y + 2, ix0 + len, y + 3, HudGfx.argb(WHITE, 0.30f * a)); // top gloss line
+			g.fill(ix0, y + RAGE_H - 3, ix0 + len, y + RAGE_H - 2, HudGfx.argb(RAGE_INK, 0.28f * a)); // bottom shade
+			if (rageFlash > 0.01) {
+				g.fill(ix0, y + 2, ix0 + len, y + RAGE_H - 2, HudGfx.argb(WHITE, (float) rageFlash * 0.45f * a));
 			}
-			case LISTENING -> {
-				frame = 2;
-				tint = STEEL;
-			}
-			case HEARING -> {
-				frame = 3 + (int) ((now * 6) % 3);
-				tint = accent;
-			}
-			default -> {
-				frame = 6;
-				tint = ERROR;
+			if (!rm && len > 10) { // slow sheen band running along the fill
+				int sx = (int) ((now * 0.5 % 1.0) * (len + 12)) - 6;
+				int s0 = Math.max(0, sx);
+				int s1 = Math.min(len, sx + 5);
+				if (s1 > s0) {
+					g.fill(ix0 + s0, y + 2, ix0 + s1, y + RAGE_H - 2, HudGfx.argb(WHITE, 0.20f * a));
+				}
 			}
 		}
-		g.sprite(VOICE_MIC, 84, 12, mx, my, frame * 12, 0, 12, 12, tint, alpha);
-		if (mic == VoiceHudState.Mic.LISTENING) {
-			float pulse = (float) (0.55 + 0.45 * Math.sin(2 * Math.PI * 0.55 * now));
-			g.fill(mx + 9, my + 1, mx + 11, my + 3, HudGfx.argb(OK, pulse * alpha));
+		// quarter ticks (25 / 50 / 75 percent)
+		for (int k = 1; k <= 3; k++) {
+			int tx = ix0 + Math.round(innerW * k / 4.0f);
+			g.fill(tx, y + 2, tx + 1, y + RAGE_H - 2, HudGfx.argb(RAGE_INK, (rageShown >= k / 4.0 ? 0.35f : 0.6f) * a));
 		}
-		// phrase toast
+		if (denying) {
+			// refused release: the missing part up to the needed mark in red, the mark itself blinks white (steady with reduceMotion)
+			float k = (float) (1.0 - (now - rageDenyAt) / RAGE_DENY_LIFE);
+			float blink = rm ? 1f : (float) (0.5 + 0.5 * Math.cos(2 * Math.PI * 4.0 * (now - rageDenyAt)));
+			int mark = ix0 + (int) Math.round(innerW * rageDenyFrac);
+			if (mark > ix0 + len) {
+				g.fill(ix0 + len, y + 2, mark, y + RAGE_H - 2, HudGfx.argb(ERROR, 0.55f * k * a));
+			}
+			g.fill(mark, y + 1, mark + 1, y + RAGE_H - 1, HudGfx.argb(WHITE, (0.45f + 0.5f * blink) * k * a));
+			g.fill(x, y, x + bw, y + 1, HudGfx.argb(ERROR, 0.7f * k * a));
+			g.fill(x, y + RAGE_H - 1, x + bw, y + RAGE_H, HudGfx.argb(ERROR, 0.7f * k * a));
+		}
+		drawFlame(g, bx, y, (float) rageShown, pulse, a);
+		// value on the right, caption under the bar
+		String num = Integer.toString((int) Math.round(r.value() / 10.0));
+		float[] tc = full ? FxMath.mix(RAGE_TEXT, RAGE_TEXT_FULL, 0.4 + 0.6 * pulse) : RAGE_TEXT;
+		g.text(font, num, bx + barW - font.getWidth(num), y + 1, (HudGfx.argb(tc, 1f) & 0x00FFFFFF) | alphaInt(a) << 24, true);
+		MatrixStack ms = g.ctx().getMatrices();
+		ms.push();
+		ms.translate(x + 2, y + RAGE_H + 1, 0);
+		ms.scale(0.75f, 0.75f, 1f);
+		g.textAt(font, HudText.tr("hud.reiatsu_test.rage"), (HudGfx.argb(full ? RAGE_TEXT_FULL : RAGE_CAPTION, 1f) & 0x00FFFFFF) | alphaInt(a * 0.9f) << 24, true);
+		ms.pop();
+	}
+
+	/** 9x9 pixel flame; brighter with the fill, white-hot pulse on a full bar. */
+	private static void drawFlame(HudGfx g, int x, int y, float fill, float pulse, float a) {
+		float lift = 0.55f + 0.45f * fill + 0.35f * pulse;
+		for (int row = 0; row < RAGE_ICON; row++) {
+			String line = FLAME[row];
+			for (int col = 0; col < RAGE_ICON; col++) {
+				char ch = line.charAt(col);
+				if (ch == '.') {
+					continue;
+				}
+				float[] base = ch == 'o' ? FLAME_O : ch == 'r' ? FLAME_R : ch == 'y' ? FLAME_Y : FLAME_W;
+				float[] c = {Math.min(1f, base[0] * lift), Math.min(1f, base[1] * lift), Math.min(1f, base[2] * lift)};
+				g.fill(x + col, y + row, x + col + 1, y + row + 1, HudGfx.argb(c, a));
+			}
+		}
+	}
+
+	/** Height of the voice toast while it is on screen (same conditions as {@code VoiceRowHud.drawToast}) plus a gap, 0 otherwise. */
+	private static double toastHeight(double now) {
 		HudModel.VoiceToast t = HudModel.VOICE;
 		double age = now - t.lastTouch;
-		if (t.lastTouch < 0 || age > 2.5 || (t.line1.isEmpty())) {
-			return;
+		if (t.lastTouch < 0 || age > 2.5 || t.line1.isEmpty()) {
+			return 0.0;
 		}
-		double inP = FxMath.oc((now - t.start) / 0.15);
-		float fade = (float) Math.min(1.0, (2.5 - age) / 0.4);
-		float ta = alpha * fade;
-		int maxW = Math.min(220, w - 40);
-		String l1 = t.interim ? t.line1 + "..." : "“" + t.line1 + "”";
-		if (t.line1.length() > 40) {
-			l1 = t.interim ? "..." + t.line1.substring(t.line1.length() - 38) + "..." : "“" + t.line1.substring(0, 38) + "...”";
-		}
-		boolean two = !t.interim && !t.line2.isEmpty();
-		int tw = Math.max(font.getWidth(l1), two ? font.getWidth(t.line2) : 0);
-		tw = Math.min(tw, maxW - 10);
-		int pw = tw + 10;
-		int ph = two ? 25 : 16;
-		float off = FxConfig.reduceMotion ? 0 : (float) ((1 - inP) * -12);
-		float px = x0 + 24 + off;
-		float py = y0 + 36;
-		float[] panelTint = WHITE;
-		if (t.accepted && t.bankai && now - t.start < 0.3 && now - t.start >= 0 || (t.bankai && now - t.lastTouch < 0.3)) {
-			panelTint = FxMath.mix(WHITE, accent, 0.6);
-		}
-		g.nineSlice(TOAST_SPRITE, Math.round(px), Math.round(py), pw, ph, panelTint, ta);
-		int ia = alphaInt(ta);
-		String line1 = font.getWidth(l1) > tw ? font.trimToWidth(l1, tw) : l1;
-		Text l1t = Text.literal(line1).formatted(Formatting.ITALIC);
-		g.text(font, l1t, px + 5, py + 4, (t.interim ? 0x008A93A6 : 0x00E8ECF4) | ia << 24, false);
-		if (two) {
-			String line2 = font.getWidth(t.line2) > tw ? font.trimToWidth(t.line2, tw) : t.line2;
-			String mark = t.accepted ? "✓ " : t.line2Tint == DIM ? "- " : "✗ ";
-			g.text(font, mark + line2, px + 5, py + 14, (HudGfx.argb(t.line2Tint, 1f) & 0x00FFFFFF) | ia << 24, false);
-		}
+		return (!t.interim && !t.line2.isEmpty() ? 25 : 16) + 3;
+	}
+
+	/** True while the rage bar is on screen: the voice row then moves its status text line down (to y0+54, below the bar). */
+	static boolean rageVisible() {
+		return rageOnScreen;
 	}
 }

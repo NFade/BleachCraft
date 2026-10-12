@@ -6,7 +6,9 @@ public enum ResultCode {
 	/** A release was requested while the sword is still in the scabbard (draw it first). */
 	DENIED_NOT_DRAWN,
 	/** Shunpo refused because the path ahead is blocked or has no safe landing (no cost, no cooldown). */
-	BLOCKED;
+	BLOCKED,
+	/** Round 5: shikai / bankai entry refused for lack of Rage (appended, so the wire codes of the older ones do not move). */
+	DENIED_RAGE;
 
 	public byte code() {
 		return (byte) ordinal();

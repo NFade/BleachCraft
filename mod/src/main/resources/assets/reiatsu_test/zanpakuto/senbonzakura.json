@@ -6,7 +6,7 @@
   "draw": {"saya": "byakuya_sealed_saya", "blade": "byakuya_sealed_drawn", "hold": [0, 0, 0.33], "regrip": 0.3, "overshoot": 1.12,
     "stow": {"rot": [0, 0, 104], "move": [-0.4, 0.24, 0], "slide_end": 0.55, "pull": 0.55, "retract": 0.15, "arm_roll_stow": 80, "arm_roll_held": 0},
     "held": {"lift": [0, 0.06, 0], "arm": [0, -0.12, 0]},
-    "hip": {"pos_px": [8.6, 9.5, 0.5], "dir": [0, 0.6, 0.8], "scale": 1.0}},
+    "hip": {"pos_px": [3.0, 9.0, -2.5], "dir": [0.35, 0.3, 0.89], "scale": 1.6}},
   "objects": {
     "byakuya_sealed_drawn": {"diffuse": "byakuya_sealed_diffuse"},
     "byakuya_sealed_sheathed": {"diffuse": "byakuya_sealed_diffuse"},

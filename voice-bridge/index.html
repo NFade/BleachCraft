@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src http://127.0.0.1:* http://localhost:*; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src http://127.0.0.1:* http://localhost:*; worker-src blob:; base-uri 'none'; form-action 'none'">
 <title>Reiatsu Voice Bridge</title>
 <style>
   :root {
@@ -70,6 +70,8 @@
   .mic.hearing { background: #17304f; color: var(--accent); }
   .mic.hearing::after { border-color: rgba(124, 196, 255, .8); animation: pulse .9s ease-out infinite; }
   .mic.error { background: #3a1818; color: var(--bad); }
+  .mic.restarting { background: #2a2210; color: var(--warn); }
+  .mic.restarting::after { border-color: rgba(251, 191, 36, .5); animation: pulse 1.2s ease-out infinite; }
   @keyframes pulse { 0% { transform: scale(.92); opacity: 1; } 100% { transform: scale(1.28); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .mic::after { animation: none !important; } .mic::before { transform: none; } }
 
@@ -93,6 +95,12 @@
   }
   .ptt.down { background: var(--accent); color: #07131f; border-style: solid; }
   .ptt[hidden] { display: none; }
+  .pttkey {
+    appearance: none; border: 1px solid var(--line); background: transparent; color: var(--muted); font: inherit; font-size: 13px;
+    border-radius: 10px; padding: 8px 12px; cursor: pointer;
+  }
+  .pttkey[hidden] { display: none; }
+  .pttkey.wait { border-color: var(--accent); color: var(--text); }
 
   .meter { margin-top: 14px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
   .meter .bar { height: 8px; border-radius: 99px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
@@ -100,6 +108,10 @@
   .meter .num { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 9ch; text-align: right; }
   .meter .note { grid-column: 1 / -1; font-size: 12px; color: var(--muted); min-height: 1.2em; }
   .meter[hidden] { display: none; }
+  .recstatus { margin-top: 12px; font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-height: 1.4em; }
+  .recstatus b { font-weight: 650; color: var(--text); }
+  .recstatus.ok b { color: var(--ok); } .recstatus.warn b { color: var(--warn); } .recstatus.bad b { color: var(--bad); }
+  .recstatus .cnt { margin-left: auto; font-variant-numeric: tabular-nums; }
 
   .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
   .heard { min-height: 3.2em; font-size: 22px; line-height: 1.35; word-break: break-word; }
@@ -175,9 +187,11 @@
       </button>
       <button class="start" id="toggle" type="button">Start</button>
       <button class="ptt" id="ptt" type="button" hidden>Hold to talk (Space)</button>
+      <button class="pttkey" id="pttKey" type="button" hidden>Key: Space</button>
       <div class="spacer"></div>
       <div class="seg" role="group" aria-label="Language" id="langs"></div>
     </div>
+    <div class="recstatus" id="recStatus" role="status" aria-live="polite"><b id="recState">Stopped</b><span id="recDetail"></span><span class="cnt" id="recCount"></span></div>
     <div class="meter" id="meter" hidden>
       <div class="bar"><div class="fill"></div></div>
       <div class="num" id="meterNum">-</div>
@@ -235,6 +249,7 @@
       <label><input type="checkbox" id="optLocal">
         <span>On-device recognition when the language pack is already installed<small>Never downloads anything. Japanese usually falls back to the browser service.</small></span></label>
     </div>
+    <p class="hint" id="healthLine"></p>
   </details>
 
   <section class="card" id="statsCard">
@@ -286,7 +301,17 @@
  * waiting for end/abort (1 s cap) before the next session starts, fallback to the plain microphone, metrics without text. */
 function createRecognizer(env, hooks, overrides) {
   "use strict";
-  var cfg = { drainTimeoutMs: 1000, tailMs: 500, finalWaitMs: 1500, maxFails: 6, backoffBaseMs: 250, backoffMaxMs: 4000, localCheckMs: 1000 };
+  // v4 additions (2026-10-11, design/results/voice_v4.md):
+  //  watchdog*: a live session with no recogniser event for too long is replaced (Chrome's service can stall without any
+  //  onerror / onend); quickMs: a session that dies young without any result counts towards the back-off even when it had
+  //  audio (the old code reset the back-off on audiostart, so a service that answered "network" 4 times a second was
+  //  hammered forever); keepAlive: never give up for transient errors, retry every slowRetryMs (the page sets it; the
+  //  default false keeps the old "6 failures = fatal" contract of the unit tests).
+  var cfg = {
+    drainTimeoutMs: 1000, tailMs: 500, finalWaitMs: 1500, maxFails: 6, backoffBaseMs: 250, backoffMaxMs: 4000, localCheckMs: 1000,
+    watchdogMs: 1000, startTimeoutMs: 8000, firstStartTimeoutMs: 45000, idleTimeoutMs: 25000, deafMs: 7000, watchdogGapMs: 3000,
+    orphanMs: 2500, quickMs: 2500, healthyMs: 5000, keepAlive: false, slowRetryMs: 10000
+  };
   if (overrides) for (var k in overrides) cfg[k] = overrides[k];
   hooks = hooks || {};
 
@@ -294,6 +319,8 @@ function createRecognizer(env, hooks, overrides) {
   var session = null, draining = null, drainTimer = null, queued = false, retryTimer = null;
   var failStreak = 0, localFailed = {}, localAvail = {}, trackOk = null, nextId = 1, lastEndAt = null;
   var pressState = null, finalTimer = null, tailTimer = null, probing = false;
+  var wdTimer = null, retryDueAt = 0, drainStartAt = 0, orphanSince = null, lastRestartAt = -1e9;
+  var restarts = 0, lastRestartWhy = "", quickStreak = 0, everAudio = false, degraded = false, health = {};
 
   function now() { return env.now(); }
   function emit(name, data) { if (hooks.onEvent) hooks.onEvent(name, data || {}); }
@@ -301,6 +328,9 @@ function createRecognizer(env, hooks, overrides) {
   function notice(m) { if (hooks.onNotice) hooks.onNotice(m); }
   function useLocal() { return preferLocal && localAvail[lang] === "available" && !localFailed[lang]; }
   function wantTrack() { return mode === "ptt" && prewarm && trackOk !== false && !!env.openInput; }
+  // per-language counters (numbers only): where does recognition misbehave, ru-RU for instance
+  function hl(l) { return health[l] || (health[l] = { sessions: 0, restarts: 0, quick: 0, results: 0, livedMs: 0, errors: {} }); }
+  function touch(s) { s.lastEventAt = now(); }
 
   function closeInput(s) {
     if (s && s.input) { try { s.input.close(); } catch (e) { /* already closed */ } s.input = null; }
@@ -310,7 +340,7 @@ function createRecognizer(env, hooks, overrides) {
   function retire(s, why) {
     if (!s || session !== s) return;
     session = null;
-    draining = s;
+    draining = s; drainStartAt = now();
     try { s.rec.abort(); } catch (e) { draining = null; }
     closeInput(s);
     if (draining === s) {
@@ -327,14 +357,26 @@ function createRecognizer(env, hooks, overrides) {
 
   function scheduleStart(delay) {
     env.clearTimeout(retryTimer);
+    retryDueAt = now() + delay;
     retryTimer = env.setTimeout(function () { retryTimer = null; startSession(); }, delay);
   }
+  // one quick death in a row restarts at once; from the second one the delay grows like for the failures
   function backoff() {
-    return failStreak > 0 ? Math.min(cfg.backoffBaseMs * Math.pow(2, failStreak - 1), cfg.backoffMaxMs) : 0;
+    var n = Math.max(failStreak, quickStreak >= 2 ? quickStreak - 1 : 0);
+    if (cfg.keepAlive && n >= cfg.maxFails) return cfg.slowRetryMs;
+    return n > 0 ? Math.min(cfg.backoffBaseMs * Math.pow(2, n - 1), cfg.backoffMaxMs) : 0;
+  }
+  function tooMany() { return failStreak >= cfg.maxFails || quickStreak >= cfg.maxFails; }
+  // too many failures in a row: the old contract is "stop" (fatal); the page asks for keepAlive and gets a slow retry instead
+  function giveUp() {
+    if (!cfg.keepAlive) { fatal("too-many-failures"); return; }
+    if (!degraded) { degraded = true; emit("degraded", { failStreak: failStreak, quickStreak: quickStreak }); }
+    state("error");
+    if (want) scheduleStart(backoff());
   }
   function fatal(code) {
     want = false;
-    env.clearTimeout(retryTimer); env.clearTimeout(tailTimer); env.clearTimeout(finalTimer);
+    env.clearTimeout(retryTimer); env.clearTimeout(tailTimer); env.clearTimeout(finalTimer); env.clearTimeout(wdTimer); wdTimer = null;
     pressState = null; queued = false;
     if (session) retire(session, "fatal");
     state("error");
@@ -374,8 +416,9 @@ function createRecognizer(env, hooks, overrides) {
     var s = {
       id: nextId++, rec: rec, lang: lang, local: useLocal(), input: null, track: false,
       prepared: mode === "ptt", armed: mode === "always", stopping: false,
-      resultFloor: 0, idleSpeech: false, startedAt: now(), audioAt: null, firstTextAt: null, promote: "", ilog: []
+      resultFloor: 0, idleSpeech: false, startedAt: now(), lastEventAt: now(), gotResult: false, audioAt: null, firstTextAt: null, promote: "", ilog: []
     };
+    hl(lang).sessions++;
     rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3; rec.lang = lang;
     if ("processLocally" in rec) rec.processLocally = s.local;
     wire(s);
@@ -407,17 +450,20 @@ function createRecognizer(env, hooks, overrides) {
   function onFail(code) {
     failStreak++;
     emit("fail", { code: code, streak: failStreak });
-    if (failStreak >= cfg.maxFails) { fatal("too-many-failures"); return; }
+    if (tooMany() && !cfg.keepAlive) { fatal("too-many-failures"); return; }
     if (hooks.onError) hooks.onError(code);
-    if (want) scheduleStart(backoff());
+    if (want) { if (tooMany()) giveUp(); else scheduleStart(backoff()); }
   }
 
   function wire(s) {
     var rec = s.rec;
-    rec.onstart = function () { if (session === s) { emit("start", { id: s.id }); state("starting"); } };
+    rec.onstart = function () { if (session === s) { touch(s); emit("start", { id: s.id }); state("starting"); } };
+    // sound / audio edges and "heard nothing usable": they only prove the service is alive (watchdog)
+    rec.onsoundstart = rec.onsoundend = rec.onaudioend = rec.onnomatch = function () { if (session === s) touch(s); };
     rec.onaudiostart = function () {
       if (session !== s) return;
-      s.audioAt = now(); failStreak = 0;
+      touch(s);
+      s.audioAt = now(); failStreak = 0; everAudio = true;
       emit("session", {
         id: s.id, startToAudioMs: s.audioAt - s.startedAt, gapMs: lastEndAt == null ? null : s.audioAt - lastEndAt,
         prepared: s.prepared, track: s.track, local: s.local, lang: s.lang
@@ -427,16 +473,19 @@ function createRecognizer(env, hooks, overrides) {
     };
     rec.onspeechstart = function () {
       if (session !== s) return;
+      touch(s);
       if (!s.armed) s.idleSpeech = true; else { state("hearing"); }
       if (hooks.onSpeech) hooks.onSpeech(true);
     };
     rec.onspeechend = function () {
       if (session !== s) return;
+      touch(s);
       if (s.armed) state("listening");
       if (hooks.onSpeech) hooks.onSpeech(false);
     };
     rec.onresult = function (ev) {
       if (session !== s) return;
+      touch(s); s.gotResult = true; quickStreak = 0; degraded = false; hl(s.lang).results++;
       if (!s.armed) {
         // prepared but not pressed: remember only where the results end, never the words
         s.resultFloor = ev.results.length;
@@ -458,6 +507,8 @@ function createRecognizer(env, hooks, overrides) {
     rec.onerror = function (ev) {
       if (session !== s) return;
       var e = ev && ev.error;
+      touch(s);
+      var he = hl(s.lang).errors; he[e] = (he[e] || 0) + 1;
       if (e === "no-speech" || e === "aborted") return;
       emit("error", { code: e, local: s.local, track: s.track });
       if (s.track) {                         // anything wrong on the muted-track path: plain microphone from now on
@@ -480,13 +531,17 @@ function createRecognizer(env, hooks, overrides) {
       closeInput(s);
       session = null; lastEndAt = now();
       if (s.audioAt == null && !s.counted) failStreak++;     // died before any audio: do not spin
-      emit("end", { id: s.id, livedMs: now() - s.startedAt });
+      var lived = now() - s.startedAt;
+      hl(s.lang).livedMs += lived;
+      if (s.audioAt != null && !s.gotResult && !s.stopping && lived < cfg.quickMs) { quickStreak++; hl(s.lang).quick++; }   // young and mute
+      else if (s.gotResult || lived >= cfg.healthyMs) quickStreak = 0;
+      emit("end", { id: s.id, livedMs: lived });
       if (pressState && pressState.session === s) {
         if (s.stopping) { finishPress(pressState, "end"); return; }
         pressState.session = null;             // service ended under a held press: re-arm a new one at once
       }
       if (!want) return;
-      if (failStreak >= cfg.maxFails) { fatal("too-many-failures"); return; }
+      if (tooMany()) { if (!cfg.keepAlive) { fatal("too-many-failures"); return; } giveUp(); return; }
       state("idle");
       scheduleStart(backoff());
     };
@@ -579,18 +634,59 @@ function createRecognizer(env, hooks, overrides) {
     if (want) { queued = true; startSession(); }
   }
 
+  // ---- watchdog (v4). The recogniser can stall without a single onerror / onend (service hiccup, network flap, a tab in the
+  // background whose timers are throttled): nothing would ever restart it and the voice just stops. Every watchdogMs a live
+  // session is compared with the last recogniser event; the page also calls tick() from a worker timer that background
+  // throttling does not slow down, and tick() runs the timers the browser has made late (a retry, a drain) by hand.
+  function restartDog(s, why) {
+    var t = now();
+    if (t - lastRestartAt < cfg.watchdogGapMs) return;
+    lastRestartAt = t; restarts++; lastRestartWhy = why; hl(s ? s.lang : lang).restarts++;
+    emit("watchdog", { why: why, count: restarts, lang: s ? s.lang : lang, silentMs: s ? Math.round(t - s.lastEventAt) : null });
+    state("restarting");
+    if (hooks.onRestart) hooks.onRestart({ why: why, count: restarts, lang: s ? s.lang : lang });
+    if (s) restartNow("watchdog:" + why); else { queued = false; startSession(); }
+  }
+  function tick() {
+    if (!want) return;
+    var t = now();
+    if (retryTimer && t >= retryDueAt + 50) startSession();                       // a delayed retry: do not wait for the throttled timer
+    if (draining && t - drainStartAt >= cfg.drainTimeoutMs + 100) completeDrain(draining, "tick");
+    if (pressState) return;                                                      // a held press is never interrupted
+    var s = session;
+    if (!s) {
+      if (draining || retryTimer) { orphanSince = null; return; }
+      if (orphanSince == null) { orphanSince = t; return; }
+      if (t - orphanSince >= cfg.orphanMs) { orphanSince = null; restartDog(null, "orphan"); }   // want=true but nothing running or scheduled
+      return;
+    }
+    orphanSince = null;
+    var age = t - s.lastEventAt, why = null;
+    if (s.audioAt == null) {
+      if (t - s.startedAt > (everAudio ? cfg.startTimeoutMs : cfg.firstStartTimeoutMs)) why = "start-timeout";   // a first start may wait for the permission prompt
+    } else if (age > cfg.idleTimeoutMs) why = "idle";
+    else if (age > cfg.deafMs && hooks.loudSince && hooks.loudSince(s.lastEventAt)) why = "deaf";                // loud microphone, silent recogniser
+    if (why) restartDog(s, why);
+  }
+  function armDog() {
+    env.clearTimeout(wdTimer);
+    wdTimer = env.setTimeout(function () { wdTimer = null; tick(); if (want) armDog(); }, cfg.watchdogMs);
+  }
+
   // ---- public
   return {
     start: function (m) {
-      mode = m || mode; want = true; failStreak = 0; state("starting");
+      mode = m || mode; want = true; failStreak = 0; quickStreak = 0; degraded = false; orphanSince = null; state("starting");
+      armDog();
       startSession();
     },
     stop: function () {
       want = false; queued = false; pressState = null;
-      env.clearTimeout(retryTimer); env.clearTimeout(tailTimer); env.clearTimeout(finalTimer);
+      env.clearTimeout(retryTimer); env.clearTimeout(tailTimer); env.clearTimeout(finalTimer); env.clearTimeout(wdTimer); wdTimer = null;
       if (session) retire(session, "stop");
       state("off");
     },
+    tick: tick,
     setLang: function (l) {
       if (l === lang) return; lang = l;
       pressState = null; env.clearTimeout(tailTimer); env.clearTimeout(finalTimer);
@@ -613,12 +709,42 @@ function createRecognizer(env, hooks, overrides) {
       return {
         want: want, mode: mode, lang: lang, hasSession: !!session, draining: !!draining, queued: queued,
         armed: !!(session && session.armed), prepared: !!(session && session.prepared), track: !!(session && session.track),
-        trackOk: trackOk, localFailed: JSON.parse(JSON.stringify(localFailed)), failStreak: failStreak, pressed: !!pressState
+        trackOk: trackOk, localFailed: JSON.parse(JSON.stringify(localFailed)), failStreak: failStreak, pressed: !!pressState,
+        quickStreak: quickStreak, restarts: restarts, lastRestartWhy: lastRestartWhy, degraded: degraded,
+        silentMs: session ? Math.round(now() - session.lastEventAt) : null
       };
-    }
+    },
+    health: function () { return JSON.parse(JSON.stringify(health)); }
   };
 }
 /* ===== SESSION-CORE-END ===== */
+
+/* ===== PTTKEY-BEGIN ===== hold-to-talk key: pure helpers (KeyboardEvent.code in, no DOM), cut out by tests/voice/ptt_key.test.mjs */
+var PTT_DEFAULT = "Space";
+var PTT_DENY = { Enter: 1, NumpadEnter: 1, Tab: 1, Escape: 1, ContextMenu: 1, MetaLeft: 1, MetaRight: 1, OSLeft: 1, OSRight: 1, Unidentified: 1 };
+function pttKeyValid(code) {
+  return typeof code === "string" && /^[A-Za-z][A-Za-z0-9]{1,24}$/.test(code) && !PTT_DENY[code];
+}
+function pttKeyLoad(raw) { return pttKeyValid(raw) ? raw : PTT_DEFAULT; }
+function pttKeyLabel(code) {
+  var m;
+  if (!pttKeyValid(code)) code = PTT_DEFAULT;
+  if ((m = /^Key([A-Z])$/.exec(code))) return m[1];
+  if ((m = /^Digit([0-9])$/.exec(code))) return m[1];
+  if ((m = /^(Shift|Control|Alt)(Left|Right)$/.exec(code))) return m[2] + " " + (m[1] === "Control" ? "Ctrl" : m[1]);
+  if ((m = /^Numpad(.+)$/.exec(code))) return "Num " + m[1];
+  if ((m = /^Arrow(.+)$/.exec(code))) return m[1] + " arrow";
+  return code;
+}
+// Does focus on this element swallow the key? Text fields keep every key; buttons, checkboxes and radios only Space and Enter.
+function pttFocusBlocks(code, tag, type, editable) {
+  tag = String(tag || "").toUpperCase(); type = String(type || "").toLowerCase();
+  if (editable || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (tag === "INPUT") return !(type === "checkbox" || type === "radio" || type === "button" || type === "file" || type === "range") || code === "Space";
+  if (tag === "BUTTON") return code === "Space";
+  return false;
+}
+/* ===== PTTKEY-END ===== */
 
 /* ===== STATS-BEGIN ===== numbers only: the page never stores words or audio in the records */
 function createStats(max) {
@@ -687,6 +813,7 @@ function createStats(max) {
   };
   if (params.get("meter") === "0") opt.meter = false;
 
+  var pttCode = pttKeyLoad(store("pttKey")), pttCapturing = false;
   var wantOn = false;
   var utt = 0;
   var interimInFlight = false, lastInterimSent = 0;
@@ -736,7 +863,7 @@ function createStats(max) {
     rz.setMode(m);
     if (wantOn) showHeard("", "");
   }
-  function applyModeUi() { $("ptt").hidden = mode !== "ptt"; }
+  function applyModeUi() { $("ptt").hidden = mode !== "ptt"; $("pttKey").hidden = mode !== "ptt"; if (mode !== "ptt") endCapture(); }
 
   function addLog(text, reply) {
     var li = document.createElement("li");
@@ -943,9 +1070,45 @@ function createStats(max) {
       };
     }
   };
+  // ---- recognition status line: what the recogniser is doing right now, how often it was restarted (watchdog), no words
+  var rec = { state: "off", detail: "", kind: "", restarts: 0, lastWhy: "" };
+  var WHY = {
+    idle: "no sign of life from the speech service for 25 s", "start-timeout": "the microphone did not start", deaf: "sound in, nothing out for 7 s",
+    orphan: "nothing was running"
+  };
+  function showRec() {
+    var st = rec.state, label = "Stopped", cls = "";
+    if (st === "listening") { label = "Listening"; cls = "ok"; rec.detail = LANG_LABEL[lang] || lang; }
+    else if (st === "hearing") { label = "Hearing you"; cls = "ok"; }
+    else if (st === "ready") { label = "Ready"; cls = "ok"; rec.detail = "hold the button or " + pttKeyLabel(pttCode); }
+    else if (st === "starting") { label = "Starting..."; cls = "warn"; }
+    else if (st === "idle") { label = "Reconnecting..."; cls = "warn"; }
+    else if (st === "restarting") { label = "Restarting recognition..."; cls = "warn"; }
+    else if (st === "error") { label = "Problem"; cls = "bad"; }
+    var box = $("recStatus"); box.className = "recstatus" + (cls ? " " + cls : "");
+    $("recState").textContent = label;
+    $("recDetail").textContent = rec.detail || "";
+    $("recCount").textContent = rec.restarts ? "restarts: " + rec.restarts + (rec.lastWhy ? " (last: " + rec.lastWhy + ")" : "") : "";
+  }
+  function showHealth() {
+    var h = rz.health(), rows = [];
+    Object.keys(h).forEach(function (l) {
+      var x = h[l], errs = Object.keys(x.errors).map(function (c) { return c + "\u00d7" + x.errors[c]; }).join(", ");
+      rows.push(l + ": " + x.sessions + " sessions, " + x.results + " results, " + x.restarts + " restarts, " + x.quick + " short" + (errs ? ", " + errs : ""));
+    });
+    $("healthLine").textContent = rows.length ? "Recognition health (this page only): " + rows.join(" | ") : "";
+  }
   var hooks = {
+    onRestart: function (info) {
+      rec.restarts = info.count; rec.lastWhy = info.why; rec.detail = WHY[info.why] || info.why; showRec();
+      showNotice("Recognition restarted by the watchdog (" + (WHY[info.why] || info.why) + ").");
+    },
     onState: function (s) {
-      if (s === "listening") setMic("on");
+      rec.state = s;
+      if (s === "listening" || s === "hearing" || s === "ready" || s === "off") rec.detail = "";
+      showRec(); showHealth();
+      if (s === "restarting") setMic("restarting");
+      else if (s === "listening") setMic("on");
       else if (s === "hearing") setMic("hearing");
       else if (s === "ready") setMic("ready");
       else if (s === "error") setMic("error");
@@ -975,6 +1138,8 @@ function createStats(max) {
       sendFinal(text, { rec: u, finalAt: finalAt }, meta.alts);
     },
     onEvent: function (name, d) {
+      if (name === "degraded") { rec.detail = "retrying every 10 s"; showRec(); }
+      else if (name === "fail" || name === "error") { rec.detail = "last error: " + (d.code || "?"); showRec(); }
       if (name === "session") {
         stats.addSession({ id: d.id, startToAudioMs: Math.round(d.startToAudioMs), gapMs: d.gapMs == null ? null : Math.round(d.gapMs), prepared: d.prepared, track: d.track, local: d.local, lang: d.lang });
         renderStats();
@@ -982,6 +1147,7 @@ function createStats(max) {
     },
     onNotice: showNotice,
     onError: function (code) {
+      rec.state = "error"; rec.detail = "last error: " + code + " (retrying)"; showRec();
       if (code === "audio-capture") { setMic("error"); showError("No microphone found."); }
       else if (code === "network") { setMic("error"); showError("Speech service unreachable (needs internet). Retrying..."); }
       else { setMic("error"); showError("Recognition error: " + code + ". Retrying..."); }
@@ -995,7 +1161,7 @@ function createStats(max) {
     loudSince: function (t) { return lvl.lastLoudAt >= t; }
   };
   var uttCount = 0, curFirstText = null;
-  var rz = createRecognizer(env, hooks);
+  var rz = createRecognizer(env, hooks, { keepAlive: true });
   rz.setLang(lang); rz.setMode(mode); rz.setOptions({ prewarm: opt.prewarm, local: opt.local });
 
   function syncToggle() {
@@ -1030,13 +1196,31 @@ function createStats(max) {
   $("ptt").addEventListener("pointerdown", function (e) { e.preventDefault(); try { $("ptt").setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } pttPress(); });
   $("ptt").addEventListener("pointerup", pttRelease);
   $("ptt").addEventListener("pointercancel", pttRelease);
+  function pttLabels() {
+    var l = pttKeyLabel(pttCode);
+    $("ptt").textContent = "Hold to talk (" + l + ")";
+    $("pttKey").textContent = pttCapturing ? "Press a key... (Esc cancels)" : "Key: " + l;
+    $("pttKey").classList.toggle("wait", pttCapturing);
+    if (rec.state === "ready") showRec();
+  }
+  function endCapture() { if (!pttCapturing) return; pttCapturing = false; pttLabels(); if (document.activeElement === $("pttKey")) $("pttKey").blur(); }
+  $("pttKey").addEventListener("click", function () { pttRelease(); pttCapturing = !pttCapturing; pttLabels(); });
+  $("pttKey").addEventListener("blur", endCapture);
   document.addEventListener("keydown", function (e) {
-    if (e.code !== "Space" || e.repeat || mode !== "ptt") return;
-    var tag = (document.activeElement && document.activeElement.tagName) || "";
-    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
+    if (pttCapturing) {
+      if (e.repeat) { e.preventDefault(); return; }
+      e.preventDefault(); e.stopPropagation();
+      if (e.code === "Escape") { endCapture(); return; }
+      if (!pttKeyValid(e.code)) return;       // Enter, Tab, OS keys: keep waiting
+      pttCode = e.code; store("pttKey", pttCode); endCapture();
+      return;
+    }
+    if (e.code !== pttCode || e.repeat || mode !== "ptt") return;
+    var a = document.activeElement || {};
+    if (pttFocusBlocks(e.code, a.tagName, a.type, a.isContentEditable)) return;
     e.preventDefault(); pttPress();
-  });
-  document.addEventListener("keyup", function (e) { if (e.code === "Space") pttRelease(); });
+  }, true);
+  document.addEventListener("keyup", function (e) { if (!pttCapturing && e.code === pttCode) pttRelease(); });
   window.addEventListener("blur", pttRelease);
 
   // ------------------------------------------------------------ latency table
@@ -1057,7 +1241,7 @@ function createStats(max) {
   });
   $("statsClear").addEventListener("click", function () { stats.clear(); renderStats(); $("statsMsg").textContent = ""; });
   window.VoiceStats = function () { var o = JSON.parse(stats.exportJson()); if (window.console && console.table) { console.table(o.sessions); console.table(o.utterances); } return o; };
-  window.__voiceDebug = { status: function () { return rz.status(); }, lvl: function () { return JSON.parse(JSON.stringify(lvl)); } };
+  window.__voiceDebug = { status: function () { return rz.status(); }, health: function () { return rz.health(); }, lvl: function () { return JSON.parse(JSON.stringify(lvl)); } };
 
   // ------------------------------------------------------------ settings
   function setOpt(name, v) {
@@ -1210,8 +1394,28 @@ function createStats(max) {
   });
   if (params.get("lab") === "1") $("lab").open = true;
 
+  // ------------------------------------------------------------ heartbeat
+  var lastStatusAt = 0, hbWorker = null, hbTimer = null;
+  function pump() {
+    try { rz.tick(); } catch (e) { /* never let the heartbeat throw */ }
+    var t = performance.now();
+    if (t - lastStatusAt >= 2400) { lastStatusAt = t; refreshStatus(); }
+  }
+  function startHeartbeat() {
+    if (hbWorker || hbTimer) return;
+    try {
+      var url = URL.createObjectURL(new Blob(["setInterval(function(){postMessage(1)},1000)"], { type: "text/javascript" }));
+      hbWorker = new Worker(url);
+      hbWorker.onmessage = pump;
+      hbWorker.onerror = function () { try { hbWorker.terminate(); } catch (e) { /* ignore */ } hbWorker = null; if (!hbTimer) hbTimer = setInterval(pump, 1000); };
+    } catch (e) {
+      hbWorker = null;   // CSP or an old browser: the plain timer still works while the tab is visible
+      hbTimer = setInterval(pump, 1000);
+    }
+  }
+
   // ------------------------------------------------------------ wiring
-  buildLangs(); buildModes(); applyModeUi(); renderStats();
+  buildLangs(); buildModes(); applyModeUi(); pttLabels(); renderStats();
   $("toggle").addEventListener("click", function () { setOn(!wantOn); });
   $("manual").addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -1226,7 +1430,7 @@ function createStats(max) {
     $("toggle").disabled = true;
   }
   refreshStatus();
-  setInterval(refreshStatus, 2500);
+  startHeartbeat();
   if (params.get("autostart") === "1" && SR) setOn(true);
 })();
 </script>

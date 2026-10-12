@@ -27,8 +27,8 @@ class PhraseBookTest {
 	private final PhraseBook book = VoiceTestSupport.book();
 
 	@Test
-	void hasThe17CommandsOfTheDesign() {
-		assertEquals(17, book.commands().size(), "14 zanpakuto commands + 3 kido (B5)");
+	void hasThe19CommandsOfTheDesign() {
+		assertEquals(19, book.commands().size(), "16 zanpakuto commands (round 6: ice spike and petal cage) + 3 kido (B5)");
 		assertEquals(1, book.commands().stream().filter(PhraseBook.Command::optional).count(), "only senkei is optional");
 		assertTrue(book.command("byakuya.bankai.senkei").optional());
 		assertFalse(book.fillerKeys().isEmpty());
@@ -143,7 +143,7 @@ class PhraseBookTest {
 				expected.get(current).add(c[1].trim().replace(" (weak: whole utterance)", ""));
 			}
 		}
-		assertEquals(17, expected.size());
+		assertEquals(19, expected.size());
 		for (Map.Entry<String, Set<String>> e : expected.entrySet()) {
 			PhraseBook.Command c = book.command(e.getKey());
 			assertNotNull(c, e.getKey());

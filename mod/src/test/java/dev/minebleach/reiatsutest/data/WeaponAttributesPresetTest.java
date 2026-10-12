@@ -72,16 +72,28 @@ class WeaponAttributesPresetTest {
 		}
 	}
 
-	/** BC5 decision 1: an empty (non-null, so it overrides the parent) pose means no Better Combat katana stance, the sword is held one handed as usual. */
+	/**
+	 * tp_fix: the presets inherit pose and attacks of the katana preset untouched. The katana stance is switched off while the sword
+	 * is sheathed by {@code mixin/BcPoseMixin} (rule {@code BcAttackGate.poseSuppressed}), not by an empty {@code pose} here (an empty
+	 * pose would remove the stance for good, also for a drawn sword).
+	 */
 	@Test
-	void presetsOverrideThePoseWithAnEmptyString() throws IOException {
+	void presetsDoNotOverrideThePoseOrTheAttacks() throws IOException {
 		for (String id : swordIds()) {
 			JsonObject o = JsonParser.parseString(Files.readString(DIR.resolve(id + ".json"), StandardCharsets.UTF_8)).getAsJsonObject();
-			assertTrue(o.has("attributes") && o.get("attributes").isJsonObject(), id + ": attributes object missing");
-			JsonObject attrs = o.getAsJsonObject("attributes");
-			assertTrue(attrs.has("pose") && attrs.get("pose").isJsonPrimitive(), id + ": pose missing");
-			assertEquals("", attrs.get("pose").getAsString(), id + ": pose must be empty");
-			assertFalse(attrs.has("attacks"), id + ": attacks stay inherited from the katana preset");
+			if (o.has("attributes")) {
+				JsonObject attrs = o.getAsJsonObject("attributes");
+				assertFalse(attrs.has("pose"), id + ": pose stays inherited (it is gated by BcPoseMixin)");
+				assertFalse(attrs.has("attacks"), id + ": attacks stay inherited from the katana preset");
+			}
 		}
+	}
+
+	/** The pose gate is a mixin of the main config and must be listed there (else the stance would be on while sheathed). */
+	@Test
+	void poseGateMixinIsRegistered() throws IOException {
+		String cfg = Files.readString(ROOT.resolve("resources/reiatsu_test.mixins.json"), StandardCharsets.UTF_8);
+		assertTrue(cfg.contains("\"BcPoseMixin\""), "BcPoseMixin missing in reiatsu_test.mixins.json");
+		assertTrue(Files.exists(ROOT.resolve("java/dev/minebleach/reiatsutest/mixin/BcPoseMixin.java")));
 	}
 }

@@ -10,6 +10,7 @@ mod/.gradle/
 mod/build/
 mod/run/
 mod/run-server/
+mod/run2/
 mod/out/
 .gradle/
 build/

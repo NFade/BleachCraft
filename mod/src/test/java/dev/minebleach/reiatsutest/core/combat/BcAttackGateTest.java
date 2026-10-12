@@ -28,4 +28,14 @@ class BcAttackGateTest {
 			assertFalse(BcAttackGate.attacksDisabled(false, s, true));
 		}
 	}
+
+	/** tp_pose: the Better Combat katana stance is off for every zanpakuto state (the pose layer draws the stance), kept for other items. */
+	@Test
+	void katanaStanceIsOffForEveryZanpakutoState() {
+		for (ZanpakutoState s : ZanpakutoState.values()) {
+			assertTrue(BcAttackGate.poseSuppressed(true, s, false), s + " has no Better Combat stance");
+			assertTrue(BcAttackGate.poseSuppressed(true, s, true), s + " has no Better Combat stance while blocking");
+			assertFalse(BcAttackGate.poseSuppressed(false, s, false), "other items keep what Better Combat decides");
+		}
+	}
 }

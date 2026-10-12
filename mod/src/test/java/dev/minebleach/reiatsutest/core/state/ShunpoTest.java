@@ -278,14 +278,14 @@ class ShunpoTest {
 	}
 
 	@Test
-	void onlyShikaiAndBankaiAllowShunpo() {
+	void shunpoWorksInEveryStateWithAnySwordOrNone() {
+		// round 5: like kido, shunpo needs neither a state nor a sword
 		Fx sealed = new Fx();
-		assertEquals(RejectReason.NOT_IN_STATE, shunpo(sealed, R, Grid.floor(), EAST, true).reason());
+		assertTrue(shunpo(sealed, CharacterId.NONE, Grid.floor(), EAST, true).ok(), "sealed, no sword");
+		assertEquals(ZanpakutoState.SEALED, sealed.sm.state());
 		Fx base = new Fx().toBase(R);
-		TransitionResult denied = shunpo(base, R, Grid.floor(), EAST, true);
-		assertEquals(RejectReason.NOT_IN_STATE, denied.reason());
-		assertEquals(ResultCode.DENIED_STATE, denied.code());
-		assertEquals(0, base.sm.shunpoCooldownRemaining());
+		assertTrue(shunpo(base, R, Grid.floor(), EAST, true).ok(), "base");
+		assertEquals(ZanpakutoState.BASE, base.sm.state(), "shunpo does not change the state");
 
 		for (CharacterId c : new CharacterId[] {R, B}) {
 			Fx shikai = new Fx().toShikai(c);
@@ -298,12 +298,16 @@ class ShunpoTest {
 	}
 
 	@Test
-	void itemAndHandChecksAndTheShared() {
+	void noItemCheckEvenWithTheWrongSwordOrNoneInHand() {
 		Fx f = new Fx().toShikai(R);
-		assertEquals(RejectReason.WRONG_ITEM, shunpo(f, CharacterId.NONE, Grid.floor(), EAST, true).reason());
-		assertEquals(RejectReason.WRONG_ITEM, shunpo(f, B, Grid.floor(), EAST, true).reason());
+		assertTrue(shunpo(f, CharacterId.NONE, Grid.floor(), EAST, true).ok(), "no sword in hand");
+		f.adv(60);
+		assertTrue(shunpo(f, B, Grid.floor(), EAST, true).ok(), "another zanpakuto in hand");
+		f.adv(60);
 		f.sm.onHandChanged(CharacterId.NONE);
-		assertEquals(RejectReason.WRONG_ITEM, shunpo(f, R, Grid.floor(), EAST, true).reason(), "during the hand grace");
+		f.adv(30);
+		assertTrue(shunpo(f, R, Grid.floor(), EAST, true).ok(), "after the sword left the hand");
+		assertEquals(ZanpakutoState.SHIKAI, f.sm.state());
 	}
 
 	@Test

@@ -3,6 +3,6 @@
 	"minVersion": "0.8",
 	"package": "dev.minebleach.reiatsutest.mixin",
 	"compatibilityLevel": "JAVA_21",
-	"mixins": ["LivingEntityMixin"],
+	"mixins": ["LivingEntityMixin", "BcPoseMixin"],
 	"injectors": { "defaultRequire": 1 }
 }

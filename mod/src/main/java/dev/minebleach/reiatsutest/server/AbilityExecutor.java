@@ -6,7 +6,6 @@ import dev.minebleach.reiatsutest.core.state.AbilitySpec;
 import dev.minebleach.reiatsutest.net.EntityFxS2C;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageTypes;
@@ -29,11 +28,22 @@ final class AbilityExecutor {
 	}
 
 	static void run(ServerPlayerEntity p, AbilityId ability, int phase, CastContext ctx) {
+		DmgLog.begin(ability.commandId + "#" + phase);
+		try {
+			dispatch(p, ability, phase, ctx);
+		} finally {
+			DmgLog.end();
+		}
+	}
+
+	private static void dispatch(ServerPlayerEntity p, AbilityId ability, int phase, CastContext ctx) {
 		switch (ability) {
 			case TSUKISHIRO -> tsukishiro(p, phase, ctx);
 			case HAKUREN -> hakuren(p, phase, ctx);
 			case SHIRAFUNE -> shirafune(p, ctx);
 			case ABSOLUTE_ZERO -> absoluteZero(p, phase, ctx);
+			case ICE_SPIKE -> iceSpike(p, phase, ctx);
+			case CAGE -> cage(p, ctx);
 			case MODE_ATTACK -> modeAttack(p, ctx);
 			case SCATTER -> scatter(p, phase, ctx);
 			case HAKUTEIKEN -> hakuteiken(p, phase, ctx);
@@ -126,20 +136,7 @@ final class AbilityExecutor {
 				ctx.frozen.add(e.getId());
 			}
 			ServerFx.entities(p, EntityFxS2C.ENCASED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
-			// temporary ice blocks around (per cast MAX_BLOCKS here, per player Tuning.MAX_TEMP_BLOCKS_PER_PLAYER in TempBlocks),
-			// rolled back 2.0 to 5.0 s later (4.0 to 7.0 s after the cast)
-			ServerWorld world = p.getServerWorld();
-			Random rnd = new Random(ctx.seed);
-			int yHint = (int) Math.floor(ctx.origin.y);
-			int maxBlocks = sp.intNum(AbilityParams.MAX_BLOCKS);
-			for (int attempt = 0; attempt < 256 && ctx.tempBlocksPlaced < maxBlocks; attempt++) {
-				double ang = rnd.nextDouble() * Math.PI * 2;
-				double r = Math.sqrt(rnd.nextDouble()) * radius;
-				BlockPos pos = TempBlocks.surface(world, ctx.origin.x + Math.cos(ang) * r, yHint, ctx.origin.z + Math.sin(ang) * r);
-				if (pos != null && TempBlocks.place(world, p.getUuid(), pos, true, now(p) + 40L + rnd.nextInt(61))) {
-					ctx.tempBlocksPlaced++;
-				}
-			}
+			// no temporary ice any more (round 6): vanilla ice slides, the territory freeze (FrostField) changes the ground instead
 		} else {
 			List<LivingEntity> hit = frozenStillNear(p, ctx);
 			for (LivingEntity e : hit) {
@@ -148,6 +145,33 @@ final class AbilityExecutor {
 			}
 			ServerFx.entities(p, EntityFxS2C.HIT, now(p), hit);
 		}
+	}
+
+	/**
+	 * Ice spike (Rukia bankai, round 6): a thrust of ice spikes along the look ray, one segment per phase (the wave front), up to the
+	 * first block. Each target is hit once: damage, Slowness and the frozen look. Block free: the spikes are only visual.
+	 */
+	private static void iceSpike(ServerPlayerEntity p, int phase, CastContext ctx) {
+		AbilitySpec sp = ctx.spec;
+		int phases = Math.max(1, sp.phaseOffsets().size());
+		double seg = sp.num(AbilityParams.LENGTH) / phases;
+		double d0 = phase * seg;
+		double d1 = Math.min((phase + 1) * seg, ctx.rayLength);
+		if (d1 <= d0) {
+			return;
+		}
+		int room = sp.intNum(AbilityParams.MAX_TARGETS) - ctx.hit.size();
+		if (room <= 0) {
+			return;
+		}
+		List<LivingEntity> targets = Targeting.segment(p, ctx.eye, ctx.dir, d0, d1, sp.num(AbilityParams.HALF_WIDTH), room, ctx.hit);
+		for (LivingEntity e : targets) {
+			ctx.hit.add(e.getId());
+			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
+			Targeting.chill(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
+		}
+		ServerFx.entities(p, EntityFxS2C.SLOWED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
+		ServerFx.entities(p, EntityFxS2C.HIT, now(p), targets);
 	}
 
 	/** Entities frozen in phase 0 that are still alive, valid and near the cast. */
@@ -182,11 +206,28 @@ final class AbilityExecutor {
 
 	private static void modeAttack(ServerPlayerEntity p, CastContext ctx) {
 		AbilitySpec sp = ctx.spec;
-		List<LivingEntity> hit = Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
+		// the landing burst sits at the cast's aimed point, or at the swarm head when the caster steered it (BladeFlights)
+		List<LivingEntity> hit = Targeting.sphere(p, BladeFlights.landingCenter(p, ctx), sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
 		for (LivingEntity e : hit) {
 			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 		}
+		BladeFlights.markLanding(p, ctx, hit);
 		ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks of the swarm envelope
+	}
+
+	/**
+	 * Petal cage (Byakuya shikai, round 6): every phase is one pulse of the sphere of petals around {@code ctx.center}. Each pulse hurts
+	 * everything inside (INDIRECT_MAGIC like the other petal abilities, players included when {@link Tuning#affectPlayers}) and renews
+	 * the Slowness, so a target that stays in the cage is slowed for the whole 5 s and 3 s after it leaves.
+	 */
+	private static void cage(ServerPlayerEntity p, CastContext ctx) {
+		AbilitySpec sp = ctx.spec;
+		List<LivingEntity> hit = Targeting.sphere(p, ctx.center, sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
+		for (LivingEntity e : hit) {
+			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
+			Targeting.slow(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
+		}
+		ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit);
 	}
 
 	private static void scatter(ServerPlayerEntity p, int phase, CastContext ctx) {

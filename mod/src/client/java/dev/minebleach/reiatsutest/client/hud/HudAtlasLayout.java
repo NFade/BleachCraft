@@ -6,7 +6,7 @@ import java.util.Map;
 final class HudAtlasLayout {
 	static final int SIZE = 512;
 	static final Map<String, int[]> SHEETS = Map.ofEntries(
-		Map.entry("ability_icons", new int[] {350, 0, 64, 48}),
+		Map.entry("ability_icons", new int[] {350, 0, 64, 64}),
 		Map.entry("bar_fill", new int[] {161, 229, 124, 35}),
 		Map.entry("bar_frame", new int[] {118, 303, 128, 11}),
 		Map.entry("bar_sheen", new int[] {286, 303, 14, 7}),

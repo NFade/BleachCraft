@@ -11,6 +11,8 @@ import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.render.entity.feature.FeatureRenderer;
 import net.minecraft.client.render.entity.feature.FeatureRendererContext;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix3f;
@@ -91,6 +93,26 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 		}
 	}
 
+	/**
+	 * Free fraction (0..1) of a ribbon segment that starts at {@code p} (the {@code base} frame, camera relative after the transform) and runs {@code len}
+	 * along {@code d}: four probes along it, each with the centre and the two edges of the strip ({@code halfW} along {@code xAxis}). The fraction is the
+	 * last probe that was still free minus nothing, so the strip ends one probe before the first solid block.
+	 */
+	private static double clipFraction(ClientWorld w, BlockPos.Mutable bp, Matrix4f base, Vector3f p, Vector3f d, Vector3f xAxis, double len, double halfW, Vec3d cam) {
+		Vector3f q = new Vector3f();
+		for (int s = 1; s <= 4; s++) {
+			float t = (float) (len * s / 4.0);
+			for (int side = -1; side <= 1; side++) {
+				q.set(p).fma(t, d).fma((float) (side * halfW), xAxis);
+				base.transformPosition(q);
+				if (FxPlace.blocked(w, bp, q.x + cam.x, q.y + cam.y, q.z + cam.z)) {
+					return (s - 1) / 4.0;
+				}
+			}
+		}
+		return 1.0;
+	}
+
 	private void ribbons(MatrixStack matrices, VertexConsumerProvider vcp, int light, AbstractClientPlayerEntity entity, double segs, float td) {
 		int id = entity.getId();
 		int maxSeg = FxConfig.fxTier == FxConfig.TierSetting.LOW ? 6 : 9;
@@ -109,6 +131,13 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 		FxMeshes.Mesh tip = FxMeshes.get(FxMeshes.RIBBON_TIP);
 		Matrix4f m = new Matrix4f();
 		Vector3f p = new Vector3f();
+		// collision clipping (rbankai.ribbonClip, 1 = on): a segment that would end inside a solid block is shortened to the free part and the chain stops there
+		ClientWorld world = MinecraftClient.getInstance().world;
+		boolean clip = world != null && FxTune.d("rbankai.ribbonClip", 1.0) > 0.5;
+		double[][] clipF = new double[3][maxSeg + 2];
+		BlockPos.Mutable bp = new BlockPos.Mutable();
+		Vec3d camPos = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+		double halfW = Math.min(0.45, seg.radius * FxTune.d("rbankai.ribbonWidth", 2.4) * FxTune.d("rbankai.ribbonClipWidth", 0.6));
 		Vector3f d = new Vector3f();
 		Vector3f xAxis = new Vector3f();
 		Vector3f zAxis = new Vector3f();
@@ -135,6 +164,20 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 					zAxis.set(xAxis).cross(new Vector3f(d).negate());
 					Matrix3f rot = new Matrix3f(xAxis.x, xAxis.y, xAxis.z, -d.x, -d.y, -d.z, zAxis.x, zAxis.y, zAxis.z);
 					double grow = j + 1 <= segs ? 1.0 : segs - j;
+					boolean cut = false;
+					if (clip) {
+						if (pass == 0) {
+							clipF[k][j] = clipFraction(world, bp, base, p, d, xAxis, FxTune.d("rbankai.ribbonSegLen", 0.35) * grow, halfW, camPos);
+						}
+						double f = clipF[k][j];
+						if (f <= 0.0) {
+							break;
+						}
+						if (f < 1.0) {
+							grow *= f;
+							cut = true;
+						}
+					}
 					m.set(base).translate(p).rotate(rot.getNormalizedRotation(new org.joml.Quaternionf())).scale((float) FxTune.d("rbankai.ribbonWidth", 2.4), (float) grow, 1f);
 					if (pass == 0) {
 						FxMeshes.draw(vc, isTip ? tip : seg, m, FxMeshes.argb(1, 1, 1, 0.95), 0xF000F0);
@@ -142,6 +185,9 @@ public final class RukiaFeature extends FeatureRenderer<AbstractClientPlayerEnti
 						FxMeshes.draw(vc, isTip ? tip : seg, m, FxMeshes.argb(0.85, 0.95, 1.0, FxTune.d("rbankai.ribbonGlow", 0.85) * FxConfig.glowIntensity), 0xF000F0);
 					}
 					p.fma((float) (FxTune.d("rbankai.ribbonSegLen", 0.35) * grow), d);
+					if (cut) {
+						break; // the chain ends at the obstacle
+					}
 					theta += j < 5 ? curve : -curve;
 				}
 				lastSegments = count;

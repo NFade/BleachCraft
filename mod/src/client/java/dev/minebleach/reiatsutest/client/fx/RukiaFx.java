@@ -38,6 +38,9 @@ public final class RukiaFx {
 				RukiaBankaiClient.flare(e.casterId());
 			}
 			case 23 -> RukiaBankaiFx.absoluteZero(e);
+			case 24 -> IceSpikeFx.play(e);
+			case 42 -> FrostFieldFx.field(e);
+			case 43 -> FrostFieldFx.thaw(e);
 			case 2 -> RukiaBankaiFx.release(e);
 			default -> {
 				return false;

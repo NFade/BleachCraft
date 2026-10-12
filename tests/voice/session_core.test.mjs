@@ -75,7 +75,8 @@ function makeWorld(opts = {}) {
     onFatal: (c) => w.fatals.push(c),
     loudSince: () => w.loud
   };
-  w.rz = createRecognizer(w.env, w.hooks);
+  w.hooks.onRestart = (i) => (w.restartsSeen = w.restartsSeen || []).push(i);
+  w.rz = createRecognizer(w.env, w.hooks, opts.cfg);
   w.live = () => w.sessions.filter((s) => s.started && !s.aborted && !s.stopped && !s.ended);
   w.ev = (n) => w.events.filter((e) => e[0] === n).map((e) => e[1]);
   return w;
@@ -392,6 +393,175 @@ test("stats keep the last 30 records, numbers only", () => {
   const json = st.exportJson();
   assert.ok(!/"text"|"words"|"transcript"/.test(json), "no words in the export");
   st.clear(); assert.equal(st.utts.length, 0);
+});
+
+// ---------------------------------------------------------------- v4: watchdog, quick-death back-off, keepAlive, health
+test("watchdog: a session that went silent after audio (no event, no end) is replaced after 25 s", () => {
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].audio();
+  w.advance(24000);
+  assert.equal(w.sessions.length, 1, "still waiting");
+  w.advance(3000);
+  const dog = w.ev("watchdog");
+  assert.equal(dog.length, 1);
+  assert.equal(dog[0].why, "idle");
+  assert.ok(w.sessions[0].aborted, "the stalled session is aborted");
+  w.advance(1500);
+  assert.equal(w.sessions.length, 2, "a replacement was started");
+  assert.equal(w.rz.status().restarts, 1);
+  assert.equal(w.restartsSeen[0].why, "idle");
+  assert.ok(w.states.includes("restarting"));
+});
+
+test("watchdog: events keep a session alive (results, speech edges, sound edges)", () => {
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].audio();
+  for (let i = 0; i < 6; i++) { w.advance(15000); w.sessions[0].onsoundstart && w.sessions[0].onsoundstart(); }
+  w.advance(15000); w.sessions[0].say("hmm", false);
+  w.advance(20000);
+  assert.equal(w.ev("watchdog").length, 0);
+  assert.equal(w.sessions.length, 1);
+});
+
+test("watchdog: a start that never reaches audio is replaced (8 s once the page has heard audio, 45 s for the very first start)", () => {
+  const first = makeWorld();
+  first.rz.start("always"); first.advance(10000);
+  assert.equal(first.sessions.length, 1, "the first start may wait for the permission prompt");
+  first.advance(36000);
+  assert.equal(first.ev("watchdog")[0].why, "start-timeout");
+
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].audio(); w.sessions[0].say("x", true); w.sessions[0].end(); w.advance(0);
+  assert.equal(w.sessions.length, 2);
+  w.advance(7000); assert.equal(w.ev("watchdog").length, 0);
+  w.advance(2000); assert.equal(w.ev("watchdog")[0].why, "start-timeout");
+});
+
+test("watchdog: loud microphone but a silent recogniser for 7 s counts as deaf; quiet microphone does not", () => {
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].audio();
+  w.advance(20000);
+  assert.equal(w.ev("watchdog").length, 0, "silence is normal");
+  w.loud = true;
+  w.advance(1500);
+  assert.equal(w.ev("watchdog")[0].why, "deaf");
+});
+
+test("watchdog: restarts are at least 3 s apart and a held press is never interrupted", () => {
+  const w = makeWorld({ cfg: { idleTimeoutMs: 1500, watchdogGapMs: 3000 } });
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].audio();
+  w.advance(2600); // first restart at ~2 s
+  assert.equal(w.ev("watchdog").length, 1);
+  w.advance(100); w.sessions.at(-1).audio();
+  w.advance(1600); // stalled again after 1.5 s, but only ~2.2 s after the last restart
+  assert.equal(w.ev("watchdog").length, 1, "gap respected");
+  w.advance(2000);
+  assert.equal(w.ev("watchdog").length, 2);
+
+  const p = makeWorld({ cfg: { idleTimeoutMs: 1500 } });
+  p.rz.start("ptt"); p.advance(0);
+  p.sessions[0].audio();
+  p.rz.press();
+  p.advance(20000);
+  assert.equal(p.ev("watchdog").length, 0, "no restart under a held press");
+});
+
+test("tick(): a retry timer the browser made late is run by hand, a late drain too", () => {
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].end();                         // died before audio: retry in 250 ms
+  w.timers.length = 0;                         // the throttled tab never fires it
+  w.advance(400); w.rz.tick();
+  assert.equal(w.sessions.length, 2, "tick started the retry");
+
+  const d = makeWorld({ noEndOnAbort: true });
+  d.rz.start("always"); d.advance(0); d.sessions[0].audio();
+  d.rz.setLang("ru-RU");
+  d.timers.length = 0;                         // the drain timer is lost too
+  d.advance(900); d.rz.tick();
+  assert.equal(d.sessions.length, 1, "still draining before the 1 s cap");
+  d.advance(300); d.rz.tick();
+  assert.equal(d.sessions.length, 2, "tick completed the drain");
+  assert.equal(d.sessions[1].lang, "ru-RU");
+});
+
+test("quick deaths with audio but no result back off (the old code reset the back-off on audio and spun at 4 sessions a second)", () => {
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  const gaps = [];
+  for (let i = 0; i < 5; i++) {
+    const s = w.sessions.at(-1);
+    s.audio(); w.advance(100);
+    s.fail("network"); s.end();
+    let d = 0; const n = w.sessions.length;
+    while (w.sessions.length === n && d < 20000) { w.advance(50); d += 50; }
+    gaps.push(d);
+  }
+  assert.ok(gaps[4] > gaps[0] * 2, "delay grows: " + gaps);
+  assert.ok(w.rz.status().quickStreak >= 4);
+  const s = w.sessions.at(-1); s.audio(); s.say("ok", true);
+  assert.equal(w.rz.status().quickStreak, 0, "a result clears it");
+});
+
+test("a normal end (the service closes a quiet session after a few seconds) still restarts at once", () => {
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  for (let i = 0; i < 4; i++) {
+    const s = w.sessions.at(-1);
+    s.audio(); w.advance(8000); s.fail("no-speech"); s.end();
+    w.advance(0);
+    assert.equal(w.sessions.length, i + 2, "restarted without delay after a no-speech end");
+  }
+  assert.equal(w.fatals.length, 0);
+});
+
+test("keepAlive: transient errors never end the recognition, the retry slows down to 10 s and recovers on a result", () => {
+  const w = makeWorld({ cfg: { keepAlive: true } });
+  w.rz.start("always"); w.advance(0);
+  for (let i = 0; i < 9; i++) {
+    const s = w.sessions.at(-1);
+    s.fail("network"); s.end();
+    let d = 0; const n = w.sessions.length;
+    while (w.sessions.length === n && d < 20000) { w.advance(50); d += 50; }
+    if (i >= 7) assert.ok(d >= 9000 && d <= 10500, "slow retry, got " + d);
+  }
+  assert.deepEqual(w.fatals, []);
+  assert.equal(w.rz.status().degraded, true);
+  assert.equal(w.ev("degraded").length, 1);
+  const s = w.sessions.at(-1); s.audio(); s.say("back", false);
+  assert.equal(w.rz.status().degraded, false);
+  assert.equal(w.rz.status().failStreak, 0);
+});
+
+test("health: per-language counters of sessions, results, errors and watchdog restarts (numbers only)", () => {
+  const w = makeWorld();
+  w.rz.setLang("ru-RU");
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].audio(); w.sessions[0].say("a", false);
+  w.sessions[0].fail("no-speech"); w.sessions[0].end(); w.advance(0);
+  w.sessions[1].audio(); w.advance(30000);       // stall: watchdog
+  const h = w.rz.health();
+  assert.equal(h["ru-RU"].sessions >= 2, true);
+  assert.equal(h["ru-RU"].results, 1);
+  assert.equal(h["ru-RU"].errors["no-speech"], 1);
+  assert.equal(h["ru-RU"].restarts, 1);
+  assert.ok(!JSON.stringify(h).includes('"a"'), "no words in the counters");
+});
+
+test("stop() cancels the watchdog: nothing starts afterwards", () => {
+  const w = makeWorld();
+  w.rz.start("always"); w.advance(0);
+  w.sessions[0].audio();
+  w.rz.stop();
+  w.advance(120000);
+  assert.equal(w.sessions.length, 1);
+  assert.equal(w.ev("watchdog").length, 0);
+  assert.equal(w.timers.length, 0);
 });
 
 // ---------------------------------------------------------------- the page itself

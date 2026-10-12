@@ -58,6 +58,16 @@ loom {
 				vmArg "-Dreiatsu.spike.tune=${project.property('tune')}"
 			}
 		}
+		// Dev-only: second game client for PvP / parry tests (gradlew runClient2). Own game dir run2 (own saves, logs, lock files),
+		// username TestB. Start runServer first, then runClient and runClient2, both join localhost:25565 (see README).
+		client2 {
+			client()
+			name = "Client 2 (TestB)"
+			runDir "run2"
+			ideConfigGenerated(false)
+			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
+			programArgs "--username", "TestB"
+		}
 		// Dev-only automated verification of phase 4 (state machine, server abilities, HUD, sync): gradlew runPhase4
 		phase4 {
 			client()
@@ -165,6 +175,25 @@ java {
 	withSourcesJar()
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
+}
+
+// runClient2: seed run2/ from run/ on the first start (config + options.txt only, never saves), so both clients look the same.
+afterEvaluate {
+	tasks.named("runClient2") {
+		doFirst {
+			def src = file("run")
+			def dst = file("run2")
+			dst.mkdirs()
+			def opts = new File(dst, "options.txt")
+			if (!opts.exists() && new File(src, "options.txt").exists()) {
+				opts.text = new File(src, "options.txt").text
+			}
+			def cfg = new File(dst, "config")
+			if (!cfg.exists() && new File(src, "config").exists()) {
+				copy { from new File(src, "config"); into cfg }
+			}
+		}
+	}
 }
 
 // Dev harnesses: make sure the first run does not stop at the accessibility onboarding screen and is silent.

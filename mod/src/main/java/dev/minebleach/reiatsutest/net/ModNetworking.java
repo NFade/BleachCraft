@@ -12,6 +12,8 @@ public final class ModNetworking {
 		PayloadTypeRegistry.playC2S().register(CastAbilityC2S.ID, CastAbilityC2S.CODEC);
 		PayloadTypeRegistry.playC2S().register(ShunpoC2S.ID, ShunpoC2S.CODEC);
 		PayloadTypeRegistry.playC2S().register(CastKidoC2S.ID, CastKidoC2S.CODEC);
+		PayloadTypeRegistry.playC2S().register(SteerC2S.ID, SteerC2S.CODEC);
+		PayloadTypeRegistry.playS2C().register(SwarmHeadS2C.ID, SwarmHeadS2C.CODEC);
 		PayloadTypeRegistry.playS2C().register(ActionResultS2C.ID, ActionResultS2C.CODEC);
 		PayloadTypeRegistry.playS2C().register(EffectEventS2C.ID, EffectEventS2C.CODEC);
 		PayloadTypeRegistry.playS2C().register(EntityFxS2C.ID, EntityFxS2C.CODEC);

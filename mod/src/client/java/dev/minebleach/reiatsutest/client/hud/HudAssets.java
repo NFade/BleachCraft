@@ -28,7 +28,7 @@ public final class HudAssets {
 	public static final Identifier SLOT_GLOW = t("slot_glow"); // 28 x 28
 	public static final Identifier COOLDOWN_SWEEP = t("cooldown_sweep"); // 24 frames of 20 x 20 (6 x 4)
 	public static final Identifier KEY_TAB = t("key_tab"); // 9 x 9
-	public static final Identifier ABILITY_ICONS = t("ability_icons"); // 4 x 3 of 16 x 16
+	public static final Identifier ABILITY_ICONS = t("ability_icons"); // 4 x 4 of 16 x 16 (cells 0 to 11 as before, 12 ice spike, 13 petal cage)
 	public static final Identifier VOICE_MIC = t("voice_mic"); // 7 x 12 x 12
 	public static final Identifier TITLE_BAND = t("title_band"); // 300 x 32
 	public static final Identifier TITLE_GLOW = t("title_glow"); // 96 x 48

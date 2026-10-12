@@ -89,6 +89,9 @@ public final class ReleaseHold {
 			if (p < 0) {
 				continue;
 			}
+			if (ShikaiDissolve.hasPose(en.getKey())) {
+				continue; // plan G-glow round 2: ShikaiDissolve glows along the real sword; this guessed position is only the fallback
+			}
 			Entity ent = mc.world.getEntityById(en.getKey());
 			if (ent == null) {
 				continue;

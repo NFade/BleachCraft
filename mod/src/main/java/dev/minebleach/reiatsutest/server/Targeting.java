@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.combat.HitRules;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,27 +27,37 @@ final class Targeting {
 	private Targeting() {
 	}
 
-	/** Never the caster, a spectator, a dead entity, a pet of the caster, an immune type, or (by default) a player. */
+	/**
+	 * Never the caster, a spectator, a dead entity, a pet of the caster, an immune type, or a player while player hits are off
+	 * ({@link Tuning#affectPlayers}, default on) or the server has {@code pvp=false}. The verdict is {@link #refusal}.
+	 */
 	static boolean valid(ServerPlayerEntity caster, LivingEntity e) {
-		if (e == caster || !e.isAlive() || e.isSpectator()) {
-			return false;
+		return refusal(caster, e) == HitRules.Refusal.OK;
+	}
+
+	static HitRules.Refusal refusal(ServerPlayerEntity caster, LivingEntity e) {
+		boolean pet = e instanceof Tameable t && caster.getUuid().equals(t.getOwnerUuid());
+		boolean player = e instanceof PlayerEntity;
+		return HitRules.refusal(e == caster, e.isAlive(), e.isSpectator(), e.getType().isIn(Tuning.IMMUNE), pet, player,
+				Tuning.affectPlayers, caster.getServer() != null && caster.getServer().isPvpEnabled());
+	}
+
+	/** Predicate for entity queries; players that are left out for a config reason are named in the {@code [dmg]} log. */
+	private static boolean validLogged(ServerPlayerEntity caster, LivingEntity e) {
+		HitRules.Refusal r = refusal(caster, e);
+		if (r == HitRules.Refusal.PLAYERS_OFF || r == HitRules.Refusal.SERVER_PVP_OFF || r == HitRules.Refusal.IMMUNE_TYPE
+				|| r == HitRules.Refusal.SPECTATOR) {
+			if (e instanceof PlayerEntity) {
+				DmgLog.refused(caster, e, r);
+			}
 		}
-		if (e.getType().isIn(Tuning.IMMUNE)) {
-			return false;
-		}
-		if (e instanceof Tameable t && caster.getUuid().equals(t.getOwnerUuid())) {
-			return false;
-		}
-		if (e instanceof PlayerEntity) {
-			return Tuning.affectPlayers && caster.getServer() != null && caster.getServer().isPvpEnabled();
-		}
-		return true;
+		return r == HitRules.Refusal.OK;
 	}
 
 	/** Valid living entities whose bounding box touches {@code box}, nearest to {@code near} first, at most {@code max}. */
 	static List<LivingEntity> inBox(ServerPlayerEntity caster, Box box, Vec3d near, int max) {
 		ServerWorld world = caster.getServerWorld();
-		List<LivingEntity> found = world.getEntitiesByClass(LivingEntity.class, box, e -> valid(caster, e));
+		List<LivingEntity> found = world.getEntitiesByClass(LivingEntity.class, box, e -> validLogged(caster, e));
 		found.sort(Comparator.comparingDouble(e -> e.squaredDistanceTo(near)));
 		return found.size() > max ? new ArrayList<>(found.subList(0, max)) : found;
 	}
@@ -145,12 +156,27 @@ final class Targeting {
 
 	// ------------------------------------------------------------------ effects
 
-	static void hurt(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
+	/**
+	 * Damages {@code target} on behalf of {@code caster} and writes the outcome to the {@code [dmg]} log (who, how much, and the
+	 * reason when nothing was lost: Creative, parry, barrier, i-frames, team ...).
+	 */
+	static HitRules.Outcome hurt(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
 		DamageSource src = caster.getServerWorld().getDamageSources().create(type, caster);
 		if (resetInvulnerability) {
 			target.timeUntilRegen = 0; // multi-hit abilities are meant to land every hit
 		}
-		target.damage(src, hp);
+		boolean creative = target instanceof PlayerEntity pl && (pl.isCreative() || pl.getAbilities().invulnerable);
+		boolean invulnerable = target.isInvulnerableTo(src);
+		boolean team = target instanceof PlayerEntity pl && !caster.shouldDamagePlayer(pl);
+		boolean iframes = target.timeUntilRegen > 10;
+		float before = target.getHealth() + target.getAbsorptionAmount();
+		DmgLog.clearVeto();
+		boolean returned = target.damage(src, hp);
+		float lost = before - (target.getHealth() + target.getAbsorptionAmount());
+		HitRules.Outcome out = HitRules.outcome(hp, returned, lost, DmgLog.vetoFor(target), creative, invulnerable, team, iframes);
+		DmgLog.clearVeto();
+		DmgLog.hit(caster, target, hp, Math.max(0.0F, lost), out);
+		return out;
 	}
 
 	/** Slowness plus vanilla freezing ticks (frozen ticks decay by 2 per tick, so 2 * duration keeps them above the visual threshold). */
@@ -160,6 +186,11 @@ final class Targeting {
 		if (target.getFrozenTicks() < want) {
 			target.setFrozenTicks(want);
 		}
+	}
+
+	/** Slowness only (no frostbite): the petal cage and other non-ice controls. */
+	static void slow(ServerPlayerEntity caster, LivingEntity target, int amplifier, int durationTicks) {
+		target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, durationTicks, amplifier, false, true, true), caster);
 	}
 
 	static void knockback(LivingEntity target, Vec3d from, double strength) {

@@ -42,16 +42,19 @@ public final class FxMeshes {
 		public final int quads;
 		/** Local bounding box height (max y) for sizing. */
 		public final float height;
+		/** Largest horizontal distance of a vertex from the local Y axis (footprint radius for placement tests). */
+		public final float radius;
 
-		Mesh(float[] data, int quads, float height) {
+		Mesh(float[] data, int quads, float height, float radius) {
 			this.data = data;
 			this.quads = quads;
 			this.height = height;
+			this.radius = radius;
 		}
 	}
 
 	private static final Map<String, Mesh> MESHES = new HashMap<>();
-	private static final Mesh EMPTY = new Mesh(new float[0], 0, 0);
+	private static final Mesh EMPTY = new Mesh(new float[0], 0, 0, 0);
 
 	private FxMeshes() {
 	}
@@ -68,6 +71,7 @@ public final class FxMeshes {
 		}
 		float[] d = new float[quads.size() * 32];
 		float maxY = 0;
+		float maxR = 0;
 		int i = 0;
 		for (ObjGeometry.Quad q : quads) {
 			for (int c = 0; c < 4; c++) {
@@ -80,11 +84,12 @@ public final class FxMeshes {
 				d[i++] = q.nrm()[c][1];
 				d[i++] = q.nrm()[c][2];
 				maxY = Math.max(maxY, q.pos()[c][1]);
+				maxR = Math.max(maxR, (float) Math.hypot(q.pos()[c][0], q.pos()[c][2]));
 			}
 		}
-		m = new Mesh(d, quads.size(), maxY);
+		m = new Mesh(d, quads.size(), maxY, maxR);
 		MESHES.put(object, m);
-		ReiatsuTest.LOGGER.info("[fx] mesh {}: {} quads, height {}", object, quads.size(), maxY);
+		ReiatsuTest.LOGGER.info("[fx] mesh {}: {} quads, height {}, radius {}", object, quads.size(), maxY, maxR);
 		return m;
 	}
 

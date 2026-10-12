@@ -87,6 +87,8 @@ public final class ReiatsuHud {
 		GFX.begin(ctx);
 		long a0 = System.nanoTime();
 		PlateHud.draw(GFX, mc, font, w, h, o[0], o[1], o[2] == 1, tickDelta);
+		// the voice row does not depend on the plate: it is on screen whenever the bridge runs, also sealed with an empty hand
+		VoiceRowHud.draw(GFX, mc, font, w, o[0], o[1], HudModel.accentNow());
 		GFX.flush();
 		long a1 = System.nanoTime();
 		StripHud.draw(GFX, mc, font, w, h);

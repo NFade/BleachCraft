@@ -41,7 +41,11 @@ public final class BladeRowLayout {
 	/** Small seeded deviation of the lean in degrees. */
 	public final float[] leanJitter;
 
-	private BladeRowLayout(int ranks, int perRank, long seed) {
+	/** Layout scale (rows.scale): spacing, corridor half width, rank step and stagger are multiplied by it. 1.0 = the original numbers. */
+	public final double space;
+
+	private BladeRowLayout(int ranks, int perRank, long seed, double space) {
+		this.space = space;
 		this.ranks = ranks;
 		this.perRank = perRank;
 		this.n = 2 * ranks * perRank;
@@ -57,8 +61,8 @@ public final class BladeRowLayout {
 		for (int s = -1; s <= 1; s += 2) {
 			for (int k = 0; k < ranks; k++) {
 				for (int j = 0; j < perRank; j++) {
-					double a = START_AHEAD - SPACING * j - STAGGER * k;
-					double off = RANK_BASE + RANK_STEP * k;
+					double a = START_AHEAD - space * (SPACING * j + STAGGER * k);
+					double off = space * (RANK_BASE + RANK_STEP * k);
 					along[i] = (float) a;
 					across[i] = (float) (s * off);
 					side[i] = (byte) s;
@@ -75,10 +79,16 @@ public final class BladeRowLayout {
 	}
 
 	public static BladeRowLayout of(int requested, long seed) {
+		return of(requested, seed, 1.0);
+	}
+
+	/** {@code space} = rows.scale: 1.0 is the original layout (6 blocks to the first rank, spacing 1.1), clamped to 0.2..3. */
+	public static BladeRowLayout of(int requested, long seed, double space) {
+		double sp = Math.max(0.2, Math.min(3.0, space));
 		int req = Math.max(4, Math.min(1000, requested));
 		int r = Math.max(2, Math.min(5, (req + 199) / 200));
 		int per = Math.max(1, req / (2 * r));
-		return new BladeRowLayout(r, per, seed);
+		return new BladeRowLayout(r, per, seed, sp);
 	}
 
 	/** Time at which the last blade has settled (2.2 s for 200 blades, 2.8 s for 1000). */
@@ -123,6 +133,11 @@ public final class BladeRowLayout {
 	/** Time after which every blade is in its final pose (the rows can go to the static buffer). */
 	public double settledTime() {
 		return completionTime() + 1.25;
+	}
+
+	/** Half width of the corridor up to the innermost rank, blocks. */
+	public double corridorHalfWidth() {
+		return RANK_BASE * space;
 	}
 
 	/** World position of the base of blade i: rows frame to world for a release yaw in degrees (Minecraft convention) and feet. */

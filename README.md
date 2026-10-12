@@ -47,7 +47,8 @@ cooldowns clear, pvp, voice) sets state and bar for testing. A dev item `spike_i
 ```
 cd mod
 gradlew runClient                 # normal dev client (run dir mod/run)
-gradlew runServer                 # dedicated dev server (run dir mod/run-server, accept the EULA there first)
+gradlew runServer                 # dedicated dev server (run dir mod/run-server, port 25565, online-mode=false)
+gradlew runClient2                # second dev client (run dir mod/run2, username TestB) for PvP / parry tests
 gradlew build test                # build and unit tests
 python -I ../tools/server_smoke.py   # dedicated server smoke test, no game window, about 2.5 minutes, prints PASS or FAIL
 ```
@@ -57,6 +58,24 @@ Dev harnesses (each opens a game window by itself, one game at a time; they driv
 `gradlew runPhase5` (voice bridge in game), `gradlew runPhase6 [-Phold=<scenario>] [-PfreezeAt=<ms>] [-Pfx=key=value,...]`
 (effects and HUD screenshots). The windows open on the monitor that contains the point `dev_monitor` in `mod/gradle.properties`
 (override it in `%GRADLE_USER_HOME%\gradle.properties`).
+
+### Two clients on one PC (PvP and parry tests)
+
+Start in this order, each in its own terminal, from `mod/`:
+
+```
+gradlew runServer      # wait for: Done (...)! For help, type "help"
+gradlew runClient      # Multiplayer -> Add Server -> localhost:25565 (random dev name)
+gradlew runClient2     # same address, joins as TestB
+```
+
+Server address for both clients: `localhost:25565` (or `127.0.0.1:25565`). `mod/run-server/` holds `server.properties` and
+`eula.txt` (`eula=true`, set for this local dev test only); the world is `world_pvp`. `online-mode=false` is needed because the
+dev clients have no Mojang session; use it for local tests only and never expose that port to the internet. Make yourself an
+operator in the server console (`op <name>`), then `/reiatsu pvp`, `/give` and the other commands work as usual. `mod/run2/`
+is a separate game dir (own saves, logs, options); its `config/` and `options.txt` were copied from `mod/run/` once, edit them
+freely. Both windows open at the `dev_monitor` point and overlap, so drag one aside. Fallback without the second task:
+`gradlew runClient --args="--username TestB --gameDir ../run2"` (the working dir of `runClient` is `mod/run`).
 
 ## Controls
 

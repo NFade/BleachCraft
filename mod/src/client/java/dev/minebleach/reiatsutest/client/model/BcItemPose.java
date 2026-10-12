@@ -27,6 +27,12 @@ import org.joml.Quaternionf;
  * <p>The correction is only applied while the animation really drives the item bone (probe of the playerAnimator stack with an
  * impossible default value), eased in and out over {@code fade_ticks}, so the resting hold keeps the look tuned for it.
  *
+ * <p>tp_pose (2026-10-11): the same hook also carries the grip of the third person pose ({@link TpPoseDriver#grip}): a rigid
+ * correction that puts the sword of a posed player exactly on the frame {@code TpPose} solved (upright in two hands, across the
+ * chest in a block) whatever the display transform says. It fades out while a Better Combat strike drives the item bone (weight
+ * {@code w} below) and the strike correction fades in. With the Better Combat stance switched off ({@code BcPoseMixin}) only
+ * strikes drive the bone, so the correction below is a strike only thing now.
+ *
  * <p>Hot reload (dev only, {@link HeldPose}): {@code pose_override.json} key {@code "bc_item"}:
  * {@code {"enabled": 1, "rot": [-55, 0, 0], "pos": [0, 0, 0], "pivot": [0, -2, 1.75], "fade_ticks": 3}}, all keys optional.
  * {@code rot} degrees (x, y, z), {@code pos} and {@code pivot} in item model pixels (1/16 block), right-handed numbers; the left
@@ -34,7 +40,13 @@ import org.joml.Quaternionf;
  */
 public final class BcItemPose {
 	private static final float[] ROT = {-55f, 0f, 0f};
-	private static final float[] POS = {0f, 0f, 0f};
+	/**
+	 * tp_fix: shift along the blade axis (item frame pixels, -1.05 px along the blade of the held pose): with the tsuba at the back of the
+	 * fist the pommel end shows in front of it, the grip is no longer buried in the 4 px wide hand. Computed (JOML order, PA chain
+	 * with the BC katana pose) for the display scale 1.6; UNVERIFIED in game.
+	 */
+	private static final float[] POS = {0f, -1.05f, 0.18f};
+	private static final float SCALE = 1f;
 	private static final float[] PIVOT = {0f, -2f, 1.75f};
 	private static final float FADE_TICKS = 3f;
 	/** A value no animation produces; the stack hands it back unchanged when nothing animates the item bone. */
@@ -108,19 +120,41 @@ public final class BcItemPose {
 	 */
 	public static boolean push(LivingEntity e, boolean leftHanded, float tickDelta, MatrixStack matrices) {
 		float w = weight(e, leftHanded, tickDelta);
-		if (w <= 0.001f) {
+		// tp_pose: the sword of a posed player is put on the frame the pose solver wants (two hands, upright; across the chest in a
+		// block); a Better Combat strike takes over with its own correction below, the two cross fade with w
+		TpPoseDriver.Grip grip = TpPoseDriver.grip(e, leftHanded);
+		float gw = grip == null ? 0f : grip.weight() * (1f - w);
+		boolean useGrip = gw > 0.001f;
+		boolean useBc = w > 0.001f;
+		if (!useGrip && !useBc) {
 			return false;
 		}
-		float s = leftHanded ? -1f : 1f;
-		float[] rot = vec("rot", ROT);
-		float[] pos = vec("pos", POS);
-		float[] pv = vec("pivot", PIVOT);
-		Quaternionf q = new Quaternionf().rotationXYZ((float) Math.toRadians(rot[0] * w), (float) Math.toRadians(s * rot[1] * w),
-				(float) Math.toRadians(s * rot[2] * w));
 		matrices.push();
-		matrices.translate(s * (pv[0] + pos[0] * w) / 16f, (pv[1] + pos[1] * w) / 16f, (pv[2] + pos[2] * w) / 16f);
-		matrices.multiply(q);
-		matrices.translate(-s * pv[0] / 16f, -pv[1] / 16f, -pv[2] / 16f);
+		if (useGrip) {
+			Quaternionf gq = new Quaternionf().slerp(
+					new Quaternionf((float) grip.q()[0], (float) grip.q()[1], (float) grip.q()[2], (float) grip.q()[3]), gw);
+			matrices.translate((float) grip.t()[0] * gw, (float) grip.t()[1] * gw, (float) grip.t()[2] * gw);
+			matrices.multiply(gq);
+		}
+		if (useBc) {
+			float s = leftHanded ? -1f : 1f;
+			float[] rot = vec("rot", ROT);
+			float[] pos = vec("pos", POS);
+			float[] pv = vec("pivot", PIVOT);
+			float sc = 1f + (num("scale", SCALE) - 1f) * w;
+			Quaternionf q = new Quaternionf().rotationXYZ((float) Math.toRadians(rot[0] * w), (float) Math.toRadians(s * rot[1] * w),
+					(float) Math.toRadians(s * rot[2] * w));
+			matrices.translate(s * (pv[0] + pos[0] * w) / 16f, (pv[1] + pos[1] * w) / 16f, (pv[2] + pos[2] * w) / 16f);
+			matrices.multiply(q);
+			matrices.scale(sc, sc, sc);
+			matrices.translate(-s * pv[0] / 16f, -pv[1] / 16f, -pv[2] / 16f);
+		}
+		// the hip to hand blend of the draw (non players) ends on the frame the hand item really gets: re-take it now that the
+		// correction is in (HeldItemRendererMixin captured it before this push)
+		ObjItemBakedModel om = ScabbardRenderer.modelOf(e, e.getMainHandStack());
+		if (om != null) {
+			ScabbardRenderer.captureHand(e, matrices, leftHanded, om);
+		}
 		return true;
 	}
 }

@@ -134,9 +134,18 @@ public final class FirstPersonHand {
 			if (follow != null) {
 				m.push();
 				m.translate(follow.x, follow.y, follow.z);
+				// round 5, two handed hold: the fist sits flush under the tsuba (shift up the hilt) and its box is turned square to the hilt
+				float[] shift = FpMotion.armShift(leftHanded);
+				if (shift != null) {
+					m.translate(shift[0], shift[1], shift[2]);
+				}
 				// the forearm comes in from the edge of the screen on the side of the hand: roll it about the view axis through the fist
 				m.translate(mx * FIST_X, FIST_Y, FIST_Z);
 				m.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(mx * roll[0]));
+				float[] turn = FpMotion.armRot(leftHanded);
+				if (turn != null) {
+					m.multiply(new Quaternionf().rotationXYZ(turn[0] * DEG, turn[1] * DEG, turn[2] * DEG));
+				}
 				m.translate(-mx * FIST_X, -FIST_Y, -FIST_Z);
 				renderVanillaArm(mc, player, left, pose, m, vcp, light);
 				m.pop();

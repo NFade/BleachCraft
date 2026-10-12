@@ -122,6 +122,7 @@ public final class ZanpakutoManager {
 		});
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register(ZanpakutoManager::allowDamage);
 		BlockParry.init();
+		BladeFlights.init(); // after the tick registration above: the flight ticks after the scheduled landing phases
 	}
 
 	// ------------------------------------------------------------------ sessions
@@ -146,6 +147,8 @@ public final class ZanpakutoManager {
 		ReiatsuData stored = p.getAttached(ModAttachments.REIATSU);
 		ReiatsuState initial = stored != null ? stored.toState() : ReiatsuState.full(cfg.maxTenths());
 		Session s = new Session(new StateMachine(srv::getTicks, cfg, initial));
+		java.util.UUID id = p.getUuid();
+		s.sm.setRage(RageManager.CONFIG, () -> RageManager.valueOf(id)); // shikai / bankai entry needs and pays Rage (round 5)
 		s.sm.setKidoConfig(KidoManager.config());
 		SESSIONS.put(p.getUuid(), s);
 		return s;
@@ -282,6 +285,9 @@ public final class ZanpakutoManager {
 			ctx = CastContext.capture(p, ability, s.sm.config().spec(ability), seed);
 		}
 		apply(p, s, r.events(), ctx);
+		if (ctx != null && ability == AbilityId.MODE_ATTACK) {
+			BladeFlights.start(p, ctx, s.sm.castSerial()); // steerable swarm flight + damage along it (core/swarm)
+		}
 		reply(p, seq, r.code());
 		return r;
 	}
@@ -323,6 +329,7 @@ public final class ZanpakutoManager {
 						}
 					}
 				case StateEvent.ReiatsuSpent r -> { }
+					case StateEvent.RageSpent r -> RageManager.spend(p, r.tenths());
 				case StateEvent.CooldownStarted c -> { }
 				case StateEvent.BroadcastEffect b -> {
 						ServerFx.effect(p, b.effectId(), b.seed(), ctx);
@@ -340,7 +347,9 @@ public final class ZanpakutoManager {
 				case StateEvent.KidoCast k -> KidoManager.cast(p, k);
 				case StateEvent.ShunpoMove m -> {
 					p.networkHandler.requestTeleport(m.toX(), m.toY(), m.toZ(), p.getYaw(), p.getPitch());
-					ServerFx.shunpo(p, m, s.sm.character());
+					// shunpo works in any state: tint by the released character, else by the sword in hand, else the default
+						CharacterId who = s.sm.character() != CharacterId.NONE ? s.sm.character() : ModItems.characterOf(p.getMainHandStack());
+						ServerFx.shunpo(p, m, who);
 				}
 			}
 		}
@@ -385,13 +394,9 @@ public final class ZanpakutoManager {
 				s.spectator = p.isSpectator();
 				ev.addAll(sm.setSpectator(s.spectator));
 			}
-			if (sm.state() != ZanpakutoState.SEALED) {
-				if (!carries(p, sm.character())) {
-					ev.addAll(sm.onItemDropped());
-				} else {
-					ev.addAll(sm.onHandChanged(ModItems.characterOf(p.getMainHandStack())));
-				}
-			}
+			// round 5: no check of the main hand here on purpose. A slot change, a drop or the off hand never ends the released form
+			// or its effects (only seal, death, logout, dimension, the bankai cap and the idle timer do); the render mirror below
+			// simply follows the stack that is in the main hand.
 			ev.addAll(sm.tick(1));
 
 			// keep the render mirror on the main-hand stack in step with the state when the hand changes
@@ -426,16 +431,6 @@ public final class ZanpakutoManager {
 		if (now % 5 == 0) {
 			TempBlocks.tick(srv, now);
 		}
-	}
-
-	private static boolean carries(ServerPlayerEntity p, CharacterId character) {
-		PlayerInventory inv = p.getInventory();
-		for (int i = 0; i < inv.size(); i++) {
-			if (ModItems.characterOf(inv.getStack(i)) == character) {
-				return true;
-			}
-		}
-		return ModItems.characterOf(p.currentScreenHandler.getCursorStack()) == character;
 	}
 
 	/**
@@ -474,11 +469,13 @@ public final class ZanpakutoManager {
 		boolean modified = false;
 		BlockOutcome block = BlockParry.onHit(p, source, amount);
 		if (block.parried()) {
+			DmgLog.noteVeto(p, dev.minebleach.reiatsutest.core.combat.HitRules.Outcome.PARRY);
 			return false;
 		}
 		if (block.blocked()) {
 			eff = block.damage();
 			modified = true;
+			DmgLog.noteVeto(p, dev.minebleach.reiatsutest.core.combat.HitRules.Outcome.BLOCKED);
 		}
 		Session s = SESSIONS.get(p.getUuid());
 		if (s != null && s.sm.shikaiMode() == dev.minebleach.reiatsutest.core.state.ShikaiMode.BARRIER) {
@@ -487,6 +484,7 @@ public final class ZanpakutoManager {
 			if (remaining < total) {
 				flush(p, s);
 				if (remaining <= 0) {
+					DmgLog.noteVeto(p, dev.minebleach.reiatsutest.core.combat.HitRules.Outcome.BARRIER);
 					return false;
 				}
 				eff = remaining / 10.0F;

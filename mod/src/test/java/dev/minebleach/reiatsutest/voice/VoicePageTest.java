@@ -46,7 +46,7 @@ class VoicePageTest {
 	@Test
 	void sessionControllerAndStatsAreDelimitedForTheNodeTests() throws IOException {
 		String html = page();
-		for (String k : new String[] {"SESSION-CORE", "STATS"}) {
+		for (String k : new String[] {"SESSION-CORE", "STATS", "PTTKEY"}) {
 			assertTrue(html.contains("===== " + k + "-BEGIN") && html.contains("===== " + k + "-END"), "markers " + k);
 		}
 	}
@@ -60,6 +60,18 @@ class VoicePageTest {
 		}
 		assertTrue(html.contains("/voice") && html.contains("/status?mic="));
 		assertFalse(html.contains("localStorage.setItem(\"reiatsu.text"), "recognised words are never stored");
+	}
+
+	/** v4: the watchdog, the status line and the background-proof heartbeat are part of the page (behaviour: session_core.test.mjs). */
+	@Test
+	void pageHasWatchdogStatusLineAndHeartbeat() throws IOException {
+		String html = page();
+		assertTrue(html.contains("id=\"recStatus\"") && html.contains("id=\"recCount\""), "recognition status line with the restart counter");
+		assertTrue(html.contains("onRestart") && html.contains("rz.tick()"), "watchdog hook and heartbeat tick");
+		assertTrue(html.contains("keepAlive: true"), "the page never gives up on transient errors");
+		// the heartbeat is a blob worker: the strict CSP must allow exactly that and nothing wider
+		assertTrue(html.contains("worker-src blob:"), "CSP allows the blob heartbeat worker");
+		assertFalse(html.contains("worker-src *") || html.contains("script-src *"), "no wide CSP");
 	}
 
 	@Test

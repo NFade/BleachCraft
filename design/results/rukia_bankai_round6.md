@@ -1,0 +1,62 @@
+# Round 6: Rukia bankai territory freeze, two different bankai abilities, Byakuya petal cage (2026-10-12)
+
+Status: code, resources and unit tests done, `gradlew test` and `compileClientJava` green. Nothing was started in the game (clients and server were running at the user's side), so every visual and every world change below is UNVERIFIED. Not committed.
+
+## 11. Territory freeze (Hakka no Togame)
+
+### Scheme (a: server block replacement, own mod blocks)
+- Five new mod blocks (`registry/ModBlocks`, textures from `tools/gen_frost_textures.py`, own pixel art, blue and white): `frost_crust` (ground: grass, dirt, podzol, mycelium, sand, gravel, clay, snow block, soul sand/soil), `frost_stone` (stone, granite/diorite/andesite, deepslate, tuff, nether stones, terracotta, cobblestone, sandstone, end stone), `frost_leaves` (all leaves, cut out texture), `frost_film` (thin ice over a water SOURCE block whose upper neighbour is air, translucent), `frost_sprig` (grass, ferns, flowers, dead bush: cross of ice blades, no collision).
+- Friction is the default 0.6 (stone): no `slipperiness(...)` call anywhere, no vanilla `ice` / `packed_ice` / `blue_ice` / `frosted_ice` in the freeze. `FrostBlocksSourceTest` guards both. Blocks have no items, drop nothing, hardness -1 (cannot be mined), blast resistance 3.6M, pistons block them.
+- Not touched: block entities, bedrock, ores, logs, buildings, stairs/slabs (only full cubes are changed), farmland/paths, snow layers, existing ice, flowing water, fluids below the surface, cells that contain an entity (water cells only), cells next to unloaded chunks, chunks that do not tick blocks (the world only tells clients about changes in ticking chunks).
+- Scan per column: from feet y + 10 down to feet y - 14, at most 5 blocks per column, only blocks with an exposed face (air or see-through non-fluid neighbour), so a column freezes its surface, cliff faces, leaf canopy and cave surfaces but not the solid inside.
+
+### Wave (b)
+- `core/world/FrostWave`: the 2800-ish columns of the disc of radius 30 sorted by distance; the ring grows 12 blocks per second (config `waveSpeed`), the rim is reached after 2.5 s. Budgets per tick: 220 columns, 450 blocks (`columnsPerTick`, `blocksPerTick`); a slow server only delays the ring. Caps: 14000 blocks per field, 40000 in all fields.
+- Starts when the Rukia bankai release effect (id 2) is broadcast (`RukiaServerFx.onEffect` -> `FrostField.onEffect`), ends when the owner is no longer in the Rukia bankai (checked every 10 ticks, same rule as the standing field anchor `FieldAnchorPolicy.keep`), dies, leaves, changes dimension or after the 45 s cap (`maxTicks` 900).
+- Client (`FrostFieldFx`, effect 42 `{radius, speed, cap}`): white ground ring and thin ring running with the wave, snowflakes and frost motes on the ring (up to 28 per 50 ms), glints, ground mist, crackling sounds (glass, amethyst, powder snow) played at the ring point nearest to the camera, about 7 rare ice crystals standing on the surface that shatter with the bankai field (same owner key as `RukiaBankaiClient`), a last glitter and a chime at the rim.
+- Thaw: the ring runs inward at 20 blocks per second (`thawSpeed`, effect 43 `{radius, speed}`), outermost blocks first, 600 blocks per tick at most. Owner dead, offline or in another dimension: fast thaw (3000 blocks per tick, no ring).
+
+### Restoring and world safety
+- `core/world/FrostJournal`: every frozen cell keeps its original state (as a block state string like `minecraft:oak_leaves[distance=2,persistent=false]`), its dimension and its field id. A cell is journaled once, so a second field can never take a frost block for the original. Pure Java, 6 unit tests (packing, once-only, outside-in batches and the inward ring gate, snapshot round trip, damaged snapshot never throws, put back).
+- `server/FrostState` (`PersistentState`, `data/reiatsu_test_frost.dat` in the overworld data folder): palette plus flat arrays, about 12 bytes per frozen block. Written at most every 10 ticks while it changes (`saveEveryTicks`) with `state.save(file, ...)`, not only with the world save.
+- Crash recovery: `SERVER_STARTED` reads the journal and restores everything before anything else (blocking chunk loads allowed); the spawn chunks that loaded earlier are swept too. `SERVER_STOPPING` restores everything synchronously, then the normal save writes the empty journal. Last line of defence `orphanSweep` (config, default on): when a chunk loads, any frost block that no journal entry knows (the journal write was lost in a hard crash) becomes dirt / stone / persistent oak leaves / water / air. The sweep stays out while a restore is running (`restoring` counter), otherwise it would replace blocks that are already taken out of the journal.
+- Restore rule: a cell is restored when it still holds one of our frost blocks, or air (creative mode may have broken the frost block, the original must not vanish with it). Anything else was placed by somebody after the freeze and stays. Unknown block in a token (mod removed) restores air. An unloaded chunk costs `chunkLoadCost` (200) of the tick budget.
+- Placement flags `NOTIFY_LISTENERS | FORCE_STATE`: clients and light are told, no neighbour or shape updates run, so plants do not pop and nothing cascades.
+- Limits of the safety net (honest): the journal file is written every 10 ticks, so a power cut within 0.5 s of a placement while the chunk was saved in exactly that window would only be caught by `orphanSweep` (fallback blocks, not the exact originals). Dev commands: `/reiatsu frost status | start | rollback` (op level 2).
+
+### Config
+`config/reiatsu_test.json`, section `"frost"` (written with defaults on first start, clamped when read): `enabled, radius 30, waveSpeed 12, maxTicks 900, up 10, down 14, maxPerColumn 5, columnsPerTick 220, blocksPerTick 450, maxBlocks 14000, maxTotalBlocks 40000, restoreBlocksPerTick 600, fastRestoreBlocksPerTick 3000, chunkLoadCost 200, saveEveryTicks 10, thawSpeed 20, orphanSweep true`. Radius default 30 (user asked 28 to 32).
+
+## 13a. Rukia bankai: two different abilities
+What was wrong: Tsukishiro (Z, shikai, still castable in bankai) and Absolute Zero (U) were the same effect (a cylinder or sphere freeze with ice shells, then a shatter), and Absolute Zero also dropped random vanilla ice blocks (slippery). The bankai row had one ability (slot U), `I` and `O` were empty.
+
+| | Ice spike (new, U, slot 1) | Absolute zero (I, slot 2, was U) |
+|---|---|---|
+| id / effect | `rukia.bankai.ice_spike` / 24 | `rukia.bankai.absolute_zero` / 23 |
+| mechanic | thrust of ice spikes along the look ray, 36 blocks, half width 1.5, stops at the first block, 6 segments every 2 ticks from tick 14, each target hit once | everything within 12 blocks frozen solid (Slowness VII) for 3 s, shatters at tick 100 for 18 HP (targets that stay within 16) |
+| damage | 9 HP (`DamageTypes.FREEZE` like the other Rukia abilities), Slowness III 4 s | 18 HP |
+| cost / cooldown | 15 reiatsu / 8 s | 50 reiatsu / 40 s (heavy) |
+| visual | no field and no pause: glints and a flare along the ray, two crystals erupt from the floor under the line per segment with shards, ground ring, shatter after 1.1 s (`IceSpikeFx`) | unchanged look (`RukiaBankaiFx.absoluteZero`), the time stop pause now 3.0 s (read from the event) |
+| DPS | 1.125 HP/s | 0.45 HP/s |
+
+Together 1.58 HP/s against 2.73 HP/s of the Rukia shikai set (Tsukishiro 0.5, Hakuren 0.625, Shirafune 1.6); `Round6AbilityTest` asserts the sum and each single ability. Numbers live in `BalanceConfig.defaults()` (the place all ability balance lives; there is no json for it). The old assertion "bankai abilities are free" now only holds for Byakuya's bankai; tests updated (M2, `BankaiTest`, `TransitionTest`, `AbilityTest`, `RukiaFxParamsTest`). HUD: icon cells 12 (ice spike) and 13 (cage) in `ability_icons` (now 4 x 4 cells, `gen_hud_textures.py`), technique card texts 24 and 35.
+
+## 13b. Byakuya shikai: petal cage
+- id `byakuya.shikai.cage`, effect 35, ability code 11, shikai slot 3 = key B by default (the third shikai slot Byakuya did not use; Rukia uses it for Shirafune, the per-character mapping stays). X was not used: vanilla binds it to the creative hotbar load key, and the key rows Z/H/B and U/I/O are the mod's own and rebindable, so no new key was added.
+- Voice: "Petal cage", "Petal prison", "Senbonzakura petal cage", `Chire no ori` (alias, mod-defined, not canon), Russian "Лепестковая клетка", "Клетка из лепестков", "Чире но ори", Japanese in kana and katakana only (the Normalizer reduces unknown kanji to the bare particle の, which fired on half of the neutrals; the book text still shows the kanji). weak=false, interimSafe=false. Same for `rukia.bankai.ice_spike`. Source: `design/VOICE_PHRASES.md` sections 1.18 and 1.19, `tools/gen_voice_phrases.py` regenerated `phrases.json` (19 commands), 30 new fixture positives in `tests/voice/phrases_fixture.json`.
+- Numbers: sphere radius 5 around the first valid target on the aim ray (range 22) or the aimed point (lifted 1.6 when it is a block); 6 pulses at ticks 12, 22 ... 62; each pulse 1.5 HP via `Targeting.hurt` with `INDIRECT_MAGIC` (`resetInvulnerability` true, players included while `Tuning.affectPlayers` and server pvp), Slowness III 3 s renewed by each pulse; `[dmg]` log lines as for the other abilities (ability label `byakuya.shikai.cage#<phase>`); 20 reiatsu, 15 s cooldown. 0.6 HP/s against 0.67 HP/s of the attack mode.
+- Client (`CageFx`): stream of petals from the hand, a shell of `PETAL` particles sliding on the sphere with pink `petal_glow` glints, a flash, ring, burst and chime at every pulse, the shell opens after the last pulse. The real 3D petal meshes of `PetalSwarmRenderer` are tied to the owner's swarm and were not reused.
+- Hand gesture: a placeholder in `core/combat/ExtraGestures` (new file, hooked by one line in `CastGestures.build()` and the two effect ids in `effectOf`); the gesture agent replaces it. Spellbook: Byakuya page 5 (cage), Rukia pages 7 (ice spike) and 8 (absolute zero), lang keys renumbered in en and ru.
+
+## What to check in the game (nothing was run)
+1. Bankai release: the ring runs out 30 blocks in about 2.5 s, blocks turn white-blue (grass/dirt to crust, stone, leaves, plants, water to thin ice); walk and run on crust and thin ice: no sliding; jump between them. Frame time during the wave on a server with the default budgets (450 blocks per tick); if it hitches lower `blocksPerTick` / `columnsPerTick` in the config.
+2. Everything is back after the bankai ends (45 s cap or seal): grass green again, leaves, water, plants; no holes, nothing popped (look at tall grass and double flowers).
+3. Death of Rukia in the field, logout, `/reiatsu frost rollback`, and the real test: kill the server process during a field, restart, check the log line `[frost] rolled back ...` and the world.
+4. Chunk borders and chunks at the edge of the simulation distance; a second player standing in the field sees the same blocks (the blocks come from the server, the ring from the effect packet).
+5. U: ice spike along the look (up, down, against a wall: stops at the block), slow and damage on mobs and on a second player; I: absolute zero costs half the bar and the 3 s pause. U and I really are different on screen.
+6. Byakuya shikai, key B: cage on a mob and on a player, 6 pulses, slowness, `[dmg]` lines; voice "petal cage".
+7. HUD strip icons for the two new abilities, spellbook pages (opening page, renumbered keys).
+8. Frost block textures and the render layers (leaves and sprigs cut out, thin ice translucent) in light and shadow.
+
+## Files
+New: `core/world/{FrostConfig,FrostWave,FrostJournal}.java`, `server/{FrostField,FrostState}.java`, `registry/ModBlocks.java`, `block/FrostSprigBlock.java`, `core/combat/ExtraGestures.java`, `client/fx/{FrostFieldFx,IceSpikeFx,CageFx}.java`, `tools/gen_frost_textures.py`, blockstates/models/textures under `assets/reiatsu_test/{blockstates,models/block,textures/block}`, tests `core/world/Frost*Test`, `core/state/Round6AbilityTest`. Changed: `AbilityId, BalanceConfig, EffectIds, RukiaFxParams, SpellbookCatalog, CastContext, AbilityExecutor, Targeting, RukiaServerFx, ReiatsuCommand, ModConfig, ReiatsuTest, CastGestures (2 lines), FxEvents, RukiaFx, ReiatsuTestClient (render layers), StripHud, PlateHud, HudModel, gen_hud_textures.py, lang en/ru, VOICE_PHRASES.md, ART_BIBLE.md` and the tests listed above.

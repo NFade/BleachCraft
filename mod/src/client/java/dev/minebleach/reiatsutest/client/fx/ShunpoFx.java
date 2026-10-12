@@ -209,6 +209,10 @@ public final class ShunpoFx {
 			p.resetTransform();
 		}
 		m.setVisible(true);
+		// EntityModel.child defaults to TRUE in the constructor (the renderer resets it every frame from isBaby()); a private model
+		// that never goes through the renderer would draw as a baby (AnimalModel: body x0.5, head x0.75). That was the "half size" bug.
+		m.child = false;
+		m.riding = false;
 		m.head.pitch = (float) Math.toRadians(im.headPitch) - 0.25f;
 		m.hat.copyTransform(m.head);
 		m.rightLeg.pitch = 0.9f * im.stride;
@@ -238,8 +242,9 @@ public final class ShunpoFx {
 		Vec3d cam = ctx.camera().getPos();
 		MatrixStack ms = ctx.matrixStack();
 		int drawn = 0;
-		// model scale of an afterimage: 1.0 = the model as it is (the live player is drawn at vanilla 0.9375, so set 0.9375 to match it)
-		float ascale = (float) FxMath.clamp(FxTune.d("shunpo.afterimageScale", 1.0), 0.25, 2.0);
+		// model scale of an afterimage; default 0.9375 = exactly what PlayerEntityRenderer.scale applies to the live player
+		// (model is 32 px = 2.0 blocks tall, x0.9375 = 1.875 blocks, same as the live player). Tunable by fx_override.json.
+		float ascale = (float) FxMath.clamp(FxTune.d("shunpo.afterimageScale", 0.9375), 0.25, 2.0);
 		for (Iterator<Image> it = LIVE.iterator(); it.hasNext();) {
 			Image im = it.next();
 			double t = (now - im.born) / LIFE;

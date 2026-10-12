@@ -13,6 +13,8 @@ import dev.minebleach.reiatsutest.core.state.AbilityId;
  * per second; {@code halfWidth} is the server half width of the path, absent in older events)</li>
  * <li>SHIRAFUNE {@code [.., reach, usedLength]} (distance from the eye to the aimed point, never more than the reach)</li>
  * <li>ABSOLUTE_ZERO {@code [.., radius, pauseSeconds]} (how long the encased targets stand frozen before the shatter)</li>
+ * <li>ICE_SPIKE {@code [.., length, usedLength, steps, stepSeconds, halfWidth, firstSeconds]} (the thrust runs {@code steps} segments, one every
+ * {@code stepSeconds}, the first {@code firstSeconds} after the cast; the free ray {@code usedLength} ends at the first block)</li>
  * </ul>
  * The client never hard codes a radius: when the balance numbers change (FIXES_B4 step 4: radii x1.5 to 2) only the
  * {@code size} the server sends changes and every effect follows.
@@ -21,8 +23,12 @@ public final class RukiaFxParams {
 	/** Default Hakuren steps and blocks per step (BalanceConfig after FIXES_B4: 8 steps of 2.5 blocks for the 20 block reach); the server sends the real values through {@link #extend(AbilityId, float[], double, int, int)}. */
 	public static final double HAKUREN_STEP_LENGTH = 2.5;
 	public static final int HAKUREN_STEPS = 8;
-	/** Absolute zero default: encased from tick 40 to the shatter at tick 66 (the server sends the real gap of its phase offsets). */
-	public static final int ABSOLUTE_ZERO_PAUSE_TICKS = 26;
+	/** Absolute zero default: encased from tick 40 to the shatter at tick 100, a 3 s freeze (the server sends the real gap of its phase offsets). */
+	public static final int ABSOLUTE_ZERO_PAUSE_TICKS = 60;
+	/** Default gap between two segments of the ice spike thrust (BalanceConfig phase offsets 14, 16, 18 ...). */
+	public static final int ICE_SPIKE_STEP_TICKS = 2;
+	/** Default tick of the first ice spike segment (BalanceConfig phase offsets 14, 16 ...). */
+	public static final int ICE_SPIKE_FIRST_TICKS = 14;
 	/** Hakuren half width of the path when the event does not say (BalanceConfig HALF_WIDTH before the balance pass was 2.0). */
 	public static final double HAKUREN_HALF_WIDTH = 2.0;
 	/** Reference radii the storyboard numbers were written for: Tsukishiro 4, Absolute zero 10, Hakuren length 12, width 2. */
@@ -37,7 +43,8 @@ public final class RukiaFxParams {
 
 	/** True for the abilities whose params are extended here. */
 	public static boolean handles(AbilityId id) {
-		return id == AbilityId.TSUKISHIRO || id == AbilityId.HAKUREN || id == AbilityId.SHIRAFUNE || id == AbilityId.ABSOLUTE_ZERO;
+		return id == AbilityId.TSUKISHIRO || id == AbilityId.HAKUREN || id == AbilityId.SHIRAFUNE || id == AbilityId.ABSOLUTE_ZERO
+				|| id == AbilityId.ICE_SPIKE;
 	}
 
 	/** Effect id to ability (the ids of AbilitySpec: 20 to 23 are the Rukia abilities), or null. */
@@ -47,6 +54,7 @@ public final class RukiaFxParams {
 			case 21 -> AbilityId.HAKUREN;
 			case 22 -> AbilityId.SHIRAFUNE;
 			case 23 -> AbilityId.ABSOLUTE_ZERO;
+			case 24 -> AbilityId.ICE_SPIKE;
 			default -> null;
 		};
 	}
@@ -66,6 +74,17 @@ public final class RukiaFxParams {
 
 	/** As above plus the Hakuren half width of the spec (NaN = not sent, the event keeps its six numbers). */
 	public static float[] extend(AbilityId id, float[] base, double eyeToAim, int hakurenSteps, int absoluteZeroPauseTicks, double hakurenHalfWidth) {
+		return extend(id, base, eyeToAim, hakurenSteps, absoluteZeroPauseTicks, hakurenHalfWidth, ICE_SPIKE_STEP_TICKS);
+	}
+
+	/** As above plus the ticks between two segments of the ice spike thrust (the gap of its phase offsets). */
+	public static float[] extend(AbilityId id, float[] base, double eyeToAim, int hakurenSteps, int absoluteZeroPauseTicks, double hakurenHalfWidth, int iceSpikeStepTicks) {
+		return extend(id, base, eyeToAim, hakurenSteps, absoluteZeroPauseTicks, hakurenHalfWidth, iceSpikeStepTicks, ICE_SPIKE_FIRST_TICKS);
+	}
+
+	/** As above plus the tick of the first segment of the ice spike thrust (the first phase offset). */
+	public static float[] extend(AbilityId id, float[] base, double eyeToAim, int hakurenSteps, int absoluteZeroPauseTicks, double hakurenHalfWidth, int iceSpikeStepTicks,
+			int iceSpikeFirstTicks) {
 		if (id == null || !handles(id) || base == null || base.length < 4) {
 			return base;
 		}
@@ -89,6 +108,15 @@ public final class RukiaFxParams {
 			case SHIRAFUNE -> {
 				out = java.util.Arrays.copyOf(base, 5);
 				out[4] = (float) Math.max(0.0, Math.min(size, eyeToAim));
+			}
+			case ICE_SPIKE -> {
+				boolean withWidth = !Double.isNaN(hakurenHalfWidth);
+				out = java.util.Arrays.copyOf(base, 9);
+				out[4] = (float) Math.max(0.0, Math.min(size, eyeToAim));
+				out[5] = Math.max(1, hakurenSteps);
+				out[6] = Math.max(1, iceSpikeStepTicks) / 20.0f;
+				out[7] = withWidth ? (float) hakurenHalfWidth : 1.5f;
+				out[8] = Math.max(0, iceSpikeFirstTicks) / 20.0f;
 			}
 			default -> {
 				out = java.util.Arrays.copyOf(base, 5);

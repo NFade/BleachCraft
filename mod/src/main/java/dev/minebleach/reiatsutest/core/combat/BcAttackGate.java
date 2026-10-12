@@ -12,6 +12,8 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
  * <li>Drawn (BASE, SHIKAI, BANKAI) and not blocking: the BC strike works.</li>
  * <li>Anything that is not a zanpakuto in the main hand: the flag is not ours to set, so it is cleared.</li>
  * </ul>
+ * The Better Combat idle stance of the katana preset is off for every zanpakuto ({@link #poseSuppressed}); the third person pose
+ * layer draws the stance instead.
  */
 public final class BcAttackGate {
 	private BcAttackGate() {
@@ -22,5 +24,16 @@ public final class BcAttackGate {
 			return false;
 		}
 		return state == ZanpakutoState.SEALED || !BlockRules.allowsAttack(blocking);
+	}
+
+	/**
+	 * True when the Better Combat idle stance (the katana pose) must NOT be shown. tp_pose (2026-10-11): always for a zanpakuto in
+	 * the main hand. The stance of our swords is drawn by the third person pose layer ({@code client/model/TpPoseLayer}, solver
+	 * {@code TpPose}): sheathed sword on the hip, the draw, the upright two handed hold, the block across the chest, all from one
+	 * source, so the stance of Better Combat would only fight it. The state and the block flag are kept for the call sites and the
+	 * tests, they no longer matter. Anything that is not a zanpakuto keeps whatever Better Combat decides.
+	 */
+	public static boolean poseSuppressed(boolean holdsZanpakuto, ZanpakutoState state, boolean blocking) {
+		return holdsZanpakuto;
 	}
 }

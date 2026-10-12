@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "reiatsu_test:block/frost_leaves"
+  }
+}

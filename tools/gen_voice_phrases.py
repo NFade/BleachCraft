@@ -108,6 +108,50 @@ EXTRA_ALIASES.update({
     "kido.sai": [("бокудо один", False), ("bokudo ichi sai", False)],
 })
 
+# --- 2026-10-11 live session, ja-JP kido (design/results/voice_v4.md). The user said 破道の四 白雷 and Chrome returned "は", "波動"
+# (a homophone of 破道, empty key before v4) and "くらい" (the first syllable びゃ lost); nothing for the other two spells. Surface
+# forms below are what ja-JP Chrome plausibly writes for the same sounds: kanji homophones (the Normalizer KANJI table maps them
+# to the key; 借家法 is the legal term read しゃっかほう), kana in both scripts, digits instead of kanji numerals, and the spell
+# name glued to hado / bakudo. Keys of same-sound kana collapse to one key, so only distinct spellings are listed. Everything is
+# UNVERIFIED against a recording except the two "くらい" / "波動" observations. The lone "くらい" is WEAK (whole utterance only; it
+# also means "about" / "dark", so inside a sentence it never fires). Lone 破道 / 波動 / はどう never fire (Hado alone is ambiguous).
+JA_KIDO = {
+    "kido.byakurai": [
+        ("白雷", False), ("百雷", False), ("白来", False), ("百来", False), ("薄雷", False), ("白らい", False), ("白ライ", False),
+        ("びゃく雷", False), ("ビャクライ", False), ("ひゃくらい", False), ("ヒャクライ", False), ("ひゃく雷", False),
+        ("びゃくらい", False), ("くらい", True),
+        ("破道の四", False), ("破道の4", False), ("波動の四", False), ("波動の4", False), ("覇道の四", False), ("破道四", False),
+        ("破道の四 白雷", False), ("破道の4 白雷", False), ("波動の四 白雷", False), ("波動の4 白雷", False), ("波動の4 百雷", False),
+        ("破道の四 びゃくらい", False), ("波動の4 びゃくらい", False), ("波動 4", False), ("破道 4", False),
+        ("はどうの4", False), ("ハドウの4", False), ("ハドウノヨン", False), ("ハドウノヨン ビャクライ", False),
+        ("はどうのよん", False), ("はどう よん", False), ("ハドウ 4", False), ("ハドウ4", False), ("ハドウ4 ビャクライ", False),
+        ("hadou no yon", False), ("hadō no yon byakurai", False),
+        ("hadou yon", False), ("hado no yon byakuraï", False), ("byakurai", False), ("bya ku rai", False), ("hyakurai", False),
+    ],
+    "kido.shakkaho": [
+        ("赤火砲", False), ("借家法", False), ("借家砲", False), ("赤火法", False), ("赤火方", False), ("赤化法", False),
+        ("射火砲", False), ("石火砲", False), ("しゃっか砲", False), ("シャッカ砲", False), ("赤火ほう", False),
+        ("しゃっかほう", False), ("シャッカホウ", False), ("しゃかほう", False), ("シャカホウ", False), ("シャッカホー", False),
+        ("破道の三十一", False), ("破道の31", False), ("波動の三十一", False), ("波動の31", False), ("破道三十一", False),
+        ("破道の三十一 赤火砲", False), ("破道の31 赤火砲", False), ("波動の三十一 赤火砲", False), ("波動の31 借家法", False),
+        ("破道の三十一 しゃっかほう", False), ("波動の31 しゃっかほう", False), ("波動 31", False), ("破道 31", False),
+        ("はどうの31", False), ("ハドウノサンジュウイチ", False), ("ハドウノサンジュウイチ シャッカホウ", False),
+        ("はどうのさんじゅういち", False), ("はどう さんじゅういち", False), ("ハドウ31", False), ("ハドウ31 シャッカホウ", False),
+        ("hadou no sanjuuichi shakkahou", False), ("shakkahou", False),
+        ("sakkaho", False), ("shakkaho", False),
+    ],
+    "kido.sai": [
+        ("塞", True), ("さい", True), ("サイ", True),
+        ("縛道の一", False), ("縛道の1", False), ("爆道の一", False), ("縛道一", False),
+        ("縛道の一 塞", False), ("縛道の1 塞", False), ("爆道の1 塞", False), ("縛道の一 さい", False), ("縛道の1 サイ", False),
+        ("ばくどう", True), ("バクドウ", True), ("縛道", True), ("ばくどう さい", False), ("バクドウ サイ", False),
+        ("ばくどうのいち", False), ("バクドウノイチ", False), ("バクドウノイチ サイ", False), ("ばくどう いち さい", False),
+        ("bakudou no ichi sai", False), ("bakudou", True),
+    ],
+}
+for _cid, _items in JA_KIDO.items():
+    EXTRA_ALIASES[_cid] = EXTRA_ALIASES.get(_cid, []) + _items
+
 # Context-gated ASR forms of "bankai" (decision: treat "bank eye" as bankai ONLY in SHIKAI + full reiatsu + item).
 GATED_ALIASES = {
     "rukia.bankai.release": [

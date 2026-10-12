@@ -97,6 +97,7 @@ public final class VoiceControl implements VoiceBackend {
 			VoiceHttp http = new VoiceHttp(cfg, this, this::page);
 			endpoint = VoiceEndpoint.create(http);
 			port = endpoint.start(cfg.port, cfg.portSearch);
+			VoiceHudState.setBridgeUp(true);
 			ReiatsuTest.LOGGER.info("[voice] bridge listening on http://127.0.0.1:{}/ (transport {})", port, endpoint.kind());
 		} catch (IOException | RuntimeException e) {
 			lastError = e.toString();
@@ -113,6 +114,7 @@ public final class VoiceControl implements VoiceBackend {
 	}
 
 	private void stopEndpoint() {
+		VoiceHudState.setBridgeUp(false);
 		if (endpoint != null) {
 			endpoint.stop();
 			ReiatsuTest.LOGGER.info("[voice] bridge stopped (port {})", port);
@@ -325,10 +327,12 @@ public final class VoiceControl implements VoiceBackend {
 				p.sendMessage(Text.translatable("message.reiatsu_test.denied.not_drawn"), true);
 			}
 		} else {
-			if (msg.isFinal() && d.outcome() != VoiceProcessor.Outcome.EMPTY) {
+			if (msg.isFinal() && d.outcome() != VoiceProcessor.Outcome.DEBOUNCED) {
+				// also for EMPTY (v4): a final the normaliser could not read (unknown kanji such as 波動) used to vanish without a trace.
+				// Not for DEBOUNCED: that is the Web Speech API repeating a final that already worked, the HUD keeps the first result.
 				VoiceHudState.result(msg.text(), d.commandId(), VoiceHudState.Result.NO_MATCH);
 			}
-			if (msg.isFinal() && d.outcome() != VoiceProcessor.Outcome.EMPTY) {
+			if (msg.isFinal()) {
 				// tuning aid (G3): what the recogniser said, the key the matcher saw and the other hypotheses that came with it
 				ReiatsuTest.LOGGER.info("[voice] heard \"{}\" ({}) key='{}' alts={} -> {}", msg.text(), msg.lang(), d.normalized(),
 						msg.alternatives(), d.outcome().wire());
@@ -343,7 +347,9 @@ public final class VoiceControl implements VoiceBackend {
 	private static VoiceHudState.Result hudResult(TransitionResult r) {
 		return switch (r.code()) {
 			case OK -> VoiceHudState.Result.ACCEPTED;
-			case DENIED_REIATSU -> VoiceHudState.Result.DENIED_REIATSU;
+							case DENIED_REIATSU -> VoiceHudState.Result.DENIED_REIATSU;
+				case DENIED_RAGE -> VoiceHudState.Result.DENIED_RAGE;
+
 			case DENIED_ITEM -> VoiceHudState.Result.DENIED_ITEM;
 			case DENIED_NOT_DRAWN -> VoiceHudState.Result.DENIED_NOT_DRAWN;
 			case COOLDOWN -> VoiceHudState.Result.COOLDOWN;

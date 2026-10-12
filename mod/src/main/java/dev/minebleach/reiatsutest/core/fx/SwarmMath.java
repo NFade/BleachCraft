@@ -18,6 +18,18 @@ public final class SwarmMath {
 		public double az;
 		/** Swarm time at which a barrier collapses (infinity while it stands). */
 		public double collapseAt = Double.POSITIVE_INFINITY;
+		/**
+		 * Attack only: path of the server's flight head (world positions). When it has at least two samples the ribbon follows it
+		 * (steerable swarm); otherwise the fixed closed-form flight to {@code aim} is used.
+		 */
+		public HeadTrack track;
+		/** Seconds the ribbon is drawn behind the newest sample (room to interpolate between 10 Hz packets), and the spread of the ribbon behind the head. */
+		public double trackDelay = 0.12;
+		public double trackLag = 0.30;
+		/** Owner feet in world axes of the frame being drawn: turns the world head path into feet relative offsets. */
+		public double fx;
+		public double fy;
+		public double fz;
 
 		public Mode(Kind kind, double t0) {
 			this.kind = kind;
@@ -29,6 +41,17 @@ public final class SwarmMath {
 			ay = y;
 			az = z;
 			return this;
+		}
+
+		public void feet(double x, double y, double z) {
+			fx = x;
+			fy = y;
+			fz = z;
+		}
+
+		/** True when the attack ribbon follows a recorded server head path. */
+		public boolean tracked() {
+			return kind == Kind.ATTACK && track != null && track.size() >= 2;
 		}
 	}
 
@@ -258,6 +281,10 @@ public final class SwarmMath {
 
 	/** Position on the envelope sphere around the aim (radius 1.5, 3 rev/s, then the dense core of radius 0.9). */
 	private static void envelop(Slots s, int i, double tm, Mode m, double[] out) {
+		envelopAt(s, i, tm, m.ax, m.ay, m.az, out);
+	}
+
+	private static void envelopAt(Slots s, int i, double tm, double cx, double cy, double cz, double[] out) {
 		int k = i % 3;
 		double kx = k == 1 ? 0.7071 : 0;
 		double ky = k == 0 ? 1 : 0.7071;
@@ -267,12 +294,93 @@ public final class SwarmMath {
 		rotate(kx, ky, kz, sign * 2 * Math.PI * 3.0 * tm, s.sx[i], s.sy[i], s.sz[i], d);
 		double core = smooth(1.0, 1.25, tm);
 		double rad = lerp(1.5, 0.9, core) * (0.72 + 0.28 * s.r2[i]);
-		out[0] = m.ax + d[0] * rad;
-		out[1] = m.ay + d[1] * rad;
-		out[2] = m.az + d[2] * rad;
+		out[0] = cx + d[0] * rad;
+		out[1] = cy + d[1] * rad;
+		out[2] = cz + d[2] * rad;
+	}
+
+	/**
+	 * Steerable attack: ribbon petal i sits on the recorded head path, {@code trackLag * rank} seconds behind the head (so the ribbon
+	 * trails it), as a band across the travel direction while the head moves and as the cutting envelope while it hangs in place.
+	 * Before the path starts the petal stays in orbit; after the head is back it falls into the orbit again, trailing petals last.
+	 */
+	private static void attackTracked(Slots s, int i, double t, Mode m, double[] out) {
+		double[] o = new double[3];
+		orbit(s, i, t, o);
+		HeadTrack tr = m.track;
+		if (!s.ribbon(i)) {
+			out[0] = o[0];
+			out[1] = o[1];
+			out[2] = o[2];
+			return;
+		}
+		double ti = t - m.trackDelay - m.trackLag * s.ribbonRank(i);
+		double since = ti - tr.startTime();
+		if (since < 0) {
+			out[0] = o[0];
+			out[1] = o[1];
+			out[2] = o[2];
+			return;
+		}
+		double[] h = new double[3];
+		tr.at(ti, h);
+		double hx = h[0] - m.fx;
+		double hy = h[1] - m.fy;
+		double hz = h[2] - m.fz;
+		double[] p = new double[3];
+		envelopAt(s, i, since, hx, hy, hz, p);
+		double move = smooth(3.0, 9.0, tr.speedAt(ti));
+		if (move > 0.001) {
+			double[] g = new double[3];
+			if (!tr.dirAt(ti, g)) {
+				g[0] = 1;
+				g[1] = 0;
+				g[2] = 0;
+			}
+			// e1 = g x up, e2 = g x e1 (the band across the travel direction, as in ribbonPoint)
+			double e1x = -g[2];
+			double e1z = g[0];
+			double el = Math.sqrt(e1x * e1x + e1z * e1z);
+			if (el < 1e-4) {
+				e1x = 1;
+				e1z = 0;
+				el = 1;
+			}
+			e1x /= el;
+			e1z /= el;
+			double e2x = g[1] * e1z;
+			double e2y = g[2] * e1x - g[0] * e1z;
+			double e2z = -g[1] * e1x;
+			double band = 0.4;
+			double sx = hx + (e1x * s.g1[i] + e2x * s.g2[i]) * band;
+			double sy = hy + (e2y * s.g2[i]) * band;
+			double sz = hz + (e1z * s.g1[i] + e2z * s.g2[i]) * band;
+			p[0] = lerp(p[0], sx, move);
+			p[1] = lerp(p[1], sy, move);
+			p[2] = lerp(p[2], sz, move);
+		}
+		double w = smooth(0, 0.12, since);
+		p[0] = lerp(o[0], p[0], w);
+		p[1] = lerp(o[1], p[1], w);
+		p[2] = lerp(o[2], p[2], w);
+		if (tr.closed()) {
+			double q = smooth(tr.endTime(), tr.endTime() + 0.45, ti);
+			if (q > 0) {
+				p[0] = lerp(p[0], o[0], q);
+				p[1] = lerp(p[1], o[1], q) + 1.2 * Math.sin(Math.PI * q) * (0.4 + 0.6 * s.u[i]);
+				p[2] = lerp(p[2], o[2], q);
+			}
+		}
+		out[0] = p[0];
+		out[1] = p[1];
+		out[2] = p[2];
 	}
 
 	private static void attack(Slots s, int i, double tm, double t, Mode m, double yaw, double[] out) {
+		if (m.tracked()) {
+			attackTracked(s, i, t, m, out);
+			return;
+		}
 		double[] o = new double[3];
 		orbit(s, i, t, o);
 		if (!s.ribbon(i) || tm < 0) {

@@ -150,6 +150,11 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 					states.bladeLen = len;
 				}
 			}
+			ItemManifest.StateDef sealedDef = man.states.get("sealed");
+			if (states.bladeBase != null && sealedDef != null) {
+				// plan G-glow round 2: the drawn blade cut into small fragments (they break off one by one in the dissolve)
+				states.shards = buildShards(sealedDef.hand(), sprite, glow, cutout, translucent, states.bladeBase, states.bladeDir, states.bladeLen);
+			}
 		}
 
 		ModelTransformation transformation = display instanceof JsonUnbakedModel j ? j.getTransformations() : ModelTransformation.NONE;
@@ -292,5 +297,161 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		float[] bladeBase;
 		float[] bladeDir;
 		float bladeLen;
+		/** The drawn blade cut into small fragments for the shikai dissolve; null when the blade axis is unknown. */
+		BladeShards shards;
+	}
+
+	/** Fragments of the drawn blade per source quad along / across the longer edge (the shikai dissolve breaks them off one by one). */
+	private static final int SHARD_LONG = 3;
+	private static final int SHARD_SHORT = 2;
+
+	/**
+	 * The blade quads (centre at or past the saya mouth, s of 0 to 1 on the blade axis) cut into a {@code SHARD_LONG x SHARD_SHORT} grid by
+	 * bilinear interpolation of position, uv and normal; the hilt part is left out. All with the emissive translucent material.
+	 */
+	private BladeShards buildShards(List<String> objects, Function<String, Sprite> sprite, RenderMaterial glowMat, RenderMaterial cutoutMat, RenderMaterial translucentMat, float[] base, float[] dir, float len) {
+		List<float[]> pos = new ArrayList<>();
+		List<float[]> nrm = new ArrayList<>();
+		List<float[]> uv = new ArrayList<>();
+		List<Sprite> sprites = new ArrayList<>();
+		List<RenderMaterial> solids = new ArrayList<>();
+		for (String obj : objects) {
+			ItemManifest.ObjectDef def = data.manifest().objects.get(obj);
+			Sprite sp = sprite.apply(def.diffuse());
+			for (ObjGeometry.Quad q : data.quads().get(obj)) {
+				float cx = 0;
+				float cy = 0;
+				float cz = 0;
+				for (int c = 0; c < 4; c++) {
+					cx += q.pos()[c][0] * 0.25f;
+					cy += q.pos()[c][1] * 0.25f;
+					cz += q.pos()[c][2] * 0.25f;
+				}
+				float s = ((cx - base[0]) * dir[0] + (cy - base[1]) * dir[1] + (cz - base[2]) * dir[2]) / len;
+				if (s < 0f) {
+					continue; // the hilt stays
+				}
+				float[][] p = q.pos();
+				float e01 = dist(p[0], p[1]);
+				float e12 = dist(p[1], p[2]);
+				// the grid runs (nu x nv) over the corner order 0-1-2-3: nu along edge 0-1, nv along edge 1-2
+				int nu = e01 >= e12 ? SHARD_LONG : SHARD_SHORT;
+				int nv = e01 >= e12 ? SHARD_SHORT : SHARD_LONG;
+				for (int iv = 0; iv < nv; iv++) {
+					for (int iu = 0; iu < nu; iu++) {
+						float[] fp = new float[12];
+						float[] fn = new float[12];
+						float[] fu = new float[8];
+						float[][] corner = {{iu, iv}, {iu + 1, iv}, {iu + 1, iv + 1}, {iu, iv + 1}};
+						for (int c = 0; c < 4; c++) {
+							float u = corner[c][0] / nu;
+							float v = corner[c][1] / nv;
+							float w0 = (1 - u) * (1 - v);
+							float w1 = u * (1 - v);
+							float w2 = u * v;
+							float w3 = (1 - u) * v;
+							for (int a = 0; a < 3; a++) {
+								fp[c * 3 + a] = w0 * q.pos()[0][a] + w1 * q.pos()[1][a] + w2 * q.pos()[2][a] + w3 * q.pos()[3][a];
+								fn[c * 3 + a] = w0 * q.nrm()[0][a] + w1 * q.nrm()[1][a] + w2 * q.nrm()[2][a] + w3 * q.nrm()[3][a];
+							}
+							for (int a = 0; a < 2; a++) {
+								fu[c * 2 + a] = w0 * q.uv()[0][a] + w1 * q.uv()[1][a] + w2 * q.uv()[2][a] + w3 * q.uv()[3][a];
+							}
+							float nl = (float) Math.sqrt(fn[c * 3] * fn[c * 3] + fn[c * 3 + 1] * fn[c * 3 + 1] + fn[c * 3 + 2] * fn[c * 3 + 2]);
+							if (nl > 1e-6f) {
+								fn[c * 3] /= nl;
+								fn[c * 3 + 1] /= nl;
+								fn[c * 3 + 2] /= nl;
+							}
+						}
+						pos.add(fp);
+						nrm.add(fn);
+						uv.add(fu);
+						sprites.add(sp);
+						solids.add(def.translucent() ? translucentMat : cutoutMat);
+					}
+				}
+			}
+		}
+		if (pos.isEmpty()) {
+			return null;
+		}
+		int n = pos.size();
+		BladeShards b = new BladeShards(n);
+		b.material = glowMat;
+		for (int k = 0; k < n; k++) {
+			System.arraycopy(pos.get(k), 0, b.pos, k * 12, 12);
+			System.arraycopy(nrm.get(k), 0, b.nrm, k * 12, 12);
+			System.arraycopy(uv.get(k), 0, b.uv, k * 8, 8);
+			b.sprite[k] = sprites.get(k);
+			b.solid[k] = solids.get(k);
+			float cx = 0;
+			float cy = 0;
+			float cz = 0;
+			for (int c = 0; c < 4; c++) {
+				cx += b.pos[k * 12 + c * 3] * 0.25f;
+				cy += b.pos[k * 12 + c * 3 + 1] * 0.25f;
+				cz += b.pos[k * 12 + c * 3 + 2] * 0.25f;
+			}
+			b.ctr[k * 3] = cx;
+			b.ctr[k * 3 + 1] = cy;
+			b.ctr[k * 3 + 2] = cz;
+			b.s[k] = ((cx - base[0]) * dir[0] + (cy - base[1]) * dir[1] + (cz - base[2]) * dir[2]) / len;
+			// radial unit vectors of the corners (from the blade axis outwards), for the bloom shells
+			for (int c = 0; c < 4; c++) {
+				float px = b.pos[k * 12 + c * 3] - base[0];
+				float py = b.pos[k * 12 + c * 3 + 1] - base[1];
+				float pz = b.pos[k * 12 + c * 3 + 2] - base[2];
+				float al = px * dir[0] + py * dir[1] + pz * dir[2];
+				float rx = px - dir[0] * al;
+				float ry = py - dir[1] * al;
+				float rz = pz - dir[2] * al;
+				float rl = (float) Math.sqrt(rx * rx + ry * ry + rz * rz);
+				if (rl > 1e-5f) {
+					b.rad[k * 12 + c * 3] = rx / rl;
+					b.rad[k * 12 + c * 3 + 1] = ry / rl;
+					b.rad[k * 12 + c * 3 + 2] = rz / rl;
+				}
+			}
+		}
+		return b;
+	}
+
+	private static float dist(float[] a, float[] b) {
+		float x = a[0] - b[0];
+		float y = a[1] - b[1];
+		float z = a[2] - b[2];
+		return (float) Math.sqrt(x * x + y * y + z * z);
+	}
+
+	/** Fragments of the drawn blade in model space (corner order 0-1-2-3 as in the source quads), see {@link #buildShards}. */
+	static final class BladeShards {
+		final int n;
+		/** 4 corners x 3 floats per fragment. */
+		final float[] pos;
+		final float[] nrm;
+		/** Unit vectors from the blade axis to the corners (zero on the axis), for the bloom shells. */
+		final float[] rad;
+		/** 4 corners x 2 floats, normalised to the sprite. */
+		final float[] uv;
+		final float[] ctr;
+		/** Position of the centre along the blade axis: 0 at the saya mouth, 1 at the tip. */
+		final float[] s;
+		final Sprite[] sprite;
+		/** The lit material of the source object (cutout or translucent), for the part of the blade that is still there. */
+		final RenderMaterial[] solid;
+		RenderMaterial material;
+
+		BladeShards(int n) {
+			this.n = n;
+			pos = new float[n * 12];
+			nrm = new float[n * 12];
+			rad = new float[n * 12];
+			uv = new float[n * 8];
+			ctr = new float[n * 3];
+			s = new float[n];
+			sprite = new Sprite[n];
+			solid = new RenderMaterial[n];
+		}
 	}
 }

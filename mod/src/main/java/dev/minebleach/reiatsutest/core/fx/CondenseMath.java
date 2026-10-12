@@ -32,6 +32,8 @@ public final class CondenseMath {
 		public final int perBlade;
 		public final int m;
 		final float[] bladeDist;
+		/** World scale of the blades (bankai.bladeScale): birth slots sit at slotHeight * heightScale above the base; times stay in blade space. */
+		public double heightScale = 1.0;
 		final float[] th0;
 		final float[] u;
 		final float[] rad;
@@ -102,7 +104,7 @@ public final class CondenseMath {
 				return 0;
 			}
 			double sx = bx;
-			double sy = by + slotHeight(j);
+			double sy = by + slotHeight(j) * heightScale;
 			double sz = bz;
 			double ax = hand[0] - sx;
 			double ay = hand[1] - sy;

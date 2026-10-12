@@ -2,14 +2,19 @@ package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderPhase;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
@@ -51,6 +56,8 @@ public final class FxDecals {
 		Entity follow;
 		double sampleX;
 		double sampleZ;
+		/** Height used for the light lookup when the centre column has no floor. */
+		double lightY;
 
 		static final double RESAMPLE = 0.2;
 
@@ -66,15 +73,46 @@ public final class FxDecals {
 			resample(hintY);
 		}
 
-		/** Re-reads the terrain heights of the grid around the current centre (the decal is created once and moves, it is never re-created). */
+		/**
+		 * Re-reads the terrain heights of the grid around the current centre (the decal is created once and moves, it is never re-created).
+		 * Heights come from {@link FxPlace#ground}: relative to the floor under the centre, within {@code decal.step} (1.0) above it; a column
+		 * that is occupied (trunk, wall, leaves at head height) or has no floor within reach stores NaN and the quads that touch it are not drawn
+		 * (the old scan from feet + 3 put vertices on canopies, which made vertical sheets through the foliage and slopes through blocks).
+		 */
 		void resample(double hintY) {
 			sampleX = cx;
 			sampleZ = cz;
+			lightY = hintY;
+			ClientWorld w = MinecraftClient.getInstance().world;
+			double lift = FxTune.d("decal.lift", 0.025);
+			if (w == null) {
+				for (double[] row : ys) {
+					java.util.Arrays.fill(row, hintY + lift);
+				}
+				return;
+			}
+			double up = FxTune.d("decal.step", 1.0);
+			double centre = FxPlace.ground(w, cx, cz, hintY, up, 6.0);
+			if (Double.isNaN(centre)) {
+				centre = FxPlace.ground(w, cx, cz, hintY, 0.2, 6.0); // a crawl space or a low roof over the feet
+			}
+			double ref = Double.isNaN(centre) ? hintY : centre;
+			if (!Double.isNaN(centre)) {
+				lightY = centre;
+			}
 			for (int i = 0; i <= rings; i++) {
 				double r = radius * i / rings;
 				for (int j = 0; j < segs; j++) {
 					double a = Math.PI * 2 * j / segs;
-					ys[i][j] = i == 0 && j > 0 ? ys[0][0] : FxGround.sample(cx + Math.cos(a) * r, cz + Math.sin(a) * r, hintY) + 0.025;
+					double g;
+					if (i == 0 && j > 0) {
+						g = ys[0][0];
+					} else if (i == 0) {
+						g = centre;
+					} else {
+						g = FxPlace.ground(w, cx + Math.cos(a) * r, cz + Math.sin(a) * r, ref, up, 3.0);
+					}
+					ys[i][j] = Double.isNaN(g) ? Double.NaN : g + lift;
 				}
 			}
 		}
@@ -148,6 +186,29 @@ public final class FxDecals {
 	}
 
 	private static final List<Decal> DECALS = new ArrayList<>();
+	private static final Map<Identifier, RenderLayer> LAYERS = new HashMap<>();
+
+	/**
+	 * Same state as {@code RenderLayer.getEntityTranslucent} (translucent blend, no culling, lightmap, overlay) plus a polygon offset
+	 * ({@code POLYGON_OFFSET_LAYERING}: factor -1, units -10 in the vanilla phase) so a decal lying 2.5 cm over a block top face does not
+	 * z-fight with it at distance or at grazing angles. Switch off with {@code decal.polyOffset} = 0 (falls back to the vanilla layer).
+	 */
+	private static RenderLayer layer(Identifier tex) {
+		if (FxTune.d("decal.polyOffset", 1.0) < 0.5) {
+			return RenderLayer.getEntityTranslucent(tex);
+		}
+		return LAYERS.computeIfAbsent(tex, t -> RenderLayer.of("reiatsu_decal_" + t.getPath(), VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, VertexFormat.DrawMode.QUADS, 1536,
+				false, true,
+				RenderLayer.MultiPhaseParameters.builder()
+						.program(RenderPhase.ENTITY_TRANSLUCENT_PROGRAM)
+						.texture(new RenderPhase.Texture(t, false, false))
+						.transparency(RenderPhase.TRANSLUCENT_TRANSPARENCY)
+						.cull(RenderPhase.DISABLE_CULLING)
+						.lightmap(RenderPhase.ENABLE_LIGHTMAP)
+						.overlay(RenderPhase.ENABLE_OVERLAY_COLOR)
+						.layering(RenderPhase.POLYGON_OFFSET_LAYERING)
+						.build(false)));
+	}
 	public static int lastVertices;
 
 	private FxDecals() {
@@ -225,7 +286,7 @@ public final class FxDecals {
 					continue;
 				}
 				if (vc == null) {
-					vc = vcp.getBuffer(RenderLayer.getEntityTranslucent(tex));
+					vc = vcp.getBuffer(layer(tex));
 				}
 				lastVertices += write(vc, d, now - d.birth, cam, world);
 			}
@@ -239,7 +300,9 @@ public final class FxDecals {
 			return 0;
 		}
 		double edge = Math.max(0.35, d.radius * 0.10);
-		int l = WorldRenderer.getLightmapCoordinates(world, BlockPos.ofFloored(d.cx, d.ys[0][0], d.cz));
+		double maxStep = FxTune.d("decal.maxStep", 0.6);
+		double biasPerBlock = FxTune.d("decal.biasPerBlock", 0.0015);
+		int l = WorldRenderer.getLightmapCoordinates(world, BlockPos.ofFloored(d.cx, Double.isNaN(d.ys[0][0]) ? d.lightY : d.ys[0][0], d.cz));
 		int light = LightmapTextureManager.pack(Math.max(LightmapTextureManager.getBlockLightCoordinates(l), 12), LightmapTextureManager.getSkyLightCoordinates(l));
 		int verts = 0;
 		double[] a = new double[4];
@@ -268,6 +331,14 @@ public final class FxDecals {
 				px[3] = d.cx + Math.cos(a1) * r0;
 				pz[3] = d.cz + Math.sin(a1) * r0;
 				py[3] = d.ys[i][j1];
+				if (Double.isNaN(py[0]) || Double.isNaN(py[1]) || Double.isNaN(py[2]) || Double.isNaN(py[3])) {
+					continue; // a column of a trunk, wall or canopy: no frost there
+				}
+				double lo = Math.min(Math.min(py[0], py[1]), Math.min(py[2], py[3]));
+				double hi = Math.max(Math.max(py[0], py[1]), Math.max(py[2], py[3]));
+				if (hi - lo > maxStep) {
+					continue; // a cliff or a step edge: the quad would slope through the block or hang in the air in front of the wall
+				}
 				double[] rr = {r0, r1, r1, r0};
 				boolean any = false;
 				for (int c = 0; c < 4; c++) {
@@ -280,7 +351,11 @@ public final class FxDecals {
 				for (int c = 0; c < 4; c++) {
 					float u = (float) (0.5 + (px[c] - d.cx) / (2 * d.radius));
 					float v = (float) (0.5 + (pz[c] - d.cz) / (2 * d.radius));
-					vc.vertex((float) (px[c] - cam.x), (float) (py[c] - cam.y), (float) (pz[c] - cam.z)).color(FxMeshes.argb(d.tint, a[c])).texture(u, v)
+					double dx = px[c] - cam.x;
+					double dz = pz[c] - cam.z;
+					// raised a little more the farther it is from the eye (depth precision falls with distance squared)
+					double dy = py[c] - cam.y + biasPerBlock * Math.sqrt(dx * dx + dz * dz);
+					vc.vertex((float) dx, (float) dy, (float) dz).color(FxMeshes.argb(d.tint, a[c])).texture(u, v)
 							.overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0f, 1f, 0f);
 					verts++;
 				}

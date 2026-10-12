@@ -109,7 +109,10 @@ public final class ScabbardRenderer {
 		Matrix4f baseInv = new Matrix4f(m.peek().getPositionMatrix()).invert();
 
 		m.push();
-		m.translate(i * 0.56f, -0.52f + eqY, -0.72f); // the resting main hand frame (swing does not move the scabbard)
+		m.translate(i * 0.56f, -0.52f + eqY, -0.72f); // the resting main hand frame
+		// round 5: the block with the sheathed sword moves the scabbard rigidly with the sword in it (the same pose the sword gets in the hand
+		// pass), the hand that holds it goes with it; before, only the sword moved and left the scabbard (a strike or the block pose)
+		boolean posed = FpMotion.pushSaya(player, main, om, tr, left, m);
 		float[] lf = HeldPose.of(om.manifest()).lift(); // the scabbard shares the lift of the sword (stow pose compensated in the rig)
 		m.translate(i * lf[0], lf[1], lf[2]);
 		m.translate(-i * SAYA_OUT_DX * out, -SAYA_OUT_DY * out, 0f); // lowered out of the screen by the left hand
@@ -132,23 +135,68 @@ public final class ScabbardRenderer {
 			Vector3f fist = new Vector3f(-i * FIST_X, FIST_Y, FIST_Z);
 			float s = new Vector3f(fist).sub(g).dot(d) / unit; // metres from the grip along the blade
 			s = Math.max(0.12f, Math.min(0.70f, s));
+			s = FpMotion.sealedLeftS(s); // the block: the hand takes its own place on the scabbard
 			Vector3f hold = new Vector3f(g).fma(s * unit, d);
 			Vector3f delta = hold.sub(fist);
 			if (DEBUG && (System.nanoTime() / 1_000_000_000L) % 2 == 0) {
 				dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[scabbard] g={} d={} unit={} s={} delta={}", g, d, unit, s, delta);
 			}
+			if (posed) {
+				m.pop();
+				posed = false;
+			}
 			m.pop();
 			m.push();
 			m.translate(-i * 0.56f, -0.52f + eqY, -0.72f);
 			m.translate(delta.x, delta.y, delta.z);
+			FpMotion.turnSealedLeftArm(m, left); // the block: the forearm comes in from the lower left
 			FirstPersonHand.renderVanillaArmAt(MinecraftClient.getInstance(), player, !left, m, vcp, light);
+		}
+		if (posed) {
+			m.pop();
 		}
 		m.pop();
 	}
 
 	// ------------------------------------------------------------------ third person
 
-	private static final float[] DEFAULT_DIR = {0f, 0.30f, 0.95f};
+	private static final float[] DEFAULT_DIR = {0.35f, 0.30f, 0.89f};
+	private static final float[] DEFAULT_POS = {3.0f, 9.0f, -2.5f};
+
+	/** Scabbard placement of a manifest (hip of a right hander) with the dev override applied; the default is the left front hip. */
+	static ItemManifest.Hip hipOf(ItemManifest man) {
+		ItemManifest.Hip hip = man.hip != null ? man.hip : new ItemManifest.Hip(DEFAULT_POS, DEFAULT_DIR, 1.6f);
+		return hipOverride(hip);
+	}
+
+	private static void applyFrame(MatrixStack m, dev.minebleach.reiatsutest.core.combat.TpPose.Frame f) {
+		m.translate(f.t()[0], f.t()[1], f.t()[2]);
+		m.multiply(new Quaternionf((float) f.q()[0], (float) f.q()[1], (float) f.q()[2], (float) f.q()[3]));
+		float sc = (float) f.s();
+		m.scale(sc, sc, sc);
+	}
+
+	/**
+	 * tp_pose: scabbard and sword of a player at the frames the pose solver computed (hip, pulled back by the left hand, carried across
+	 * the chest in a block, the sword sliding out and swinging to the hand while it is drawn). The hand follows the same frames.
+	 */
+	private static void renderHipPosed(MatrixStack m, VertexConsumerProvider vcp, int light, ObjItemBakedModel om,
+			dev.minebleach.reiatsutest.core.combat.TpPose.Result r, float p, BipedEntityModel<?> model) {
+		VertexConsumer vc = vcp.getBuffer(TexturedRenderLayers.getEntityCutout());
+		m.push();
+		model.body.rotate(m);
+		m.push();
+		applyFrame(m, r.saya());
+		drawMesh(om.sayaMesh(), m.peek(), vc, light);
+		m.pop();
+		if (p < 1f) {
+			m.push();
+			applyFrame(m, r.sword());
+			drawMesh(om.swordMesh(), m.peek(), vc, light);
+			m.pop();
+		}
+		m.pop();
+	}
 
 	/** Scabbard (and the sword while it is in it) on the hip of a biped, matrices at the entity origin of a feature renderer. */
 	public static void renderHip(MatrixStack m, VertexConsumerProvider vcp, int light, LivingEntity e, BipedEntityModel<?> model) {
@@ -162,8 +210,12 @@ public final class ScabbardRenderer {
 		}
 		float p = DrawTracker.effectiveProgress(e, main);
 		ItemManifest man = om.manifest();
-		ItemManifest.Hip hip = man.hip != null ? man.hip : new ItemManifest.Hip(new float[] {6.2f, 9f, -1f}, DEFAULT_DIR, 1f);
-		hip = hipOverride(hip);
+		dev.minebleach.reiatsutest.core.combat.TpPose.Result tp = TpPoseDriver.resultFor(e);
+		if (tp != null) {
+			renderHipPosed(m, vcp, light, om, tp, p, model);
+			return;
+		}
+		ItemManifest.Hip hip = hipOf(man);
 		DrawRig rig = om.rig(false);
 
 		Matrix4f base = new Matrix4f(m.peek().getPositionMatrix());
@@ -172,7 +224,7 @@ public final class ScabbardRenderer {
 		model.body.rotate(m);
 		float side = e.getMainArm() == Arm.RIGHT ? 1f : -1f; // the scabbard hangs opposite the sword hand
 		m.translate(side * hip.posPx()[0] / 16f, hip.posPx()[1] / 16f, hip.posPx()[2] / 16f);
-		m.multiply(basis(hip.dir()));
+		m.multiply(basis(new float[] {side * hip.dir()[0], hip.dir()[1], hip.dir()[2]})); // the sideways tilt mirrors with the hip
 		m.scale(hip.scale(), hip.scale(), hip.scale());
 		m.translate(-0.5f, -0.5f, -0.5f);
 		drawMesh(om.sayaMesh(), m.peek(), vc, light);

@@ -300,6 +300,7 @@ public final class HakuteikenFx {
 		CondenseMath.Params cp = condenseParams();
 		long seed = e.seed() * 0x2545F4914F6CDD1DL + 33;
 		CondenseMath.Cloud cloud = new CondenseMath.Cloud(cp, seed, blades, per, dist);
+		cloud.heightScale = haveRows ? rs.bladeScale : 1.0;
 		HakuteikenCurves.Timing tm = timing();
 		EffectTimeline t = FxTimelines.create(33, e.seed(), pos, dir, e.params(), e.casterId(), FxClient.forceRemote());
 		State st = new State(e.casterId(), seed, t.slot, tm, cloud, !haveRows, bx, by, bz, len, pos, Math.atan2(-dir.x, dir.z));

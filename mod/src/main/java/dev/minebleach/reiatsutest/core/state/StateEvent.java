@@ -12,6 +12,10 @@ public sealed interface StateEvent {
 	record ReiatsuSpent(int tenths) implements StateEvent {
 	}
 
+	/** Round 5: the glue pays this much Rage (tenths) from the player's Rage meter; the machine already checked it was there. */
+	record RageSpent(int tenths) implements StateEvent {
+	}
+
 	record CooldownStarted(AbilityId ability, long endTick) implements StateEvent {
 	}
 

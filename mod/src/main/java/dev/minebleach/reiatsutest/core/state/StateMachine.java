@@ -4,12 +4,14 @@ import dev.minebleach.reiatsutest.core.kido.KidoConfig;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.kido.KidoRequest;
 import dev.minebleach.reiatsutest.core.kido.KidoSpec;
+import dev.minebleach.reiatsutest.core.rage.RageConfig;
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuMath;
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuState;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntSupplier;
 
 /**
  * Per-player zanpakuto state machine (STATE_MACHINE.md). Pure Java, deterministic given the {@link Clock}. The server
@@ -17,7 +19,11 @@ import java.util.Map;
  * {@link StateEvent}s. Nothing here knows about Minecraft.
  *
  * <p>Order of checks for requests (first failure wins): alive, sequence, rate limit, state, item, locks (transition,
- * gcd, settle, release), cooldown, reiatsu.
+ * gcd, settle, release), cooldown, rage (shikai and bankai entry only), reiatsu.
+ *
+ * <p>Round 5: the sword leaving the main hand (slot change, drop, off hand) no longer ends anything. SHIKAI / BANKAI end only by
+ * seal, death, logout, dimension change, the bankai cap and the shikai idle timer; casting a NEW shikai/bankai ability still needs
+ * the matching sword in the main hand. Kido and shunpo need neither a state nor a sword.
  */
 public final class StateMachine {
 	/** Upper bound on how many ticks one {@link #tick(int)} call walks (catch-up stays exact within it). */
@@ -53,7 +59,10 @@ public final class StateMachine {
 	private long settleEnd;
 	private long releaseLockEnd;
 	private long lastCast;
-	private long handLostSince = -1;
+	/** Rage seam (round 5): the cost config and the live value; null = Rage does not gate the release (unit tests, harness). */
+	private RageConfig rageCfg;
+	private IntSupplier rageSource;
+	private boolean rageFree;
 
 	private boolean dead;
 	private boolean spectator;
@@ -68,6 +77,39 @@ public final class StateMachine {
 		this.reiatsu = new ReiatsuState(initial.value(), cfg.maxTenths());
 		this.limiter = new RateLimiter(clock, cfg.rateLimitPerSecond());
 		this.stateSince = clock.nowTick();
+	}
+
+	// ------------------------------------------------------------------ rage seam
+
+	/**
+	 * Round 5: shikai and bankai entry need (and pay) Rage. {@code available} is read live at the request (the server's Rage meter);
+	 * a null config switches the requirement off (the machine alone, as in unit tests). The payment itself is the
+	 * {@link StateEvent.RageSpent} event the glue executes.
+	 */
+	public void setRage(RageConfig config, IntSupplier available) {
+		this.rageCfg = config;
+		this.rageSource = available;
+	}
+
+	/** Dev switch ({@code /reiatsu dev ragefree on}): no Rage is required or spent for shikai and bankai. Default off. */
+	public void setRageFree(boolean free) {
+		this.rageFree = free;
+	}
+
+	public boolean rageFree() {
+		return rageFree;
+	}
+
+	/** Rage a request to {@code target} needs and pays in tenths (0 = none: not shikai/bankai, requirement off or ragefree). */
+	public int rageNeed(ZanpakutoState target) {
+		if (rageCfg == null || rageSource == null || rageFree) {
+			return 0;
+		}
+		return switch (target) {
+			case SHIKAI -> rageCfg.shikaiCostTenths();
+			case BANKAI -> rageCfg.bankaiCostTenths();
+			default -> 0;
+		};
 	}
 
 	// ------------------------------------------------------------------ requests
@@ -88,8 +130,8 @@ public final class StateMachine {
 			if (r.held() == CharacterId.NONE) {
 				return reject(RejectReason.WRONG_ITEM);
 			}
-		} else if (inHandGrace() || r.held() != character) {
-			return reject(RejectReason.WRONG_ITEM);
+		} else if (target != ZanpakutoState.SEALED && r.held() != character) {
+			return reject(RejectReason.WRONG_ITEM); // sealing needs no sword: V works with the sword dropped or in the off hand
 		}
 		if (now < transitionLockEnd) {
 			return reject(RejectReason.TRANSITION_LOCK);
@@ -99,6 +141,10 @@ public final class StateMachine {
 		}
 		if (target == ZanpakutoState.BANKAI && now < bankaiLockEnd) {
 			return reject(RejectReason.RELEASE_LOCK); // bankai recovery after the last bankai (timer end, seal)
+		}
+		int rageNeed = rageNeed(target);
+		if (rageNeed > 0 && rageSource.getAsInt() < rageNeed) {
+			return reject(RejectReason.NOT_ENOUGH_RAGE);
 		}
 		if (target == ZanpakutoState.SHIKAI && !reiatsu.canSpend(cfg.shikaiReleaseCost())) {
 			return reject(RejectReason.NOT_ENOUGH_REIATSU);
@@ -118,7 +164,6 @@ public final class StateMachine {
 				mode = ShikaiMode.IDLE;
 				bankaiEnd = 0;
 				lastCast = now;
-				handLostSince = -1;
 				transitionLockEnd = now + cfg.transitionLockTicks();
 				castSerial++;
 				ev.add(new StateEvent.StateChanged(from, state, Trigger.REQUEST));
@@ -126,12 +171,14 @@ public final class StateMachine {
 			}
 			case SHIKAI -> {
 				spend(cfg.shikaiReleaseCost(), ev);
+				if (rageNeed > 0) {
+					ev.add(new StateEvent.RageSpent(rageNeed));
+				}
 				state = ZanpakutoState.SHIKAI;
 				stateSince = now;
 				mode = ShikaiMode.IDLE;
 				bankaiEnd = 0;
 				lastCast = now;
-				handLostSince = -1;
 				transitionLockEnd = now + cfg.transitionLockTicks();
 				castSerial++;
 				ev.add(new StateEvent.StateChanged(from, state, Trigger.REQUEST));
@@ -141,6 +188,9 @@ public final class StateMachine {
 			case BANKAI -> {
 				if (cfg.bankaiCost() > 0) {
 					spend(cfg.bankaiCost(), ev);
+				}
+				if (rageNeed > 0) {
+					ev.add(new StateEvent.RageSpent(rageNeed));
 				}
 				state = ZanpakutoState.BANKAI;
 				stateSince = now;
@@ -175,7 +225,7 @@ public final class StateMachine {
 				|| !(a.requiredState == state || (state == ZanpakutoState.BANKAI && a.requiredState == ZanpakutoState.SHIKAI))) {
 			return reject(RejectReason.NOT_IN_STATE);
 		}
-		if (inHandGrace() || r.held() != character) {
+		if (r.held() != character) {
 			return reject(RejectReason.WRONG_ITEM);
 		}
 		if (now < transitionLockEnd) {
@@ -290,8 +340,8 @@ public final class StateMachine {
 	}
 
 	/**
-	 * Shunpo (B4 step 5): a short teleport along the look direction, SHIKAI and BANKAI only. The machine checks everything
-	 * that is not geometry (state, item, locks, cooldown, reiatsu), then walks the path through {@code probe}. A path with
+	 * Shunpo (B4 step 5, round 5): a short teleport along the look direction, in ANY state with any sword or none (like kido). The
+	 * machine checks everything that is not geometry (alive, rate limit, transition lock, cooldown, reiatsu), then walks the path through {@code probe}. A path with
 	 * no room refuses with {@link RejectReason#NO_ROOM} and costs nothing. The accepted result carries a
 	 * {@link StateEvent.ShunpoMove} for the glue (move the player, broadcast the effect).
 	 *
@@ -304,12 +354,6 @@ public final class StateMachine {
 			return reject(pre);
 		}
 		long now = clock.nowTick();
-		if (state != ZanpakutoState.SHIKAI && state != ZanpakutoState.BANKAI) {
-			return reject(RejectReason.NOT_IN_STATE);
-		}
-		if (inHandGrace() || held != character) {
-			return reject(RejectReason.WRONG_ITEM);
-		}
 		if (now < transitionLockEnd) {
 			return reject(RejectReason.TRANSITION_LOCK);
 		}
@@ -350,13 +394,10 @@ public final class StateMachine {
 		return ev;
 	}
 
-	/** Fixed order inside one tick: mode expiry, hand grace, reiatsu batch, zero check, bankai cap, shikai idle. */
+	/** Fixed order inside one tick: mode expiry, reiatsu batch, zero check, bankai cap, shikai idle. */
 	private void step(long t, List<StateEvent> ev) {
 		if (mode != ShikaiMode.IDLE && t >= modeEnd) {
 			setMode(ShikaiMode.IDLE, ev);
-		}
-		if (state != ZanpakutoState.SEALED && handLostSince >= 0 && t - handLostSince >= cfg.handGraceTicks()) {
-			revertToSealed(t, Trigger.HAND_LOST, EffectIds.SEAL, 0, false, ev);
 		}
 		if (t % cfg.regenBatchTicks() == 0) {
 			reiatsu = ReiatsuMath.applyBatch(reiatsu, cfg.rate(state));
@@ -377,23 +418,13 @@ public final class StateMachine {
 
 	// ------------------------------------------------------------------ Minecraft events
 
-	/** The character of the zanpakuto in the main hand changed (NONE = none). Starts or cancels the hand grace. */
+	/**
+	 * The character of the zanpakuto in the main hand changed (NONE = none). Round 5: deliberately a no-op. Changing the slot,
+	 * dropping the sword or moving it to the off hand does NOT end the released form or its running effects; it only blocks
+	 * casting new shikai/bankai abilities (the request carries the held character). Kept so the glue and old tests still call it.
+	 */
 	public List<StateEvent> onHandChanged(CharacterId held) {
-		if (state == ZanpakutoState.SEALED || held == character) {
-			handLostSince = -1;
-		} else if (handLostSince < 0) {
-			handLostSince = clock.nowTick();
-		}
 		return List.of();
-	}
-
-	/** The released stack left the inventory: immediate SEALED. */
-	public List<StateEvent> onItemDropped() {
-		List<StateEvent> ev = new ArrayList<>();
-		if (state != ZanpakutoState.SEALED) {
-			revertToSealed(clock.nowTick(), Trigger.ITEM_DROPPED, EffectIds.SEAL, 0, false, ev);
-		}
-		return ev;
 	}
 
 	public List<StateEvent> onDeath() {
@@ -471,7 +502,6 @@ public final class StateMachine {
 		barrierPool = 0;
 		bankaiEnd = target == ZanpakutoState.BANKAI ? now + cfg.bankaiCapTicks() : 0;
 		lastCast = now;
-		handLostSince = -1;
 		transitionLockEnd = 0;
 		gcdEnd = 0;
 		settleEnd = 0;
@@ -522,10 +552,6 @@ public final class StateMachine {
 
 	public boolean isDead() {
 		return dead;
-	}
-
-	public boolean inHandGrace() {
-		return handLostSince >= 0 && state != ZanpakutoState.SEALED;
 	}
 
 	/** Increases whenever running effects must be dropped (seal, auto-revert, reset). */
@@ -649,7 +675,6 @@ public final class StateMachine {
 		bankaiEnd = 0;
 		stateSince = t;
 		settleEnd = 0;
-		handLostSince = -1;
 		castSerial++;
 		releaseLockEnd = t + releaseLock;
 		transitionLockEnd = transitionLock ? t + cfg.transitionLockTicks() : 0;
@@ -679,7 +704,6 @@ public final class StateMachine {
 		barrierPool = 0;
 		bankaiEnd = 0;
 		stateSince = now;
-		handLostSince = -1;
 		transitionLockEnd = 0;
 		gcdEnd = 0;
 		settleEnd = 0;

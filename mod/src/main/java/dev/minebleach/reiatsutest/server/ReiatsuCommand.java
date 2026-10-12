@@ -3,6 +3,7 @@ package dev.minebleach.reiatsutest.server;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
@@ -15,6 +16,10 @@ import java.util.List;
 import java.util.Map;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandSource;
+import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -51,13 +56,79 @@ public final class ReiatsuCommand {
 										.suggests((c, b) -> CommandSource.suggestMatching(List.of("rukia", "byakuya"), b))
 										.executes(c -> setState(c.getSource(), StringArgumentType.getString(c, "state"),
 												StringArgumentType.getString(c, "character"))))))
+				// /reiatsu frost status | start | rollback: the Rukia bankai territory freeze (start = a field at your feet, rollback = restore all now)
+				.then(CommandManager.literal("frost")
+						.then(CommandManager.literal("status").executes(c -> {
+							c.getSource().sendFeedback(() -> Text.literal(FrostField.status()), false);
+							return 1;
+						}))
+						.then(CommandManager.literal("start").executes(c -> {
+							boolean ok = FrostField.start(c.getSource().getPlayerOrThrow(), true);
+							c.getSource().sendFeedback(() -> Text.literal(ok ? "frost field started at your feet (it ends with the 45 s cap or /reiatsu frost rollback)" : "frost is off"), true);
+							return ok ? 1 : 0;
+						}))
+						.then(CommandManager.literal("rollback").executes(c -> {
+							int n = FrostField.rollbackNow(c.getSource().getServer());
+							c.getSource().sendFeedback(() -> Text.literal("frost rolled back: " + n + " block(s) restored"), true);
+							return n;
+						})))
 				.then(CommandManager.literal("cooldowns").then(CommandManager.literal("clear").executes(c -> clearCooldowns(c.getSource()))))
 				.then(CommandManager.literal("pvp")
 						.then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(c -> {
 							Tuning.affectPlayers = BoolArgumentType.getBool(c, "enabled");
 							c.getSource().sendFeedback(() -> Text.literal("abilities affect players: " + Tuning.affectPlayers), true);
 							return 1;
-						}))));
+						})))
+				.then(CommandManager.literal("dev")
+						// /reiatsu dev dummy_hit <targets> [hp]: hits the targets as if by an ability of the caster; the result and the
+						// reason (creative, parry, barrier, iframes, team, pvp off ...) go to the chat and to the [dmg] server log
+						.then(CommandManager.literal("dummy_hit")
+								.then(CommandManager.argument("targets", EntityArgumentType.entities())
+										.executes(c -> dummyHit(c.getSource(), EntityArgumentType.getEntities(c, "targets"), 2.0F))
+										.then(CommandManager.argument("hp", FloatArgumentType.floatArg(0.1F, 100.0F))
+												.executes(c -> dummyHit(c.getSource(), EntityArgumentType.getEntities(c, "targets"),
+														FloatArgumentType.getFloat(c, "hp"))))))
+						// /reiatsu dev rage <points>: sets the Rage bar of the caster (0..100) to test the HUD
+						.then(CommandManager.literal("rage")
+								.then(CommandManager.argument("points", DoubleArgumentType.doubleArg(0.0, 100.0))
+										.executes(c -> {
+											ServerPlayerEntity p = c.getSource().getPlayerOrThrow();
+											double pts = DoubleArgumentType.getDouble(c, "points");
+											RageManager.devSet(p, (int) Math.round(pts * 10.0));
+											c.getSource().sendFeedback(() -> Text.literal("rage set to " + pts), true);
+											return 1;
+										})))
+						// /reiatsu dev ragefree on|off: shikai and bankai need and spend no Rage (debug only, default off, creative does not bypass)
+						.then(CommandManager.literal("ragefree")
+								.then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(c -> {
+									StateMachine sm = machine(c.getSource());
+									boolean on = BoolArgumentType.getBool(c, "enabled");
+									sm.setRageFree(on);
+									dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[rage] ragefree {} for {}", on ? "ON" : "off", c.getSource().getPlayerOrThrow().getName().getString());
+									c.getSource().sendFeedback(() -> Text.literal("ragefree " + (on ? "ON: shikai and bankai need no Rage" : "off")), true);
+									return 1;
+								})))));
+	}
+
+	private static int dummyHit(ServerCommandSource src, java.util.Collection<? extends Entity> targets, float hp) throws CommandSyntaxException {
+		ServerPlayerEntity caster = src.getPlayerOrThrow();
+		int n = 0;
+		DmgLog.begin("dummy_hit");
+		try {
+			for (Entity e : targets) {
+				if (!(e instanceof LivingEntity le)) {
+					continue;
+				}
+				var refusal = Targeting.refusal(caster, le);
+				var out = Targeting.hurt(caster, le, hp, DamageTypes.INDIRECT_MAGIC, true);
+				String line = le.getName().getString() + ": " + out + " (target filter: " + refusal + ")";
+				src.sendFeedback(() -> Text.literal(line), false);
+				n++;
+			}
+		} finally {
+			DmgLog.end();
+		}
+		return n;
 	}
 
 	private static int voice(ServerCommandSource src) {

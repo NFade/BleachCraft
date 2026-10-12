@@ -78,8 +78,9 @@ public final class RukiaBankaiFx {
 			// the hot core of the base: flare and soft disc
 			FxGlowBatch.sprite(GlowSprite.FLARE).at(pos.x, gy + 0.5, pos.z).size(d("rb.baseFlare", 9.0)).life(0.55).curve(0.02, 0.75).color("#FFFFFF").peak(RukiaKit.glow(0.95)).owner(x).spawn();
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(pos.x, gy + 1.2, pos.z).axisY().size(3.0, 6.0).sizeEase(FxMath.OC).life(0.7).curve(0.03, 0.75).color("#EAF8FF").peak(RukiaKit.glow(0.85)).owner(x).spawn();
-			RukiaKit.ring(x, pos.x, gy + 0.06, pos.z, 0.8, ringR, 0.45 + 0.35, "#EAF8FF", 0.85, false);
-			RukiaKit.ring(x, pos.x, gy + 0.07, pos.z, 0.8, ringR * 0.9, 0.5, "#FFFFFF", 0.9, true);
+			double ry = FxPlace.ringY(pos.x, pos.z, gy, ringR);
+			RukiaKit.ring(x, pos.x, ry + 0.06, pos.z, 0.8, ringR, 0.45 + 0.35, "#EAF8FF", 0.85, false);
+			RukiaKit.ring(x, pos.x, ry + 0.07, pos.z, 0.8, ringR * 0.9, 0.5, "#FFFFFF", 0.9, true);
 			Random r = x.rng(2);
 			int nSparks = RukiaKit.count(80);
 			for (int i = 0; i < nSparks; i++) {
@@ -250,8 +251,9 @@ public final class RukiaBankaiFx {
 		t.at(0.40, x -> {
 			Random r = x.rng(2);
 			double wave = d("az.waveTime", 0.6);
-			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(pos.x, gy + 0.06, pos.z).ground().size(1.0, R / 0.375).sizeEase(FxMath.OC).life(wave * 1.5).curve(0.02, 0.6).color("#EAF8FF").peak(RukiaKit.glow(0.95)).owner(x).spawn();
-			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(pos.x, gy + 0.07, pos.z).ground().size(1.0, R / 0.4375).sizeEase(FxMath.OC).life(wave * 1.2).curve(0.02, 0.6).delay(0.1).color("#FFFFFF").peak(RukiaKit.glow(0.85))
+			double ry = FxPlace.ringY(pos.x, pos.z, gy, R);
+			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(pos.x, ry + 0.06, pos.z).ground().size(1.0, R / 0.375).sizeEase(FxMath.OC).life(wave * 1.5).curve(0.02, 0.6).color("#EAF8FF").peak(RukiaKit.glow(0.95)).owner(x).spawn();
+			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(pos.x, ry + 0.07, pos.z).ground().size(1.0, R / 0.4375).sizeEase(FxMath.OC).life(wave * 1.2).curve(0.02, 0.6).delay(0.1).color("#FFFFFF").peak(RukiaKit.glow(0.85))
 					.owner(x).spawn();
 			int sides = (int) FxMath.clamp(Math.round(R * 2.3), 16, 40);
 			FxShapes.Wall wall = FxShapes.wall(pos.x, pos.z, gy, sides, 0).radius(a -> Math.max(0.2, R * FxMath.oc(a / wave))).height(a -> d("az.wallHeight", 2.5) * sk).topFade(0.0).scroll(3, 0.25);
@@ -302,12 +304,17 @@ public final class RukiaBankaiFx {
 				// seeded points between 0.3 R and 0.9 R (3 to 9 for the reference radius), never within 2.5 of the caster
 				double a = (ii + r.nextDouble() * 0.6) / nCrystals * Math.PI * 2;
 				double rad = Math.max(3.0, R * (0.3 + 0.6 * r.nextDouble()));
-				double px = pos.x + Math.cos(a) * rad;
-				double pz = pos.z + Math.sin(a) * rad;
-				double py = FxGround.sample(px, pz, gy);
 				double lean = 0.1 + r.nextDouble() * 0.25;
-				FxMeshPass.Crystal c = FxMeshPass.crystal(meshes[ii % meshes.length], px, py - 0.04, pz, Math.cos(a) * lean, 1, Math.sin(a) * lean, r.nextDouble() * 6.28,
-						scales[ii % scales.length] * sk * d("az.crystalScale", 1.0), 0);
+				double roll = r.nextDouble() * 6.28;
+				// fitted to the terrain (floor within a step, shrunk under leaves and roofs, moved off trunks); no free spot: no crystal here
+				FxMeshPass.Crystal c = RukiaBankaiClient.placeCrystal(meshes[ii % meshes.length], pos, a, rad, lean, roll, scales[ii % scales.length] * sk * d("az.crystalScale", 1.0), 0, 0.04,
+						(int) d("az.placeTries", 6));
+				if (c == null) {
+					return;
+				}
+				double px = c.x;
+				double py = c.y + 0.04;
+				double pz = c.z;
 				c.grow = 0.5;
 				c.emissive = 0.8;
 				mine.add(c);
@@ -320,7 +327,7 @@ public final class RukiaBankaiFx {
 		t.at(stop, x -> {
 			x.pause(pause * 1000.0);
 			x.duck(stop, stop + 1.0, 0.0);
-			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(pos.x, gy + 0.08, pos.z).ground().size(1.0, 1.4 * R / 0.4375).sizeEase(FxMath.OC).life(0.3).curve(0.02, 0.7).color("#FFFFFF").peak(RukiaKit.glow(0.8)).spawn();
+			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(pos.x, FxPlace.ringY(pos.x, pos.z, gy, 1.4 * R) + 0.08, pos.z).ground().size(1.0, 1.4 * R / 0.4375).sizeEase(FxMath.OC).life(0.3).curve(0.02, 0.7).color("#FFFFFF").peak(RukiaKit.glow(0.8)).spawn();
 			FreezeDesat.set(d("az.desat2", 0.45) * strength, 0.1);
 			grade[0] = x.grade("#C8DCF0", d("az.grade", 0.5), 0.1);
 			vigs[2] = x.vignette(ScreenFx.Kind.DARK, d("az.vignetteDark", 0.25), 0.2);
@@ -381,7 +388,7 @@ public final class RukiaBankaiFx {
 			if (vigs[0] != null) {
 				vigs[0].release(0.7);
 			}
-			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(pos.x, gy + 0.09, pos.z).ground().size(1.0, 1.2 * R / 0.375).sizeEase(FxMath.OC).life(0.6).curve(0.02, 0.6).color("#FFFFFF").peak(RukiaKit.glow(0.95))
+			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(pos.x, FxPlace.ringY(pos.x, pos.z, gy, 1.2 * R) + 0.09, pos.z).ground().size(1.0, 1.2 * R / 0.375).sizeEase(FxMath.OC).life(0.6).curve(0.02, 0.6).color("#FFFFFF").peak(RukiaKit.glow(0.95))
 					.spawn();
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(pos.x, gy + 1.0, pos.z).ground().size(2.0, R * 2.4).sizeEase(FxMath.OC).life(0.5).curve(0.02, 0.7).color("#EAF8FF").peak(RukiaKit.glow(0.7)).spawn();
 			RukiaKit.iceShards(x, r, RukiaKit.areaCount(260, R, RukiaFxParams.REF_ABSOLUTE_ZERO_RADIUS), pos.x, gy + 0.4, pos.z, R * 0.9, 8.0 * sk, 5.0, 1.0, 26, 0.46);

@@ -24,6 +24,8 @@ public final class ClientState {
 	private static long cooldownsReceivedAt;
 	private static ZanpakutoState lastState = ZanpakutoState.SEALED;
 	private static long stateChangedAt;
+	/** Set by the swarm steering key code while the cast key is held and the swarm is being steered (FP_ABILITY_ANIMS: the conducting hand). */
+	private static volatile boolean steering;
 
 	private ClientState() {
 	}
@@ -35,6 +37,7 @@ public final class ClientState {
 			lastPlayer = p;
 			lastCooldowns = null;
 			lastState = ZanpakutoState.SEALED;
+			steering = false;
 		}
 		ticks++;
 		if (p == null) {
@@ -50,6 +53,18 @@ public final class ClientState {
 			lastState = st;
 			stateChangedAt = ticks;
 		}
+	}
+
+	/**
+	 * True while the player steers the swarm with the held cast key (Byakuya shikai attack). Default false. The hands then hold the
+	 * conducting gesture ({@code FpCast}, gesture {@code steer}); the code that handles the key switches it with {@link #setSteering}.
+	 */
+	public static boolean steering() {
+		return steering;
+	}
+
+	public static void setSteering(boolean on) {
+		steering = on;
 	}
 
 	public static long clientTicks() {

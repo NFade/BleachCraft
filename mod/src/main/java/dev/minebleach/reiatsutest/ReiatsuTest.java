@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest;
 
 import dev.minebleach.reiatsutest.net.ModNetworking;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
+import dev.minebleach.reiatsutest.registry.ModBlocks;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ModEntities;
 import dev.minebleach.reiatsutest.registry.ModParticles;
@@ -24,6 +25,7 @@ public class ReiatsuTest implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModBlocks.init();
 		ModComponents.init();
 		ModItems.init();
 		ModAttachments.init();
@@ -36,6 +38,7 @@ public class ReiatsuTest implements ModInitializer {
 		ReiatsuCommand.register();
 		VoiceControl.init();
 		dev.minebleach.reiatsutest.server.RukiaServerFx.init();
+		dev.minebleach.reiatsutest.server.FrostField.init();
 		LOGGER.info("registered items {}, {}, {} (component {}), attachments and payloads",
 				ModItems.SODE_NO_SHIRAYUKI, ModItems.SENBONZAKURA, ModItems.SPIKE_ITEM, ModComponents.RELEASE_STATE);
 	}

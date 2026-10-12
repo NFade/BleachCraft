@@ -26,7 +26,7 @@ in the address: `index.html?port=47822`. The browser asks for the microphone per
 
 - **Always listening** (default): one continuous recognition session, restarted at once when the browser ends it (backoff only
   after errors). Replacing a session (language switch, option change) waits for the old one to end, at most 1 s.
-- **Hold to talk**: hold the button (or Space while the page has focus); results only count while held plus a 0.5 s tail.
+- **Hold to talk**: hold the button (or the PTT key, Space by default; the "Key" button next to it re-binds it, stored in `localStorage` `reiatsu.pttKey`); results only count while held plus a 0.5 s tail.
   A session is kept ready in between, so the press costs no start-up time. Option **Pre-warm** runs that session on a muted
   Web Audio track and the press only opens its volume; if the browser or the device does not cooperate the page falls back
   to the plain microphone by itself and says so.

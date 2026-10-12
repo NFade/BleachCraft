@@ -76,12 +76,12 @@ class RukiaFxParamsTest {
 	void absoluteZeroCarriesThePauseSeconds() {
 		float[] p = RukiaFxParams.extend(AbilityId.ABSOLUTE_ZERO, base(10f), 0);
 		assertEquals(10f, p[3], 0);
-		assertEquals(1.3f, p[4], 1e-4);
+		assertEquals(3.0f, p[4], 1e-4);
 	}
 
 	@Test
 	void pauseMatchesTheServerPhaseTimes() {
-		// the server shatters absolute zero at tick 66 after the freeze at tick 40 (BalanceConfig)
+		// the server shatters absolute zero at tick 100 after the freeze at tick 40, a 3 s freeze (BalanceConfig)
 		var phases = BalanceConfig.defaults().spec(AbilityId.ABSOLUTE_ZERO).phaseOffsets();
 		assertEquals(RukiaFxParams.ABSOLUTE_ZERO_PAUSE_TICKS, phases.get(1) - phases.get(0));
 		// Hakuren: steps at ticks 20, 22, ..., 34 = 8 steps (FIXES_B4)

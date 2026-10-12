@@ -43,6 +43,18 @@ final class ServerFx {
 	}
 
 	/**
+	 * Block feedback (id 41, BC5b): the defender's client plays the first person recoil, screen kick and sparks; others ignore it.
+	 * x y z = the defender, d = horizontal vector to the attacker, params = {parried (1/0), damage of the hit}.
+	 */
+	static void blockFeedback(ServerPlayerEntity defender, LivingEntity attacker, boolean parried, float damage) {
+		int tick = defender.getServer().getTicks();
+		Vec3d to = attacker.getPos().subtract(defender.getPos());
+		EffectEventS2C payload = new EffectEventS2C(EffectIds.BLOCK_FEEDBACK, defender.getId(), tick, defender.getX(), defender.getY(),
+				defender.getZ(), (float) to.x, 0f, (float) to.z, attacker.getId(), tick, new float[] {parried ? 1f : 0f, damage});
+		sendToViewers(defender, payload);
+	}
+
+	/**
 	 * Kido effect (ids 50 to 52): x y z = the caster's eye, d = unit look direction, target = id of the entity hit or -1, params =
 	 * {@link KidoMath#effectParams} (line length, travel ticks, burst radius, hit kind, speed, binding ticks).
 	 */

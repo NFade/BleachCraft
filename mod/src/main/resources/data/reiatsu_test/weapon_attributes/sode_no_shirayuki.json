@@ -1,6 +1,3 @@
 {
-  "parent": "bettercombat:katana",
-  "attributes": {
-    "pose": ""
-  }
+  "parent": "bettercombat:katana"
 }

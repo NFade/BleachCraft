@@ -28,6 +28,8 @@ final class StripHud {
 			case SCATTER -> 6;
 			case HAKUTEIKEN -> 7;
 			case SENKEI -> 8;
+			case ICE_SPIKE -> 12; // second row of 4 after the 12 cells of round 5 (gen_hud_textures.py: 4 x 4 cells)
+			case CAGE -> 13;
 		};
 	}
 
@@ -130,7 +132,7 @@ final class StripHud {
 			case DISABLED -> 0.35f;
 			default -> 1f;
 		};
-		g.sprite(ABILITY_ICONS, 64, 48, 3, 3, (ii % 4) * 16, (ii / 4) * 16, 16, 16, new float[] {ib, ib, ib}, alpha);
+		g.sprite(ABILITY_ICONS, 64, 64, 3, 3, (ii % 4) * 16, (ii / 4) * 16, 16, 16, new float[] {ib, ib, ib}, alpha);
 		if (s.state == HudModel.SlotState.COOLING && s.totalTicks > 0) {
 			int f = Math.max(1, Math.min(24, (int) Math.ceil(24.0 * s.remainingTicks / s.totalTicks)));
 			g.sprite(COOLDOWN_SWEEP, 120, 80, 1, 1, ((f - 1) % 6) * 20, ((f - 1) / 6) * 20, 20, 20, WHITE, alpha);

@@ -201,6 +201,10 @@ public final class PetalSwarmRenderer {
 			}
 			SwarmMath.Mode mode = st.mode;
 			SwarmMath.Mode prev = st.prev;
+			mode.feet(feet.x, feet.y, feet.z); // steerable attack: the server head path is in world axes, positions are feet relative
+			if (prev != null) {
+				prev.feet(feet.x, feet.y, feet.z);
+			}
 			double blend = prev != null ? SwarmMath.blendWeight(t - mode.t0) : 1.0;
 			int n = st.n;
 			if (d2.length < n) {

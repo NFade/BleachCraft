@@ -98,6 +98,7 @@ class TransitionTest {
 		Fx f = new Fx().toBase(R);
 		for (AbilityId a : AbilityId.values()) {
 			assertDenied(f.cast(a, a.character), RejectReason.NOT_IN_STATE);
+			f.adv(3); // the abilities outnumber the 10 requests per second of the rate limiter
 		}
 		f.sm.devSetReiatsu(500);
 		f.adv(50);
@@ -295,12 +296,12 @@ class TransitionTest {
 		Fx base = new Fx().toBase(R);
 		assertDenied(base.tr(ZanpakutoState.SHIKAI, B), RejectReason.WRONG_ITEM);
 		assertDenied(base.tr(ZanpakutoState.SHIKAI, NONE), RejectReason.WRONG_ITEM);
-		assertDenied(base.tr(ZanpakutoState.SEALED, B), RejectReason.WRONG_ITEM);
+		// round 5: sealing needs no sword (dropped, off hand, another zanpakuto in hand)
+		assertTrue(base.tr(ZanpakutoState.SEALED, B).ok());
 		Fx r = new Fx().toShikai(R);
-		assertDenied(r.tr(ZanpakutoState.SEALED, B), RejectReason.WRONG_ITEM);
-		assertDenied(r.tr(ZanpakutoState.SEALED, NONE), RejectReason.WRONG_ITEM);
+		assertTrue(r.tr(ZanpakutoState.SEALED, NONE).ok());
 		Fx b = new Fx().toShikai(B);
-		assertDenied(b.tr(ZanpakutoState.SEALED, R), RejectReason.WRONG_ITEM);
+		assertTrue(b.tr(ZanpakutoState.SEALED, R).ok());
 	}
 
 	@Test
@@ -312,17 +313,14 @@ class TransitionTest {
 	}
 
 	@Test
-	void I8_duringHandGrace() {
+	void I8_swordAwayFromTheHand() {
 		Fx f = new Fx().toShikai(R);
 		f.adv(150);
 		f.sm.onHandChanged(NONE);
 		f.adv(5);
-		assertTrue(f.sm.inHandGrace());
-		assertDenied(f.tr(ZanpakutoState.BANKAI, R), RejectReason.WRONG_ITEM);
-		assertDenied(f.tr(ZanpakutoState.SEALED, R), RejectReason.WRONG_ITEM);
-		assertDenied(f.cast(AbilityId.SHIRAFUNE, R), RejectReason.WRONG_ITEM);
+		assertDenied(f.tr(ZanpakutoState.BANKAI, NONE), RejectReason.WRONG_ITEM);
+		assertDenied(f.cast(AbilityId.SHIRAFUNE, NONE), RejectReason.WRONG_ITEM);
 		f.sm.onHandChanged(R);
-		assertFalse(f.sm.inHandGrace());
 		assertTrue(f.tr(ZanpakutoState.BANKAI, R).ok());
 	}
 
@@ -423,7 +421,7 @@ class TransitionTest {
 		Fx f = new Fx().toBase(R);
 		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok());
 		f.adv(2);
-		assertDenied(f.tr(ZanpakutoState.SEALED, B), RejectReason.WRONG_ITEM);
+		assertDenied(f.tr(ZanpakutoState.BANKAI, B), RejectReason.WRONG_ITEM);
 		assertDenied(f.tr(ZanpakutoState.SEALED, R), RejectReason.TRANSITION_LOCK);
 		// lock beats cooldown: same ability twice inside the gcd
 		Fx g = new Fx().toShikai(R);
@@ -460,7 +458,9 @@ class TransitionTest {
 		assertEquals(CharacterId.NONE, CharacterId.fromCode((byte) 9));
 		assertEquals(ShikaiMode.IDLE, ShikaiMode.fromCode((byte) -1));
 		assertEquals(AbilityId.HAKUREN, AbilityId.fromCommandId("rukia.shikai.hakuren"));
-		assertEquals(AbilityId.ABSOLUTE_ZERO, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
+		assertEquals(AbilityId.ICE_SPIKE, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
+		assertEquals(AbilityId.ABSOLUTE_ZERO, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 1));
 		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 2));
+		assertEquals(AbilityId.CAGE, AbilityId.forSlot(B, ZanpakutoState.SHIKAI, 2));
 	}
 }

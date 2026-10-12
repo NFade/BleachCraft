@@ -40,12 +40,41 @@ public final class Normalizer {
 		{"お願い", "onegai"},
 		// kido (B5): Hado, Bakudo, and the three spell names
 		{"破道", "hado"}, {"縛道", "bakudo"}, {"白雷", "byakurai"}, {"赤火砲", "shakkaho"}, {"塞", "sai"},
+		// kido, ja-JP live session 2026-10-11 (design/results/voice_v4.md): Chrome writes the sounds of hado / bakudo / the
+		// spell names with other kanji ("波動" for はどう, "借家法" for しゃっかほう) or loses the first syllable ("くらい").
+		// Homophones only; no common one-kanji word (再, 最, 才 for さい would turn ordinary speech into "sai").
+		{"波動", "hado"}, {"覇道", "hado"}, {"破堂", "hado"}, {"破導", "hado"}, {"歯道", "hado"},
+		{"爆道", "bakudo"}, {"爆動", "bakudo"}, {"縛堂", "bakudo"},
+		{"百雷", "byakurai"}, {"白来", "byakurai"}, {"百来", "byakurai"}, {"薄雷", "byakurai"}, {"白蕾", "byakurai"},
+		{"白らい", "byakurai"}, {"百らい", "byakurai"}, {"びゃく雷", "byakurai"}, {"ひゃく雷", "byakurai"},
+		{"借家法", "shakkaho"}, {"借家砲", "shakkaho"}, {"赤火法", "shakkaho"}, {"赤火方", "shakkaho"}, {"赤火報", "shakkaho"},
+		{"赤化砲", "shakkaho"}, {"赤化法", "shakkaho"}, {"射火砲", "shakkaho"}, {"石火砲", "shakkaho"}, {"尺火砲", "shakkaho"},
+		{"しゃっか砲", "shakkaho"}, {"しゃか砲", "shakkaho"}, {"赤火ほう", "shakkaho"}, {"赤火ほ", "shakkaho"}, {"赤か砲", "shakkaho"},
 	};
+
+	/** The number after hado / bakudo ("の四", "の4", "の三十一", "の一"): the key keeps the spoken number. */
+	private static final String[][] HADO_NUMBERS = {{"四", "yon"}, {"4", "yon"}, {"三十一", "sanjuichi"}, {"31", "sanjuichi"}};
+	private static final String[][] BAKUDO_NUMBERS = {{"一", "ichi"}, {"1", "ichi"}};
+	private static final String[] HADO_WORDS = {"破道", "波動", "覇道", "破堂", "破導", "歯道", "はどう"};
+	private static final String[] BAKUDO_WORDS = {"縛道", "爆道", "爆動", "縛堂", "ばくどう"};
 
 	private static final String[][] KANJI_SORTED;
 
 	static {
-		String[][] copy = KANJI.clone();
+		java.util.List<String[]> all = new ArrayList<>(Arrays.asList(KANJI));
+		for (String h : HADO_WORDS) {
+			for (String[] n : HADO_NUMBERS) {
+				all.add(new String[] {h + "の" + n[0], "hado no " + n[1]});
+				all.add(new String[] {h + n[0], "hado " + n[1]});
+			}
+		}
+		for (String h : BAKUDO_WORDS) {
+			for (String[] n : BAKUDO_NUMBERS) {
+				all.add(new String[] {h + "の" + n[0], "bakudo no " + n[1]});
+				all.add(new String[] {h + n[0], "bakudo " + n[1]});
+			}
+		}
+		String[][] copy = all.toArray(new String[0][]);
 		Arrays.sort(copy, Comparator.comparingInt((String[] e) -> e[0].length()).reversed());
 		KANJI_SORTED = copy;
 	}
@@ -91,11 +120,16 @@ public final class Normalizer {
 			return "";
 		}
 		String s = java.text.Normalizer.normalize(raw, Form.NFKC).toLowerCase(Locale.ROOT);
+		s = katakanaToHiragana(s); // before the kanji table, so "シャッカ砲" meets "しゃっか砲"
 		for (String[] e : KANJI_SORTED) {
 			if (s.contains(e[0])) {
 				s = s.replace(e[0], " " + e[1] + " ");
 			}
 		}
+		// a kanji straight before or after くらい is a quantity or an adjective ("百くらい", "半分くらい": about a hundred, about
+		// half; "くらい部屋": a dark room): voice it so the lone くらい of the byakurai alias (びゃ lost by the recogniser) cannot
+		// be made from ordinary speech
+		s = QUANTITY_KURAI.matcher(s).replaceAll("ぐらい");
 		s = dropCjkIdeographs(s);
 		s = cyrillicToLatin(s);
 		s = katakanaToHiragana(s);
@@ -126,6 +160,7 @@ public final class Normalizer {
 		return String.join("", tokens);
 	}
 
+	private static final Pattern QUANTITY_KURAI = Pattern.compile("(?<=[㐀-䶿一-鿿])くらい|くらい(?=[㐀-䶿一-鿿])");
 	private static final Pattern COMBINING = Pattern.compile("\\p{M}+");
 	private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9 ]");
 	private static final Pattern WHITESPACE = Pattern.compile("\\s+");

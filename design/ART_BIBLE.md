@@ -481,6 +481,12 @@ Source: [RB 4]: wave of cold toward the target, area where temperature drops to 
 | 3.3 | Shatter | All crystals and shells burst, `ice_shard` flung outward speed 8 | 260 `ice_shard`, 160 `frost_mote` | `block.glass.break` x5 staggered, `entity.player.hurt_freeze` | shake 1.0 degree, 0.5 s |
 | 4.0 | Aftermath | Frost haze on the ground radius 10 fades over 3 s; temporary ice blocks revert | 60 `frost_mote` | `block.powder_snow.break` | frost_edge fade-out |
 
+#### Round 6 (2026-10-12): the bankai abilities were two freezes, now they are two different abilities, and the field freezes the land
+Details and numbers: `design/results/rukia_bankai_round6.md`. Tsukishiro (Z, shikai) and Absolute zero (U) were the same effect (a cylinder freeze, then a shatter), so the bankai row is now:
+- **U, Ice spike** (`rukia.bankai.ice_spike`, effect 24): a thrust of ice spikes along the look ray, 36 blocks, narrow (half width 1.5), one hit per target (9 HP, Slowness III 4 s), 15 reiatsu, 8 s cooldown. Visual: cold gathers at the tip, a flare and a string of glints along the ray, then segment after segment (every 0.1 s, the server hit times) two crystals (`rukia_bankai_crystal_b/c/d`) erupt from the floor under the line with shards, motes and a ground ring; they shatter after 1.1 s.
+- **I, Absolute zero** (effect 23): unchanged look, but heavy: 50 reiatsu, 40 s cooldown, targets stand frozen 3 s (the time stop pause is read from the event, 3.0 s now) and shatter for 18 HP. No more random vanilla ice blocks around (they slid).
+- **Territory freeze** (effects 42 and 43, `FrostField`): at the release a ring of frost runs outward at 12 blocks per second to radius 30 and turns the exposed surface into the mod's frost blocks (`frost_crust`, `frost_stone`, `frost_leaves`, `frost_film` thin ice on water, `frost_sprig` for plants; default friction 0.6, nothing slides). Ring visuals: white ground ring, snowflakes and frost motes on the ring, glints, ground mist, crackling glass and amethyst sounds, about 7 crystals on the surface (they shatter with the field). At the end the ring runs back inward at 20 blocks per second and the blocks are restored. Textures: `tools/gen_frost_textures.py`.
+
 ### 2.4 Byakuya shikai (Senbonzakura: Chire)
 
 Source: [BS 3, 4a to 4c]. The blade scatters into a thousand blades that are steered by swinging the hilt; modes attack and barrier/dome. Petal colour `#E5A4DC` (body) / `#F9C8F6` (highlight); reference frames [img byakuya_shikai_3, byakuya_shikai_7]; the swarm is rendered by `PetalSwarmRenderer`, 1000 petals at quality 1.0 (3000 total including the bankai storm).
@@ -511,6 +517,9 @@ Fandom says the blades can fully enclose him, but gives no radius [BS 4b]; the H
 | 0.6 | Solid | Subtle lavender rim ring on the ground, `#CFC3F0` | 1 quad | `block.amethyst_block.resonate` low | none |
 | per hit | Block reaction | Local petal spray of 20 away from the impact | 20 `petal` | `item.shield.block` + `block.pink_petals.break` | shake 0.2 degrees |
 | 5.0 or cancel | Dome collapses | Petals fall to the ground and fade | 900 petals | `block.pink_petals.step` | none |
+
+#### Petal cage (round 6, `byakuya.shikai.cage`, effect 35, third shikai slot)
+A sphere of petals (radius 5) closes around the target on the aim ray, or the aimed point. Visual: a stream of petals from the hand to the centre (0 to 0.5 s), then the shell: petals appear on the sphere and slide round the vertical axis with a little rise, pink glints on the surface (`petal_glow`); at each server pulse (6 pulses, 0.5 s apart, first at 0.6 s) a pink flash, a ring, a burst of petals through the shell and a chime; after the last pulse the shell opens in a burst. Damage 1.5 HP per pulse (INDIRECT_MAGIC, players included), Slowness III 3 s renewed by each pulse, 20 reiatsu, 15 s cooldown. Hand gesture: placeholder `ExtraGestures` (the real one comes from the gesture agent).
 
 ### 2.5 Byakuya bankai (Senbonzakura Kageyoshi)
 

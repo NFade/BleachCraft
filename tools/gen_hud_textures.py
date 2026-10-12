@@ -766,6 +766,34 @@ def icon_senkei():
     return p.finish()
 
 
+def icon_ice_spike():
+    """Rukia bankai ice spike (round 6): a long needle of ice thrust to the upper right with two side spikes."""
+    w, c, m, d = RUKIA
+    p = Pix()
+    p.line((1.6, 14.4), (13.0, 3.0), 1.6, c)
+    p.line((2.0, 14.0), (12.8, 3.2), 0.8, w)
+    p.poly([(15.2, 0.8), (10.8, 2.0), (13.8, 5.2)], w)
+    p.poly([(15.2, 0.8), (12.0, 1.8), (13.6, 3.6)], c)
+    p.poly([(5.0, 9.8), (2.6, 5.6), (7.4, 7.4)], m)
+    p.poly([(8.6, 12.6), (7.4, 8.0), (11.6, 10.2)], m)
+    p.dot(1, 9, c)
+    p.dot(12, 13, c)
+    p.dot(5, 3, w)
+    return p.finish()
+
+
+def icon_cage():
+    """Byakuya shikai petal cage (round 6): a ring of petals around a small core."""
+    w, c, m, d = BYAK
+    p = Pix()
+    for i in range(8):
+        a = math.radians(i * 45 + 22.5)
+        p.poly(petal_poly(8 + math.cos(a) * 1.6, 8 - math.sin(a) * 1.6, i * 45 + 22.5, 5.6, 1.5), (c, w)[i % 2])
+    p.ell((1.8, 1.8, 14.2, 14.2), None, outline=m, width=1.0)
+    p.rect(7, 7, 9, 9, m)
+    return p.finish()
+
+
 def icon_release():
     w, c, m, d = ("#FFFFFF", "#DDE6F6", "#B9C6E0", INK)
     p = Pix()
@@ -809,8 +837,9 @@ def icon_seal():
 
 def gen_ability_icons():
     icons = [icon_tsukishiro(), icon_hakuren(), icon_shirafune(), icon_absolute_zero(), icon_attack(), icon_barrier(),
-             icon_scatter(), icon_hakuteiken(), icon_senkei(), icon_release(), icon_bankai(), icon_seal()]
-    rows = [hstack(icons[i * 4:(i + 1) * 4]) for i in range(3)]
+             icon_scatter(), icon_hakuteiken(), icon_senkei(), icon_release(), icon_bankai(), icon_seal(),
+             icon_ice_spike(), icon_cage(), Pix().finish(), Pix().finish()]  # cells 12 and 13 are the round 6 abilities, 14 and 15 are free
+    rows = [hstack(icons[i * 4:(i + 1) * 4]) for i in range(4)]
     return vstack(rows)
 
 

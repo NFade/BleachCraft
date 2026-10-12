@@ -60,6 +60,7 @@ public final class FxClient {
 		PetalSwarmRenderer.init();
 		AuraFx.init();
 		ReleaseHold.init();
+		ShikaiDissolve.init();
 		BankaiBladeRenderer.init();
 		StormRenderer.init();
 		WingHaloRenderer.init();

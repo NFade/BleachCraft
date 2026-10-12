@@ -270,42 +270,79 @@ public final class RukiaBankaiClient {
 		p.fieldMade = false;
 	}
 
-	/** 6 release crystals (a x3, b x3) at radius 1.2 to 1.6 and 8 rim crystals (a, b) at 2.6 to 3.0, seeded by the owner; staged by the release clock. */
+	/**
+	 * 6 release crystals (a x3, b x3) at radius 1.2 to 1.6 and 8 rim crystals (a, b) at 2.6 to 3.0, seeded by the owner; staged by the release clock.
+	 * Every crystal is fitted to the terrain by {@link FxPlace#fitMesh}: it stands on a floor within one step, never on a trunk or a canopy, is shrunk
+	 * to the free height under a roof or leaves and is moved to a neighbouring angle / radius (up to {@code rbankai.placeTries} candidates) when the
+	 * spot is occupied; if no candidate fits it is not made. The random draws per crystal do not depend on the terrain, so every client picks the same
+	 * first candidate.
+	 */
 	private static void makeField(int ownerId, Vec3d at, double age) {
 		Random r = new Random(ownerId * 7919L + 13);
 		double sc = FxTune.d("rbankai.crystalScale", 1.0);
 		double relR = FxTune.d("rbankai.releaseCrystalRadius", 1.2);
 		double rimR = FxTune.d("rbankai.rimCrystalRadius", 2.6);
+		int tries = (int) FxMath.clamp(Math.round(FxTune.d("rbankai.placeTries", 6)), 1, 12);
+		int skipped = 0;
 		for (int i = 0; i < 6; i++) {
-			double a = Math.PI * 2 * (i + r.nextDouble() * 0.6) / 6;
-			double rad = relR + r.nextDouble() * 0.4;
-			double px = at.x + Math.cos(a) * rad;
-			double pz = at.z + Math.sin(a) * rad;
-			double py = FxGround.sample(px, pz, at.y);
+			double a0 = Math.PI * 2 * (i + r.nextDouble() * 0.6) / 6;
+			double rad0 = relR + r.nextDouble() * 0.4;
 			double lean = 0.1 + r.nextDouble() * 0.18;
 			boolean small = i % 2 == 0;
+			double roll = r.nextDouble() * 6.28;
+			double scale = (small ? FxTune.d("rbankai.relScaleA", 4.6) : FxTune.d("rbankai.relScaleB", 2.5)) * sc * (0.85 + 0.3 * r.nextDouble());
 			double delay = Math.max(0.0, 0.6 + 0.06 * i - age);
-			FxMeshPass.Crystal c = FxMeshPass.crystal(small ? FxMeshes.CRYSTAL_A : FxMeshes.CRYSTAL_B, px, py - 0.03, pz, Math.cos(a) * lean, 1, Math.sin(a) * lean, r.nextDouble() * 6.28,
-					(small ? FxTune.d("rbankai.relScaleA", 4.6) : FxTune.d("rbankai.relScaleB", 2.5)) * sc * (0.85 + 0.3 * r.nextDouble()), delay);
+			FxMeshPass.Crystal c = placeCrystal(small ? FxMeshes.CRYSTAL_A : FxMeshes.CRYSTAL_B, at, a0, rad0, lean, roll, scale, delay, 0.03, tries);
+			if (c == null) {
+				skipped++;
+				continue;
+			}
 			c.field = ownerId;
 			c.pulsePhase = i * 0.17;
 		}
 		for (int j = 0; j < 8; j++) {
-			double a = Math.PI * 2 * (j + r.nextDouble() * 0.7) / 8;
-			double rad = rimR + r.nextDouble() * 0.4;
-			double px = at.x + Math.cos(a) * rad;
-			double pz = at.z + Math.sin(a) * rad;
-			double py = FxGround.sample(px, pz, at.y);
+			double a0 = Math.PI * 2 * (j + r.nextDouble() * 0.7) / 8;
+			double rad0 = rimR + r.nextDouble() * 0.4;
 			double lean = 0.1 + r.nextDouble() * 0.2;
 			boolean small = j % 2 == 1;
+			double roll = r.nextDouble() * 6.28;
+			double scale = (small ? FxTune.d("rbankai.rimScaleA", 5.2) : FxTune.d("rbankai.rimScaleB", 3.0)) * sc * (0.85 + 0.3 * r.nextDouble());
 			double delay = Math.max(0.0, 1.4 + 0.22 * j - age);
-			FxMeshPass.Crystal c = FxMeshPass.crystal(small ? FxMeshes.CRYSTAL_A : FxMeshes.CRYSTAL_B, px, py - 0.03, pz, Math.cos(a) * lean, 1, Math.sin(a) * lean, r.nextDouble() * 6.28,
-					(small ? FxTune.d("rbankai.rimScaleA", 5.2) : FxTune.d("rbankai.rimScaleB", 3.0)) * sc * (0.85 + 0.3 * r.nextDouble()), delay);
+			FxMeshPass.Crystal c = placeCrystal(small ? FxMeshes.CRYSTAL_A : FxMeshes.CRYSTAL_B, at, a0, rad0, lean, roll, scale, delay, 0.03, tries);
+			if (c == null) {
+				skipped++;
+				continue;
+			}
 			c.field = ownerId;
 			c.rim = true;
 			c.pulsePhase = j * 0.31 + 0.5;
 		}
+		if (skipped > 0) {
+			dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[fx] rukia bankai field of {}: {} of 14 crystals found no free spot (terrain)", ownerId, skipped);
+		}
 		fieldsMade++;
+	}
+
+	/**
+	 * One crystal of the field: candidate k tries the wanted angle and radius first, then alternates around it (angle +-0.35 rad steps, radius
+	 * +0.45 / -0.35 blocks), so a trunk or a wall at the exact spot moves the crystal a little instead of burying it.
+	 */
+	static FxMeshPass.Crystal placeCrystal(String mesh, Vec3d at, double a0, double rad0, double lean, double roll, double scale, double delay, double sink, int tries) {
+		for (int k = 0; k < tries; k++) {
+			double da = (k % 2 == 0 ? 1 : -1) * 0.35 * ((k + 1) / 2);
+			double dr = k == 0 ? 0.0 : (k % 3 == 0 ? -0.35 : (k % 3 == 1 ? 0.45 : 0.0));
+			double a = a0 + da;
+			double rad = Math.max(0.8, rad0 + dr);
+			double px = at.x + Math.cos(a) * rad;
+			double pz = at.z + Math.sin(a) * rad;
+			double lx = Math.cos(a) * lean;
+			double lz = Math.sin(a) * lean;
+			FxPlace.Spot s = FxPlace.fitMesh(mesh, px, pz, at.y, lx, 1, lz, scale, sink);
+			if (s != null) {
+				return FxMeshPass.crystal(mesh, s.x(), s.y(), s.z(), lx, 1, lz, roll, s.scale(), delay);
+			}
+		}
+		return null;
 	}
 
 	private static void glints(int ownerId, Vec3d cam) {

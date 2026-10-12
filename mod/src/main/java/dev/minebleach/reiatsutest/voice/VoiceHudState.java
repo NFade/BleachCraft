@@ -9,9 +9,14 @@ public record VoiceHudState(Mic mic, long lastContactMs, String interim, String 
 		long atMs, long seq) {
 	public enum Mic { OFF, IDLE, LISTENING, HEARING, ERROR }
 
-	public enum Result { NONE, ACCEPTED, DENIED_REIATSU, DENIED_STATE, DENIED_ITEM, DENIED_NOT_DRAWN, COOLDOWN, NO_MATCH, GATED }
+	public enum Result { NONE, ACCEPTED, DENIED_REIATSU, DENIED_RAGE, DENIED_STATE, DENIED_ITEM, DENIED_NOT_DRAWN, COOLDOWN, NO_MATCH, GATED }
+
+	/** The page counts as connected while it polls /status (every 2.5 s) or posts; a few missed polls and the HUD says "off". */
+	public static final long CONTACT_TIMEOUT_MS = 6000;
 
 	private static volatile VoiceHudState current = new VoiceHudState(Mic.OFF, 0, "", "", null, Result.NONE, 0, 0);
+	/** True while the HTTP bridge of this JVM is listening (set by the server glue), so the HUD can show "not connected" before the first contact. */
+	private static volatile boolean bridgeUp;
 
 	public static VoiceHudState get() {
 		return current;
@@ -24,6 +29,25 @@ public record VoiceHudState(Mic mic, long lastContactMs, String interim, String 
 
 	public static void reset() {
 		current = new VoiceHudState(Mic.OFF, 0, "", "", null, Result.NONE, 0, 0);
+		bridgeUp = false;
+	}
+
+	public static boolean bridgeUp() {
+		return bridgeUp;
+	}
+
+	public static void setBridgeUp(boolean up) {
+		bridgeUp = up;
+	}
+
+	/** True when the HUD should show the voice indicator at all: the bridge runs here, or a page has been in touch. */
+	public boolean indicatorWanted() {
+		return bridgeUp || lastContactMs > 0;
+	}
+
+	/** The mic state to draw at {@code wallMs}: OFF when the page has not been heard from for {@link #CONTACT_TIMEOUT_MS}. */
+	public Mic effectiveMic(long wallMs) {
+		return lastContactMs <= 0 || wallMs - lastContactMs > CONTACT_TIMEOUT_MS ? Mic.OFF : mic;
 	}
 
 	/** The bridge was reached (a /status poll or a /voice post); {@code pageMic} is the page's own microphone state or null. */

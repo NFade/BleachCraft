@@ -102,9 +102,9 @@ public final class BankaiBladeRenderer {
 			double x = FxMath.clamp(tau / 0.5);
 			double risen = BladeRowLayout.riseOffset(st.endAt - st.epoch - l.start[i]);
 			// sink from where the blade stood at the seal (reverse of the rise, easeInQuad)
-			return risen + (-BladeRowLayout.SINK_DEPTH - risen) * x * x;
+			return st.bladeScale * (risen + (-BladeRowLayout.SINK_DEPTH - risen) * x * x);
 		}
-		return BladeRowLayout.riseOffset(t - l.start[i]);
+		return st.bladeScale * BladeRowLayout.riseOffset(t - l.start[i]);
 	}
 
 	/** Basis of blade i with the lean (radians toward the axis) and the scale, row major 3x3 into {@code m}. */
@@ -121,7 +121,7 @@ public final class BankaiBladeRenderer {
 		double zZ = s * rz;
 		double c = Math.cos(leanRad);
 		double sn = Math.sin(leanRad);
-		float sc = st.layout.scale[i];
+		float sc = (float) (st.layout.scale[i] * st.bladeScale);
 		m[0] = (float) (xX * sc);
 		m[1] = (float) (-zX * sn * sc);
 		m[2] = (float) (zX * c * sc);
@@ -200,7 +200,7 @@ public final class BankaiBladeRenderer {
 				boolean sweep = FxConfig.effectQuality >= 0.4;
 				for (int i = 0; i < l.n; i++) {
 					double off = offsetOf(st, i, t);
-					if (off < -7.6) {
+					if (off < -7.6 * st.bladeScale) {
 						continue;
 					}
 					double frac = st.fraction(i);
@@ -223,7 +223,7 @@ public final class BankaiBladeRenderer {
 					double tz = st.bz[i] + M[7] * 8.0;
 					double ty = by + M[4] * 8.0;
 					if (frustum != null) {
-						double r = 0.9 * l.scale[i];
+						double r = 0.9 * l.scale[i] * st.bladeScale;
 						Box box = new Box(Math.min(st.bx[i], tx) - r, Math.min(by, ty) - 0.2, Math.min(st.bz[i], tz) - r, Math.max(st.bx[i], tx) + r, Math.max(by, ty) + 0.2,
 								Math.max(st.bz[i], tz) + r);
 						if (!frustum.isVisible(box)) {
@@ -237,7 +237,7 @@ public final class BankaiBladeRenderer {
 					FxMesh m = d < lodDist || lod == null ? blade : lod;
 					double sx = shiver == 0 ? 0 : shiver * -Math.cos(Math.toRadians(st.yawDeg));
 					double sz = shiver == 0 ? 0 : shiver * -Math.sin(Math.toRadians(st.yawDeg));
-					m.writeBlade(buf, M, st.bx[i] - cp.x + sx, by - cp.y, st.bz[i] - cp.z + sz, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, 1f / l.scale[i], cutY);
+					m.writeBlade(buf, M, st.bx[i] - cp.x + sx, by - cp.y, st.bz[i] - cp.z + sz, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, (float) (1.0 / (l.scale[i] * st.bladeScale)), cutY);
 					cpuQuads += m.quads;
 					cpuBlades++;
 				}
@@ -298,7 +298,7 @@ public final class BankaiBladeRenderer {
 			double lean = Math.toRadians(l.leanDeg(t, i));
 			basis(st, i, lean, M);
 			double by = st.ground[i] - 0.5;
-			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), TIP_Y, WHITE, TIP, 0f, 1f / l.scale[i]);
+			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), TIP_Y, WHITE, TIP, 0f, (float) (1.0 / (l.scale[i] * st.bladeScale)));
 			quads += blade.quads;
 		}
 		BuiltBuffer built = b.endNullable();
@@ -522,8 +522,9 @@ public final class BankaiBladeRenderer {
 			double over = overdrive(st);
 			boolean phased = st.phase != RowsPhase.STANDING;
 			double edgeMul = FxTune.d("storm.edgeGlow", 0.8);
+			double gs = 0.4 + 0.6 * st.bladeScale; // (glow sprites shrink less than the blade)
 			for (int i = 0; i < l.n; i++) {
-				double off = offsetOf(st, i, t);
+				double off = offsetOf(st, i, t) / st.bladeScale; // (in blade units of the 8 m mesh: the thresholds below are those)
 				if (off < -7.0) {
 					continue;
 				}
@@ -536,26 +537,26 @@ public final class BankaiBladeRenderer {
 				double edge = phased ? RowsPhase.edgeGlow(st.timing, st.phaseTau(), l.dist[i]) : 0;
 				double k = glow * breath * fade * (0.45 + 0.55 * Math.max(lit, rise * 0.6));
 				float cg = (float) (0.91 + 0.09 * over);
-				e.sprite(GlowSprite.GLOW_CORE, tip[0], tip[1], tip[2], size * l.scale[i] * (1.0 + 0.5 * over + 0.7 * edge), 0, 0.95f + 0.05f * (float) over, cg, 1f,
+				e.sprite(GlowSprite.GLOW_CORE, tip[0], tip[1], tip[2], size * l.scale[i] * gs * (1.0 + 0.5 * over + 0.7 * edge), 0, 0.95f + 0.05f * (float) over, cg, 1f,
 						k * (1.0 + 1.1 * over + 1.6 * edge));
 				if (edge > 0.02) {
 					// the burning edge: a horizontal flare at the cut and a sparkle on every 3rd blade
-					e.sprite(GlowSprite.FLARE, tip[0], tip[1], tip[2], 2.4 * l.scale[i], 0, 1f, 0.91f, 0.98f, edgeMul * edge * fade);
+					e.sprite(GlowSprite.FLARE, tip[0], tip[1], tip[2], 2.4 * l.scale[i] * gs, 0, 1f, 0.91f, 0.98f, edgeMul * edge * fade);
 					if (i % 3 == 0) {
-						e.sprite(GlowSprite.STAR4, tip[0], tip[1], tip[2], 1.1 * l.scale[i], i * 0.7 + FxClock.now * 2.0, 1f, 0.95f, 1f, 0.7 * edge * fade);
+						e.sprite(GlowSprite.STAR4, tip[0], tip[1], tip[2], 1.1 * l.scale[i] * gs, i * 0.7 + FxClock.now * 2.0, 1f, 0.95f, 1f, 0.7 * edge * fade);
 					}
 				}
 			}
 			// the sparkle running up: a faint lilac star at every 4th tip, twinkling
 			for (int i = 0; i < l.n; i += 4) {
-				double off = offsetOf(st, i, t);
+				double off = offsetOf(st, i, t) / st.bladeScale; // (in blade units of the 8 m mesh: the thresholds below are those)
 				double f = st.fraction(i);
 				if (off < -1.0 || st.endAt >= 0 || f < 0.5) {
 					continue;
 				}
 				tipPosition(st, i, t, f, tip);
 				double tw = 0.5 + 0.5 * Math.sin(FxClock.now * 3.0 + i * 1.7);
-				e.sprite(GlowSprite.STAR4, tip[0], tip[1], tip[2], 0.9 * l.scale[i], i * 0.3, 1f, 0.96f, 1f, 0.28 * tw * fade * lit);
+				e.sprite(GlowSprite.STAR4, tip[0], tip[1], tip[2], 0.9 * l.scale[i] * gs, i * 0.3, 1f, 0.96f, 1f, 0.28 * tw * fade * lit);
 			}
 		}
 	}

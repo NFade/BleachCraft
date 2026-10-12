@@ -160,7 +160,9 @@ class AbilityTest {
 	@Test
 	void C11_scheduledPhaseOffsets() {
 		assertEquals(List.of(20, 40), phases(AbilityId.TSUKISHIRO));
-		assertEquals(List.of(40, 66), phases(AbilityId.ABSOLUTE_ZERO));
+		assertEquals(List.of(40, 100), phases(AbilityId.ABSOLUTE_ZERO));
+		assertEquals(List.of(14, 16, 18, 20, 22, 24), phases(AbilityId.ICE_SPIKE));
+		assertEquals(List.of(12, 22, 32, 42, 52, 62), phases(AbilityId.CAGE));
 		assertEquals(List.of(12), phases(AbilityId.SHIRAFUNE));
 		assertEquals(List.of(10, 12, 14, 20), phases(AbilityId.MODE_ATTACK));
 		assertEquals(List.of(30, 36), phases(AbilityId.HAKUTEIKEN));

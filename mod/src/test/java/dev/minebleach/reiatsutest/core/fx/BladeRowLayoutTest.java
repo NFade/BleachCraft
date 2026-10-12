@@ -83,4 +83,21 @@ class BladeRowLayoutTest {
 		assertEquals(0.0, l.leanDeg(l.completionTime(), 3), 1e-9);
 		assertEquals(3.0, l.leanDeg(l.settledTime() + 1, 0), 0.6);
 	}
+
+	@Test
+	void rowsScaleShrinksSpacingAndCorridorButKeepsCountsAndTheOriginalAt1() {
+		BladeRowLayout o = BladeRowLayout.of(200, 1);
+		BladeRowLayout one = BladeRowLayout.of(200, 1, 1.0);
+		BladeRowLayout s = BladeRowLayout.of(200, 1, 0.5);
+		assertEquals(o.n, s.n);
+		for (int i = 0; i < o.n; i++) {
+			assertEquals(o.along[i], one.along[i], 1e-6);
+			assertEquals(o.across[i], one.across[i], 1e-6);
+		}
+		assertEquals(3.0, s.corridorHalfWidth(), 1e-9);
+		assertEquals(0.55, s.along[0] - s.along[1], 1e-5, "spacing 1.1 x 0.5");
+		assertEquals(3.0, Math.abs(s.across[0]), 1e-5);
+		assertEquals(3.6, Math.abs(s.across[s.perRank]), 1e-5, "second rank 1.2 x 0.5 further out");
+		assertEquals(0.2, BladeRowLayout.of(200, 1, 0.0).space, 1e-9, "clamped");
+	}
 }

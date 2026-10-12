@@ -98,6 +98,16 @@ public final class KidoManager {
 		Vec3d eye = p.getEyePos();
 		Vec3d dir = p.getRotationVec(1.0F).normalize();
 		Trace t = trace(p, eye, dir, spec.range(), spec.width());
+		DmgLog.begin("kido:" + k.kido().name().toLowerCase(java.util.Locale.ROOT));
+		try {
+			applyCast(p, k, spec, t, dir);
+		} finally {
+			DmgLog.end();
+		}
+		ServerFx.kido(p, k.kido(), k.seed(), eye, dir, t, spec);
+	}
+
+	private static void applyCast(ServerPlayerEntity p, StateEvent.KidoCast k, KidoSpec spec, Trace t, Vec3d dir) {
 		switch (k.kido()) {
 			case BYAKURAI -> {
 				if (t.entity() != null) {
@@ -120,7 +130,6 @@ public final class KidoManager {
 				}
 			}
 		}
-		ServerFx.kido(p, k.kido(), k.seed(), eye, dir, t, spec);
 	}
 
 	// ------------------------------------------------------------------ tracing
@@ -183,10 +192,13 @@ public final class KidoManager {
 			if (p == null || p.isDead() || p.getServerWorld() != b.world()) {
 				continue; // the caster died, left or changed dimension while the ball was in flight: it fizzles
 			}
+			DmgLog.begin("kido:shakkaho-burst");
 			try {
 				burst(p, b.spec(), b.center());
 			} catch (RuntimeException ex) {
 				ReiatsuTest.LOGGER.error("[kido] burst failed", ex);
+			} finally {
+				DmgLog.end();
 			}
 		}
 	}

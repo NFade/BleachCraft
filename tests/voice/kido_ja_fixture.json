@@ -1,0 +1,607 @@
+{
+ "_comment": "Kido (B5) ja-JP voice fixture, v4 (2026-10-11): separate from the 202/153, dirty, live and kido ones. Positives must fire exactly their command in EVERY gate context; neutrals must fire nothing in any context. The first positive 'くらい' and the neutral '波動' are the two outputs of Chrome ja-JP seen in the live log (the user said 破道の四 白雷); every other spelling is an expected rendering (UNVERIFIED with a recording).",
+ "version": 1,
+ "positives": [
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "くらい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "白雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "百雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "白来"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "百来"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "薄雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "びゃくらい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "ビャクライ"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "ひゃくらい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "ヒャクライ"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "白らい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "お願い 白雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "破道の四"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "破道の4"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "波動の四"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "波動の4"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "波動 4"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "破道の四 白雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "波動の4 白雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "波動の四 びゃくらい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "破道の4 ビャクライ"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "ハドウノヨン"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "はどうのよん びゃくらい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "ハドウ4"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "ハドウ 4"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "hadou no yon"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "波動の4 くらい"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "覇道の四 百雷"
+  },
+  {
+   "command": "kido.byakurai",
+   "lang": "ja-JP",
+   "text": "破道、四、白雷"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "赤火砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "借家法"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "借家砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "赤火法"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "赤化法"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "射火砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "石火砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "しゃっかほう"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "シャッカホウ"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "しゃかほう"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "シャッカ砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "赤火ほう"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "破道の三十一"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "破道の31"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "波動の三十一"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "波動の31"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "波動 31"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "破道の三十一 赤火砲"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "波動の31 借家法"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "波動の31 しゃっかほう"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "ハドウ31 シャッカホウ"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "ハドウノサンジュウイチ"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "はどうのさんじゅういち"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "shakkahou"
+  },
+  {
+   "command": "kido.shakkaho",
+   "lang": "ja-JP",
+   "text": "破道、三十一、赤火砲"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "塞"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "さい"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "サイ"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "縛道の一"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "縛道の1"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "縛道の一 塞"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "縛道の1 サイ"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "爆道の1 塞"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "ばくどう"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "バクドウ"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "縛道"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "ばくどう さい"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "バクドウ サイ"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "ばくどうのいち"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "バクドウノイチ サイ"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "お願い サイ"
+  },
+  {
+   "command": "kido.sai",
+   "lang": "ja-JP",
+   "text": "縛道、一、塞"
+  }
+ ],
+ "neutrals": [
+  {
+   "lang": "ja-JP",
+   "text": "波動"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "破道"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "はどう"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "ハドウ"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "は"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "波動について教えて"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "電波の波動"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "白い雷"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "百円"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "百万円"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "来週"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "雷が鳴った"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "最近どう"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "再開"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "最高"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "歳を取る"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "さいたま"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "サイコロ"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "サイズ"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "サイン"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "どのくらい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "これくらい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "半分くらい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "百くらい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "千くらい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "少しくらい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "部屋がくらい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "暗い"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "赤い火"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "火の砲台"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "家を借りる"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "借家の契約"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "どうなる"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "筆の白雪"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "パワーストライク"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "マッシュアップ"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "エピソード 次郎"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "月 セラ"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "ハドウケン"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "バクダン"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "爆弾"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "縛る"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "白い"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "百"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "破壊"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "覇権"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "ハドソン川"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "バクテリア"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "はどうして"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "百合"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "来い"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "らい"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "ビャクヤ"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "白夜"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "シャッター"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "赤い"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "砲撃"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "しゃっくり"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "借金"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "サイレン"
+  },
+  {
+   "lang": "ja-JP",
+   "text": "くらい部屋"
+  }
+ ]
+}

@@ -45,7 +45,10 @@ public final class ClientNet {
 			boolean local = mcl.player != null && mcl.player.getId() == payload.casterId();
 			HudModel.onEffectEvent(payload.effectId(), local, dev.minebleach.reiatsutest.core.state.CharacterId.NONE);
 			dev.minebleach.reiatsutest.client.fx.FxEvents.onEffectEvent(mcl, payload);
+			dev.minebleach.reiatsutest.client.model.FpCast.onEffectEvent(mcl, payload); // hand and sword gesture of the ability (FP_ABILITY_ANIMS)
 		});
+		ClientPlayNetworking.registerGlobalReceiver(dev.minebleach.reiatsutest.net.SwarmHeadS2C.ID,
+				(payload, ctx) -> dev.minebleach.reiatsutest.client.fx.SwarmFx.onHead(payload));
 		ClientPlayNetworking.registerGlobalReceiver(EntityFxS2C.ID, (payload, ctx) -> {
 			ENTITY_FX.incrementAndGet();
 			if (payload.kind() == EntityFxS2C.HIT_PETAL) {
@@ -84,6 +87,11 @@ public final class ClientNet {
 		return seq;
 	}
 
+	/** Steer packet of the attack swarm: the unit look direction while the key is held, {@code holding = false} once on release. */
+	public static void sendSteer(boolean holding, double dx, double dy, double dz) {
+		ClientPlayNetworking.send(new dev.minebleach.reiatsutest.net.SteerC2S(holding, (float) dx, (float) dy, (float) dz));
+	}
+
 	/** Casts a kido spell (B5): no state or sword needed, the server checks cooldown, reiatsu and the block. */
 	public static int castKido(KidoId kido, RequestSource source) {
 		int seq = SEQ.incrementAndGet();
@@ -116,6 +124,9 @@ public final class ClientNet {
 			RESULTS.add(r.clientSeq() + ":" + code);
 		}
 		HudModel.Request req = REQUESTS.remove(r.clientSeq());
+		if (code == ResultCode.OK && req != null && req.ability() == AbilityId.MODE_ATTACK) {
+			dev.minebleach.reiatsutest.client.input.BladeSteer.onAccepted(); // the swarm is out: holding the key steers it
+		}
 		if (req == null && r.clientSeq() < 0) {
 			req = HudModel.requestFromVoice();
 		}
@@ -136,7 +147,9 @@ public final class ClientNet {
 		String key = switch (code) {
 			case DENIED_STATE -> "message.reiatsu_test.denied.state";
 			case DENIED_ITEM -> "message.reiatsu_test.denied.item";
-			case DENIED_REIATSU -> "message.reiatsu_test.denied.reiatsu";
+							case DENIED_REIATSU -> "message.reiatsu_test.denied.reiatsu";
+				case DENIED_RAGE -> "message.reiatsu_test.denied.rage";
+
 			case DENIED_NOT_DRAWN -> "message.reiatsu_test.denied.not_drawn";
 			case BLOCKED -> "hud.reiatsu_test.denied.blocked";
 			case COOLDOWN -> null; // the HUD icons shake, no text spam

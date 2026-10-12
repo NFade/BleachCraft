@@ -46,7 +46,9 @@ class BalanceConfigTest {
 			assertEquals(a, spec.id());
 			assertTrue(spec.costTenths() < c.maxTenths(), a.name());
 			assertTrue(spec.cooldownTicks() > 0, a.name());
-			assertEquals(a.requiredState == ZanpakutoState.BANKAI, spec.costTenths() == 0, a.name() + ": bankai abilities are free, shikai ones cost");
+			// Byakuya's bankai abilities are free; Rukia's two (round 6: ice spike and the heavy absolute zero) cost reiatsu, shikai ones always cost
+			boolean free = a.requiredState == ZanpakutoState.BANKAI && a.character == CharacterId.BYAKUYA;
+			assertEquals(free, spec.costTenths() == 0, a.name() + ": Byakuya bankai abilities are free, every other one costs");
 			assertTrue(codes.add(a.code), "duplicate code " + a);
 			assertTrue(effects.add(spec.effectId()), "duplicate effect id " + a);
 			assertTrue(ids.add(a.commandId), "duplicate command id " + a);
@@ -110,6 +112,6 @@ class BalanceConfigTest {
 		assertTrue(all.contains(CommandIds.SEAL));
 		assertEquals(Set.of(ZanpakutoState.BASE, ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command(CommandIds.SEAL).states());
 		assertNull(CommandIds.forTransition(CharacterId.RUKIA, ZanpakutoState.BASE), "the draw has no voice command");
-		assertEquals(17, all.size(), "14 zanpakuto commands + 3 kido, which have no AbilityId (see KidoId)");
+		assertEquals(19, all.size(), "16 zanpakuto commands + 3 kido, which have no AbilityId (see KidoId)");
 	}
 }

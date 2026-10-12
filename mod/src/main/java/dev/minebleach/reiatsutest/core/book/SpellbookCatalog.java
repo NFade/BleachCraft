@@ -44,13 +44,15 @@ public final class SpellbookCatalog {
 				ability(AbilityId.HAKUREN, SHIKAI, K_ABILITY[1]),
 				ability(AbilityId.SHIRAFUNE, SHIKAI, K_ABILITY[2]),
 				bankaiRelease(CommandIds.RUKIA_BANKAI_RELEASE),
-				ability(AbilityId.ABSOLUTE_ZERO, BANKAI, K_BANKAI_ABILITY[0]),
+				ability(AbilityId.ICE_SPIKE, BANKAI, K_BANKAI_ABILITY[0]),
+				ability(AbilityId.ABSOLUTE_ZERO, BANKAI, K_BANKAI_ABILITY[1]),
 				seal()));
 		BOOKS.put(SpellbookId.SENBONZAKURA, List.of(
 				intro(),
 				release(CommandIds.BYAKUYA_SHIKAI_RELEASE),
 				ability(AbilityId.MODE_ATTACK, SHIKAI, K_ABILITY[0]),
 				ability(AbilityId.MODE_BARRIER, SHIKAI, K_ABILITY[1]),
+				ability(AbilityId.CAGE, SHIKAI, K_ABILITY[2]),
 				bankaiRelease(CommandIds.BYAKUYA_BANKAI_RELEASE),
 				ability(AbilityId.SCATTER, BANKAI, K_BANKAI_ABILITY[0]),
 				ability(AbilityId.HAKUTEIKEN, BANKAI, K_BANKAI_ABILITY[1]),
@@ -61,8 +63,12 @@ public final class SpellbookCatalog {
 		kido.add(new BookPage(List.of(), SEALED, List.of(BookArg.key(K_KIDO[0]), BookArg.key(K_KIDO[1]),
 				BookArg.key(K_KIDO[2]))));
 		for (KidoId k : KidoId.values()) {
-			kido.add(new BookPage(List.of(k.commandId), ANY, List.of(BookArg.key(K_KIDO[k.slot]), BookArg.cost(k.commandId),
-					BookArg.cooldown(k.commandId), BookArg.kidoRange(k.commandId), BookArg.kidoDamage(k.commandId))));
+			List<BookArg> args = new ArrayList<>(List.of(BookArg.key(K_KIDO[k.slot]), BookArg.cost(k.commandId),
+					BookArg.cooldown(k.commandId), BookArg.kidoRange(k.commandId)));
+			if (k != KidoId.SAI) { // the binding does no damage, its page has no damage number
+				args.add(BookArg.kidoDamage(k.commandId));
+			}
+			kido.add(new BookPage(List.of(k.commandId), ANY, args));
 		}
 		BOOKS.put(SpellbookId.KIDO, List.copyOf(kido));
 	}
@@ -91,6 +97,47 @@ public final class SpellbookCatalog {
 
 	private static BookPage seal() {
 		return new BookPage(List.of(CommandIds.SEAL), DRAWN, List.of(BookArg.key(K_SEAL)));
+	}
+
+	/** Whether a page can be used by the player right now; drives the dimmed look of the page. */
+	public enum Availability {
+		AVAILABLE,
+		/** The commands of the page do not work in the player's current state. */
+		WRONG_STATE,
+		/** The player has released the other zanpakuto than this book describes. */
+		WRONG_ZANPAKUTO
+	}
+
+	/**
+	 * Availability of page {@code index} for a player. Introduction pages and kido pages are always available. A zanpakuto
+	 * page is WRONG_ZANPAKUTO when the player is drawn or released with the other zanpakuto (the character is NONE while
+	 * sealed), otherwise WRONG_STATE when the state is not one of the page's states.
+	 */
+	public static Availability availability(SpellbookId book, int index, CharacterId playerCharacter, ZanpakutoState state) {
+		BookPage p = BOOKS.get(book).get(index);
+		if (!p.hasCommands()) {
+			return Availability.AVAILABLE;
+		}
+		if (book.character != CharacterId.NONE && state != ZanpakutoState.SEALED && playerCharacter != book.character) {
+			return Availability.WRONG_ZANPAKUTO;
+		}
+		return p.states().contains(state) ? Availability.AVAILABLE : Availability.WRONG_STATE;
+	}
+
+	/** Translation key of a state name (shared with the HUD). */
+	public static String stateKey(ZanpakutoState state) {
+		return "hud.reiatsu_test.state." + state.name().toLowerCase(java.util.Locale.ROOT);
+	}
+
+	/** Every voice command id mentioned by any book (for the phrase table coverage test). */
+	public static Set<String> allCommandIds() {
+		Set<String> out = new java.util.TreeSet<>();
+		for (List<BookPage> pages : BOOKS.values()) {
+			for (BookPage p : pages) {
+				out.addAll(p.commandIds());
+			}
+		}
+		return out;
 	}
 
 	public static List<BookPage> pages(SpellbookId book) {

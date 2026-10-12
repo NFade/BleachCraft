@@ -78,8 +78,12 @@ public final class BlockParry {
 			ReiatsuTest.LOGGER.info("[parry] {} parried {} at {} ticks, {} damage cancelled", defender.getName().getString(),
 					attacker.getName().getString(), elapsed, amount);
 			ParryBus.fire(new ParryEvent(defender.getUuid(), attacker.getUuid(), defender.getServer().getTicks(), amount));
+			ServerFx.blockFeedback(defender, attacker, true, amount);
 		} else {
 			world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ITEM_SHIELD_BLOCK, SoundCategory.PLAYERS, 0.8F, 1.1F);
+			if (source.getAttacker() instanceof LivingEntity attacker) {
+				ServerFx.blockFeedback(defender, attacker, false, amount);
+			}
 		}
 		return out;
 	}

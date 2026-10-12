@@ -13,7 +13,11 @@ public enum AbilityId {
 	MODE_BARRIER(6, "byakuya.shikai.mode_barrier", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI),
 	SCATTER(7, "byakuya.bankai.scatter", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
 	HAKUTEIKEN(8, "byakuya.bankai.hakuteiken", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
-	SENKEI(9, "byakuya.bankai.senkei", CharacterId.BYAKUYA, ZanpakutoState.BANKAI);
+	SENKEI(9, "byakuya.bankai.senkei", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
+	/** Rukia bankai, first slot: a long thrust of ice spikes along the look ray (round 6; Absolute Zero moved to the second slot). */
+	ICE_SPIKE(10, "rukia.bankai.ice_spike", CharacterId.RUKIA, ZanpakutoState.BANKAI),
+	/** Byakuya shikai, third slot: the petal cage around the aimed target or point (round 6). */
+	CAGE(11, "byakuya.shikai.cage", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI);
 
 	public final byte code;
 	public final String commandId;
@@ -49,9 +53,9 @@ public enum AbilityId {
 	/** Ability slot (0..2) of this ability for its character and state: Z / H / B. */
 	public int slot() {
 		return switch (this) {
-			case TSUKISHIRO, ABSOLUTE_ZERO, MODE_ATTACK, SCATTER -> 0;
-			case HAKUREN, MODE_BARRIER, HAKUTEIKEN -> 1;
-			case SHIRAFUNE, SENKEI -> 2;
+			case TSUKISHIRO, ICE_SPIKE, MODE_ATTACK, SCATTER -> 0;
+			case HAKUREN, ABSOLUTE_ZERO, MODE_BARRIER, HAKUTEIKEN -> 1;
+			case SHIRAFUNE, SENKEI, CAGE -> 2;
 		};
 	}
 

@@ -108,70 +108,55 @@ class AutoRevertTest {
 	}
 
 	@Test
-	void A5_handGrace20Ticks() {
-		Fx back = new Fx().toShikai(R);
-		back.sm.onHandChanged(CharacterId.NONE);
-		back.adv(19);
-		assertEquals(ZanpakutoState.SHIKAI, back.sm.state());
-		back.sm.onHandChanged(R);
-		back.adv(5);
-		assertEquals(ZanpakutoState.SHIKAI, back.sm.state());
-
-		Fx gone = new Fx().toShikai(R);
-		gone.sm.onHandChanged(B); // another zanpakuto in hand also counts as lost
-		gone.adv(19);
-		assertEquals(ZanpakutoState.SHIKAI, gone.sm.state());
-		List<StateEvent> ev = gone.adv(1);
-		assertEquals(ZanpakutoState.SEALED, gone.sm.state());
-		assertEquals(Trigger.HAND_LOST, Fx.lastChange(ev).trigger());
-		// release lock is 0 after a hand loss
-		assertTrue(gone.tr(ZanpakutoState.BASE, R).ok());
-	}
-
-	@Test
-	void A5b_handGraceAlsoAppliesToTheBaseForm() {
-		Fx back = new Fx().toBase(R);
-		back.sm.onHandChanged(CharacterId.NONE);
-		back.adv(19);
-		assertEquals(ZanpakutoState.BASE, back.sm.state());
-		assertEquals(RejectReason.WRONG_ITEM, back.tr(ZanpakutoState.SHIKAI, R).reason(), "no release during the grace");
-		back.sm.onHandChanged(R);
-		back.adv(5);
-		assertEquals(ZanpakutoState.BASE, back.sm.state());
-		assertTrue(back.tr(ZanpakutoState.SHIKAI, R).ok());
-
-		Fx gone = new Fx().toBase(R);
-		gone.sm.onHandChanged(CharacterId.NONE);
-		gone.adv(19);
-		assertEquals(ZanpakutoState.BASE, gone.sm.state());
-		List<StateEvent> ev = gone.adv(1);
-		assertEquals(ZanpakutoState.SEALED, gone.sm.state());
-		assertEquals(Trigger.HAND_LOST, Fx.lastChange(ev).trigger());
-		assertEquals(ZanpakutoState.SEALED, Fx.events(ev, StateEvent.MirrorComponent.class).get(0).state());
-		assertEquals(CharacterId.NONE, gone.sm.character());
-	}
-
-	@Test
-	void A5c_swappingTheHandToAnotherZanpakutoLosesTheBaseForm() {
-		Fx f = new Fx().toBase(R);
-		f.sm.onHandChanged(B);
-		f.adv(20);
-		assertEquals(ZanpakutoState.SEALED, f.sm.state());
-	}
-
-	@Test
-	void A6_dropIsImmediate() {
+	void A5_losingTheSwordFromTheHandNeverEndsShikai() {
+		// round 5: slot change, off hand, a drop: nothing ends the released form (only seal, death, logout, dimension, timers)
 		Fx f = new Fx().toShikai(R);
-		List<StateEvent> ev = f.sm.onItemDropped();
-		assertEquals(ZanpakutoState.SEALED, f.sm.state());
-		assertEquals(Trigger.ITEM_DROPPED, Fx.lastChange(ev).trigger());
-		assertTrue(Fx.has(ev, StateEvent.CancelEffects.class));
-		assertTrue(f.sm.onItemDropped().isEmpty(), "dropping while sealed does nothing");
+		f.sm.onHandChanged(CharacterId.NONE);
+		List<StateEvent> ev = f.adv(100);
+		assertEquals(ZanpakutoState.SHIKAI, f.sm.state());
+		assertTrue(Fx.events(ev, StateEvent.StateChanged.class).isEmpty());
+		assertFalse(Fx.has(ev, StateEvent.CancelEffects.class));
+		f.sm.onHandChanged(B); // another zanpakuto in hand: still nothing
+		f.adv(100);
+		assertEquals(ZanpakutoState.SHIKAI, f.sm.state());
+		assertEquals(R, f.sm.character());
+	}
 
-		Fx base = new Fx().toBase(B);
-		List<StateEvent> ev2 = base.sm.onItemDropped();
-		assertEquals(ZanpakutoState.SEALED, base.sm.state());
-		assertEquals(Trigger.ITEM_DROPPED, Fx.lastChange(ev2).trigger());
+	@Test
+	void A5b_baseFormAlsoSurvivesTheSwordLeavingTheHand() {
+		Fx f = new Fx().toBase(R);
+		f.sm.onHandChanged(CharacterId.NONE);
+		f.adv(100);
+		assertEquals(ZanpakutoState.BASE, f.sm.state());
+		f.sm.onHandChanged(B);
+		f.adv(100);
+		assertEquals(ZanpakutoState.BASE, f.sm.state());
+		assertEquals(R, f.sm.character());
+		assertTrue(f.tr(ZanpakutoState.SHIKAI, R).ok(), "release once the sword is back");
+	}
+
+	@Test
+	void A5c_theIdleTimerStillSealsAShikaiWhoseSwordIsAway() {
+		Fx f = new Fx().toShikai(R);
+		f.sm.onHandChanged(CharacterId.NONE);
+		f.adv(2400 - 11 - 1);
+		assertEquals(ZanpakutoState.SHIKAI, f.sm.state());
+		f.adv(1);
+		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+	}
+
+	@Test
+	void A6_noSwordInHandStillAllowsSealing() {
+		Fx f = new Fx().toShikai(R);
+		f.sm.onHandChanged(CharacterId.NONE);
+		TransitionResult r = f.tr(ZanpakutoState.SEALED, CharacterId.NONE);
+		assertTrue(r.ok(), "V works with the sword dropped or in the off hand");
+		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+		assertTrue(Fx.has(r.events(), StateEvent.CancelEffects.class));
+		// but release and casts need the matching sword
+		Fx g = new Fx().toShikai(R);
+		assertEquals(RejectReason.WRONG_ITEM, g.cast(AbilityId.SHIRAFUNE, CharacterId.NONE).reason());
+		assertEquals(RejectReason.WRONG_ITEM, g.tr(ZanpakutoState.BANKAI, B).reason());
 	}
 
 	@Test

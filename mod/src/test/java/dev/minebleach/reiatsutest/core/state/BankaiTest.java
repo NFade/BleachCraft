@@ -97,7 +97,7 @@ class BankaiTest {
 			if (a.requiredState != ZanpakutoState.BANKAI || !spec.enabled()) {
 				continue;
 			}
-			assertTrue(spec.cooldownTicks() >= 300, a + " cooldown " + spec.cooldownTicks() + " ticks is at least 15 s");
+			assertTrue(spec.cooldownTicks() >= 160, a + " cooldown " + spec.cooldownTicks() + " ticks is at least 8 s");
 			Fx f = inBankai(a.character);
 			assertTrue(f.cast(a, a.character).ok());
 			int cd = spec.cooldownTicks();
@@ -120,7 +120,7 @@ class BankaiTest {
 			}
 			f.adv(1);
 		}
-		assertEquals(1, accepted, "200 ticks of spamming give one cast (cooldown 400)");
+		assertEquals(1, accepted, "200 ticks of spamming give one cast (cooldown 800 after round 6)");
 	}
 
 	@Test
@@ -151,7 +151,8 @@ class BankaiTest {
 		f.sm.devSetReiatsu(200); // Tsukishiro costs 25.0
 		assertEquals(RejectReason.NOT_ENOUGH_REIATSU, f.cast(AbilityId.TSUKISHIRO, R).reason());
 		assertEquals(0, f.sm.cooldownRemaining(AbilityId.TSUKISHIRO), "a refused cast starts no cooldown");
-		assertTrue(f.cast(AbilityId.ABSOLUTE_ZERO, R).ok(), "the free bankai ability works with the same low bar");
+		assertEquals(RejectReason.NOT_ENOUGH_REIATSU, f.cast(AbilityId.ABSOLUTE_ZERO, R).reason(), "the heavy bankai ability needs half the bar (round 6)");
+		assertTrue(f.cast(AbilityId.ICE_SPIKE, R).ok(), "the cheaper bankai ability works with the same low bar");
 		f.sm.devSetReiatsu(900);
 		assertEquals(RejectReason.GCD, f.cast(AbilityId.HAKUREN, R).reason());
 		f.adv(12);
@@ -188,11 +189,11 @@ class BankaiTest {
 	}
 
 	@Test
-	void handLossStillSealsInsideBankai() {
+	void handLossDoesNotEndBankai() {
 		Fx f = inBankai(R);
 		f.sm.onHandChanged(CharacterId.NONE);
-		f.adv(20);
-		assertEquals(ZanpakutoState.SEALED, f.sm.state());
+		f.adv(200);
+		assertEquals(ZanpakutoState.BANKAI, f.sm.state(), "round 5: only seal, death, logout and the bankai cap end it");
 	}
 
 	// ------------------------------------------------------------------ scaled numbers (BalanceConfig, LOG "B4 step 4")

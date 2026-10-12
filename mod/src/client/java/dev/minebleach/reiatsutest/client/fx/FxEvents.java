@@ -20,6 +20,10 @@ public final class FxEvents {
 		if (client.world == null) {
 			return;
 		}
+		if (id == dev.minebleach.reiatsutest.core.state.EffectIds.BLOCK_FEEDBACK) {
+			BlockFx.play(client, e);
+			return;
+		}
 		if (id == dev.minebleach.reiatsutest.core.state.EffectIds.SHUNPO) {
 			ShunpoFx.play(client, e);
 			return;
@@ -36,6 +40,12 @@ public final class FxEvents {
 			} else {
 				SwarmFx.onBarrier(e);
 			}
+			return;
+		}
+		if (id == 35) {
+			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={} params={}", id, e.casterId(), e.seed(), java.util.Arrays.toString(e.params()));
+			handled++;
+			CageFx.play(e);
 			return;
 		}
 		if (id == 32 || id == 33) {
@@ -71,10 +81,19 @@ public final class FxEvents {
 				ReleaseHold.start(e.casterId(), hold);
 				ShikaiDissolve.start(e.casterId(), hold); // plan G-glow: the blade dissolves into petals after the pink hold
 				FxSound.play(null, "block.amethyst_block.resonate", e.x(), e.y() + 1.1, e.z(), 1.7, 0.35);
-				FxDelayed.after(hold, () -> {
-					ReleaseFx.play(e);
-					SwarmFx.onRelease(e);
-				});
+				FxDelayed.after(hold, () -> ReleaseFx.play(e));
+				// the swarm launches from the hand at the end of the hold; release.swarmDelay (0 by default) moves its start later into the
+				// dissolve, so that the dissolve petals (ShikaiDissolve) are already in the air when the swarm comes (they blend into its orbit)
+				double swarmDelay = Math.max(0, FxTune.d("release.swarmDelay", 0.0));
+				if (swarmDelay <= 0.001) {
+					FxDelayed.after(hold, () -> SwarmFx.onRelease(e));
+				} else {
+					FxDelayed.after(hold + swarmDelay, () -> {
+						if (SwarmFx.of(e.casterId()) == null) {
+							SwarmFx.onRelease(e);
+						}
+					});
+				}
 			} else if (id <= 4) {
 				ReleaseFx.play(e);
 				if (id == 3) {

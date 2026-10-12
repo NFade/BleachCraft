@@ -15,4 +15,25 @@ public record BookPage(List<String> commandIds, Set<ZanpakutoState> states, List
 		states = Set.copyOf(states);
 		args = List.copyOf(args);
 	}
+
+	/** False for an introduction page (nothing to cast), which is always readable and never dimmed. */
+	public boolean hasCommands() {
+		return !commandIds.isEmpty();
+	}
+
+	/** True when the commands work in every state (the kido pages). */
+	public boolean anyState() {
+		return states.size() == ZanpakutoState.values().length;
+	}
+
+	/** The states of this page in enum order (sealed, drawn, shikai, bankai), for display. */
+	public List<ZanpakutoState> orderedStates() {
+		List<ZanpakutoState> out = new java.util.ArrayList<>();
+		for (ZanpakutoState s : ZanpakutoState.values()) {
+			if (states.contains(s)) {
+				out.add(s);
+			}
+		}
+		return out;
+	}
 }

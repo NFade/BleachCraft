@@ -271,7 +271,8 @@ public final class HudModel {
 		}
 
 		// bankai ready gem (SHIKAI at full reiatsu)
-		boolean ready = st == ZanpakutoState.SHIKAI && value >= max && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0);
+		boolean ready = st == ZanpakutoState.SHIKAI && value >= max
+				&& ClientState.rage().value() >= dev.minebleach.reiatsutest.core.rage.RageConfig.defaults().bankaiCostTenths() && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0);
 		if (ready && !gemReady) {
 			gemSparkAt = now;
 			if (FxConfig.cooldownReadySound && plateWanted) {
@@ -489,6 +490,10 @@ public final class HudModel {
 				VOICE.line2 = Text.translatable("hud.reiatsu_test.voice.cooldown", String.format(java.util.Locale.ROOT, "%.1f", secs)).getString();
 				VOICE.line2Tint = HudAssets.ERROR;
 			}
+			case DENIED_RAGE -> {
+				VOICE.line2 = Text.translatable("hud.reiatsu_test.rage_need_short").getString();
+				VOICE.line2Tint = HudAssets.ERROR;
+			}
 			case DENIED_REIATSU -> {
 				VOICE.line2 = Text.translatable(cmd != null && cmd.endsWith(".bankai.release") ? "hud.reiatsu_test.need_full" : "hud.reiatsu_test.voice.need").getString();
 				VOICE.line2Tint = HudAssets.ERROR;
@@ -547,10 +552,10 @@ public final class HudModel {
 		} else if (effectId == 11) {
 			endedAt = now; // bankai timer ran out: back to shikai, the HUD shows "Bankai ended" and holds the ready gem
 			barRedFlashStart = now;
-		} else if (effectId >= 20 && effectId <= 34) {
+		} else if (effectId >= 20 && effectId <= 35) {
 			Technique t = new Technique();
 			t.text = Text.translatable("hud.reiatsu_test.technique." + effectId);
-			t.character = effectId <= 23 ? CharacterId.RUKIA : CharacterId.BYAKUYA;
+			t.character = effectId <= 24 ? CharacterId.RUKIA : CharacterId.BYAKUYA; // 20 to 24 Rukia (24 = ice spike), 30 to 35 Byakuya (35 = petal cage)
 			t.start = now;
 			technique = t;
 			lastActivity = now;
@@ -646,6 +651,19 @@ public final class HudModel {
 					FxSound.ui("block.note_block.bass", 0.6, 0.6);
 				}
 			}
+			case DENIED_RAGE -> {
+				// round 5: shikai / bankai entry needs Rage; the numbers are the client's copy of the defaults (server config may differ)
+				boolean bankai = req != null && req.target() == ZanpakutoState.BANKAI;
+				var rc = dev.minebleach.reiatsutest.core.rage.RageConfig.defaults();
+				int need = rc.releaseCostTenths(bankai);
+				var rg = ClientState.rage();
+				PlateHud.flashRageDenied(rg.max() <= 0 ? 0.0 : need / (double) rg.max());
+				Text msg = rageNeedText(rg.value(), need);
+				pushToast(msg, HudAssets.ERROR, ToastKind.DENIED, 1.6);
+				if (FxConfig.hud) {
+					FxSound.ui("block.note_block.bass", 0.6, 0.6);
+				}
+			}
 			case COOLDOWN -> {
 				if (slot != null) {
 					slot.shake = now + 0.3;
@@ -692,6 +710,11 @@ public final class HudModel {
 			case RATE_LIMIT -> {
 			}
 		}
+	}
+
+	/** "Not enough Rage 23/40" with whole points (the bar shows tenths of a point). */
+	public static Text rageNeedText(int haveTenths, int needTenths) {
+		return Text.translatable("hud.reiatsu_test.rage_need", Math.round(haveTenths / 10.0f), Math.round(needTenths / 10.0f));
 	}
 
 	public static Slot slotFor(AbilityId a) {

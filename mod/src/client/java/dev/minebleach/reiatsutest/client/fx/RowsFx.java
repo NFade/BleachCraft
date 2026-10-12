@@ -67,6 +67,8 @@ public final class RowsFx {
 		public boolean gradeLocked;
 		/** Farthest blade from the release point. */
 		public final double maxDist;
+		/** World scale of every blade (bankai.bladeScale, read when the rows are created and kept for their life; the static buffer depends on it). */
+		public final double bladeScale = bladeScaleSetting();
 		/** Time (seconds from the release) from which the rows are drawn from the static buffer. */
 		public final double settleAt;
 		ScreenFx.Layer grade;
@@ -178,6 +180,19 @@ public final class RowsFx {
 	public static boolean requireAnchor = true;
 
 	private RowsFx() {
+	}
+
+	/**
+	 * World scale of the bankai blades (fx_override.json {@code bankai.bladeScale}). The mesh is 8 m long (ART_BIBLE B13); at the default 0.55 the
+	 * first rank stands about 3.9 blocks above the ground (4.3 for the second rank), the 8 m original looked like towers (round 5, note 4). 1.0 = the original size.
+	 */
+	public static double bladeScaleSetting() {
+		return FxMath.clamp(FxTune.d("bankai.bladeScale", 0.55), 0.2, 2.0);
+	}
+
+	/** Spacing and corridor width of the rows (fx_override.json {@code rows.scale}, default 0.65; 1.0 = the original 6 block half width, spacing 1.1). */
+	public static double rowsScaleSetting() {
+		return FxMath.clamp(FxTune.d("rows.scale", 0.65), 0.2, 3.0);
 	}
 
 	/** The rows (fault lines, eruption) start this long after the throw of the sword, which needs about 1.5 s to hang and sink. */
@@ -371,14 +386,14 @@ public final class RowsFx {
 			minAlong = Math.min(minAlong, st.layout.along[i]);
 			maxAlong = Math.max(maxAlong, st.layout.along[i]);
 		}
-		if (along >= minAlong && along <= maxAlong && across <= BladeRowLayout.RANK_BASE) {
+		if (along >= minAlong && along <= maxAlong && across <= st.layout.corridorHalfWidth()) {
 			return 0;
 		}
 		return best;
 	}
 
 	private static State create(int owner, long seed, double epoch, double yawDeg, double x, double y, double z, ClientWorld w) {
-		BladeRowLayout layout = BladeRowLayout.of(FxConfig.bankaiBladeCount, seed);
+		BladeRowLayout layout = BladeRowLayout.of(FxConfig.bankaiBladeCount, seed, rowsScaleSetting());
 		State st = new State(owner, seed, layout, epoch, yawDeg, x, y, z, w);
 		st.hiltGround = FxGround.sample(w, st.hiltX(), st.hiltZ(), y);
 		STATES.put(owner, st);
@@ -575,7 +590,7 @@ public final class RowsFx {
 		if (st.layout.n > 400 && i % 2 == 1) {
 			return;
 		}
-		FxGlowBatch.sprite(GlowSprite.STAR4).at(tip[0], tip[1], tip[2]).size(1.2 * st.layout.scale[i] * (d > 60 ? 1.6 : 1.0)).lifeTicks(5).curve(0.01, 0.8).color("#FFFFFF")
+		FxGlowBatch.sprite(GlowSprite.STAR4).at(tip[0], tip[1], tip[2]).size(1.2 * st.layout.scale[i] * (0.4 + 0.6 * st.bladeScale) * (d > 60 ? 1.6 : 1.0)).lifeTicks(5).curve(0.01, 0.8).color("#FFFFFF")
 				.peak(0.8).rot(i * 0.9, 0).spawn();
 	}
 

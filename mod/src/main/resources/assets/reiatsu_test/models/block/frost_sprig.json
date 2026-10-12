@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "reiatsu_test:block/frost_sprig"
+  }
+}

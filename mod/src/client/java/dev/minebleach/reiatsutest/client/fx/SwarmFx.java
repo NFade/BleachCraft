@@ -1,9 +1,12 @@
 package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.fx.HeadTrack;
 import dev.minebleach.reiatsutest.core.fx.SwarmMath;
 import dev.minebleach.reiatsutest.core.state.ShikaiMode;
+import dev.minebleach.reiatsutest.core.swarm.BladeFlight;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
+import dev.minebleach.reiatsutest.net.SwarmHeadS2C;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.data.ZanpakutoData;
 import java.util.HashMap;
@@ -50,6 +53,11 @@ public final class SwarmFx {
 		public int visible;
 		/** Events of the HIT feedback and similar: owner interpolated feet of the last frame. */
 		public double t;
+		/** Steerable attack: server tick and swarm time of the first head packet (maps later packets onto the swarm clock). */
+		int trackTick0;
+		double trackT0;
+		/** Last head position received (world), for the glow and sparks of the attack. */
+		public Vec3d headWorld;
 
 		State(int ownerId, long seed, int n, double epoch) {
 			this.ownerId = ownerId;
@@ -191,17 +199,69 @@ public final class SwarmFx {
 		tl.at(0.6, x -> x.sound("entity.player.attack.crit", 1.1, 0.6));
 		tl.at(0.7, x -> x.sound("entity.player.attack.crit", 1.2, 0.6));
 		// cutting core: glow at the aim and a sound every 0.25 s, 30 petal sparks per second
-		tl.at(0.45, x -> FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(aimWorld.x, aimWorld.y, aimWorld.z).size(1.6, 3.2).sizeEase(FxMath.OC).life(1.15)
-				.curve(0.3, 0.45).color("#F9C8F6").peak(FxTune.d("swarm.coreGlow", 0.35)).owner(x).spawn());
+		final int caster = e.casterId();
+		tl.at(0.45, x -> {
+			Vec3d c = headOr(caster, aimWorld); // the steered swarm: the glow sits where the head is, not at the cast's aim
+			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(c.x, c.y, c.z).size(1.6, 3.2).sizeEase(FxMath.OC).life(1.15)
+					.curve(0.3, 0.45).color("#F9C8F6").peak(FxTune.d("swarm.coreGlow", 0.35)).owner(x).spawn();
+		});
 		for (int k = 0; k < 4; k++) {
 			tl.at(1.0 + 0.25 * k, x -> {
 				x.sound("block.pink_petals.break", 1.0 + 0.1 * (x.rng(5).nextDouble() - 0.5), 0.5);
-				sparks(x, aimWorld, 8);
+				sparks(x, headOr(caster, aimWorld), 8);
 			});
 		}
 		tl.at(1.5, x -> x.sound("block.pink_petals.step", 1.0, 0.4));
 		tl.lifetime(2.4);
 		FxTimelines.start(tl);
+	}
+
+	/** Where the swarm head is now (steered attack), or {@code fallback} (the cast's aimed point) without a head path. */
+	private static Vec3d headOr(int ownerId, Vec3d fallback) {
+		State st = STATES.get(ownerId);
+		return st != null && st.headWorld != null && st.mode.tracked() ? st.headWorld : fallback;
+	}
+
+	/**
+	 * Head packet of the server flight (SwarmHeadS2C, about 10 per second): the first one of a flight (phase WINDUP) starts a head path
+	 * on the current attack mode, the following ones extend it, phase DONE closes it. The swarm then follows the server head path
+	 * ({@link SwarmMath}, tracked attack); without these packets the old fixed flight to the aimed point is used. The server tick
+	 * of each packet sets its time on the swarm clock, so network jitter does not make the ribbon stutter.
+	 */
+	public static void onHead(SwarmHeadS2C pk) {
+		if (FxTune.d("swarm.tracked", 1.0) < 0.5) {
+			return;
+		}
+		State st = STATES.get(pk.casterId());
+		if (st == null) {
+			return;
+		}
+		SwarmMath.Mode m = st.mode;
+		double now = st.time();
+		if (pk.phase() == BladeFlight.Phase.WINDUP.code) {
+			if (m.kind != SwarmMath.Kind.ATTACK) {
+				return; // the attack effect event was lost or is late: the next flight will attach
+			}
+			m.track = new HeadTrack();
+			m.trackDelay = FxTune.d("swarm.trackDelay", 0.12);
+			m.trackLag = FxTune.d("swarm.trackLag", 0.22);
+			st.trackTick0 = pk.serverTick();
+			st.trackT0 = now;
+		}
+		HeadTrack tr = m.track;
+		if (tr == null || m.kind != SwarmMath.Kind.ATTACK) {
+			return;
+		}
+		double mapped = st.trackT0 + (pk.serverTick() - st.trackTick0) * 0.05;
+		if (now - mapped > 0.1) {
+			st.trackT0 += now - mapped - 0.05; // the packet came late (lag spike): move the clock mapping instead of freezing the head
+			mapped = st.trackT0 + (pk.serverTick() - st.trackTick0) * 0.05;
+		}
+		tr.add(mapped, pk.x(), pk.y(), pk.z());
+		st.headWorld = new Vec3d(pk.x(), pk.y(), pk.z());
+		if (pk.phase() == BladeFlight.Phase.DONE.code) {
+			tr.close(mapped);
+		}
 	}
 
 	private static void sparks(EffectTimeline x, Vec3d c, int n) {
@@ -305,7 +365,17 @@ public final class SwarmFx {
 			SwarmMath.Mode m = st.mode;
 			switch (m.kind) {
 				case ATTACK -> {
-					if (t - m.t0 > SwarmMath.ATTACK_RETURN_END + 0.2) {
+					if (m.tracked()) {
+						// steerable flight: over once the head is back and the trailing petals have settled (or the packets stopped for 1.5 s)
+						boolean stale = !m.track.closed() && t - m.trackDelay > m.track.lastTime() + 1.5;
+						if (stale && !m.track.closed()) {
+							m.track.close(m.track.lastTime());
+						}
+						if ((m.track.closed() && t - m.track.endTime() > m.trackDelay + m.trackLag + 0.7) || t - m.t0 > 10.0) {
+							st.mode = new SwarmMath.Mode(SwarmMath.Kind.IDLE, t);
+							st.prev = null;
+						}
+					} else if (t - m.t0 > SwarmMath.ATTACK_RETURN_END + 0.2) {
 						st.mode = new SwarmMath.Mode(SwarmMath.Kind.IDLE, t);
 						st.prev = null;
 					}

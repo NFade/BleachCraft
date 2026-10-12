@@ -42,7 +42,8 @@ public final class FxScene {
 				swarms++;
 				SwarmFx.State st = SwarmFx.of(owner);
 				// (not while the blade of this owner is still turning pink: the anchor is there at once, the swarm is born 0.4 s later)
-				if (st == null && w.getEntityById(owner) != null && FxClock.now > 0 && !ReleaseHold.active(owner)) {
+				if (st == null && w.getEntityById(owner) != null && FxClock.now > 0 && !ReleaseHold.active(owner)
+						&& !(ShikaiDissolve.wantsPose(owner) && FxTune.d("release.swarmDelay", 0.0) > 0.001)) { // (nor while the delayed swarm start of the dissolve is pending)
 					st = SwarmFx.lateState(owner, a.seed(), w.getEntityById(owner).getPos());
 					lateJoins++;
 				}

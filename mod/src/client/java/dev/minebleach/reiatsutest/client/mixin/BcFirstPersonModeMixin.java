@@ -19,6 +19,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * the trail, sound and hit still happen). Other weapons keep the Better Combat setting. Called when a strike animation starts,
  * so the main hand item at that moment decides. Pseudo mixin into a Better Combat class: no BC code is copied, the config
  * option of the player is untouched.
+ *
+ * <p>BC5b: the strike gesture of the first person view is drawn by {@code FpMotion} (on the Better Combat attack start event).
+ * Dev switch {@code "fp_bc_mode": 1} in pose_override.json returns the decision to Better Combat (its own third person model
+ * animation in first person) for a comparison in game.
  */
 @Pseudo
 @Mixin(targets = "net.bettercombat.client.compat.FirstPersonAnimationCompatibility", remap = false)
@@ -26,7 +30,8 @@ public abstract class BcFirstPersonModeMixin {
 	@Inject(method = "firstPersonMode", at = @At("HEAD"), cancellable = true, remap = false)
 	private static void reiatsu$keepOurHand(CallbackInfoReturnable<FirstPersonMode> cir) {
 		ClientPlayerEntity p = MinecraftClient.getInstance().player;
-		if (p != null && p.getMainHandStack().getItem() instanceof ZanpakutoItem) {
+		if (p != null && p.getMainHandStack().getItem() instanceof ZanpakutoItem
+				&& !dev.minebleach.reiatsutest.client.model.FpMotion.useBcFirstPerson()) {
 			cir.setReturnValue(FirstPersonMode.NONE);
 		}
 	}

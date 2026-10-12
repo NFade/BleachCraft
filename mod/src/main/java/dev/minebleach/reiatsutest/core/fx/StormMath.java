@@ -110,6 +110,8 @@ public final class StormMath {
 		public final int perBlade;
 		public final int m;
 		final float[] bladeDist;
+		/** World scale of the blades (bankai.bladeScale): birth slots sit at slotHeight * heightScale above the base; times stay in blade space. */
+		public double heightScale = 1.0;
 		final float[] h0;
 		final float[] th0;
 		final float[] nz;
@@ -363,7 +365,7 @@ public final class StormMath {
 		/** The birth slot of petal j in the world (blade base at {@code (bx, by, bz)}, by = rest y of the base). */
 		public void slotPoint(int j, double bx, double by, double bz, double[] out) {
 			out[0] = bx + slotDx[j];
-			out[1] = by + slotHeight(j);
+			out[1] = by + slotHeight(j) * heightScale;
 			out[2] = bz + slotDz[j];
 		}
 

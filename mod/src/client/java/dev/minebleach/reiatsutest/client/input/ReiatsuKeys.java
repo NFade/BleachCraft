@@ -64,6 +64,7 @@ public final class ReiatsuKeys {
 	}
 
 	private static void tick(MinecraftClient client) {
+		BladeSteer.tick(client);
 		if (client.player == null) {
 			drain();
 			return;
@@ -133,6 +134,9 @@ public final class ReiatsuKeys {
 		if (ability == null || z.zanpakutoState() == ZanpakutoState.SEALED || z.zanpakutoState() == ZanpakutoState.BASE) {
 			ClientNet.feedback(client, ResultCode.DENIED_STATE);
 			return;
+		}
+		if (ability == AbilityId.MODE_ATTACK) {
+			BladeSteer.arm((bankaiRow ? BANKAI_SLOTS : SLOTS)[slot]); // holding this key steers the swarm once the server accepts the cast
 		}
 		ClientNet.castAbility(ability, RequestSource.KEY);
 	}
