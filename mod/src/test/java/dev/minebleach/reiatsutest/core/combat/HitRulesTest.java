@@ -51,6 +51,14 @@ class HitRulesTest {
 	}
 
 	@Test
+	void aHitLoweredByTheBarrierIsDamagedEvenThoughDamageReturnedFalse() {
+		// the barrier re-applies the lowered hit inside the hook, so the outer damage() returns false while 0.4 HP were lost
+		// (mech2: the log used to say REFUSED_UNKNOWN for these)
+		assertEquals(Outcome.DAMAGED, o(2, false, 0.4F, null, false, false, false, false));
+		assertEquals(Outcome.DAMAGED, o(2, false, 0.4F, Outcome.BARRIER, false, false, false, false));
+	}
+
+	@Test
 	void creativeIsNamedWhenNothingWasLost() {
 		assertEquals(Outcome.CREATIVE, o(6, false, 0, null, true, true, false, false));
 	}

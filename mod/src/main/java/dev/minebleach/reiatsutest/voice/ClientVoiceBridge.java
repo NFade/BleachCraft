@@ -188,10 +188,11 @@ public final class ClientVoiceBridge implements VoiceBackend {
 		}
 		if (s.state() != null) {
 			CharacterId held = s.held() == null ? CharacterId.NONE : s.held();
-			GateContext ctx = GateContext.of(held, s.state(), s.reiatsuFull());
+			GateContext ctx = GateContext.of(held, s.state(), true);
 			o.addProperty("state", s.state().name());
 			o.addProperty("held", held.name().toLowerCase(Locale.ROOT));
-			o.addProperty("reiatsuFull", ctx.reiatsuFull());
+			o.addProperty("bankaiReady", ctx.bankaiReady());
+			o.addProperty("reiatsuFull", ctx.bankaiReady());
 			JsonArray say = new JsonArray();
 			for (PhraseBook.Command c : book.commands()) {
 				if (c.validIn(ctx) && !c.optional()) {

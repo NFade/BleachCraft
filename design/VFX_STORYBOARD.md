@@ -458,7 +458,7 @@ Principles: Minecraft-native pixel art (1 texel = 1 GUI pixel, nearest, no fract
 ### 7.7 Feedback for denied actions (`action_result`; replaces the action-bar text; the action bar stays as fallback when `hud=false`)
 | Result | Feedback | Sound |
 |---|---|---|
-| DENIED_REIATSU | bar shakes +-2 px at 30 Hz for 0.3 s; the missing span (value to cost, or to max for bankai) is drawn as a red hatch (`hatch.png` 4 x 4 tiled, `#FF4A4A` alpha 160) for 0.8 s; slot flashes red; toast `Need 40 reiatsu` (or `Need full reiatsu`) under the plate | `ui.denied` or `block.note_block.bass` 0.6 0.6 |
+| DENIED_REIATSU | bar shakes +-2 px at 30 Hz for 0.3 s; the missing span (value to cost) is drawn as a red hatch (`hatch.png` 4 x 4 tiled, `#FF4A4A` alpha 160) for 0.8 s; slot flashes red; toast `Need 40 reiatsu` (or `Need full reiatsu`) under the plate | `ui.denied` or `block.note_block.bass` 0.6 0.6 |
 | COOLDOWN | that slot shakes +-2 px for 0.3 s, its seconds flash `#FFD860` | `ui.button.click` 0.5 0.4 |
 | DENIED_STATE | small grey toast near the crosshair (y = h/2 + 30) `Not in shikai` / `Bankai needs shikai`; slots flash grey 0.2 s | `block.note_block.bass` 0.5 0.4 |
 | DENIED_ITEM | emblem flashes with a crossed-sword glyph 0.6 s; toast `Hold your zanpakuto` | `block.note_block.bass` 0.5 0.4 |

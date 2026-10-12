@@ -1068,3 +1068,9 @@ Bankai blades were the shipped 8 m mesh, not a regression: now `bankai.bladeScal
 - Notes on branches: `design/results/mech2.md` (mech2), `design/results/fp2.md` (fp2). None for vfx2.
 - Next: merge mech2 -> vfx2 -> fp2, rebuild, run runPhase4/5/6 under the lock protocol (`mkdir D:\gamelock`). Damage rebalance after mech2 merge.
 - Open question: keep the 80 Rage gate for bankai or not?
+## 2026-10-12: mech2 (branch `mech2`, from main 80b855d, 4 local commits, not pushed)
+- Task 1 barrier: the damage cut worked in the live two-client log (asked 2.0 lost 0.4); what was missing was control immunity (3 mixins: `canHaveStatusEffect`, `takeKnockback`, `setFrozenTicks`, pure `BarrierRules`), the 20 HP pool collapsed the dome early (now no cap by default), and `[dmg]` said REFUSED_UNKNOWN for lowered hits. Dev check `/reiatsu dev barrier_check`.
+- Task 2 bankai cleanup: every end path emits one `StateEvent.BankaiEnded`; one server cleanup (`ZanpakutoManager.endBankaiEffects`) + `EffectIds.BANKAI_CLEANUP` 44; client `BankaiEnd` (message + per tick watcher + audit `[bankai-audit]`). Root cause of the stuck night grade: rows state dropped by the anchor timeout without releasing its screen layers. `/reiatsu dev reset`, `/reiatsu dev bankai_audit`.
+- Task 3: `BANKAI_NOT_FULL` and every "full bar" rule removed (core, voice gate -> `bankaiReady`, HUD, lang, books, docs, tests). Rage gate 80 kept (the complaint is probably about Rage; to confirm with the user).
+- Task 4: Absolute Zero removed everywhere; passive frost territory `server/BankaiField` + `BankaiFieldSpec` (Slowness I every 20 ticks, 2.0 HP INDIRECT_MAGIC every 60 ticks, radius = frost radius 30).
+- Details, numbers, blocked-effect list and the UNVERIFIED list: `design/results/mech2.md`. `gradlew build test` green. Harnesses now waive Rage with `reiatsu dev ragefree true`.

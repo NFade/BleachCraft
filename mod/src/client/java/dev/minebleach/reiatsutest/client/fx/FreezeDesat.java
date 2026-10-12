@@ -20,7 +20,7 @@ import org.joml.Matrix4fStack;
 
 /**
  * The one post pass of the mod (1.3.3, 1.4 {@code desat}): {@code freeze_desat} turns the colour of the world down to grey with a
- * cool tint while Rukia's absolute zero holds time still. {@link #set} ramps the amount (linear in time), {@link #render} runs the
+ * cool tint (it was driven by Rukia's absolute zero, removed in mech2 task 4; the pass stays for dev scenes and is cleared by every bankai end). {@link #set} ramps the amount (linear in time), {@link #render} runs the
  * {@link PostEffectProcessor} at {@code WorldRenderEvents.LAST} (after the world, before the hand and the HUD, so those stay in
  * colour) and sets the {@code Amount} uniform each frame through {@link PostEffectProcessorAccessor}. The program sits under
  * {@code assets/minecraft/shaders/program/reiatsu_test_freeze_desat.*} because post programs cannot be namespaced (LOG, phase 6

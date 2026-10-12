@@ -518,9 +518,9 @@ def phase_one(srv, port):
         rc("execute as SmokeBot run reiatsu full")
         rc("execute as SmokeBot run reiatsu cooldowns clear")
         rc("execute as SmokeBot run reiatsu state bankai rukia")
-        b1.cast(4, 3)  # ABSOLUTE_ZERO
-        line = srv.wait_for(r"SmokeBot cast ABSOLUTE_ZERO \(held RUKIA, KEY\): ", 5)
-        check("C2S cast_ability ABSOLUTE_ZERO reaches the executor", line is not None, line or "")
+        b1.cast(10, 3)  # ICE_SPIKE (the old code 4, Absolute Zero, was removed in mech2 task 4)
+        line = srv.wait_for(r"SmokeBot cast ICE_SPIKE \(held RUKIA, KEY\): ", 5)
+        check("C2S cast_ability ICE_SPIKE reaches the executor", line is not None, line or "")
         time.sleep(4.0)
 
         rc("item replace entity SmokeBot weapon.mainhand with reiatsu_test:senbonzakura")

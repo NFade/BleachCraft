@@ -117,7 +117,7 @@ public final class PhraseMatcher {
 				continue;
 			}
 			for (Variant v : c.variants()) {
-				if (v.requiresFullReiatsu() && !(ctx.gated() && ctx.reiatsuFull())) {
+				if (v.requiresBankaiReady() && !(ctx.gated() && ctx.bankaiReady())) {
 					continue;
 				}
 				double s;

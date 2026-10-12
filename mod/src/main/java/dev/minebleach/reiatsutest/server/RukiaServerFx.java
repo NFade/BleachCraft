@@ -42,10 +42,9 @@ public final class RukiaServerFx {
 			return params;
 		}
 		java.util.List<Integer> offs = ctx.spec.phaseOffsets();
-		int pause = offs.size() >= 2 ? offs.get(1) - offs.get(0) : RukiaFxParams.ABSOLUTE_ZERO_PAUSE_TICKS;
 		double half = ctx.spec.params().containsKey(dev.minebleach.reiatsutest.core.state.AbilityParams.HALF_WIDTH) ? ctx.spec.num(dev.minebleach.reiatsutest.core.state.AbilityParams.HALF_WIDTH) : Double.NaN;
 		int stepTicks = offs.size() >= 2 ? offs.get(1) - offs.get(0) : RukiaFxParams.ICE_SPIKE_STEP_TICKS;
-		return RukiaFxParams.extend(RukiaFxParams.abilityOf(effectId), params, ctx.eye.distanceTo(ctx.aim), Math.max(1, offs.size()), pause, half, stepTicks, offs.isEmpty() ? RukiaFxParams.ICE_SPIKE_FIRST_TICKS : offs.get(0));
+		return RukiaFxParams.extend(RukiaFxParams.abilityOf(effectId), params, ctx.eye.distanceTo(ctx.aim), Math.max(1, offs.size()), half, stepTicks, offs.isEmpty() ? RukiaFxParams.ICE_SPIKE_FIRST_TICKS : offs.get(0));
 	}
 
 	/** Called for every broadcast effect: creates the standing field of a Rukia bankai. */
@@ -61,6 +60,29 @@ public final class RukiaServerFx {
 		caster.getServerWorld().spawnEntity(a);
 		TRACKED.add(new Tracked(a, caster.getUuid(), caster.getServer().getTicks()));
 		ReiatsuTest.LOGGER.info("[fx] rukia bankai field anchor for {} at ({}, {}, {})", caster.getName().getString(), caster.getX(), caster.getY(), caster.getZ());
+	}
+
+	/** Ends the standing field anchor of an owner at once (the one bankai cleanup). Returns how many anchors were discarded. */
+	static int endOf(UUID owner) {
+		int n = 0;
+		for (Tracked t : TRACKED) {
+			if (t.owner().equals(owner)) {
+				n++;
+			}
+		}
+		discardOf(owner);
+		return n;
+	}
+
+	/** Number of live field anchors of an owner (dev audit). */
+	static int liveOf(UUID owner) {
+		int n = 0;
+		for (Tracked t : TRACKED) {
+			if (t.owner().equals(owner) && !t.anchor().isRemoved()) {
+				n++;
+			}
+		}
+		return n;
 	}
 
 	private static void discardOf(UUID owner) {

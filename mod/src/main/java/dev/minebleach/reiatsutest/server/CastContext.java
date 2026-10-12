@@ -88,7 +88,7 @@ final class CastContext {
 			return new float[] {(float) center.x, (float) center.y, (float) center.z, spec.floatNum(AbilityParams.RADIUS), first, offs.size(), spacing};
 		}
 		switch (ability) {
-			case TSUKISHIRO, ABSOLUTE_ZERO, MODE_ATTACK -> size = spec.floatNum(AbilityParams.RADIUS);
+			case TSUKISHIRO, MODE_ATTACK -> size = spec.floatNum(AbilityParams.RADIUS);
 			case HAKUREN -> {
 				size = spec.floatNum(AbilityParams.LENGTH);
 				size2 = spec.floatNum(AbilityParams.HALF_WIDTH);

@@ -114,31 +114,15 @@
         {"text": "bonkay", "origin": "A"},
         {"text": "bang kai", "origin": "A"},
         {"text": "bung kai", "origin": "A"},
-        {"text": "bank eye", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bankeye", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bank i", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bank ai", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bank eye hakka no togame", "origin": "A", "requires": ["full_reiatsu"]},
-        {"text": "bank i hakka no togame", "origin": "A", "requires": ["full_reiatsu"]},
-        {"text": "bankie", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "banki", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "банкой", "origin": "A", "weak": true, "requires": ["full_reiatsu"]}
-      ]
-    },
-    {
-      "id": "rukia.bankai.absolute_zero", "states": ["BANKAI"], "item": "rukia",
-      "interimSafe": false, "optional": false, "say": "Absolute zero",
-      "variants": [
-        {"text": "絶対零度", "origin": "M"},
-        {"text": "ぜったいれいど", "origin": "M"},
-        {"text": "Zettai reido", "origin": "M"},
-        {"text": "Absolute zero", "origin": "M"},
-        {"text": "Абсолютный ноль", "origin": "M"},
-        {"text": "Абсолютный нуль", "origin": "M"},
-        {"text": "absolute 0", "origin": "A"},
-        {"text": "absolute zeal", "origin": "A"},
-        {"text": "абсолютного нуля", "origin": "A"},
-        {"text": "absolute zeros", "origin": "A"}
+        {"text": "bank eye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bankeye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank i", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank ai", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank eye hakka no togame", "origin": "A", "requires": ["bankai_ready"]},
+        {"text": "bank i hakka no togame", "origin": "A", "requires": ["bankai_ready"]},
+        {"text": "bankie", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "banki", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "банкой", "origin": "A", "weak": true, "requires": ["bankai_ready"]}
       ]
     },
     {
@@ -293,15 +277,15 @@
         {"text": "bonkay", "origin": "A"},
         {"text": "bang kai", "origin": "A"},
         {"text": "bung kai", "origin": "A"},
-        {"text": "bank eye", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bankeye", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bank i", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bank ai", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bankie", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "banki", "origin": "A", "weak": true, "requires": ["full_reiatsu"]},
-        {"text": "bank eye senbonzakura kageyoshi", "origin": "A", "requires": ["full_reiatsu"]},
-        {"text": "bank i senbonzakura kageyoshi", "origin": "A", "requires": ["full_reiatsu"]},
-        {"text": "банкой", "origin": "A", "weak": true, "requires": ["full_reiatsu"]}
+        {"text": "bank eye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bankeye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank i", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank ai", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bankie", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "banki", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank eye senbonzakura kageyoshi", "origin": "A", "requires": ["bankai_ready"]},
+        {"text": "bank i senbonzakura kageyoshi", "origin": "A", "requires": ["bankai_ready"]},
+        {"text": "банкой", "origin": "A", "weak": true, "requires": ["bankai_ready"]}
       ]
     },
     {

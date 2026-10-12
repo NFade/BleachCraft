@@ -32,6 +32,29 @@ final class PhaseScheduler {
 		}
 	}
 
+	/** Drops the pending phases of {@code caster} whose ability matches; returns how many were dropped. */
+	int cancelIf(UUID caster, java.util.function.Predicate<AbilityId> which) {
+		int n = 0;
+		for (Iterator<Task> it = queue.iterator(); it.hasNext();) {
+			Task t = it.next();
+			if (t.caster().equals(caster) && which.test(t.ability())) {
+				it.remove();
+				n++;
+			}
+		}
+		return n;
+	}
+
+	int countFor(UUID caster, java.util.function.Predicate<AbilityId> which) {
+		int n = 0;
+		for (Task t : queue) {
+			if (t.caster().equals(caster) && which.test(t.ability())) {
+				n++;
+			}
+		}
+		return n;
+	}
+
 	void clear() {
 		queue.clear();
 	}

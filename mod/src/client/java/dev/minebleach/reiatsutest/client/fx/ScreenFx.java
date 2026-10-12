@@ -43,6 +43,19 @@ public final class ScreenFx {
 		double releaseAt = Double.MAX_VALUE;
 		double fade = 0.5;
 		boolean dead;
+		/** Entity id of the caster this layer belongs to, or -1 (mech2: the bankai cleanup releases every held layer of an owner). */
+		int owner = -1;
+
+		/** Marks the layer as belonging to a caster, so {@link ScreenFx#releaseOwner} can let it go. Returns the layer. */
+		public Layer owner(int casterId) {
+			this.owner = casterId;
+			return this;
+		}
+
+		/** True while the layer is held (not released yet). */
+		public boolean held() {
+			return releaseAt == Double.MAX_VALUE && !dead;
+		}
 
 		Layer(Kind kind, float[] rgb, double level, double ramp) {
 			this.kind = kind;
@@ -137,6 +150,36 @@ public final class ScreenFx {
 		speedLevel = 0;
 		rushLines = 0;
 		rushFov = 0;
+	}
+
+	/** Releases (fades out) every held vignette and grade of a caster. Returns how many were released. */
+	public static int releaseOwner(int ownerId, double fadeSeconds) {
+		int n = 0;
+		for (Layer l : VIGNETTES) {
+			if (l.owner == ownerId && l.held()) {
+				l.release(fadeSeconds);
+				n++;
+			}
+		}
+		for (Layer l : GRADES) {
+			if (l.owner == ownerId && l.held()) {
+				l.release(fadeSeconds);
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/** Held (not released) vignettes and grades of a caster: the audit after a bankai end counts them (must be 0). */
+	public static int heldOwner(int ownerId) {
+		int n = 0;
+		for (Layer l : VIGNETTES) {
+			n += l.owner == ownerId && l.held() ? 1 : 0;
+		}
+		for (Layer l : GRADES) {
+			n += l.owner == ownerId && l.held() ? 1 : 0;
+		}
+		return n;
 	}
 
 	// ------------------------------------------------------------------------------------------------ requests

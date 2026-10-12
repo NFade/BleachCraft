@@ -327,7 +327,7 @@ class ClientVoiceBridgeTest {
 		@Override
 		public ClientVoiceBridge.Status status() {
 			GateContext g = server.gates.get(id);
-			return new ClientVoiceBridge.Status(true, true, name, g.state(), g.held(), g.reiatsuFull());
+			return new ClientVoiceBridge.Status(true, true, name, g.state(), g.held(), g.bankaiReady());
 		}
 
 		void start(VoiceConfig cfg) throws IOException {

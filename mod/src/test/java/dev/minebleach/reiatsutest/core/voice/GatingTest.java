@@ -51,7 +51,7 @@ class GatingTest {
 
 	@Test
 	void theBankaiPhraseDoesNotCareAboutTheBarBecauseTheServerDecides() {
-		// a spoken "bankai" without a full bar still reaches the server, which answers DENIED_REIATSU with the usual feedback
+		// a spoken "bankai" without enough Rage still reaches the server, which answers DENIED_RAGE with the usual feedback
 		assertEquals("rukia.bankai.release", fire("bankai", CharacterId.RUKIA, ZanpakutoState.SHIKAI, false));
 	}
 
@@ -87,7 +87,7 @@ class GatingTest {
 	void stateGate() {
 		assertNull(fire("hakuren", CharacterId.RUKIA, ZanpakutoState.SEALED));
 		assertNull(fire("hakuren", CharacterId.RUKIA, ZanpakutoState.BANKAI));
-		assertEquals("rukia.bankai.absolute_zero", fire("absolute zero", CharacterId.RUKIA, ZanpakutoState.BANKAI));
+		assertNull(fire("absolute zero", CharacterId.RUKIA, ZanpakutoState.BANKAI), "the command was removed (mech2 task 4)");
 		assertNull(fire("absolute zero", CharacterId.RUKIA, ZanpakutoState.SHIKAI));
 		assertEquals("byakuya.bankai.hakuteiken", fire("hakuteiken", CharacterId.BYAKUYA, ZanpakutoState.BANKAI));
 		assertNull(fire("hakuteiken", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI));
@@ -107,15 +107,15 @@ class GatingTest {
 
 	/**
 	 * Decision: "bank eye" (the commonest en-US rendering of "bankai") counts as bankai ONLY in the context where a bankai
-	 * request can really succeed: state SHIKAI, the matching sword in the main hand AND a full reiatsu bar. Everywhere
+	 * request can really succeed: state SHIKAI, the matching sword in the main hand AND enough Rage (bankai ready). Everywhere
 	 * else (and in the ungated strict test mode) it is ordinary speech.
 	 */
 	@Test
-	void bankEyeIsBankaiOnlyWithShikaiItemAndFullBar() {
+	void bankEyeIsBankaiOnlyWithShikaiItemAndBankaiReady() {
 		for (String phrase : new String[] {"bank eye", "bankeye", "bank i"}) {
 			assertEquals("rukia.bankai.release", fire(phrase, CharacterId.RUKIA, ZanpakutoState.SHIKAI, true), phrase);
 			assertEquals("byakuya.bankai.release", fire(phrase, CharacterId.BYAKUYA, ZanpakutoState.SHIKAI, true), phrase);
-			assertNull(fire(phrase, CharacterId.RUKIA, ZanpakutoState.SHIKAI, false), phrase + ": bar not full");
+			assertNull(fire(phrase, CharacterId.RUKIA, ZanpakutoState.SHIKAI, false), phrase + ": bankai not ready");
 			assertNull(fire(phrase, CharacterId.RUKIA, ZanpakutoState.SEALED, true), phrase + ": not shikai");
 			assertNull(fire(phrase, CharacterId.RUKIA, ZanpakutoState.BANKAI, true), phrase + ": not shikai");
 			assertNull(fire(phrase, CharacterId.NONE, ZanpakutoState.SHIKAI, true), phrase + ": nothing in hand");

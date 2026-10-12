@@ -28,6 +28,10 @@ public final class FxEvents {
 			ShunpoFx.play(client, e);
 			return;
 		}
+		if (id == dev.minebleach.reiatsutest.core.state.EffectIds.BANKAI_CLEANUP) {
+			BankaiEnd.onEvent(e);
+			return;
+		}
 		if (KidoFx.handles(id)) {
 			KidoFx.play(client, e);
 			return;

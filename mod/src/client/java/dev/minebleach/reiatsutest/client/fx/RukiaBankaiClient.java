@@ -68,6 +68,35 @@ public final class RukiaBankaiClient {
 		MOBS.clear();
 	}
 
+	/**
+	 * Bankai cleanup of one owner: the passive, the frost ground decal, the crystals (they shatter, or vanish at once when {@code instant}), the
+	 * owner's frost edge and the ribbons end now, whatever the attachment says (it follows a tick later, and a dropped entity is never seen).
+	 * Returns true when the owner was in the bankai on this client. Idempotent.
+	 */
+	public static boolean endOwner(int ownerId, boolean instant) {
+		P p = PLAYERS.get(ownerId);
+		boolean was = p != null && p.bankai;
+		if (p != null) {
+			if (p.bankai) {
+				p.bankai = false;
+				p.endedAt = FxClock.now;
+			}
+			endField(ownerId, p, !instant);
+		} else {
+			FxMeshPass.clearField(ownerId);
+		}
+		if (instant) {
+			PLAYERS.remove(ownerId);
+		}
+		return was;
+	}
+
+	/** True while the passive of this owner still runs on this client (audit). */
+	public static boolean active(int ownerId) {
+		P p = PLAYERS.get(ownerId);
+		return p != null && (p.bankai || p.decal != null || p.vignette != null || p.vignetteHostile != null);
+	}
+
 	/** Seconds since the bankai of this player started (late joiners count as fully settled). */
 	public static double bankaiAge(int entityId) {
 		P p = PLAYERS.get(entityId);
@@ -207,11 +236,11 @@ public final class RukiaBankaiClient {
 			}
 			// ---- owner screen: the release frost edge settles to 0.06
 			if (local && age >= 2.0 && p.vignette == null) {
-				p.vignette = ScreenFx.vignette(ScreenFx.Kind.FROST, FxTune.d("rbankai.vignette", 0.06), 1.0, 1.0);
+				p.vignette = ScreenFx.vignette(ScreenFx.Kind.FROST, FxTune.d("rbankai.vignette", 0.06), 1.0, 1.0).owner(pl.getId());
 			}
 			if (local && age >= 2.0 && p.vignette != null) {
 				if (p.hostileInside && p.vignetteHostile == null) {
-					p.vignetteHostile = ScreenFx.vignette(ScreenFx.Kind.FROST, FxTune.d("rbankai.vignetteHostile", 0.06), 0.5, 1.0);
+					p.vignetteHostile = ScreenFx.vignette(ScreenFx.Kind.FROST, FxTune.d("rbankai.vignetteHostile", 0.06), 0.5, 1.0).owner(pl.getId());
 				} else if (!p.hostileInside && p.vignetteHostile != null) {
 					p.vignetteHostile.release(0.8);
 					p.vignetteHostile = null;

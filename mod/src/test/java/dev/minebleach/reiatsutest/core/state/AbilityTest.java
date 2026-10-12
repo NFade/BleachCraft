@@ -76,7 +76,7 @@ class AbilityTest {
 		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.TSUKISHIRO, R).reason()); // sealed
 		f.toShikai(R);
 		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.MODE_ATTACK, R).reason()); // other character
-		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.ABSOLUTE_ZERO, R).reason()); // other state
+		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.ICE_SPIKE, R).reason()); // other state
 		assertEquals(RejectReason.WRONG_ITEM, f.cast(AbilityId.TSUKISHIRO, B).reason());
 		assertEquals(RejectReason.NOT_IN_STATE, f.sm.cast(new AbilityRequest(null, RequestSource.KEY, 999, R)).reason());
 	}
@@ -112,7 +112,7 @@ class AbilityTest {
 		Fx f = new Fx().toShikai(B);
 		assertTrue(f.cast(AbilityId.MODE_BARRIER, B).ok());
 		assertEquals(ShikaiMode.BARRIER, f.sm.shikaiMode());
-		assertEquals(200, f.sm.barrierPoolTenths());
+		assertEquals(StateMachine.POOL_UNLIMITED, f.sm.barrierPoolTenths());
 		f.adv(12);
 		TransitionResult r = f.cast(AbilityId.MODE_ATTACK, B);
 		assertTrue(r.ok());
@@ -136,15 +136,58 @@ class AbilityTest {
 	}
 
 	@Test
-	void barrierAbsorbsEightyPercentUntilThePoolIsGone() {
-		Fx f = new Fx().toShikai(B);
+	void barrierWithAPoolAbsorbsEightyPercentUntilThePoolIsGone() {
+		Fx f = new Fx(BalanceConfig.defaults().withBarrier(200, 80, true), 1000).toShikai(B);
 		assertEquals(100, f.sm.absorbBarrier(100)); // no barrier yet
 		assertTrue(f.cast(AbilityId.MODE_BARRIER, B).ok());
+		assertEquals(200, f.sm.barrierPoolTenths());
 		assertEquals(20, f.sm.absorbBarrier(100)); // 80 absorbed, pool 120
 		assertEquals(20, f.sm.absorbBarrier(100)); // pool 40
 		assertEquals(60, f.sm.absorbBarrier(100)); // only 40 left: 100 - 40, dome collapses
 		assertEquals(ShikaiMode.IDLE, f.sm.shikaiMode());
+		assertFalse(f.sm.barrierActive());
 		assertEquals(100, f.sm.absorbBarrier(100));
+	}
+
+	@Test
+	void barrierDefaultHasNoPoolCapAndCutsEightyPercentForItsWholeTime() {
+		Fx f = new Fx().toShikai(B);
+		assertEquals(0, BalanceConfig.defaults().barrierPoolTenths());
+		assertEquals(80, BalanceConfig.defaults().barrierReductionPercent());
+		assertTrue(BalanceConfig.defaults().barrierControlImmune());
+		assertFalse(f.sm.barrierActive());
+		assertTrue(f.cast(AbilityId.MODE_BARRIER, B).ok());
+		assertTrue(f.sm.barrierActive());
+		assertTrue(f.sm.barrierControlImmune());
+		// 50 hits of 10 HP each: every one is cut to 2 HP, the dome never collapses early
+		for (int i = 0; i < 50; i++) {
+			assertEquals(20, f.sm.absorbBarrier(100));
+		}
+		assertEquals(ShikaiMode.BARRIER, f.sm.shikaiMode());
+		assertEquals(StateMachine.POOL_UNLIMITED, f.sm.barrierPoolTenths());
+		f.adv(99);
+		assertTrue(f.sm.barrierActive());
+		f.adv(1); // 5 s: over
+		assertFalse(f.sm.barrierActive());
+		assertFalse(f.sm.barrierControlImmune());
+		assertEquals(100, f.sm.absorbBarrier(100));
+	}
+
+	@Test
+	void barrierControlImmunityCanBeSwitchedOffAndEndsWithEveryReset() {
+		Fx off = new Fx(BalanceConfig.defaults().withBarrier(0, 80, false), 1000).toShikai(B);
+		assertTrue(off.cast(AbilityId.MODE_BARRIER, B).ok());
+		assertTrue(off.sm.barrierActive());
+		assertFalse(off.sm.barrierControlImmune());
+		Fx f = new Fx().toShikai(B);
+		assertTrue(f.cast(AbilityId.MODE_BARRIER, B).ok());
+		assertTrue(f.sm.barrierControlImmune());
+		f.sm.onDeath();
+		assertFalse(f.sm.barrierControlImmune());
+		Fx g = new Fx().toShikai(B);
+		assertTrue(g.cast(AbilityId.MODE_BARRIER, B).ok());
+		g.sm.devSetState(ZanpakutoState.SHIKAI, B);
+		assertFalse(g.sm.barrierControlImmune());
 	}
 
 	@Test
@@ -160,7 +203,6 @@ class AbilityTest {
 	@Test
 	void C11_scheduledPhaseOffsets() {
 		assertEquals(List.of(20, 40), phases(AbilityId.TSUKISHIRO));
-		assertEquals(List.of(40, 100), phases(AbilityId.ABSOLUTE_ZERO));
 		assertEquals(List.of(14, 16, 18, 20, 22, 24), phases(AbilityId.ICE_SPIKE));
 		assertEquals(List.of(12, 22, 32, 42, 52, 62), phases(AbilityId.CAGE));
 		assertEquals(List.of(12), phases(AbilityId.SHIRAFUNE));

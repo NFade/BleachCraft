@@ -186,11 +186,7 @@ class TransitionTest {
 		rates.put(ZanpakutoState.BASE, d.rate(ZanpakutoState.BASE));
 		rates.put(ZanpakutoState.SHIKAI, new Rate(0, 100));
 		rates.put(ZanpakutoState.BANKAI, d.rate(ZanpakutoState.BANKAI));
-		BalanceConfig drain = new BalanceConfig(d.maxTenths(), d.regenBatchTicks(), rates, d.shikaiReleaseCost(),
-				d.bankaiCost(), d.bankaiCapTicks(), d.shikaiIdleTicks(), d.handGraceTicks(), d.transitionLockTicks(),
-				d.gcdTicks(), d.settleTicks(), d.sealLockTicks(), d.sheatheLockTicks(), d.bankaiReentryTicks(), d.rateLimitPerSecond(),
-				d.respawnTenths(), d.attackModeTicks(), d.barrierTicks(), d.barrierPoolTenths(),
-				d.barrierReductionPercent(), d.shunpo(), d.abilities());
+		BalanceConfig drain = d.withRates(rates);
 		Fx f = new Fx(drain, 400);
 		f.toBase(R);
 		f.sm.devSetReiatsu(400);
@@ -270,11 +266,12 @@ class TransitionTest {
 	}
 
 	@Test
-	void I4_bankaiBelowFullIsAllowed() {
+	void I4_bankaiBelowFullIsAllowedNow() {
+		// mech2 task 3: the full bar is no longer needed (it used to be BANKAI_NOT_FULL)
 		Fx f = new Fx().toShikai(R);
 		f.sm.devSetReiatsu(999);
 		TransitionResult r = f.tr(ZanpakutoState.BANKAI, R);
-		assertTrue(r.ok());
+		assertTrue(r.ok(), String.valueOf(r.reason()));
 		assertEquals(999, f.sm.reiatsu().value());
 	}
 
@@ -398,7 +395,6 @@ class TransitionTest {
 		assertEquals(ResultCode.DENIED_STATE, RejectReason.NOT_IN_STATE.toWire());
 		assertEquals(ResultCode.DENIED_ITEM, RejectReason.WRONG_ITEM.toWire());
 		assertEquals(ResultCode.DENIED_REIATSU, RejectReason.NOT_ENOUGH_REIATSU.toWire());
-		assertEquals(ResultCode.DENIED_REIATSU, RejectReason.BANKAI_NOT_FULL.toWire());
 		for (RejectReason r : new RejectReason[] {RejectReason.ON_COOLDOWN, RejectReason.RELEASE_LOCK,
 				RejectReason.TRANSITION_LOCK, RejectReason.GCD, RejectReason.SETTLE_LOCK}) {
 			assertEquals(ResultCode.COOLDOWN, r.toWire(), r.name());
@@ -458,7 +454,7 @@ class TransitionTest {
 		assertEquals(ShikaiMode.IDLE, ShikaiMode.fromCode((byte) -1));
 		assertEquals(AbilityId.HAKUREN, AbilityId.fromCommandId("rukia.shikai.hakuren"));
 		assertEquals(AbilityId.ICE_SPIKE, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
-		assertEquals(AbilityId.ABSOLUTE_ZERO, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 1));
+		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 1), "Absolute Zero was removed (mech2 task 4)");
 		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 2));
 		assertEquals(AbilityId.CAGE, AbilityId.forSlot(B, ZanpakutoState.SHIKAI, 2));
 	}

@@ -27,8 +27,8 @@ class PhraseBookTest {
 	private final PhraseBook book = VoiceTestSupport.book();
 
 	@Test
-	void hasThe19CommandsOfTheDesign() {
-		assertEquals(19, book.commands().size(), "16 zanpakuto commands (round 6: ice spike and petal cage) + 3 kido (B5)");
+	void hasThe18CommandsOfTheDesign() {
+		assertEquals(18, book.commands().size(), "15 zanpakuto commands (ice spike and petal cage added in round 6, Absolute Zero removed in mech2 task 4) + 3 kido (B5)");
 		assertEquals(1, book.commands().stream().filter(PhraseBook.Command::optional).count(), "only senkei is optional");
 		assertTrue(book.command("byakuya.bankai.senkei").optional());
 		assertFalse(book.fillerKeys().isEmpty());
@@ -49,7 +49,7 @@ class PhraseBookTest {
 				assertFalse(v.key().isEmpty(), v.text());
 				assertEquals(v.key(), String.join(" ", v.tokens()));
 				assertEquals(v.key().replace(" ", ""), v.compact());
-				assertTrue(seen.add(v.text() + "|" + v.requiresFullReiatsu()), c.id() + " duplicate variant " + v.text());
+				assertTrue(seen.add(v.text() + "|" + v.requiresBankaiReady()), c.id() + " duplicate variant " + v.text());
 			}
 		}
 	}
@@ -75,17 +75,17 @@ class PhraseBookTest {
 	@Test
 	void contextGatedVariantsExistOnlyForTheBankaiReleases() {
 		for (PhraseBook.Command c : book.commands()) {
-			long gated = c.variants().stream().filter(PhraseBook.Variant::requiresFullReiatsu).count();
+			long gated = c.variants().stream().filter(PhraseBook.Variant::requiresBankaiReady).count();
 			if (c.id().endsWith(".bankai.release")) {
 				assertTrue(gated >= 3, c.id() + " gated aliases " + gated);
-				c.variants().stream().filter(PhraseBook.Variant::requiresFullReiatsu)
+				c.variants().stream().filter(PhraseBook.Variant::requiresBankaiReady)
 						.forEach(v -> assertEquals("A", v.origin(), v.text()));
 			} else {
 				assertEquals(0, gated, c.id());
 			}
 		}
 		assertTrue(book.command("rukia.bankai.release").variants().stream()
-				.anyMatch(v -> v.requiresFullReiatsu() && v.key().equals("bank e") && v.weak()));
+				.anyMatch(v -> v.requiresBankaiReady() && v.key().equals("bank e") && v.weak()));
 	}
 
 	@Test
@@ -143,7 +143,7 @@ class PhraseBookTest {
 				expected.get(current).add(c[1].trim().replace(" (weak: whole utterance)", ""));
 			}
 		}
-		assertEquals(19, expected.size());
+		assertEquals(18, expected.size());
 		for (Map.Entry<String, Set<String>> e : expected.entrySet()) {
 			PhraseBook.Command c = book.command(e.getKey());
 			assertNotNull(c, e.getKey());

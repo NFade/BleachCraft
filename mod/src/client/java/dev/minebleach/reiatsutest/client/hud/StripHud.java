@@ -22,7 +22,6 @@ final class StripHud {
 			case TSUKISHIRO -> 0;
 			case HAKUREN -> 1;
 			case SHIRAFUNE -> 2;
-			case ABSOLUTE_ZERO -> 3;
 			case MODE_ATTACK -> 4;
 			case MODE_BARRIER -> 5;
 			case SCATTER -> 6;

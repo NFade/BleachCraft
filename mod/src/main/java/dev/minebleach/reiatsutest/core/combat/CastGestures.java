@@ -76,7 +76,6 @@ public final class CastGestures {
 			case TSUKISHIRO -> 20;
 			case HAKUREN -> 21;
 			case SHIRAFUNE -> 22;
-			case ABSOLUTE_ZERO -> 23;
 			case ICE_SPIKE -> 24;
 			case MODE_ATTACK -> 30;
 			case MODE_BARRIER -> 31;
@@ -210,30 +209,6 @@ public final class CastGestures {
 				.c(0.45, SM, 0, 0, 0, 0)
 				.c(1.20, SM, -1, 0, 0, 0)
 				.c(2.00, SM, 0, 0, 0, 0), 0.12, -150, -20, 60, 2.2));
-
-		// ---- Rukia, Absolute zero: overhead, the cold strike, the blade across the chest, the world stops for a second, the break
-		put(m, tp(CastGesture.builder("rukia.bankai.absolute_zero").dur(3.4).out(0.4).hold(2.0, 1.0)
-				.r(0.00, SM, 0, 0.14, -0.06, 55, 0, 6)
-				.r(0.30, SM, 0.01, 0.15, -0.06, 58, 0, 6)
-				.r(0.42, OUT, 0.02, -0.10, -0.26, -70, 0, 0)
-				.r(0.65, SM, 0, -0.04, -0.20, -40, 0, 0)
-				.r(1.05, SM, 0, -0.06, -0.20, -8, 0, 76)
-				.r(2.00, SM, 0, -0.06, -0.20, -8, 0, 78)
-				.r(2.35, OUT, 0.02, 0, -0.16, -12, 0, -26)
-				.r(3.40, SM, 0, 0, 0, 0, 0, 0)
-				.vib('R', 2.0, 2.3, 0.008, 12)
-				.l(0.00, SM, 0.08, -0.03, -0.14, 0, 0, 0, 0.7)
-				.l(0.40, OUT, -0.05, -0.10, -0.25, 15, 0, 0, 1)
-				.l(0.65, SM, -0.05, -0.05, -0.22, 0, 0, 0, 1)
-				.l(1.05, SM, -0.10, 0.04, -0.24, 0, 0, 0, 1)
-				.l(2.00, SM, -0.10, 0.04, -0.24, 0, 0, 0, 1)
-				.l(2.45, OUT, -0.36, 0.05, -0.12, 0, -30, 0, 1)
-				.l(3.00, SM, -0.20, 0, -0.14, 0, 0, 0, 1)
-				.l(3.40, SM, 0, 0, 0, 0, 0, 0, 0)
-				.c(0.42, OUT, -1.5, 0, 0, 0)
-				.c(1.00, SM, 0, 0, 0, 0)
-				.c(2.45, OUT, -2, 0, 0, 4)
-				.c(3.00, SM, 0, 0, 0, 0), 0.20, -170, -30, 40, 3.4));
 
 		// ---- Byakuya, shikai release (Chire): the hilt at the face through the pink hold, then the hand thrown forward, the left hand conducts
 		put(m, tp(CastGesture.builder(BYAKUYA_SHIKAI).dur(2.2).out(0.4)

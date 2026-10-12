@@ -29,6 +29,8 @@ public record BalanceConfig(
 		int barrierTicks,
 		int barrierPoolTenths,
 		int barrierReductionPercent,
+		boolean barrierControlImmune,
+		BankaiFieldSpec bankaiField,
 		ShunpoSpec shunpo,
 		Map<AbilityId, AbilitySpec> abilities) {
 
@@ -46,8 +48,32 @@ public record BalanceConfig(
 		return abilities.get(id);
 	}
 
+	/** A copy with another rate table (drain scenarios in tests). */
+	public BalanceConfig withRates(Map<ZanpakutoState, Rate> newRates) {
+		return new BalanceConfig(maxTenths, regenBatchTicks, newRates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
+				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
+				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, barrierPoolTenths, barrierReductionPercent,
+				barrierControlImmune, bankaiField, shunpo, abilities);
+	}
+
+	/** A copy with another territory spec (tests). */
+	public BalanceConfig withBankaiField(BankaiFieldSpec field) {
+		return new BalanceConfig(maxTenths, regenBatchTicks, rates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
+				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
+				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, barrierPoolTenths, barrierReductionPercent,
+				barrierControlImmune, field, shunpo, abilities);
+	}
+
+	/** A copy with other barrier numbers: pool in tenths of a HP (0 = unlimited), reduction percent, control immunity. */
+	public BalanceConfig withBarrier(int poolTenths, int reductionPercent, boolean controlImmune) {
+		return new BalanceConfig(maxTenths, regenBatchTicks, rates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
+				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
+				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, poolTenths, reductionPercent,
+				controlImmune, bankaiField, shunpo, abilities);
+	}
+
 	/**
-	 * Defaults. B4 step 4 (justification: LOG.md "B4 step 4"): bankai costs no reiatsu to enter (the bar must still be full),
+	 * Defaults. B4 step 4 (justification: LOG.md "B4 step 4"): bankai costs no reiatsu to enter (and needs no full bar, mech2 task 3; the Rage gate stays),
 	 * lasts {@code bankaiCapTicks} as a plain timer and then falls back to SHIKAI; its abilities cost nothing but have
 	 * cooldowns; shikai abilities stay usable inside bankai with their normal costs. Areas of every ability are 1.5 to 2 times
 	 * the old values (shikai) or 10 to 16 blocks (bankai).
@@ -67,15 +93,11 @@ public record BalanceConfig(
 				AbilityParams.LENGTH, 20.0, AbilityParams.HALF_WIDTH, 3.5, AbilityParams.MAX_TARGETS, 20, AbilityParams.DAMAGE, 5.0, AbilityParams.SLOW_AMP, 1, AbilityParams.STATUS_TICKS, 60, AbilityParams.MAX_BLOCKS, 64)));
 		a.put(AbilityId.SHIRAFUNE, new AbilitySpec(AbilityId.SHIRAFUNE, 150, 100, 22, true, List.of(12), p(
 				AbilityParams.LENGTH, 14.0, AbilityParams.DAMAGE, 8.0, AbilityParams.SLOW_AMP, 2, AbilityParams.STATUS_TICKS, 80)));
-		// ---- Rukia bankai (round 6: two different abilities instead of two freezes)
+		// ---- Rukia bankai: the ice spike is the one ability; the second slot became the passive frost territory (BankaiFieldSpec, mech2 task 4)
 		// Ice spike (U): a 36 block thrust of ice spikes along the look ray (the wave runs 6 blocks per 2 ticks), one hit per target,
 		// 9 HP and Slowness III for 4 s, 15 reiatsu, 8 s cooldown. About 1.1 HP per second when spammed.
 		a.put(AbilityId.ICE_SPIKE, new AbilitySpec(AbilityId.ICE_SPIKE, 150, 160, 24, true, List.of(14, 16, 18, 20, 22, 24), p(
 				AbilityParams.LENGTH, 36.0, AbilityParams.HALF_WIDTH, 1.5, AbilityParams.MAX_TARGETS, 12, AbilityParams.DAMAGE, 9.0, AbilityParams.SLOW_AMP, 2, AbilityParams.STATUS_TICKS, 80)));
-		// Absolute zero (I): everything within 12 blocks is frozen solid for 3 s (Slowness VII), then shatters for 18 HP. Heavy: 50 reiatsu
-		// (half the bar, 25 s of bankai regeneration) and a 40 s cooldown, so it is a once or twice per bankai trump card, 0.45 HP per second.
-		a.put(AbilityId.ABSOLUTE_ZERO, new AbilitySpec(AbilityId.ABSOLUTE_ZERO, 500, 800, 23, true, List.of(40, 100), p(
-				AbilityParams.RADIUS, 12.0, AbilityParams.MAX_TARGETS, 48, AbilityParams.SLOW_AMP, 6, AbilityParams.STATUS_TICKS, 60, AbilityParams.DAMAGE, 18.0, AbilityParams.SPLIT_RADIUS, 16.0)));
 		// ---- Byakuya shikai
 		a.put(AbilityId.MODE_ATTACK, new AbilitySpec(AbilityId.MODE_ATTACK, 120, 60, 30, true, List.of(10, 12, 14, 20), p(
 				AbilityParams.RADIUS, 3.0, AbilityParams.MAX_TARGETS, 16, AbilityParams.DAMAGE, 2.0, AbilityParams.AIM_RANGE, 19.0)));
@@ -96,7 +118,10 @@ public record BalanceConfig(
 				1000, 5, rates,
 				150, 0, 900, 2400, 20,
 				10, 12, 44, 40, 0, 1200,
-				10, 500, 30, 100, 200, 80,
+				// barrier (H): 5 s, 80 percent less damage for the whole time (pool 0 = no cap, the dome never collapses early), control immune
+				10, 500, 30, 100, 0, 80, true,
+				// passive frost territory of the Rukia bankai (mech2 task 4)
+				BankaiFieldSpec.defaults(),
 				new ShunpoSpec(50, 50, 9.0, 1.5, 0.25, 3), a);
 	}
 

@@ -65,9 +65,6 @@ class RageGateTest {
 	void bankaiNeedsEightyAndPaysIt() {
 		Rig g = new Rig(1000);
 		g.fx.toShikai(R);
-		while (!g.fx.sm.reiatsu().isFull()) {
-			g.fx.adv(5);
-		}
 		g.rage[0] = 799;
 		TransitionResult denied = g.fx.tr(ZanpakutoState.BANKAI, R);
 		assertEquals(RejectReason.NOT_ENOUGH_RAGE, denied.reason());

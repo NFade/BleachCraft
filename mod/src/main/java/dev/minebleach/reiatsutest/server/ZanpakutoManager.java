@@ -14,6 +14,8 @@ import dev.minebleach.reiatsutest.core.state.StateEvent;
 import dev.minebleach.reiatsutest.core.state.StateMachine;
 import dev.minebleach.reiatsutest.core.state.TransitionRequest;
 import dev.minebleach.reiatsutest.core.state.TransitionResult;
+import dev.minebleach.reiatsutest.core.state.Trigger;
+import dev.minebleach.reiatsutest.core.state.EffectIds;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.net.ActionResultS2C;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
@@ -117,6 +119,7 @@ public final class ZanpakutoManager {
 		ServerLifecycleEvents.SERVER_STOPPING.register(srv -> {
 			TempBlocks.onServerStopping(srv);
 			SCHEDULER.clear();
+			BankaiField.clearAll();
 			SESSIONS.clear();
 			server = null;
 		});
@@ -168,7 +171,12 @@ public final class ZanpakutoManager {
 	private static void onLeave(ServerPlayerEntity p) {
 		Session s = SESSIONS.remove(p.getUuid());
 		if (s != null) {
-			s.sm.onLogout();
+			// the machine's own events are not applied (the player is leaving), but the bankai cleanup must run: frost, anchors, clients
+			for (StateEvent e : s.sm.onLogout()) {
+				if (e instanceof StateEvent.BankaiEnded b) {
+					endBankaiEffects(p, b.who(), b.trigger());
+				}
+			}
 		}
 		SCHEDULER.cancel(p.getUuid());
 		AnchorManager.reset(p);
@@ -344,6 +352,7 @@ public final class ZanpakutoManager {
 					}
 				}
 				case StateEvent.ShikaiModeChanged m -> { }
+				case StateEvent.BankaiEnded b -> endBankaiEffects(p, b.who(), b.trigger());
 				case StateEvent.KidoCast k -> KidoManager.cast(p, k);
 				case StateEvent.ShunpoMove m -> {
 					p.networkHandler.requestTeleport(m.toX(), m.toY(), m.toZ(), p.getYaw(), p.getPitch());
@@ -409,8 +418,8 @@ public final class ZanpakutoManager {
 			}
 			apply(p, s, ev, null);
 
-			if (sm.state() == ZanpakutoState.BANKAI && sm.character() == CharacterId.RUKIA && now % 10 == 0) {
-				AbilityExecutor.rukiaBankaiPassive(p);
+			if (sm.state() == ZanpakutoState.BANKAI && sm.character() == CharacterId.RUKIA) {
+				BankaiField.tick(p, sm.config().bankaiField(), now); // the passive frost territory (mech2 task 4)
 			}
 			if ((now + p.getId()) % 20 == 0) {
 				applyMirror(p, sm); // invariant check (ADR section 3)
@@ -501,6 +510,78 @@ public final class ZanpakutoManager {
 			reentrantDamage = false;
 		}
 		return false;
+	}
+
+	// ------------------------------------------------------------------ the one bankai cleanup (mech2 task 2)
+
+	/** How many bankai cleanups ran since the server started (dev audit and tests). */
+	private static int bankaiCleanups;
+
+	/**
+	 * THE cleanup of a bankai. Every end reason (45 s timer, seal, death, logout, dimension change, spectator, dev reset) reaches it
+	 * through {@link StateEvent.BankaiEnded}, which the machine emits exactly once per bankai: effect anchors (rows, swarm) and the Rukia
+	 * field anchor are discarded now, the frost territory starts to thaw now (fast when the owner is dead, gone or elsewhere), scheduled
+	 * phases of bankai abilities are dropped, and the clients get {@link EffectIds#BANKAI_CLEANUP} so every bankai effect of that owner
+	 * ends there too. Idempotent: running it twice finds nothing left.
+	 */
+	static void endBankaiEffects(ServerPlayerEntity p, CharacterId who, Trigger why) {
+		bankaiCleanups++;
+		UUID id = p.getUuid();
+		boolean fast = why == Trigger.DEATH || why == Trigger.LOGOUT || why == Trigger.DIMENSION_CHANGE;
+		int anchors = AnchorManager.count(p);
+		AnchorManager.reset(p);
+		int fieldAnchors = RukiaServerFx.endOf(id);
+		boolean territory = BankaiField.end(id);
+		int fields = p.getServer() == null ? 0 : FrostField.endOf(p.getServer(), id, fast);
+		int phases = SCHEDULER.cancelIf(id, a -> a.requiredState == ZanpakutoState.BANKAI);
+		ServerFx.bankaiEnd(p, who, why);
+		ReiatsuTest.LOGGER.info("[bankai-end] {} {} ended ({}): {} anchor(s), {} field anchor(s), territory {}, {} frost field(s) thawing{}, {} scheduled phase(s) dropped",
+				p.getName().getString(), who, why, anchors, fieldAnchors, territory ? "ended" : "-", fields, fast ? " fast" : "", phases);
+	}
+
+	/** Slowness and damage pulses of the Rukia bankai territory since the server started: {slow, damage} (dev audit and the harness). */
+	public static int[] fieldPulses() {
+		return new int[] {BankaiField.slowPulses(), BankaiField.damagePulses()};
+	}
+
+	public static int bankaiCleanups() {
+		return bankaiCleanups;
+	}
+
+	/**
+	 * Server side leftovers of a player's bankai, for the audit after an end: anchors alive, Rukia field anchors, frost fields (not
+	 * the manual dev ones), scheduled bankai phases and the passive territory (index 4). Everything must be 0 once the bankai is over.
+	 */
+	public static int[] bankaiLeftovers(ServerPlayerEntity p) {
+		int phases = SCHEDULER.countFor(p.getUuid(), a -> a.requiredState == ZanpakutoState.BANKAI);
+		return new int[] {AnchorManager.count(p), RukiaServerFx.liveOf(p.getUuid()), FrostField.liveFields(p.getUuid()), phases, BankaiField.live(p.getUuid())};
+	}
+
+	// ------------------------------------------------------------------ barrier: control immunity (mech2 task 1)
+
+	/** How many control effects the barrier has refused since the server started (dev check and tests). */
+	private static int barrierRefusals;
+
+	/**
+	 * Server side, called by the mixins: does a Byakuya barrier with control immunity stand on this entity right now? False for
+	 * everything that is not an online player with a session, on the client and for the dead.
+	 */
+	public static boolean barrierControlImmune(Entity e) {
+		if (!(e instanceof ServerPlayerEntity p) || p.isDead()) {
+			return false;
+		}
+		Session s = SESSIONS.get(p.getUuid());
+		return s != null && s.sm.barrierControlImmune();
+	}
+
+	/** Bookkeeping of one refused control effect ({@code [barrier]} server log, counter). */
+	public static void noteBarrierRefused(Entity e, String what) {
+		barrierRefusals++;
+		ReiatsuTest.LOGGER.info("[barrier] {} refused {}", e.getName().getString(), what);
+	}
+
+	public static int barrierRefusals() {
+		return barrierRefusals;
 	}
 
 	// ------------------------------------------------------------------ info for commands and the harness

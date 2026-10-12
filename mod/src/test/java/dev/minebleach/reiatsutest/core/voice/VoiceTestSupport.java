@@ -58,7 +58,7 @@ final class VoiceTestSupport {
 		return out;
 	}
 
-	/** The context in which a command is valid: its first required state (SHIKAI for the shared seal), its item, full bar. */
+	/** The context in which a command is valid: its first required state (SHIKAI for the shared seal), its item, bankai ready. */
 	static GateContext contextFor(PhraseBook.Command c) {
 		ZanpakutoState st = c.states().size() > 1 ? ZanpakutoState.SHIKAI : c.states().iterator().next();
 		CharacterId item = c.item() == CharacterId.NONE ? CharacterId.RUKIA : c.item();

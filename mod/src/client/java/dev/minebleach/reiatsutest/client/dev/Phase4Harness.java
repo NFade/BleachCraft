@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.client.dev;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.ClientState;
+import dev.minebleach.reiatsutest.client.fx.BankaiEnd;
 import dev.minebleach.reiatsutest.client.fx.FxClock;
 import dev.minebleach.reiatsutest.client.fx.FxSound;
 import dev.minebleach.reiatsutest.client.fx.ShunpoFx;
@@ -15,6 +16,7 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ReleaseState;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
+import dev.minebleach.reiatsutest.server.BarrierCheck;
 import dev.minebleach.reiatsutest.server.ZanpakutoManager;
 import dev.minebleach.reiatsutest.server.TempBlocks;
 import java.io.File;
@@ -234,6 +236,26 @@ public final class Phase4Harness {
 		});
 	}
 
+	/**
+	 * Mech2 task 2: after a bankai ended (whatever the reason) wait out the rows' sink and the client audit (5 s), then require that nothing of it
+	 * is left: no anchor, no Rukia field anchor, no frost field, no scheduled bankai phase on the server; no rows, storm, Hakuteiken, Rukia passive,
+	 * crystal, held screen layer, running bankai timeline, anchor entity or freeze_desat on the client; and no dirty [bankai-audit] line.
+	 */
+	private static void bankaiAuditSteps(String what) {
+		step(what + ": wait for the sink and the audit", 140, () -> { });
+		step(what + ": checks, nothing of the bankai is left", 4, () -> {
+			sCheck(what + ": server leftovers", p -> {
+				int[] l = ZanpakutoManager.bankaiLeftovers(p);
+				return l[0] + l[1] + l[2] + l[3] == 0 ? null : "anchors " + l[0] + " fieldAnchors " + l[1] + " frostFields " + l[2] + " bankaiPhases " + l[3];
+			});
+			cCheck(what + ": client leftovers", () -> {
+				var l = BankaiEnd.leftovers(mc.player.getId());
+				return l.clean() ? null : l.toString();
+			});
+			cCheck(what + ": no dirty [bankai-audit]", () -> BankaiEnd.dirtyAudits == 0 ? null : BankaiEnd.lastAudit);
+		});
+	}
+
 	private static StateMachine sm(ServerPlayerEntity p) {
 		return ZanpakutoManager.machine(p);
 	}
@@ -309,6 +331,7 @@ public final class Phase4Harness {
 		step("setup", 30, () -> {
 			cmd("gamerule doDaylightCycle false", "gamerule doWeatherCycle false", "gamerule doMobSpawning false",
 					"gamerule doImmediateRespawn false", "time set noon", "weather clear", "difficulty easy", "gamemode creative @s",
+					"reiatsu dev ragefree true", // the Rage gate (40 / 80) is tested on its own below and in RageGateTest; everything else waives it
 					"item replace entity @s hotbar.0 with " + RUKIA,
 					"item replace entity @s hotbar.1 with " + BYAKUYA,
 					"tp @s 0.5 -60 0.5 0 20");
@@ -483,24 +506,25 @@ public final class Phase4Harness {
 			});
 		});
 
-		// Denied by reiatsu
-		step("drain reiatsu, press G", 3, () -> {
-			cmd("reiatsu set 50");
+		// Denied by Rage (mech2 task 3: the full reiatsu bar is no longer a condition, the Rage gate stays)
+		step("Rage gate on, Rage 10, press G", 3, () -> {
+			cmd("reiatsu dev ragefree false", "reiatsu dev rage 10", "reiatsu full");
 		});
-		step("press G (bankai, not full)", 8, () -> press(ReiatsuKeys.BANKAI));
-		step("A7 checks: denied reiatsu", 3, () -> {
-			cCheck("A7 bankai at 50.0 is DENIED_REIATSU", () -> lastResultIs("DENIED_REIATSU") ? null : "last result " + lastResult());
-			shot("08_denied_reiatsu_flash");
+		step("press G (bankai, Rage 10)", 8, () -> press(ReiatsuKeys.BANKAI));
+		step("A7 checks: denied by Rage", 3, () -> {
+			cCheck("A7 bankai with Rage 10 is DENIED_RAGE", () -> lastResultIs("DENIED_RAGE") ? null : "last result " + lastResult());
+			sCheck("A7 still SHIKAI", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
+			shot("08_denied_rage_flash");
 		});
 
-		// Bankai (Rukia)
-		step("full reiatsu, wait", 14, () -> cmd("reiatsu full"));
-		step("press G (bankai)", 12, () -> press(ReiatsuKeys.BANKAI));
+		// Bankai (Rukia) from a HALF bar: the bar does not matter
+		step("Rage waived, reiatsu 50, wait", 14, () -> cmd("reiatsu dev ragefree true", "reiatsu set 50"));
+		step("press G (bankai at 50.0 reiatsu)", 12, () -> press(ReiatsuKeys.BANKAI));
 		step("A8 checks: rukia bankai", 3, () -> {
 			sCheck("A8 server BANKAI/RUKIA", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.RUKIA));
-			sCheck("A8 bankai cost no reiatsu (bar still full)", p -> {
+			sCheck("A8 bankai from a half bar was accepted and cost no reiatsu (bar still about 50.0)", p -> {
 				int v = sm(p).reiatsu().value();
-				return v >= 990 ? null : "reiatsu " + v;
+				return v >= 490 && v < 700 ? null : "reiatsu " + v;
 			});
 			sCheck("A8 bankai timer 45 s armed (bankaiEndTick = now + 900)", p -> {
 				long end = sm(p).snapshot().bankaiEndTick();
@@ -511,71 +535,58 @@ public final class Phase4Harness {
 			cCheck("A8 held stack BANKAI", () -> clientStack(ReleaseState.BANKAI));
 			shot("09_rukia_bankai_hud");
 		});
+		step("full bar for the abilities", 2, () -> cmd("reiatsu full"));
 		step("press Z inside settle lock", 6, () -> press(ReiatsuKeys.SLOTS[0]));
 		step("A9 checks: settle lock", 3, () -> {
 			cCheck("A9 Z during settle is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
 		});
-		step("cows for absolute zero + hostile for passive", 50, () -> {
-			spawnCows(3.0, 5.0, 7.0);
-			cmd("summon minecraft:zombie 1.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,ArmorItems:[{},{},{},{id:\"minecraft:leather_helmet\",count:1}]}");
-			// B4 step 4 acceptance: a group more than 10 blocks from the caster (10.5 to 11.6 blocks, all around)
-			spawnFar("11.0 -60 0.5", "-11.0 -60 1.0", "2.0 -60 -11.0", "-7.0 -60 -8.0");
+		// mech2 task 4: the passive frost territory (replaces Absolute zero): Slowness I + 2.0 HP (one heart, armor ignored) every 3 s on enemies
+		// inside the radius; passive animals, the caster and everything outside are left alone
+		step("territory: zombies in full netherite (near and 14 blocks away), one outside the radius, cows", 40, () -> {
+			String netherite = "ArmorItems:[{id:\"minecraft:netherite_boots\",count:1},{id:\"minecraft:netherite_leggings\",count:1},{id:\"minecraft:netherite_chestplate\",count:1},{id:\"minecraft:netherite_helmet\",count:1}]";
+			spawnCows(3.0, 5.0);
+			cmd("summon minecraft:zombie 1.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,Tags:[\"field\"]," + netherite + "}",
+					"summon minecraft:zombie 14.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,Tags:[\"field\"]," + netherite + "}",
+					"summon minecraft:zombie 45.5 -60 1.5 {NoAI:1b,PersistenceRequired:1b,Tags:[\"outside\"],ArmorItems:[{},{},{},{id:\"minecraft:leather_helmet\",count:1}]}");
 			view(0.5, -60, 0.5, 0, 25);
 		});
-		step("A10 checks: bankai passive slows hostile mobs", 12, () -> {
-			sCheck("A10 zombie slowed by the passive", p -> {
-				for (var z : p.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.ZombieEntity.class, Box.of(p.getPos(), 20, 10, 20), e -> true)) {
-					return z.hasStatusEffect(StatusEffects.SLOWNESS) ? null : "zombie without slowness";
-				}
-				return "no zombie";
-			});
-		});
-		step("press U (absolute zero, bankai row)", 42, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
-		step("A11 checks: absolute zero ice", 3, () -> {
-			shot("10_absolute_zero_ice");
-			sCheck("A11 temp ice placed", p -> TempBlocks.count(p.getUuid()) > 0 ? null : "no temp blocks");
-			sCheck("A11 temp ice within the TempBlocks per-player limit (128)", p -> TempBlocks.count(p.getUuid()) <= 128 ? null : "count " + TempBlocks.count(p.getUuid()));
-			sCheck("A11 bankai ability cost no reiatsu", p -> sm(p).reiatsu().value() >= 990 ? null : "reiatsu " + sm(p).reiatsu().value());
-			sCheck("A11 all 7 cows immobilised (Slowness VII)", p -> {
-				for (CowEntity c : cows(p)) {
-					var s = c.getStatusEffect(StatusEffects.SLOWNESS);
-					if (s == null || s.getAmplifier() < 6) {
-						return "cow slowness " + s;
+		step("territory: wait for the pulses", 150, () -> { });
+		step("territory checks", 3, () -> {
+			sCheck("territory: the two zombies in netherite lost whole hearts (2.0 per pulse, armor ignored) and were slowed (Slowness I)", p -> {
+				int seen = 0;
+				for (var z : p.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.ZombieEntity.class, Box.of(p.getPos(), 80, 20, 80), e -> e.getCommandTags().contains("field"))) {
+					seen++;
+					float lost = z.getMaxHealth() - z.getHealth();
+					int hearts = Math.round(lost / 2.0F);
+					if (hearts < 1 || Math.abs(lost - hearts * 2.0F) > 0.01F) {
+						return "zombie lost " + lost + " (not whole 2.0 pulses)";
+					}
+					var slow = z.getStatusEffect(StatusEffects.SLOWNESS);
+					if (slow == null || slow.getAmplifier() != 0) {
+						return "slowness " + slow;
 					}
 				}
-				return cows(p).size() == 7 ? null : "cows " + cows(p).size();
+				return seen == 2 ? null : "field zombies " + seen;
 			});
-			sCheck("A11 ACCEPTANCE: the 4 cows 10+ blocks away are in the frozen group", p -> {
-				int far = 0;
+			sCheck("territory: the zombie outside the radius is untouched", p -> {
+				for (var z : p.getServerWorld().getEntitiesByClass(net.minecraft.entity.mob.ZombieEntity.class, Box.of(p.getPos(), 120, 20, 120), e -> e.getCommandTags().contains("outside"))) {
+					return z.getHealth() >= z.getMaxHealth() - 0.01F && !z.hasStatusEffect(StatusEffects.SLOWNESS) ? null : "outside zombie health " + z.getHealth() + " slow " + z.getStatusEffect(StatusEffects.SLOWNESS);
+				}
+				return "no outside zombie";
+			});
+			sCheck("territory: passive cows are not enemies (full health, not slowed)", p -> {
 				for (CowEntity c : cows(p)) {
-					if (c.getCommandTags().contains("far")) {
-						double d = Math.hypot(c.getX() - p.getX(), c.getZ() - p.getZ());
-						if (d < 10.0) {
-							return "far cow only " + d + " blocks away";
-						}
-						if (c.hasStatusEffect(StatusEffects.SLOWNESS)) {
-							far++;
-						}
+					if (c.getHealth() < c.getMaxHealth() - 0.01F || c.hasStatusEffect(StatusEffects.SLOWNESS)) {
+						return "cow health " + c.getHealth() + " slow " + c.getStatusEffect(StatusEffects.SLOWNESS);
 					}
 				}
-				return far == 4 ? null : "far cows frozen " + far;
+				return cows(p).size() == 2 ? null : "cows " + cows(p).size();
 			});
-			sCheck("A11 sanity: the radius of the frozen group is 10 to 16 blocks", p -> {
-				double max = 0;
-				for (CowEntity c : cows(p)) {
-					max = Math.max(max, Math.hypot(c.getX() - p.getX(), c.getZ() - p.getZ()));
-				}
-				return max >= 10.0 && max <= 16.0 ? null : "farthest cow " + max;
-			});
+			sCheck("territory: the caster is not hurt by her own field", p -> p.getHealth() >= p.getMaxHealth() - 0.01F ? null : "health " + p.getHealth());
+			sCheck("territory: the [dmg] counters show slow and damage pulses", p -> ZanpakutoManager.fieldPulses()[0] > 0 && ZanpakutoManager.fieldPulses()[1] > 0 ? null : java.util.Arrays.toString(ZanpakutoManager.fieldPulses()));
+			shot("10_frost_territory");
 		});
-		step("wait shatter", 30, () -> { });
-		step("A11 checks: shatter", 3, () -> {
-			sCheck("A11 all cows dead after the 18 HP shatter (near and far)", p -> cows(p).isEmpty() ? null : "cows alive " + cows(p).size());
-		});
-		step("wait ice rollback", 110, () -> { });
-		step("A11 checks: ice rolled back", 3, () -> {
-			sCheck("A11 all temp ice gone", p -> TempBlocks.size() == 0 ? null : "still " + TempBlocks.size());
-		});
+		step("territory: clean up the test mobs", 3, () -> cmd("kill @e[type=minecraft:zombie]", "kill @e[type=minecraft:cow]"));
 		// B4 step 4: shikai abilities stay available inside bankai, with their normal cost and cooldown
 		step("A11b cow near, full reiatsu", 20, () -> {
 			spawnCows(2.5);
@@ -597,14 +608,22 @@ public final class Phase4Harness {
 			});
 			cCheck("A11b shikai cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.TSUKISHIRO) > 100
 					? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.TSUKISHIRO));
-			cCheck("A11b bankai ability cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.ABSOLUTE_ZERO) > 100
-					? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.ABSOLUTE_ZERO));
 			shot("10b_bankai_strip_both_rows");
 		});
+		// the only bankai ability of Rukia is the ice spike (U); key I is empty for her now
+		step("A11c press U (ice spike)", 12, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
+		step("A11c checks: ice spike OK, cooldown running, key I is empty", 3, () -> {
+			cCheck("A11c ice spike action_result OK", () -> lastResultIs("OK") ? null : "last result " + lastResult());
+			cCheck("A11c ice spike cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.ICE_SPIKE) > 100 ? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.ICE_SPIKE));
+		});
 		step("A11c press U again (cooldown, no spam)", 12, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
-		step("A11c checks", 3, () -> {
-			cCheck("A11c second absolute zero is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
-			sCheck("A11c nothing was spent", p -> sm(p).reiatsu().value() >= 700 ? null : "reiatsu " + sm(p).reiatsu().value());
+		step("A11c checks: second ice spike", 3, () -> {
+			cCheck("A11c second ice spike is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
+		});
+		step("A11d checks: the second bankai slot of Rukia (key I) is empty", 3, () -> {
+			cCheck("A11d no ability in the Rukia bankai slot 2", () -> AbilityId.forSlot(CharacterId.RUKIA, ZanpakutoState.BANKAI, 1) == null ? null : "ability " + AbilityId.forSlot(CharacterId.RUKIA, ZanpakutoState.BANKAI, 1));
+			cCheck("A11d AbilityId has no absolute zero any more", () -> AbilityId.fromCommandId("rukia.bankai.absolute_zero") == null ? null : "still there");
+			sCheck("A11d still BANKAI", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.RUKIA));
 		});
 		step("press V (seal)", 8, () -> press(ReiatsuKeys.SEAL));
 		step("A12 checks: sealed", 3, () -> {
@@ -616,6 +635,7 @@ public final class Phase4Harness {
 		step("A13 checks: release lock", 3, () -> {
 			cCheck("A13 J during the 2 s release lock is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
 		});
+		bankaiAuditSteps("mech2 seal (Rukia)");
 
 		// ---------------- B. Byakuya
 		step("cleanup, select byakuya", 60, () -> {
@@ -658,7 +678,13 @@ public final class Phase4Harness {
 				float h = p.getHealth();
 				return Math.abs(h - 18.0F) < 0.2F ? null : "health " + h;
 			});
-			sCheck("B3 absorption pool 12.0 left", p -> sm(p).barrierPoolTenths() == 120 ? null : "pool " + sm(p).barrierPoolTenths());
+			sCheck("B3 barrier has no pool cap (the dome lasts its whole time)", p -> sm(p).barrierPoolTenths() == StateMachine.POOL_UNLIMITED ? null : "pool " + sm(p).barrierPoolTenths());
+		});
+		// mech2 task 1: the in-world barrier check (damage cut, control effects, Rukia ice, knockback; positive controls without the barrier)
+		step("mech2: /reiatsu dev barrier_check", 10, () -> cmd("reiatsu dev barrier_check"));
+		step("mech2 checks: barrier_check", 4, () -> {
+			sCheck("mech2 barrier_check ran (" + BarrierCheck.lastChecks + " checks)", p -> BarrierCheck.lastChecks >= 20 ? null : "checks " + BarrierCheck.lastChecks);
+			sCheck("mech2 barrier_check: no failed check (see the [barrier-check] log lines)", p -> BarrierCheck.lastFailures == 0 ? null : "failures " + BarrierCheck.lastFailures);
 		});
 		step("creative again, full reiatsu, wait", 150, () -> cmd("gamemode creative @s", "reiatsu full", "reiatsu cooldowns clear"));
 		step("press G (byakuya bankai)", 14, () -> press(ReiatsuKeys.BANKAI));
@@ -679,6 +705,7 @@ public final class Phase4Harness {
 			cCheck("B5 held stack SHIKAI", () -> clientStack(ReleaseState.SHIKAI));
 			shot("13_after_bankai_timer_back_in_shikai");
 		});
+		bankaiAuditSteps("mech2 timer (Byakuya)");
 		step("B5b press G right after the timer (re-entry lock)", 14, () -> press(ReiatsuKeys.BANKAI));
 		step("B5b checks", 3, () -> {
 			cCheck("B5b bankai is locked after the timer even with a full bar (COOLDOWN)", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
@@ -740,56 +767,49 @@ public final class Phase4Harness {
 		step("B8 checks: sealed", 3, () -> {
 			sCheck("B8 server SEALED", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
 		});
+		bankaiAuditSteps("mech2 seal (Byakuya)");
 
 		// ---------------- D. shunpo (B4 step 5) and the keys
 		buildShunpoSteps();
 
 		// ---------------- C. hand, drop, death, dimension
+		// Round 5: the sword leaving the main hand (slot change, drop, off hand) no longer ends the form; only V, death, logout, dimension, the timers do.
 		step("C1 release rukia, switch hand away", 175, () -> {
+			cmd("reiatsu dev reset");
 			selectSlot(0);
 			cmd("reiatsu full");
 		});
 		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("select empty slot", 10, () -> selectSlot(5));
-		step("C1 checks: inside the 1 s hand grace", 3, () -> {
-			sCheck("C1 still SHIKAI after 0.5 s without the item", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
+		step("wait longer than the old 1 s hand grace", 32, () -> { });
+		step("C1 checks: the form survives an empty hand", 3, () -> {
+			sCheck("C1 still SHIKAI 2 s after the sword left the main hand", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
+			cCheck("C1 client SHIKAI", () -> clientExpect(ZanpakutoState.SHIKAI, CharacterId.RUKIA));
 		});
-		step("wait out the grace", 22, () -> { });
-		step("C1 checks: grace expired", 3, () -> {
-			sCheck("C1 SEALED after the grace", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
-			cCheck("C1 client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
-		});
-		step("C2 re-equip and release", 14, () -> {
+		step("C1 V with an empty hand", 8, () -> press(ReiatsuKeys.SEAL));
+		step("C1 checks: sealing needs no sword", 3, () -> sCheck("C1 SEALED by V without the sword", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE)));
+		step("C2 re-equip and release (after the seal lock)", 60, () -> {
 			selectSlot(0);
 			cmd("reiatsu full");
 		});
 		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
-		step("C2 remove the item (drop)", 6, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
-		step("C2 checks: immediate seal on drop", 3, () -> {
-			sCheck("C2 SEALED right after the item left the inventory", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+		step("C2 remove the item (drop)", 20, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
+		step("C2 checks: no seal on drop", 3, () -> {
+			sCheck("C2 still SHIKAI after the item left the inventory", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
 		});
-		step("C2b give back, only draw, then drop", 20, () -> {
-			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
+		step("C2b reset, give back, only draw, then drop", 20, () -> {
+			cmd("reiatsu dev reset", "item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
+			selectSlot(0);
 		});
 		step("C2b press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("C2b checks: drawn", 2, () -> sCheck("C2b server BASE", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA)));
-		step("C2b remove the item", 6, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
-		step("C2b checks: immediate seal on drop of the drawn sword", 3, () -> {
-			sCheck("C2b SEALED right after the item left the inventory", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+		step("C2b remove the item", 30, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
+		step("C2b checks: the drawn form also survives a drop", 3, () -> {
+			sCheck("C2b still BASE", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA));
 		});
-		step("C2c give back, draw, switch hand away (hand grace)", 20, () -> {
-			cmd("item replace entity @s hotbar.0 with " + RUKIA);
-		});
-		step("C2c press J", 14, () -> press(ReiatsuKeys.DRAW));
-		step("C2c select empty slot", 10, () -> selectSlot(5));
-		step("C2c checks: inside the grace", 3, () -> sCheck("C2c still BASE after 0.5 s without the item", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA)));
-		step("C2c wait out the grace", 22, () -> { });
-		step("C2c checks: grace expired", 3, () -> {
-			sCheck("C2c SEALED after the grace", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
-			cCheck("C2c client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
-		});
+		step("C2c reset", 5, () -> cmd("reiatsu dev reset", "item replace entity @s hotbar.0 with " + RUKIA));
 		step("C3 give back, release, die", 20, () -> {
 			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
 			selectSlot(0);
@@ -841,10 +861,62 @@ public final class Phase4Harness {
 		stepUntil("wait for overworld", 20, 20 * 60, () -> { }, () -> mc.world != null && mc.player != null
 				&& mc.world.getRegistryKey().getValue().toString().equals("minecraft:overworld") && mc.currentScreen == null);
 
+		buildBankaiEndSteps();
+
 		step("finish", 10, () -> {
 			finish();
 			mc.scheduleStop();
 		});
+	}
+
+	// ---------------------------------------------------------------- E. every way a bankai ends (mech2 task 2)
+
+	/** Rukia into bankai: draw, release, bankai (Rage is waived by the dev switch). Her bankai starts the field anchor and the frost territory. */
+	private static void toRukiaBankaiSteps(String what) {
+		step(what + ": rukia in hand, bar full, locks cleared", 20, () -> {
+			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu dev ragefree true", "reiatsu full", "reiatsu cooldowns clear", "tp @s 0.5 -60 0.5 0 20");
+			selectSlot(0);
+		});
+		step(what + ": J", 14, () -> press(ReiatsuKeys.DRAW));
+		step(what + ": R", 14, () -> press(ReiatsuKeys.RELEASE));
+		step(what + ": G", 70, () -> press(ReiatsuKeys.BANKAI));
+		step(what + ": checks, the bankai stands with its field", 3, () -> {
+			sCheck(what + ": server BANKAI/RUKIA", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.RUKIA));
+			sCheck(what + ": the bankai has something to clean (field anchor or frost field)", p -> {
+				int[] l = ZanpakutoManager.bankaiLeftovers(p);
+				return l[1] + l[2] > 0 ? null : "nothing alive: " + java.util.Arrays.toString(l);
+			});
+		});
+	}
+
+	private static void buildBankaiEndSteps() {
+		// E1 death
+		toRukiaBankaiSteps("E1 death");
+		step("E1 kill the player", 30, () -> cmd("kill @s"));
+		stepUntil("E1 respawn", 5, 400, () -> {
+			if (mc.currentScreen instanceof net.minecraft.client.gui.screen.DeathScreen) {
+				mc.player.requestRespawn();
+			}
+		}, () -> mc.player != null && mc.player.isAlive() && mc.currentScreen == null);
+		bankaiAuditSteps("E1 death");
+		// E2 dimension change
+		toRukiaBankaiSteps("E2 dimension");
+		step("E2 go to the nether", 10, () -> cmd("execute in minecraft:the_nether run tp @s 0 100 0"));
+		stepUntil("E2 wait for the nether", 20, 20 * 60, () -> { }, () -> mc.world != null && mc.player != null
+				&& mc.world.getRegistryKey().getValue().toString().equals("minecraft:the_nether") && mc.currentScreen == null);
+		bankaiAuditSteps("E2 dimension");
+		step("E2 back to the overworld", 5, () -> cmd("execute in minecraft:overworld run tp @s 0.5 -60 0.5 0 20"));
+		stepUntil("E2 wait for the overworld", 20, 20 * 60, () -> { }, () -> mc.world != null && mc.player != null
+				&& mc.world.getRegistryKey().getValue().toString().equals("minecraft:overworld") && mc.currentScreen == null);
+		// E3 /reiatsu dev reset
+		toRukiaBankaiSteps("E3 dev reset");
+		step("E3 /reiatsu dev reset", 10, () -> cmd("reiatsu dev reset"));
+		bankaiAuditSteps("E3 dev reset");
+		// E4 the 45 s timer, Rukia (the Byakuya timer is checked in section B)
+		toRukiaBankaiSteps("E4 timer");
+		stepUntil("E4 wait for the 45 s timer", 10, 20 * 60, () -> { }, () -> ClientState.zanpakuto().zanpakutoState() == ZanpakutoState.SHIKAI);
+		bankaiAuditSteps("E4 timer");
+		step("E5 back to normal: ragefree off, sealed", 10, () -> cmd("reiatsu dev ragefree false", "reiatsu dev reset"));
 	}
 
 	// ---------------------------------------------------------------- D. shunpo (B4 step 5)
