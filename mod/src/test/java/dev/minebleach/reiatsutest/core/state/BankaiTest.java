@@ -23,18 +23,37 @@ class BankaiTest {
 	}
 
 	@Test
-	void entryCostsNothingButStillNeedsAFullBar() {
+	void entryCostsNothingAndNeedsNoFullBar() {
+		// mech2 task 3: the "reiatsu must be full" rule is gone; only the Rage gate (RageGateTest) and the locks remain
 		Fx f = new Fx().toShikai(R);
-		f.adv(120); // 850 + 120/5*5 = 970
-		assertTrue(f.sm.reiatsu().value() < 1000);
-		TransitionResult denied = f.tr(ZanpakutoState.BANKAI, R);
-		assertEquals(RejectReason.BANKAI_NOT_FULL, denied.reason());
 		f.adv(30);
+		assertTrue(f.sm.reiatsu().value() < 1000);
 		int before = f.sm.reiatsu().value();
 		TransitionResult ok = f.tr(ZanpakutoState.BANKAI, R);
-		assertTrue(ok.ok());
+		assertTrue(ok.ok(), String.valueOf(ok.reason()));
 		assertEquals(before, f.sm.reiatsu().value());
 		assertFalse(Fx.has(ok.events(), StateEvent.ReiatsuSpent.class));
+		assertEquals(ZanpakutoState.BANKAI, f.sm.state());
+	}
+
+	@Test
+	void entryWorksAtAlmostEmptyBarAndKeepsTheTimerAndTheReentryLock() {
+		for (CharacterId c : new CharacterId[] {R, B}) {
+			Fx f = new Fx().toShikai(c);
+			f.sm.devSetReiatsu(1); // the bar never goes to zero (R2); one tenth is as empty as it gets
+			TransitionResult ok = f.tr(ZanpakutoState.BANKAI, c);
+			assertTrue(ok.ok(), c + " " + ok.reason());
+			assertEquals(1, f.sm.reiatsu().value(), "no cost");
+			assertEquals(f.now() + CFG.bankaiCapTicks(), f.sm.snapshot().bankaiEndTick(), "45 s timer armed");
+			f.adv(CFG.bankaiCapTicks());
+			assertEquals(ZanpakutoState.SHIKAI, f.sm.state(), "the timer still ends it");
+			// the 60 s re-entry lock still applies (not the bar)
+			f.sm.devSetReiatsu(1000);
+			f.adv(CFG.transitionLockTicks() + 1);
+			assertEquals(RejectReason.RELEASE_LOCK, f.tr(ZanpakutoState.BANKAI, c).reason());
+			f.adv(CFG.bankaiReentryTicks() - CFG.transitionLockTicks() - 1);
+			assertTrue(f.tr(ZanpakutoState.BANKAI, c).ok(), "after 60 s the second bankai starts");
+		}
 	}
 
 	@Test

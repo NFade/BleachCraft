@@ -270,8 +270,8 @@ public final class HudModel {
 			chipFrom = -1;
 		}
 
-		// bankai ready gem (SHIKAI at full reiatsu)
-		boolean ready = st == ZanpakutoState.SHIKAI && value >= max
+		// bankai ready gem (SHIKAI with enough Rage; the reiatsu bar does not matter any more, mech2 task 3)
+		boolean ready = st == ZanpakutoState.SHIKAI
 				&& ClientState.rage().value() >= dev.minebleach.reiatsutest.core.rage.RageConfig.defaults().bankaiCostTenths() && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0);
 		if (ready && !gemReady) {
 			gemSparkAt = now;
@@ -495,7 +495,7 @@ public final class HudModel {
 				VOICE.line2Tint = HudAssets.ERROR;
 			}
 			case DENIED_REIATSU -> {
-				VOICE.line2 = Text.translatable(cmd != null && cmd.endsWith(".bankai.release") ? "hud.reiatsu_test.need_full" : "hud.reiatsu_test.voice.need").getString();
+				VOICE.line2 = Text.translatable("hud.reiatsu_test.voice.need").getString();
 				VOICE.line2Tint = HudAssets.ERROR;
 			}
 			case DENIED_STATE, DENIED_ITEM, DENIED_NOT_DRAWN -> {
@@ -629,12 +629,8 @@ public final class HudModel {
 			case DENIED_REIATSU -> {
 				barShakeUntil = now + 0.3;
 				int needed;
-				boolean full = false;
 				if (spec != null) {
 					needed = spec.costTenths();
-				} else if (req != null && req.target() == ZanpakutoState.BANKAI) {
-					needed = max;
-					full = true;
 				} else {
 					needed = CFG.shikaiReleaseCost() + 1;
 				}
@@ -644,8 +640,7 @@ public final class HudModel {
 				if (slot != null) {
 					slot.flashRed = now + 0.4;
 				}
-				Text msg = full ? Text.translatable("hud.reiatsu_test.need_full")
-						: Text.translatable("hud.reiatsu_test.need", String.format(java.util.Locale.ROOT, "%d", Math.round(needed / 10.0)));
+				Text msg = Text.translatable("hud.reiatsu_test.need", String.format(java.util.Locale.ROOT, "%d", Math.round(needed / 10.0)));
 				pushToast(msg, HudAssets.ERROR, ToastKind.DENIED, 1.6);
 				if (FxConfig.hud) {
 					FxSound.ui("block.note_block.bass", 0.6, 0.6);

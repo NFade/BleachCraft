@@ -105,13 +105,13 @@ class DirtyPhraseFixtureTest {
 		assertTrue(loose.confidence() >= m.config().threshold());
 	}
 
-	/** The new aliases and hesitation words must not have opened the gated "bank eye" family for a half-empty bar. */
+	/** The new aliases and hesitation words must not have opened the gated "bank eye" family when bankai is not ready. */
 	@Test
-	void bankEyeFamilyStaysGatedOnTheFullBar() {
+	void bankEyeFamilyStaysGatedOnBankaiReady() {
 		PhraseMatcher m = VoiceTestSupport.matcher();
 		for (String t : new String[] {"bank eye", "bankeye", "bankee", "bank i", "bankie", "banki", "uh bank eye"}) {
 			for (CharacterId who : new CharacterId[] {CharacterId.RUKIA, CharacterId.BYAKUYA}) {
-				assertFalse(m.match(t, GateContext.of(who, ZanpakutoState.SHIKAI, false)).matched(), t + " fired without a full bar");
+				assertFalse(m.match(t, GateContext.of(who, ZanpakutoState.SHIKAI, false)).matched(), t + " fired while bankai is not ready");
 				assertFalse(m.match(t, GateContext.of(who, ZanpakutoState.BASE, true)).matched(), t + " fired outside shikai");
 				assertFalse(m.match(t, GateContext.ungated()).matched(), t + " fired ungated");
 			}

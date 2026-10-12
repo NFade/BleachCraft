@@ -49,7 +49,7 @@ class PhraseBookTest {
 				assertFalse(v.key().isEmpty(), v.text());
 				assertEquals(v.key(), String.join(" ", v.tokens()));
 				assertEquals(v.key().replace(" ", ""), v.compact());
-				assertTrue(seen.add(v.text() + "|" + v.requiresFullReiatsu()), c.id() + " duplicate variant " + v.text());
+				assertTrue(seen.add(v.text() + "|" + v.requiresBankaiReady()), c.id() + " duplicate variant " + v.text());
 			}
 		}
 	}
@@ -75,17 +75,17 @@ class PhraseBookTest {
 	@Test
 	void contextGatedVariantsExistOnlyForTheBankaiReleases() {
 		for (PhraseBook.Command c : book.commands()) {
-			long gated = c.variants().stream().filter(PhraseBook.Variant::requiresFullReiatsu).count();
+			long gated = c.variants().stream().filter(PhraseBook.Variant::requiresBankaiReady).count();
 			if (c.id().endsWith(".bankai.release")) {
 				assertTrue(gated >= 3, c.id() + " gated aliases " + gated);
-				c.variants().stream().filter(PhraseBook.Variant::requiresFullReiatsu)
+				c.variants().stream().filter(PhraseBook.Variant::requiresBankaiReady)
 						.forEach(v -> assertEquals("A", v.origin(), v.text()));
 			} else {
 				assertEquals(0, gated, c.id());
 			}
 		}
 		assertTrue(book.command("rukia.bankai.release").variants().stream()
-				.anyMatch(v -> v.requiresFullReiatsu() && v.key().equals("bank e") && v.weak()));
+				.anyMatch(v -> v.requiresBankaiReady() && v.key().equals("bank e") && v.weak()));
 	}
 
 	@Test

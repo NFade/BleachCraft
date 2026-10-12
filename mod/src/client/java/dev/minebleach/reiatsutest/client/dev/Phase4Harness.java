@@ -331,6 +331,7 @@ public final class Phase4Harness {
 		step("setup", 30, () -> {
 			cmd("gamerule doDaylightCycle false", "gamerule doWeatherCycle false", "gamerule doMobSpawning false",
 					"gamerule doImmediateRespawn false", "time set noon", "weather clear", "difficulty easy", "gamemode creative @s",
+					"reiatsu dev ragefree true", // the Rage gate (40 / 80) is tested on its own below and in RageGateTest; everything else waives it
 					"item replace entity @s hotbar.0 with " + RUKIA,
 					"item replace entity @s hotbar.1 with " + BYAKUYA,
 					"tp @s 0.5 -60 0.5 0 20");
@@ -505,24 +506,25 @@ public final class Phase4Harness {
 			});
 		});
 
-		// Denied by reiatsu
-		step("drain reiatsu, press G", 3, () -> {
-			cmd("reiatsu set 50");
+		// Denied by Rage (mech2 task 3: the full reiatsu bar is no longer a condition, the Rage gate stays)
+		step("Rage gate on, Rage 10, press G", 3, () -> {
+			cmd("reiatsu dev ragefree false", "reiatsu dev rage 10", "reiatsu full");
 		});
-		step("press G (bankai, not full)", 8, () -> press(ReiatsuKeys.BANKAI));
-		step("A7 checks: denied reiatsu", 3, () -> {
-			cCheck("A7 bankai at 50.0 is DENIED_REIATSU", () -> lastResultIs("DENIED_REIATSU") ? null : "last result " + lastResult());
-			shot("08_denied_reiatsu_flash");
+		step("press G (bankai, Rage 10)", 8, () -> press(ReiatsuKeys.BANKAI));
+		step("A7 checks: denied by Rage", 3, () -> {
+			cCheck("A7 bankai with Rage 10 is DENIED_RAGE", () -> lastResultIs("DENIED_RAGE") ? null : "last result " + lastResult());
+			sCheck("A7 still SHIKAI", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
+			shot("08_denied_rage_flash");
 		});
 
-		// Bankai (Rukia)
-		step("full reiatsu, wait", 14, () -> cmd("reiatsu full"));
-		step("press G (bankai)", 12, () -> press(ReiatsuKeys.BANKAI));
+		// Bankai (Rukia) from a HALF bar: the bar does not matter
+		step("Rage waived, reiatsu 50, wait", 14, () -> cmd("reiatsu dev ragefree true", "reiatsu set 50"));
+		step("press G (bankai at 50.0 reiatsu)", 12, () -> press(ReiatsuKeys.BANKAI));
 		step("A8 checks: rukia bankai", 3, () -> {
 			sCheck("A8 server BANKAI/RUKIA", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.RUKIA));
-			sCheck("A8 bankai cost no reiatsu (bar still full)", p -> {
+			sCheck("A8 bankai from a half bar was accepted and cost no reiatsu (bar still about 50.0)", p -> {
 				int v = sm(p).reiatsu().value();
-				return v >= 990 ? null : "reiatsu " + v;
+				return v >= 490 && v < 700 ? null : "reiatsu " + v;
 			});
 			sCheck("A8 bankai timer 45 s armed (bankaiEndTick = now + 900)", p -> {
 				long end = sm(p).snapshot().bankaiEndTick();
@@ -533,6 +535,7 @@ public final class Phase4Harness {
 			cCheck("A8 held stack BANKAI", () -> clientStack(ReleaseState.BANKAI));
 			shot("09_rukia_bankai_hud");
 		});
+		step("full bar for the abilities", 2, () -> cmd("reiatsu full"));
 		step("press Z inside settle lock", 6, () -> press(ReiatsuKeys.SLOTS[0]));
 		step("A9 checks: settle lock", 3, () -> {
 			cCheck("A9 Z during settle is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());

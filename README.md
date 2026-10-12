@@ -85,7 +85,7 @@ Keys are rebindable in Options, Controls, category **Reiatsu Test**. The mod ign
 |---|---|
 | `J` (or right click with the sword) | draw the sword from the scabbard, press again to sheathe it |
 | `R` | release: shikai (only from the drawn form) |
-| `G` | bankai (only from shikai, needs a full reiatsu bar) |
+| `G` | bankai (only from shikai; needs 80 Rage, which it spends; the reiatsu bar does not matter) |
 | `V` | seal: back to the sheathed sword from any drawn form |
 | `Z`, `H`, `B` | ability 1, 2, 3 of the current character and form |
 | shunpo | see in-game **Controls** (Options, Controls, Reiatsu Test); the key is listed there once the ability is in your build |
@@ -97,7 +97,7 @@ cooldowns, damage and radii are numbers in `BalanceConfig` (`core/state`) and ar
 ## State flow
 
 ```
-SEALED --J or right click--> BASE --R--> SHIKAI --G (full bar)--> BANKAI
+SEALED --J or right click--> BASE --R--> SHIKAI --G (80 Rage)--> BANKAI
    ^                          |            |                         |
    +----- J or V -------------+---- V -----+---- V, timeout, bar 0 --+
 ```
@@ -107,8 +107,8 @@ SEALED is the sheathed sword, BASE is the drawn sword without release.
 - The sword has to stay in the main hand. Drop it, hold something else for more than a second, die, change dimension or log out
   and the state goes back to SEALED. The state belongs to the player and is synchronised to everybody (auras); the reiatsu bar is
   private to its owner and saved with the player.
-- Shikai costs 15 reiatsu. Bankai needs the full bar (100) and costs 20; each form regenerates or drains the bar at its own rate,
-  and bankai lasts at most 45 seconds and then returns to SEALED. What the server refuses (state, item, bar, cooldown) is shown as a
+- Shikai costs 15 reiatsu and 40 Rage. Bankai costs no reiatsu and no full bar: it needs 80 Rage (spent on entry); each form regenerates
+  or drains the bar at its own rate, and bankai lasts at most 45 seconds and then returns to SHIKAI (re-entry locked for 60 s). What the server refuses (state, item, bar, cooldown) is shown as a
   short HUD message. Balance is still being tuned (`design/FIXES_B4.md`: bankai timer, bigger radii, shunpo).
 - Abilities change the world only with temporary ice or snow that is rolled back on timeout, seal, death, logout or server stop
   (at most 128 blocks per player). They never hurt the caster, villagers, wandering traders or, by default, other players
@@ -142,19 +142,19 @@ voice command: use `J` or a right click.
 | Rukia | shikai | "Some no mai, Tsukishiro" (or "Tsukishiro") | first dance, Tsukishiro |
 | Rukia | shikai | "Tsugi no mai, Hakuren" (or "Hakuren") | second dance, Hakuren |
 | Rukia | shikai | "San no mai, Shirafune" (or "Shirafune") | third dance, Shirafune |
-| Rukia | shikai | "Bankai, Hakka no Togame" (or just "Bankai"), 卍解, "Банкай" | bankai (needs a full reiatsu bar) |
+| Rukia | shikai | "Bankai, Hakka no Togame" (or just "Bankai"), 卍解, "Банкай" | bankai (needs 80 Rage) |
 | Rukia | bankai | "Absolute zero", 絶対零度, "Абсолютный ноль" | absolute zero |
 | Byakuya | drawn | "Chire, Senbonzakura" (or "Chire", "Scatter"), 散れ千本桜, "Чире" | release (shikai) |
 | Byakuya | shikai | "Attack mode", 攻撃モード, "Режим атаки" | swarm attack mode |
 | Byakuya | shikai | "Barrier mode" or "Dome mode", 防御モード, "Режим барьера" | barrier dome |
-| Byakuya | shikai | "Bankai, Senbonzakura Kageyoshi" (or "Bankai", "Kageyoshi") | bankai (needs a full reiatsu bar) |
+| Byakuya | shikai | "Bankai, Senbonzakura Kageyoshi" (or "Bankai", "Kageyoshi") | bankai (needs 80 Rage) |
 | Byakuya | bankai | "Chire" or "Petal storm", 桜吹雪, "Шторм лепестков" | petal storm (scatter) |
 | Byakuya | bankai | "Shukei, Hakuteiken" (or "Hakuteiken") | Hakuteiken |
 | either | drawn, shikai or bankai | "Seal", 封印, "Запечатать" (whole sentence only) | back to sealed |
 
 Notes: "Chire" is the release when the sword is drawn and the petal storm in bankai, never a bankai trigger. Lone "Seal",
 "Chire" and "Scatter" only count as the whole utterance ("the seal is broken" does nothing). "bank eye" (what English
-recognisers often hear for "bankai") is accepted as bankai only while you are in shikai, hold the sword and the bar is full.
+recognisers often hear for "bankai") is accepted as bankai only while you are in shikai, hold the sword and have the 80 Rage.
 
 **Tuning.** `config/reiatsu_test.json`, section `voice` (port, confidence threshold, debounce times, interim results,
 languages). Regenerate the phrase table after editing `design/VOICE_PHRASES.md` with `python -I tools/gen_voice_phrases.py`.
@@ -221,10 +221,10 @@ Fabric-мод для Minecraft Java 1.21.1 по Bleach: два занпакто,
 - **Сборка:** `cd mod`, `gradlew build` (переменная `JAVA_HOME` на JDK 21). Готовый jar: `mod/build/libs/reiatsu_test-0.0.1-spike.jar`,
   его и Fabric API положить в папку `mods`. Меч лежит во вкладке Combat (боевые предметы) творческого инвентаря или выдаётся командой
   `/give @s reiatsu_test:sode_no_shirayuki`.
-- **Клавиши:** `J` или правый клик достаёт меч и убирает в ножны, `R` шикай, `G` банкай (нужна полная шкала), `V` запечатать,
+- **Клавиши:** `J` или правый клик достаёт меч и убирает в ножны, `R` шикай, `G` банкай (нужно 80 Ярости, полная шкала рейацу не нужна), `V` запечатать,
   `Z` `H` `B` способности 1-3. Клавишу шунпо смотри в игре: «Настройки, Управление, Reiatsu Test».
 - **Состояния:** ножны, меч обнажён, шикай, банкай. Шикай включается только из обнажённого состояния, банкай только из шикая при
-  полной шкале рейацу, банкай длится не больше 45 секунд.
+  80 Ярости (полная шкала рейацу не нужна), банкай длится не больше 45 секунд.
 - **Голос:** в одиночной игре откройте ссылку из чата (`http://127.0.0.1:47821/`) в Chrome или Edge, нажмите Start, разрешите
   микрофон и выберите язык (японский, английский или русский). Фразы указаны в таблице раздела Voice. Распознавание делает облако
   браузера (нужен интернет); на выделенном сервере голосовой мост не запускается.

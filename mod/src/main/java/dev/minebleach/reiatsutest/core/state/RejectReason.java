@@ -6,7 +6,6 @@ public enum RejectReason {
 	NOT_DRAWN(ResultCode.DENIED_NOT_DRAWN),
 	WRONG_ITEM(ResultCode.DENIED_ITEM),
 	NOT_ENOUGH_REIATSU(ResultCode.DENIED_REIATSU),
-	BANKAI_NOT_FULL(ResultCode.DENIED_REIATSU),
 	/** Round 5: shikai / bankai entry needs Rage (rage.shikaiCost / rage.bankaiCost). */
 	NOT_ENOUGH_RAGE(ResultCode.DENIED_RAGE),
 	ON_COOLDOWN(ResultCode.COOLDOWN),

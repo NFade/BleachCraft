@@ -250,7 +250,7 @@ public final class Phase5Harness {
 
 	private static void run() throws Exception {
 		serverCommands("gamerule doDaylightCycle false", "gamerule doMobSpawning false", "time set noon", "weather clear",
-				"gamemode creative @s", "item replace entity @s hotbar.0 with " + RUKIA, "item replace entity @s hotbar.1 with " + BYAKUYA,
+				"gamemode creative @s", "reiatsu dev ragefree true", "item replace entity @s hotbar.0 with " + RUKIA, "item replace entity @s hotbar.1 with " + BYAKUYA,
 				"tp @s 0.5 -60 0.5 0 20");
 		selectSlot(0);
 		Thread.sleep(1500);
@@ -291,11 +291,14 @@ public final class Phase5Harness {
 		check("V3 weak word in a sentence: ignored", !matched(r), r.toString());
 		check("V3 state unchanged", serverState() == ZanpakutoState.SHIKAI, "server " + serverState());
 
-		// ---- V4 voice cannot bypass the reiatsu rule: bankai needs a full bar, the bar is at 85
+		// ---- V4 voice cannot bypass the Rage gate (mech2 task 3: the reiatsu bar is no longer part of the bankai rule, Rage 80 is)
 		Thread.sleep(700); // past the 10 tick transition lock of the release
+		serverCommands("reiatsu dev ragefree false", "reiatsu dev rage 0");
+		Thread.sleep(300);
 		r = post("Bankai, Hakka no Togame", "en-US", true);
-		check("V4 bankai without a full bar is denied by the server", matched(r) && "DENIED_REIATSU".equals(str(r, "result")), r.toString());
+		check("V4 bankai without enough Rage is denied by the server", matched(r) && "DENIED_RAGE".equals(str(r, "result")), r.toString());
 		check("V4 state still SHIKAI", serverState() == ZanpakutoState.SHIKAI, "server " + serverState());
+		serverCommands("reiatsu dev ragefree true");
 
 		// ---- V5 ability by voice, cooldown not bypassed, debounce
 		Thread.sleep(1600);
@@ -329,7 +332,7 @@ public final class Phase5Harness {
 		r = post("hakuren", "en-US", true);
 		check("V7 ability phrase while sealed: gated out", !matched(r) && "gated_out".equals(str(r, "reason")), r.toString());
 
-		// ---- V8 Byakuya: Chire means three things, "bank eye" only with shikai + full bar
+		// ---- V8 Byakuya: Chire means three things, "bank eye" only with shikai + the sword + enough Rage (bankai ready)
 		selectSlot(1);
 		serverCommands("reiatsu full");
 		Thread.sleep(2500); // release lock of the seal above
@@ -337,19 +340,18 @@ public final class Phase5Harness {
 		r = post("Chire, Senbonzakura", "ru-RU", true);
 		check("V8 Chire Senbonzakura releases (drawn base form)", matched(r) && "byakuya.shikai.release".equals(str(r, "command")) && "OK".equals(str(r, "result")), r.toString());
 		Thread.sleep(400);
+		serverCommands("reiatsu dev ragefree false", "reiatsu dev rage 0");
+		Thread.sleep(300);
 		r = post("bank eye", "en-US", true);
-		check("V8 'bank eye' with a bar below full is NOT bankai", !matched(r), r.toString());
-		onServer(p -> {
-			sm(p).devSetReiatsu(1000);
-			ZanpakutoManager.applyExternal(p, List.of());
-			return null;
-		});
+		check("V8 'bank eye' without enough Rage (bankai not ready) is NOT bankai", !matched(r), r.toString());
+		serverCommands("reiatsu dev rage 100");
 		Thread.sleep(1700);
 		r = post("bank eye", "en-US", true);
-		check("V8 'bank eye' with shikai + full bar + sword is bankai", matched(r) && "byakuya.bankai.release".equals(str(r, "command")) && "OK".equals(str(r, "result")),
+		check("V8 'bank eye' with shikai + enough Rage + sword is bankai", matched(r) && "byakuya.bankai.release".equals(str(r, "command")) && "OK".equals(str(r, "result")),
 				r.toString());
 		check("V8 server BANKAI", serverState() == ZanpakutoState.BANKAI, "server " + serverState());
 		check("V8 client BANKAI", waitUntil(() -> clientState() == ZanpakutoState.BANKAI, 1000), "client " + clientState());
+		serverCommands("reiatsu dev ragefree true");
 		Thread.sleep(400);
 		r = post("Chire", "en-US", true);
 		check("V8 lone Chire in bankai is the petal storm, rejected by the 44-tick settle lock (not bypassed)",

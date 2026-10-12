@@ -266,12 +266,12 @@ class TransitionTest {
 	}
 
 	@Test
-	void I4_bankaiBelowFull() {
+	void I4_bankaiBelowFullIsAllowedNow() {
+		// mech2 task 3: the full bar is no longer needed (it used to be BANKAI_NOT_FULL)
 		Fx f = new Fx().toShikai(R);
 		f.sm.devSetReiatsu(999);
 		TransitionResult r = f.tr(ZanpakutoState.BANKAI, R);
-		assertDenied(r, RejectReason.BANKAI_NOT_FULL);
-		assertEquals(ResultCode.DENIED_REIATSU, r.code());
+		assertTrue(r.ok(), String.valueOf(r.reason()));
 		assertEquals(999, f.sm.reiatsu().value());
 	}
 
@@ -395,7 +395,6 @@ class TransitionTest {
 		assertEquals(ResultCode.DENIED_STATE, RejectReason.NOT_IN_STATE.toWire());
 		assertEquals(ResultCode.DENIED_ITEM, RejectReason.WRONG_ITEM.toWire());
 		assertEquals(ResultCode.DENIED_REIATSU, RejectReason.NOT_ENOUGH_REIATSU.toWire());
-		assertEquals(ResultCode.DENIED_REIATSU, RejectReason.BANKAI_NOT_FULL.toWire());
 		for (RejectReason r : new RejectReason[] {RejectReason.ON_COOLDOWN, RejectReason.RELEASE_LOCK,
 				RejectReason.TRANSITION_LOCK, RejectReason.GCD, RejectReason.SETTLE_LOCK}) {
 			assertEquals(ResultCode.COOLDOWN, r.toWire(), r.name());

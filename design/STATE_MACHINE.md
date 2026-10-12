@@ -53,7 +53,7 @@ Illegal requests never change state or reiatsu, never start a cooldown, and are 
 | `NOT_IN_STATE` (also duplicate target = current state) | `DENIED_STATE` | bankai from SEALED or BASE, shikai release while SHIKAI, draw while BASE, ability of the other state or in BASE | action bar `message.reiatsu_test.denied.state`, low bass note |
 | `NOT_DRAWN` (shikai requested while SEALED) | `DENIED_NOT_DRAWN` (new byte 6) | R key with the sword in the scabbard | action bar `message.reiatsu_test.denied.not_drawn` ("Draw the sword first"), low bass note. A spoken release phrase while SEALED is gated out by the voice matcher and answered with the same action bar message |
 | `WRONG_ITEM` (no zanpakuto, other character, hand grace) | `DENIED_ITEM` | voice command with nothing in hand | action bar `...denied.item` |
-| `NOT_ENOUGH_REIATSU`, `BANKAI_NOT_FULL` | `DENIED_REIATSU` | bankai at 99.9, ability above available | action bar plus red flash of the bar for 0.4 s, `block.note_block.bass` |
+| `NOT_ENOUGH_REIATSU` | `DENIED_REIATSU` | shikai release at 15.0, ability above available (mech2 task 3: `BANKAI_NOT_FULL` is gone, the bankai entry needs no full bar; `NOT_ENOUGH_RAGE` / `DENIED_RAGE` stays) | action bar plus red flash of the bar for 0.4 s, `block.note_block.bass` |
 | `ON_COOLDOWN`, `RELEASE_LOCK`, `TRANSITION_LOCK`, `GCD`, `SETTLE_LOCK` | `COOLDOWN` | repeated voice duplicate, scatter at 1.0 s after bankai | HUD cooldown icon shakes, no chat spam |
 | `RATE_LIMITED` | `RATE_LIMIT` | more than 10 C2S per second | none (silent) |
 | `DEAD_OR_SPECTATOR` | `DENIED_STATE` | | none |
@@ -116,7 +116,7 @@ public enum RequestSource { KEY, VOICE }                       // wire bytes 0, 
 public enum ShikaiMode { IDLE, ATTACK, BARRIER }
 public enum Trigger { VOICE, KEY, BANKAI_CAP, SHIKAI_IDLE, REIATSU_ZERO,
                       HAND_LOST, ITEM_DROPPED, DEATH, LOGOUT, DIMENSION_CHANGE }
-public enum RejectReason { NOT_IN_STATE, NOT_DRAWN, WRONG_ITEM, NOT_ENOUGH_REIATSU, BANKAI_NOT_FULL,
+public enum RejectReason { NOT_IN_STATE, NOT_DRAWN, WRONG_ITEM, NOT_ENOUGH_REIATSU,
     ON_COOLDOWN, RELEASE_LOCK, TRANSITION_LOCK, GCD, SETTLE_LOCK, RATE_LIMITED, STALE_SEQ, DEAD_OR_SPECTATOR;
     ResultCode toWire(); }                                     // ADR action_result byte
 public enum ResultCode { OK, DENIED_STATE, DENIED_ITEM, DENIED_REIATSU, COOLDOWN, RATE_LIMIT, DENIED_NOT_DRAWN }
@@ -222,7 +222,7 @@ Decision of the orchestrator (FIXES_B4 step 3): drawing the sword no longer rele
 Decisions of the orchestrator (the user had not answered): shikai abilities cost reiatsu as usual inside bankai; bankai lasts 45 s; shunpo is shared by both characters, key Y.
 
 ### 10.1 Bankai
-- **Entry** (T2): needs a full bar and is not locked, costs **0**. `bankaiEndTick = now + bankaiCapTicks` (900). The settle lock (44 ticks) stays. Re-entry lock: `bankaiReentryTicks = 1200` (60 s) starts when bankai ends for any reason (timer, seal V, dimension change); rejected as `RELEASE_LOCK` (wire COOLDOWN). Death and logout clear it.
+- **Entry** (T2): needs no full bar (mech2 task 3 removed `BANKAI_NOT_FULL`; the Rage gate of 80 stays), is not locked, costs **0** reiatsu. `bankaiEndTick = now + bankaiCapTicks` (900). The settle lock (44 ticks) stays. Re-entry lock: `bankaiReentryTicks = 1200` (60 s) starts when bankai ends for any reason (timer, seal V, dimension change); rejected as `RELEASE_LOCK` (wire COOLDOWN). Death and logout clear it.
 - **Reiatsu in bankai**: regeneration +2.0/s (rate 5 per batch), no upkeep drain. Spending still cannot reach 0 (R2). An empty bar never ends bankai.
 - **End** (T4): the timer ends bankai into SHIKAI with the sword still drawn and the character locked; HUD "Bankai ended", effect 11. Seal (V, voice), hand loss (grace 20 ticks), drop, death, logout, dimension change still go to SEALED as before.
 - **Abilities**: bankai abilities cost 0 and have cooldowns (Absolute zero 20 s, Scatter 15 s, Hakuteiken 30 s); a rejected cast starts no cooldown. In BANKAI the machine also accepts the character's **shikai abilities** with their normal cost and cooldown (rule: `requiredState == state` or `state == BANKAI && requiredState == SHIKAI`); the global cooldown (12 ticks) and the settle lock apply to both tiers. Keys: Z H B shikai abilities (SHIKAI and BANKAI), **U I O** bankai abilities (new rebindable bindings). The HUD strip shows the bankai row first, then the shikai row.

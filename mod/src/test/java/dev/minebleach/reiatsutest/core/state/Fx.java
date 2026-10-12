@@ -87,12 +87,9 @@ public final class Fx {
 		return this;
 	}
 
-	/** SHIKAI -> BANKAI: waits for a full bar first (150 ticks from a fresh release). */
+	/** SHIKAI -> BANKAI (no full bar needed any more; the bar is topped up so tests that count reiatsu keep their starting point). */
 	public Fx toBankai(CharacterId c) {
-		int guard = 0;
-		while (!sm.reiatsu().isFull() && guard++ < 1000) {
-			adv(5);
-		}
+		sm.devSetReiatsu(sm.config().maxTenths());
 		TransitionResult r = tr(ZanpakutoState.BANKAI, c);
 		if (!r.ok()) {
 			throw new AssertionError("toBankai rejected: " + r.reason());

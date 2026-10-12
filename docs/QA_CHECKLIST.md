@@ -83,8 +83,8 @@ flat arena). Say each phrase once and press the key once.
 
 ## 4. Bankai: condition, transition, effect, HUD, timer (3 min)
 
-- [ ] In shikai with the bar below full (`/reiatsu set 99`) `G` and the bankai phrase are refused ("Need full reiatsu", red flash).
-- [ ] `/reiatsu full`, then `G` (or say "Bankai" with the matching sword): transition to BANKAI. Cost 20 is taken.
+- [ ] In shikai with Rage below 80 (`/reiatsu dev rage 10`, `/reiatsu dev ragefree false`) `G` and the bankai phrase are refused ("Not enough Rage", red flash on the Rage bar).
+- [ ] With 80 Rage and the reiatsu bar at ANY value (`/reiatsu set 40`), `G` (or say "Bankai" with the matching sword): transition to BANKAI. No reiatsu is taken, 80 Rage is spent.
       Effect: letterbox bars and the kanji plate 卍解 with the bankai name (Hakka no Togame / Senbonzakura Kageyoshi) and its
       English translation, screen grade, the big bankai effect and the aura of the form (if built). The model changes to the
       bankai model (Rukia: the long white ribbon blade; Byakuya: the sword with the blade rows in the ground, if built).

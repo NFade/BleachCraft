@@ -23,7 +23,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 **Key form** = output of the normaliser defined in section 5.1 (lowercase Latin, no punctuation, no macrons, folded consonants). It is what the matcher compares. Spaces between tokens are kept in the table; the matcher also uses the compact form (spaces removed).
 
-**Gating columns:** `state` = state the player must be in (SEALED = sheathed, BASE = drawn base form, SHIKAI, BANKAI; machine in `design/STATE_MACHINE.md`); `item` = which zanpakuto must be in the main hand (the character is derived from the held item, any visual state of it). The matcher only considers commands whose state and item match; everything else is ignored, not scored. `reiatsu` conditions (full bar for bankai) and cooldowns are checked on the server, not in the matcher: the matcher emits an intent, the server accepts or rejects it.
+**Gating columns:** `state` = state the player must be in (SEALED = sheathed, BASE = drawn base form, SHIKAI, BANKAI; machine in `design/STATE_MACHINE.md`); `item` = which zanpakuto must be in the main hand (the character is derived from the held item, any visual state of it). The matcher only considers commands whose state and item match; everything else is ignored, not scored. Rage conditions (80 Rage for bankai) and cooldowns are checked on the server, not in the matcher: the matcher emits an intent, the server accepts or rejects it.
 
 ## 1. Command list
 
@@ -35,14 +35,14 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `rukia.shikai.tsukishiro` | SHIKAI | Rukia's zanpakuto | Some no mai, Tsukishiro | no | Dance 1 (ice ring + light pillar). Name canon, "dance" prefix optional. |
 | `rukia.shikai.hakuren` | SHIKAI | Rukia's zanpakuto | Tsugi no mai, Hakuren | no | Dance 2 (ice wave). Same prefix rules. |
 | `rukia.shikai.shirafune` | SHIKAI | Rukia's zanpakuto | San no mai, Shirafune | no | Dance 3 (ice blade). Same prefix rules. |
-| `rukia.bankai.release` | SHIKAI | Rukia's zanpakuto | Bankai, Hakka no Togame | no | SHIKAI to BANKAI. Server requires full reiatsu. Phrase is game-sourced (Gate A 9). |
+| `rukia.bankai.release` | SHIKAI | Rukia's zanpakuto | Bankai, Hakka no Togame | no | SHIKAI to BANKAI. Server requires 80 Rage (no full reiatsu bar since mech2 task 3). Phrase is game-sourced (Gate A 9). |
 | `rukia.bankai.absolute_zero` | BANKAI | Rukia's zanpakuto | (mod-defined) Absolute zero | no | Active area freeze. No canon phrase exists: mod-defined. |
 | `rukia.bankai.ice_spike` | BANKAI | Rukia's zanpakuto | (mod-defined) Ice spike | no | Round 6: thrust of ice spikes along the look. No canon phrase exists: mod-defined. |
 | `byakuya.shikai.release` | BASE | Byakuya's zanpakuto | Chire, Senbonzakura | no | BASE to SHIKAI (the sword must be drawn first, B4 step 3). Canon. Lone "Chire" and "Scatter" are weak (see 3). |
 | `byakuya.shikai.mode_attack` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Attack mode | no | Swarm follows the aim. Mod-defined phrase. |
 | `byakuya.shikai.mode_barrier` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Barrier mode | no | Dome mode. Mod-defined phrase. |
 | `byakuya.shikai.cage` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Petal cage | no | Round 6: sphere of petals around the aimed target. Mod-defined phrase; `Chire no ori` is the alias. |
-| `byakuya.bankai.release` | SHIKAI | Byakuya's zanpakuto | Bankai, Senbonzakura Kageyoshi | no | SHIKAI to BANKAI. Server requires full reiatsu. "Chire" never triggers it (Gate A 8). |
+| `byakuya.bankai.release` | SHIKAI | Byakuya's zanpakuto | Bankai, Senbonzakura Kageyoshi | no | SHIKAI to BANKAI. Server requires 80 Rage (no full reiatsu bar since mech2 task 3). "Chire" never triggers it (Gate A 8). |
 | `byakuya.bankai.scatter` | BANKAI | Byakuya's zanpakuto | Chire (same word as shikai) / mod: Petal storm | no | Giant blades to petal storm. Canon word "Chire" (same word as shikai, different state) + mod aliases. |
 | `byakuya.bankai.hakuteiken` | BANKAI | Byakuya's zanpakuto | Shukei: Hakuteiken | no | Final strike. Canon name. |
 | `byakuya.bankai.senkei` | BANKAI | Byakuya's zanpakuto | Senkei | no | OPTIONAL (ART_BIBLE stretch). Build only if Senkei is built. |
@@ -139,7 +139,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ### 1.5 `rukia.bankai.release`
 
-- **Required state:** SHIKAI. **Item:** Rukia's zanpakuto in the main hand. **Server also requires full reiatsu.**
+- **Required state:** SHIKAI. **Item:** Rukia's zanpakuto in the main hand. **Server also requires 80 Rage (not a full reiatsu bar).**
 - **Canonical phrase:** Bankai, Hakka no Togame
 - **Notes:** Research found no spoken phrase in canon; the only documented line is the game line "Bankai! Hakka no Togame!". Gate A decision 9 makes it the trigger. Wiki literal translation "Censure of the White Haze"; VIZ "White Haze Punishment". Official-looking kanji 白霞罸 is rare; ja-JP ASR will almost certainly write 白霞の咎め (table in 5.1 maps it).
 
@@ -240,7 +240,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ### 1.10 `byakuya.bankai.release`
 
-- **Required state:** SHIKAI. **Item:** Byakuya's zanpakuto in the main hand. **Server also requires full reiatsu.**
+- **Required state:** SHIKAI. **Item:** Byakuya's zanpakuto in the main hand. **Server also requires 80 Rage (not a full reiatsu bar).**
 - **Canonical phrase:** Bankai, Senbonzakura Kageyoshi
 - **Notes:** Gate A decision 8: trigger is "Bankai" optionally followed by "Senbonzakura Kageyoshi"; "Chire" is never a bankai trigger. 景厳 is read Kageyoshi (Fandom, Wikipedia); ja.wikipedia romanises it "Kagemitsu", treated as an error in research. English literal names ("Vibrant Display of a Thousand Cherry Blossoms") are intentionally not accepted: nobody says them and "cherry blossoms" is ordinary speech.
 
@@ -1070,7 +1070,7 @@ Prototype results with these rules (for the sanity check only, not a replacement
 ### 5.3 State and item gating
 
 - The matcher receives a `GateContext { character, state, heldItemCharacter }` from the server-side player state at the moment the utterance arrives (not at the moment speech started). Candidate commands are filtered by section 1 `state` and `item` **before** scoring.
-- `reiatsu` (bankai needs a full bar), cooldowns and zone limits are **not** evaluated here. The matcher emits `CommandIntent(id, score, text, lang, final, receivedAtNanos)`; the server validates and replies. A rejected intent still starts the debounce window.
+- `reiatsu` and Rage (bankai needs 80 Rage), cooldowns and zone limits are **not** evaluated here. The matcher emits `CommandIntent(id, score, text, lang, final, receivedAtNanos)`; the server validates and replies. A rejected intent still starts the debounce window.
 - Latency budget (MASTER_PROMPT: at most 400 ms from the final recognition result to the start of the effect) is measured from `receivedAtNanos` of the final message to the tick where the server applies the state change; the matcher itself should be under 5 ms for the whole table.
 
 ### 5.4 Interim versus final results

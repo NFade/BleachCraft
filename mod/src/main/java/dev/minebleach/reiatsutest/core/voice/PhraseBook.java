@@ -29,7 +29,7 @@ public final class PhraseBook {
 	public static final String RESOURCE = "/assets/reiatsu_test/voice/phrases.json";
 
 	/** One spoken form of a command. {@code weak}: only accepted as the whole utterance. */
-	public record Variant(String text, String origin, boolean weak, boolean requiresFullReiatsu, String key,
+	public record Variant(String text, String origin, boolean weak, boolean requiresBankaiReady, String key,
 			List<String> tokens, String compact) {
 	}
 
@@ -133,7 +133,7 @@ public final class PhraseBook {
 				boolean full = false;
 				if (v.has("requires")) {
 					for (JsonElement r : v.getAsJsonArray("requires")) {
-						if (r.getAsString().equals("full_reiatsu")) {
+						if (r.getAsString().equals("bankai_ready")) {
 							full = true;
 						} else {
 							throw new IllegalArgumentException(id + ": unknown requirement " + r.getAsString());

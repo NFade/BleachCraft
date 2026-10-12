@@ -64,7 +64,7 @@ public record BalanceConfig(
 	}
 
 	/**
-	 * Defaults. B4 step 4 (justification: LOG.md "B4 step 4"): bankai costs no reiatsu to enter (the bar must still be full),
+	 * Defaults. B4 step 4 (justification: LOG.md "B4 step 4"): bankai costs no reiatsu to enter (and needs no full bar, mech2 task 3; the Rage gate stays),
 	 * lasts {@code bankaiCapTicks} as a plain timer and then falls back to SHIKAI; its abilities cost nothing but have
 	 * cooldowns; shikai abilities stay usable inside bankai with their normal costs. Areas of every ability are 1.5 to 2 times
 	 * the old values (shikai) or 10 to 16 blocks (bankai).

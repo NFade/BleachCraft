@@ -261,10 +261,10 @@ public final class VoiceControl implements VoiceBackend {
 		}
 		if (sm != null) {
 			CharacterId held = ModItems.characterOf(p.getMainHandStack());
-			GateContext ctx = GateContext.of(held, sm.state(), sm.reiatsu().isFull());
+			GateContext ctx = GateContext.of(held, sm.state(), bankaiReady(p, sm));
 			o.addProperty("state", sm.state().name());
 			o.addProperty("held", held.name().toLowerCase(Locale.ROOT));
-			o.addProperty("reiatsuFull", ctx.reiatsuFull());
+			o.addProperty("bankaiReady", ctx.bankaiReady());
 			JsonArray say = new JsonArray();
 			for (PhraseBook.Command c : matcher.book().commands()) {
 				if (c.validIn(ctx) && !c.optional()) {
@@ -279,6 +279,12 @@ public final class VoiceControl implements VoiceBackend {
 		return o.toString();
 	}
 
+	/** True when a bankai release would not be refused for Rage right now (the reiatsu bar no longer matters, mech2 task 3). */
+	private static boolean bankaiReady(ServerPlayerEntity p, StateMachine sm) {
+		int need = sm.rageNeed(ZanpakutoState.BANKAI);
+		return need <= 0 || RageManager.valueOf(p.getUuid()) >= need;
+	}
+
 	private String handle(VoiceMessage msg, long receivedNanos) {
 		ServerPlayerEntity p = server == null ? null : hostPlayer();
 		StateMachine sm = p == null ? null : ZanpakutoManager.machine(p);
@@ -286,7 +292,7 @@ public final class VoiceControl implements VoiceBackend {
 			return error(p == null ? "no_player" : "no_session");
 		}
 		CharacterId held = ModItems.characterOf(p.getMainHandStack());
-		GateContext ctx = GateContext.of(held, sm.state(), sm.reiatsu().isFull());
+		GateContext ctx = GateContext.of(held, sm.state(), bankaiReady(p, sm));
 		VoiceProcessor proc = processors.computeIfAbsent(p.getUuid(), k -> new VoiceProcessor(matcher, cfg, System::currentTimeMillis));
 		String prevLang = lastLang.put(p.getUuid(), msg.lang());
 		if (prevLang != null && !prevLang.equals(msg.lang())) {

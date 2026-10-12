@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 /**
  * The acceptance numbers of MASTER_PROMPT section 6: at least 95 percent recall on the fixture positives and not one
  * false positive on the neutral phrases. Positives are matched in the context in which their command is valid
- * (state + item in hand + full bar); neutrals are matched in the strict ungated mode (every command considered) AND in
+ * (state + item in hand + bankai ready); neutrals are matched in the strict ungated mode (every command considered) AND in
  * every real gate context, so no state/item combination lets ordinary speech fire.
  */
 class MatcherFixtureTest {
@@ -118,7 +118,7 @@ class MatcherFixtureTest {
 		assertTrue(100.0 * hit / total >= 80.0, "fuzzy-only recall dropped to " + hit + "/" + total);
 	}
 
-	/** VOICE_PHRASES section 3.3: the gating/ambiguity matrix, evaluated with a NOT full reiatsu bar. */
+	/** VOICE_PHRASES section 3.3: the gating/ambiguity matrix, evaluated with bankai NOT ready. */
 	@Test
 	void gatingMatrixOfTheDesignDocument() throws IOException {
 		Assumptions.assumeTrue(Files.isRegularFile(VoiceTestSupport.VOICE_MD), "design/VOICE_PHRASES.md not reachable");
