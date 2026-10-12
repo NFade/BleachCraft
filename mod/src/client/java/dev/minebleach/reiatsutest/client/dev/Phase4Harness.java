@@ -773,51 +773,43 @@ public final class Phase4Harness {
 		buildShunpoSteps();
 
 		// ---------------- C. hand, drop, death, dimension
+		// Round 5: the sword leaving the main hand (slot change, drop, off hand) no longer ends the form; only V, death, logout, dimension, the timers do.
 		step("C1 release rukia, switch hand away", 175, () -> {
+			cmd("reiatsu dev reset");
 			selectSlot(0);
 			cmd("reiatsu full");
 		});
 		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
 		step("select empty slot", 10, () -> selectSlot(5));
-		step("C1 checks: inside the 1 s hand grace", 3, () -> {
-			sCheck("C1 still SHIKAI after 0.5 s without the item", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
+		step("wait longer than the old 1 s hand grace", 32, () -> { });
+		step("C1 checks: the form survives an empty hand", 3, () -> {
+			sCheck("C1 still SHIKAI 2 s after the sword left the main hand", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
+			cCheck("C1 client SHIKAI", () -> clientExpect(ZanpakutoState.SHIKAI, CharacterId.RUKIA));
 		});
-		step("wait out the grace", 22, () -> { });
-		step("C1 checks: grace expired", 3, () -> {
-			sCheck("C1 SEALED after the grace", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
-			cCheck("C1 client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
-		});
-		step("C2 re-equip and release", 14, () -> {
+		step("C1 V with an empty hand", 8, () -> press(ReiatsuKeys.SEAL));
+		step("C1 checks: sealing needs no sword", 3, () -> sCheck("C1 SEALED by V without the sword", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE)));
+		step("C2 re-equip and release (after the seal lock)", 60, () -> {
 			selectSlot(0);
 			cmd("reiatsu full");
 		});
 		step("press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("press R", 14, () -> press(ReiatsuKeys.RELEASE));
-		step("C2 remove the item (drop)", 6, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
-		step("C2 checks: immediate seal on drop", 3, () -> {
-			sCheck("C2 SEALED right after the item left the inventory", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+		step("C2 remove the item (drop)", 20, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
+		step("C2 checks: no seal on drop", 3, () -> {
+			sCheck("C2 still SHIKAI after the item left the inventory", p -> expectState(p, ZanpakutoState.SHIKAI, CharacterId.RUKIA));
 		});
-		step("C2b give back, only draw, then drop", 20, () -> {
-			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
+		step("C2b reset, give back, only draw, then drop", 20, () -> {
+			cmd("reiatsu dev reset", "item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
+			selectSlot(0);
 		});
 		step("C2b press J", 14, () -> press(ReiatsuKeys.DRAW));
 		step("C2b checks: drawn", 2, () -> sCheck("C2b server BASE", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA)));
-		step("C2b remove the item", 6, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
-		step("C2b checks: immediate seal on drop of the drawn sword", 3, () -> {
-			sCheck("C2b SEALED right after the item left the inventory", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
+		step("C2b remove the item", 30, () -> cmd("item replace entity @s hotbar.0 with minecraft:air"));
+		step("C2b checks: the drawn form also survives a drop", 3, () -> {
+			sCheck("C2b still BASE", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA));
 		});
-		step("C2c give back, draw, switch hand away (hand grace)", 20, () -> {
-			cmd("item replace entity @s hotbar.0 with " + RUKIA);
-		});
-		step("C2c press J", 14, () -> press(ReiatsuKeys.DRAW));
-		step("C2c select empty slot", 10, () -> selectSlot(5));
-		step("C2c checks: inside the grace", 3, () -> sCheck("C2c still BASE after 0.5 s without the item", p -> expectState(p, ZanpakutoState.BASE, CharacterId.RUKIA)));
-		step("C2c wait out the grace", 22, () -> { });
-		step("C2c checks: grace expired", 3, () -> {
-			sCheck("C2c SEALED after the grace", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
-			cCheck("C2c client SEALED", () -> clientExpect(ZanpakutoState.SEALED, CharacterId.NONE));
-		});
+		step("C2c reset", 5, () -> cmd("reiatsu dev reset", "item replace entity @s hotbar.0 with " + RUKIA));
 		step("C3 give back, release, die", 20, () -> {
 			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu full");
 			selectSlot(0);
