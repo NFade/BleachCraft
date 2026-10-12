@@ -88,6 +88,15 @@ public final class ReiatsuCommand {
 										.then(CommandManager.argument("hp", FloatArgumentType.floatArg(0.1F, 100.0F))
 												.executes(c -> dummyHit(c.getSource(), EntityArgumentType.getEntities(c, "targets"),
 														FloatArgumentType.getFloat(c, "hp"))))))
+						// /reiatsu dev barrier_check: in-world check of the Byakuya barrier on you (damage cut, control effects, ice, knockback)
+						.then(CommandManager.literal("barrier_check").executes(c -> {
+							ServerPlayerEntity p = c.getSource().getPlayerOrThrow();
+							List<String> lines = BarrierCheck.run(p);
+							for (String l : lines) {
+								c.getSource().sendFeedback(() -> Text.literal(l), false);
+							}
+							return BarrierCheck.lastFailures == 0 ? 1 : 0;
+						}))
 						// /reiatsu dev rage <points>: sets the Rage bar of the caster (0..100) to test the HUD
 						.then(CommandManager.literal("rage")
 								.then(CommandManager.argument("points", DoubleArgumentType.doubleArg(0.0, 100.0))

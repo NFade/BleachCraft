@@ -29,6 +29,7 @@ public record BalanceConfig(
 		int barrierTicks,
 		int barrierPoolTenths,
 		int barrierReductionPercent,
+		boolean barrierControlImmune,
 		ShunpoSpec shunpo,
 		Map<AbilityId, AbilitySpec> abilities) {
 
@@ -44,6 +45,22 @@ public record BalanceConfig(
 
 	public AbilitySpec spec(AbilityId id) {
 		return abilities.get(id);
+	}
+
+	/** A copy with another rate table (drain scenarios in tests). */
+	public BalanceConfig withRates(Map<ZanpakutoState, Rate> newRates) {
+		return new BalanceConfig(maxTenths, regenBatchTicks, newRates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
+				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
+				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, barrierPoolTenths, barrierReductionPercent,
+				barrierControlImmune, shunpo, abilities);
+	}
+
+	/** A copy with other barrier numbers: pool in tenths of a HP (0 = unlimited), reduction percent, control immunity. */
+	public BalanceConfig withBarrier(int poolTenths, int reductionPercent, boolean controlImmune) {
+		return new BalanceConfig(maxTenths, regenBatchTicks, rates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
+				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
+				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, poolTenths, reductionPercent,
+				controlImmune, shunpo, abilities);
 	}
 
 	/**
@@ -96,7 +113,8 @@ public record BalanceConfig(
 				1000, 5, rates,
 				150, 0, 900, 2400, 20,
 				10, 12, 44, 40, 0, 1200,
-				10, 500, 30, 100, 200, 80,
+				// barrier (H): 5 s, 80 percent less damage for the whole time (pool 0 = no cap, the dome never collapses early), control immune
+				10, 500, 30, 100, 0, 80, true,
 				new ShunpoSpec(50, 50, 9.0, 1.5, 0.25, 3), a);
 	}
 

@@ -186,11 +186,7 @@ class TransitionTest {
 		rates.put(ZanpakutoState.BASE, d.rate(ZanpakutoState.BASE));
 		rates.put(ZanpakutoState.SHIKAI, new Rate(0, 100));
 		rates.put(ZanpakutoState.BANKAI, d.rate(ZanpakutoState.BANKAI));
-		BalanceConfig drain = new BalanceConfig(d.maxTenths(), d.regenBatchTicks(), rates, d.shikaiReleaseCost(),
-				d.bankaiCost(), d.bankaiCapTicks(), d.shikaiIdleTicks(), d.handGraceTicks(), d.transitionLockTicks(),
-				d.gcdTicks(), d.settleTicks(), d.sealLockTicks(), d.sheatheLockTicks(), d.bankaiReentryTicks(), d.rateLimitPerSecond(),
-				d.respawnTenths(), d.attackModeTicks(), d.barrierTicks(), d.barrierPoolTenths(),
-				d.barrierReductionPercent(), d.shunpo(), d.abilities());
+		BalanceConfig drain = d.withRates(rates);
 		Fx f = new Fx(drain, 400);
 		f.toBase(R);
 		f.sm.devSetReiatsu(400);

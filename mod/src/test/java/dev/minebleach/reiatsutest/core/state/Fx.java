@@ -36,10 +36,7 @@ public final class Fx {
 			rates.put(s, d.rate(s));
 		}
 		rates.put(state, rate);
-		return new BalanceConfig(d.maxTenths(), d.regenBatchTicks(), rates, d.shikaiReleaseCost(), d.bankaiCost(), d.bankaiCapTicks(),
-				d.shikaiIdleTicks(), d.handGraceTicks(), d.transitionLockTicks(), d.gcdTicks(), d.settleTicks(), d.sealLockTicks(),
-				d.sheatheLockTicks(), d.bankaiReentryTicks(), d.rateLimitPerSecond(), d.respawnTenths(), d.attackModeTicks(), d.barrierTicks(),
-				d.barrierPoolTenths(), d.barrierReductionPercent(), d.shunpo(), d.abilities());
+		return d.withRates(rates);
 	}
 
 	public long now() {

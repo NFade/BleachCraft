@@ -503,6 +503,33 @@ public final class ZanpakutoManager {
 		return false;
 	}
 
+	// ------------------------------------------------------------------ barrier: control immunity (mech2 task 1)
+
+	/** How many control effects the barrier has refused since the server started (dev check and tests). */
+	private static int barrierRefusals;
+
+	/**
+	 * Server side, called by the mixins: does a Byakuya barrier with control immunity stand on this entity right now? False for
+	 * everything that is not an online player with a session, on the client and for the dead.
+	 */
+	public static boolean barrierControlImmune(Entity e) {
+		if (!(e instanceof ServerPlayerEntity p) || p.isDead()) {
+			return false;
+		}
+		Session s = SESSIONS.get(p.getUuid());
+		return s != null && s.sm.barrierControlImmune();
+	}
+
+	/** Bookkeeping of one refused control effect ({@code [barrier]} server log, counter). */
+	public static void noteBarrierRefused(Entity e, String what) {
+		barrierRefusals++;
+		ReiatsuTest.LOGGER.info("[barrier] {} refused {}", e.getName().getString(), what);
+	}
+
+	public static int barrierRefusals() {
+		return barrierRefusals;
+	}
+
 	// ------------------------------------------------------------------ info for commands and the harness
 
 	/** Effect anchors (swarm, rows) alive for a player: harness and tests. */

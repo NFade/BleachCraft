@@ -49,6 +49,8 @@ public final class StateMachine {
 	private long stateSince;
 	private ShikaiMode mode = ShikaiMode.IDLE;
 	private long modeEnd;
+	/** {@code barrierPool} value of a barrier without a cap. */
+	public static final int POOL_UNLIMITED = -1;
 	private int barrierPool;
 	private long bankaiEnd;
 	private long bankaiLockEnd;
@@ -262,7 +264,7 @@ public final class StateMachine {
 		} else if (a == AbilityId.MODE_BARRIER) {
 			mode = ShikaiMode.BARRIER;
 			modeEnd = now + cfg.barrierTicks();
-			barrierPool = cfg.barrierPoolTenths();
+			barrierPool = cfg.barrierPoolTenths() > 0 ? cfg.barrierPoolTenths() : POOL_UNLIMITED;
 			ev.add(new StateEvent.ShikaiModeChanged(mode));
 		}
 		ev.add(new StateEvent.BroadcastEffect(spec.effectId(), nextSeed(now, spec.effectId())));
@@ -465,10 +467,13 @@ public final class StateMachine {
 	 * its pool is exhausted, then the dome collapses. Returns the damage that still applies to the caster.
 	 */
 	public int absorbBarrier(int damageTenths) {
-		if (mode != ShikaiMode.BARRIER || barrierPool <= 0 || damageTenths <= 0) {
+		if (mode != ShikaiMode.BARRIER || barrierPool == 0 || damageTenths <= 0) {
 			return damageTenths;
 		}
 		int wanted = damageTenths * cfg.barrierReductionPercent() / 100;
+		if (barrierPool == POOL_UNLIMITED) {
+			return damageTenths - wanted; // the default: no cap, the barrier lasts its whole time
+		}
 		int absorbed = Math.min(wanted, barrierPool);
 		barrierPool -= absorbed;
 		if (barrierPool <= 0) {
@@ -546,8 +551,19 @@ public final class StateMachine {
 		return mode;
 	}
 
+	/** Remaining absorption in tenths of a HP: {@link #POOL_UNLIMITED} (-1) when the config has no cap, 0 without a barrier. */
 	public int barrierPoolTenths() {
 		return barrierPool;
+	}
+
+	/** True while the Byakuya barrier stands: damage is cut and control effects (slow, freeze, knockback ...) do not land. */
+	public boolean barrierActive() {
+		return mode == ShikaiMode.BARRIER && barrierPool != 0;
+	}
+
+	/** Control immunity of the standing barrier (config knob {@code barrierControlImmune}). */
+	public boolean barrierControlImmune() {
+		return barrierActive() && cfg.barrierControlImmune();
 	}
 
 	public boolean isDead() {

@@ -98,7 +98,9 @@ public final class HitRules {
 		if (!(amount > 0.0F)) {
 			return Outcome.ZERO_AMOUNT;
 		}
-		if (returned && hpLost > 0.0F) {
+		// hpLost > 0 is the truth: a hit that the barrier or a block lowered is re-applied inside the damage hook and the
+		// outer damage() then returns false although health went down (the old log said REFUSED_UNKNOWN for those)
+		if (hpLost > 0.0F) {
 			return Outcome.DAMAGED;
 		}
 		if (vetoReason != null) {

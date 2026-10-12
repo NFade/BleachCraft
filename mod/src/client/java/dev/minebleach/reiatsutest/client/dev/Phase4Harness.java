@@ -15,6 +15,7 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.ModComponents;
 import dev.minebleach.reiatsutest.registry.ReleaseState;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
+import dev.minebleach.reiatsutest.server.BarrierCheck;
 import dev.minebleach.reiatsutest.server.ZanpakutoManager;
 import dev.minebleach.reiatsutest.server.TempBlocks;
 import java.io.File;
@@ -658,7 +659,13 @@ public final class Phase4Harness {
 				float h = p.getHealth();
 				return Math.abs(h - 18.0F) < 0.2F ? null : "health " + h;
 			});
-			sCheck("B3 absorption pool 12.0 left", p -> sm(p).barrierPoolTenths() == 120 ? null : "pool " + sm(p).barrierPoolTenths());
+			sCheck("B3 barrier has no pool cap (the dome lasts its whole time)", p -> sm(p).barrierPoolTenths() == StateMachine.POOL_UNLIMITED ? null : "pool " + sm(p).barrierPoolTenths());
+		});
+		// mech2 task 1: the in-world barrier check (damage cut, control effects, Rukia ice, knockback; positive controls without the barrier)
+		step("mech2: /reiatsu dev barrier_check", 10, () -> cmd("reiatsu dev barrier_check"));
+		step("mech2 checks: barrier_check", 4, () -> {
+			sCheck("mech2 barrier_check ran (" + BarrierCheck.lastChecks + " checks)", p -> BarrierCheck.lastChecks >= 20 ? null : "checks " + BarrierCheck.lastChecks);
+			sCheck("mech2 barrier_check: no failed check (see the [barrier-check] log lines)", p -> BarrierCheck.lastFailures == 0 ? null : "failures " + BarrierCheck.lastFailures);
 		});
 		step("creative again, full reiatsu, wait", 150, () -> cmd("gamemode creative @s", "reiatsu full", "reiatsu cooldowns clear"));
 		step("press G (byakuya bankai)", 14, () -> press(ReiatsuKeys.BANKAI));
