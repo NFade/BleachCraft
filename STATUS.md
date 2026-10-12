@@ -2,6 +2,27 @@
 
 Fabric 1.21.1 mod `reiatsu_test` (Bleach: Rukia, Byakuya, 3 states each). Details: `LOG.md`, design contracts in `design/`.
 
+## STOP POINT 2026-10-12 (user feedback round, agents stopped)
+- User feedback (not yet fixed):
+  - First-person animations are broken.
+  - Idle hands must sit lower so the tsuba is visible.
+  - Byakuya barrier does not work: needs an 80% damage cut and no control effects (CC immunity).
+  - Byakuya bankai: too many rows, two rows at the sides. Want one row per side, wider, max about 10.
+  - First-person block pose is broken.
+  - Bankai effects stay after the bankai ends, for both Rukia and Byakuya.
+  - Damage balance: netherite fights last several minutes; escalation should be sword -> kido -> shikai -> bankai.
+  - Remove the reiatsu-100 condition for bankai.
+  - Rukia bankai: replace Absolute zero with a territory slow I plus 1 heart every 3 s.
+  - Byakuya shikai third-person petals should swirl dense along their trajectories, like the reference.
+  - Senkei is disabled: it was optional/deferred and its sword model was never built.
+- Branches pushed to origin as WIP. Unfinished, not merged, may not build, not verified in game:
+  - `mech2`: Byakuya barrier 80% + CC immunity, bankai effect cleanup on end, BANKAI_NOT_FULL reiatsu condition removed, Rukia bankai territory slow + damage replacing Absolute zero. Notes: `design/results/mech2.md` (on branch mech2).
+  - `vfx2`: Byakuya bankai rows (one per side, wider, max about 10), Byakuya shikai third-person petal ribbon swirl.
+  - `fp2`: first-person animation rework (idle hands lower so tsuba visible, block pose, Blender-authored key poses). Notes: `design/results/fp2.md` (on branch fp2).
+- NOT started: damage rebalance (do after mech2 is merged).
+- Next: merge mech2 -> vfx2 -> fp2, then rebuild and run runPhase4/5/6 under the lock protocol (`mkdir D:\gamelock`).
+- Open question for the user: keep the 80 Rage gate for bankai or not?
+
 ## Done (on `main`)
 - Phase 0-2: environment (JDK 21, Gradle, Blender 5.2.2 MCP), research, art bible v3, Gates A/B, ADR, OBJ item rendering spike (path B1 approved).
 - Phase 3: all 6 models built in Blender, textured, verified, exported (`blender/export/`): rukia_sealed, rukia_shikai, rukia_bankai, byakuya_sealed, byakuya_shikai, byakuya_bankai, plus separate saya (scabbard) objects for both sealed models. Gate C review done and its edits C1-C4 applied (`design/GATE_C.md`).
