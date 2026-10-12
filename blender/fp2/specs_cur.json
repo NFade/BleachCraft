@@ -1,0 +1,3 @@
+{"cur_stance": {"char":"rukia","state":"drawn","pose":{"pos":[-0.47,0.105,0.06],"rot":[-36,0,-8]},"pivot_s":-0.10,"arms":{"mode":"ik","right":{"on":true,"s":0.005},"left":{"on":true,"s":-0.115}}},
+ "cur_guard": {"char":"rukia","state":"drawn","pose":{"pos":[-0.32,0.22,-0.06],"rot":[-14,-16,54]},"pivot_s":-0.10,"arms":{"mode":"ik","right":{"on":true,"s":0.005},"left":{"on":true,"s":-0.115}}},
+ "cur_sealed": {"char":"rukia","state":"sealed","pose":{"pos":[0,0,0],"rot":[0,0,0]},"arms":{"mode":"ik","right":{"on":true,"s":0.0}}}}
