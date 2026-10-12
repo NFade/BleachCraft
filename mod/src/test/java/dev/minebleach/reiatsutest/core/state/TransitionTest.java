@@ -270,12 +270,11 @@ class TransitionTest {
 	}
 
 	@Test
-	void I4_bankaiBelowFull() {
+	void I4_bankaiBelowFullIsAllowed() {
 		Fx f = new Fx().toShikai(R);
 		f.sm.devSetReiatsu(999);
 		TransitionResult r = f.tr(ZanpakutoState.BANKAI, R);
-		assertDenied(r, RejectReason.BANKAI_NOT_FULL);
-		assertEquals(ResultCode.DENIED_REIATSU, r.code());
+		assertTrue(r.ok());
 		assertEquals(999, f.sm.reiatsu().value());
 	}
 

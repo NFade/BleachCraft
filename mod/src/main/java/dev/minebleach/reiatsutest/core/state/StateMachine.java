@@ -149,9 +149,6 @@ public final class StateMachine {
 		if (target == ZanpakutoState.SHIKAI && !reiatsu.canSpend(cfg.shikaiReleaseCost())) {
 			return reject(RejectReason.NOT_ENOUGH_REIATSU);
 		}
-		if (target == ZanpakutoState.BANKAI && !reiatsu.isFull()) {
-			return reject(RejectReason.BANKAI_NOT_FULL);
-		}
 
 		ZanpakutoState from = state;
 		List<StateEvent> ev = new ArrayList<>();

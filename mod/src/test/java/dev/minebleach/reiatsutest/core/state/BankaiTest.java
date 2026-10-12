@@ -23,13 +23,10 @@ class BankaiTest {
 	}
 
 	@Test
-	void entryCostsNothingButStillNeedsAFullBar() {
+	void entryCostsNothingAndNeedsNoFullBar() {
 		Fx f = new Fx().toShikai(R);
-		f.adv(120); // 850 + 120/5*5 = 970
+		f.adv(120); // 850 + 120/5*5 = 970, below full on purpose
 		assertTrue(f.sm.reiatsu().value() < 1000);
-		TransitionResult denied = f.tr(ZanpakutoState.BANKAI, R);
-		assertEquals(RejectReason.BANKAI_NOT_FULL, denied.reason());
-		f.adv(30);
 		int before = f.sm.reiatsu().value();
 		TransitionResult ok = f.tr(ZanpakutoState.BANKAI, R);
 		assertTrue(ok.ok());
