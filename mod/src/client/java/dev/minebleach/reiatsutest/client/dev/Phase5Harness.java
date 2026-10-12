@@ -9,7 +9,7 @@ import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
 import dev.minebleach.reiatsutest.core.state.StateMachine;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
-import dev.minebleach.reiatsutest.server.VoiceControl;
+import dev.minebleach.reiatsutest.client.voice.VoiceBridgeClient;
 import dev.minebleach.reiatsutest.server.ZanpakutoManager;
 import java.io.File;
 import java.io.IOException;
@@ -124,7 +124,7 @@ public final class Phase5Harness {
 	private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
 
 	private static String base() {
-		return "http://127.0.0.1:" + VoiceControl.get().port();
+		return "http://127.0.0.1:" + VoiceBridgeClient.port();
 	}
 
 	private static JsonObject post(String text, String lang, boolean fin) throws Exception {
@@ -254,10 +254,10 @@ public final class Phase5Harness {
 				"tp @s 0.5 -60 0.5 0 20");
 		selectSlot(0);
 		Thread.sleep(1500);
-		ReiatsuTest.LOGGER.info(P + "bridge at {} transport={}", VoiceControl.get().url(), VoiceControl.get().transport());
+		ReiatsuTest.LOGGER.info(P + "bridge at {} transport={}", VoiceBridgeClient.url(), VoiceBridgeClient.transport());
 
 		// ---- V1 bridge, status and page
-		check("V1 bridge is up", VoiceControl.get().port() > 0, "no port");
+		check("V1 bridge is up", VoiceBridgeClient.port() > 0, "no port");
 		JsonObject st = get("/status");
 		check("V1 GET /status", st.get("_http").getAsInt() == 200 && "SEALED".equals(str(st, "state")) && "rukia".equals(str(st, "held")),
 				st.toString());

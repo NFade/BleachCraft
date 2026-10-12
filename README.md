@@ -121,16 +121,16 @@ hand, reiatsu, cooldowns): a spoken command that the server refuses gets the sam
 
 **How to open the page**
 
-1. Start the game, open a single-player world. The chat shows `Voice bridge ready: http://127.0.0.1:47821/`; click it, or run
-   `/reiatsu voice` to see the link again. The bridge listens on the loopback address 127.0.0.1 only (default port 47821, the next
-   four ports are tried when it is busy).
+1. Join any world or server (single player, LAN, dedicated server). The chat shows `Voice bridge ready: http://127.0.0.1:47821/`;
+   click it, or run `/voicelink` to see the link again. The bridge runs on your own PC, listens on the loopback address 127.0.0.1
+   only (default port 47821, the next four ports are tried when it is busy) and stops when you leave the server.
 2. Open the link in Chrome or Edge, press **Start**, allow the microphone, choose Japanese, English or Russian.
 3. Hold a zanpakuto in the main hand and speak. The page shows what it heard, what the game answered, and the phrases that
    work in your current state.
 
 Chrome and Edge do the recognition in their vendor's cloud (internet needed, audio leaves your PC); Firefox has no speech
-recognition. Details, query parameters and the config keys: `voice-bridge/README.md`. Dedicated servers do not start the
-bridge (single player only for now).
+recognition. Only the recognised text goes to the game server, never audio; the server decides what it means. Details, query
+parameters and the config keys: `voice-bridge/README.md` (section "Online").
 
 **Phrases per state.** Every phrase also works in its Japanese and Russian spelling, and common misheard forms are accepted
 (full lists: `design/VOICE_PHRASES.md`). A phrase for another state or the other sword is ignored. Drawing the sword (BASE) has no
@@ -186,8 +186,8 @@ with real people:
   socket fallback exists and is covered by unit tests only.
 - Fabulous graphics were not checked with the translucent ice blade and the glow layers (Fast and Fancy were).
 - The camera shake hook and the Byakuya hand poses on a real player model (tuned on an armor stand) are unverified.
-- Voice: no real microphone session has been run; Chrome and Edge send the audio to their cloud for recognition; voice works in
-  single player (the host player) only, dedicated servers and LAN guests do not start the bridge.
+- Voice: no real microphone session has been run; Chrome and Edge send the audio to their cloud for recognition; online voice (text packets from each
+  player's own browser) is built and unit tested but not yet tried in game on two clients (checklist: `design/results/voice_online.md`).
 - Multiplayer: the dedicated server was smoke tested with scripted protocol clients (`tools/server_smoke.py`); a second real game
   client was not (manual list in `docs/QA_CHECKLIST.md`).
 - Third person: at the end of the draw animation the sword jumps from the hip to the hand, and there is no sword swing animation

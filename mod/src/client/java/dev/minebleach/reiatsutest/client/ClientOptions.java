@@ -1,16 +1,20 @@
 package dev.minebleach.reiatsutest.client;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
- * Client options file {@code config/reiatsu_test_client.json}: {@code {"show_first_person_hand": true}}. Created with the
- * defaults on first start. {@code -Dreiatsu.hand=false} overrides it for dev runs.
+ * Client options file {@code config/reiatsu_test_client.json}: {@code {"show_first_person_hand": true, ..., "voice": {"client": {"enabled": true, "port": 47821}}}}.
+ * Created with the defaults on first start; a missing {@code voice} section is added to an existing file. {@code -Dreiatsu.hand=false}
+ * overrides the hand option for dev runs. The {@code voice.client} section configures the player's own loopback voice bridge
+ * (online voice); the server-side voice settings stay in {@code config/reiatsu_test.json}.
  */
 public final class ClientOptions {
 	/** Draw the player arm gripping the zanpakuto in first person. */
@@ -22,7 +26,41 @@ public final class ClientOptions {
 	/** Duration of the draw / sheathe animation of the sealed zanpakuto in seconds; 0 = no animation (config key draw_animation_seconds). */
 	public static volatile float drawSeconds = 0.45f;
 
+	/** {@code voice.client.enabled}: start the local voice bridge on joining any server. */
+	public static volatile boolean voiceClientEnabled = true;
+	/** {@code voice.client.port}: loopback port of the bridge (the next {@link #voiceClientPortSearch} ports are tried when busy). */
+	public static volatile int voiceClientPort = dev.minebleach.reiatsutest.core.voice.VoiceConfig.DEFAULT_PORT;
+	public static volatile int voiceClientPortSearch = 4;
+
 	private ClientOptions() {
+	}
+
+	private static JsonObject voiceDefaults() {
+		JsonObject client = new JsonObject();
+		client.addProperty("enabled", true);
+		client.addProperty("port", dev.minebleach.reiatsutest.core.voice.VoiceConfig.DEFAULT_PORT);
+		JsonObject voice = new JsonObject();
+		voice.add("client", client);
+		return voice;
+	}
+
+	/** Reads {@code voice.client.*}; anything missing or out of range keeps its default. */
+	static void readVoice(JsonObject root) {
+		if (!root.has("voice") || !root.get("voice").isJsonObject() || !root.getAsJsonObject("voice").has("client")
+				|| !root.getAsJsonObject("voice").get("client").isJsonObject()) {
+			return;
+		}
+		JsonObject c = root.getAsJsonObject("voice").getAsJsonObject("client");
+		if (c.has("enabled")) {
+			voiceClientEnabled = c.get("enabled").getAsBoolean();
+		}
+		if (c.has("port")) {
+			int p = c.get("port").getAsInt();
+			voiceClientPort = p < 1024 || p > 65535 ? dev.minebleach.reiatsutest.core.voice.VoiceConfig.DEFAULT_PORT : p;
+		}
+		if (c.has("portSearch")) {
+			voiceClientPortSearch = Math.max(0, Math.min(20, c.get("portSearch").getAsInt()));
+		}
 	}
 
 	public static void load() {
@@ -39,8 +77,19 @@ public final class ClientOptions {
 				if (o.has("draw_animation_seconds")) {
 					drawSeconds = Math.max(0f, Math.min(3f, o.get("draw_animation_seconds").getAsFloat()));
 				}
+				readVoice(o);
+				if (!o.has("voice")) {
+					// older file without the voice section: add it with the defaults, keep everything else as it is
+					o.add("voice", voiceDefaults());
+					Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(o) + System.lineSeparator(), StandardCharsets.UTF_8);
+				}
 			} else {
-				Files.writeString(file, "{\n  \"show_first_person_hand\": true,\n  \"first_person_scale_multiplier\": 1.0,\n  \"draw_animation_seconds\": 0.45\n}\n");
+				JsonObject o = new JsonObject();
+				o.addProperty("show_first_person_hand", true);
+				o.addProperty("first_person_scale_multiplier", 1.0);
+				o.addProperty("draw_animation_seconds", 0.45);
+				o.add("voice", voiceDefaults());
+				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(o) + System.lineSeparator(), StandardCharsets.UTF_8);
 			}
 		} catch (IOException | RuntimeException e) {
 			ReiatsuTest.LOGGER.warn("cannot read {}: {}", file, e.toString());

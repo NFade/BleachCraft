@@ -133,15 +133,13 @@ public final class ReiatsuCommand {
 
 	private static int voice(ServerCommandSource src) {
 		VoiceControl v = VoiceControl.get();
-		String url = v.url();
-		if (url == null) {
+		if (!v.active()) {
 			src.sendFeedback(() -> Text.translatable("message.reiatsu_test.voice.off"), false);
 			return 0;
 		}
 		ServerPlayerEntity p = src.getPlayer();
 		StateMachine sm = p == null ? null : ZanpakutoManager.machine(p);
-		src.sendFeedback(() -> Text.translatable("message.reiatsu_test.voice.status", url, v.transport(),
-				sm == null ? "-" : sm.state().name()), false);
+		src.sendFeedback(() -> Text.translatable("message.reiatsu_test.voice.status", sm == null ? "-" : sm.state().name()), false);
 		return 1;
 	}
 

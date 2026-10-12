@@ -573,9 +573,13 @@ public final class HudModel {
 	/** The request a voice command stands for (voice results arrive with the server sequence number, not a client one). */
 	public static Request requestFromVoice() {
 		VoiceHudState v = VoiceHudState.get();
-		String cmd = v.commandId();
-		if (cmd == null || System.currentTimeMillis() - v.atMs() > 2000) {
-			return null;
+		// online: the server announces the command (voice_feedback PENDING) just before its action_result, the final verdict follows
+		String cmd = VoiceHudState.pendingCommand(2000);
+		if (cmd == null) {
+			cmd = v.commandId();
+			if (cmd == null || System.currentTimeMillis() - v.atMs() > 2000) {
+				return null;
+			}
 		}
 		if (cmd.endsWith(".shikai.release")) {
 			return new Request(true, ZanpakutoState.SHIKAI, null);

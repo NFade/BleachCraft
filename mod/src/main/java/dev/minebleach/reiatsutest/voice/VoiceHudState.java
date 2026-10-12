@@ -1,9 +1,10 @@
 package dev.minebleach.reiatsutest.voice;
 
 /**
- * What the HUD shows about the voice bridge (VFX_STORYBOARD 7.8, S6). Written by the server glue on the HTTP / server
- * threads, read by the client HUD in the same JVM (integrated server only; a dedicated server never writes it, so the
- * voice indicator stays hidden there). Immutable snapshots in a volatile field, no locking.
+ * What the HUD shows about the voice bridge (VFX_STORYBOARD 7.8, S6). Written by the client bridge ({@link ClientVoiceBridge}:
+ * HTTP threads for the page contact, the client thread for the server's answers), read by the client HUD in the same JVM. The
+ * bridge runs on the player's own PC for every server (online voice), so the state is per game client. Immutable snapshots
+ * in a volatile field, no locking.
  */
 public record VoiceHudState(Mic mic, long lastContactMs, String interim, String finalText, String commandId, Result result,
 		long atMs, long seq) {
@@ -17,6 +18,9 @@ public record VoiceHudState(Mic mic, long lastContactMs, String interim, String 
 	private static volatile VoiceHudState current = new VoiceHudState(Mic.OFF, 0, "", "", null, Result.NONE, 0, 0);
 	/** True while the HTTP bridge of this JVM is listening (set by the server glue), so the HUD can show "not connected" before the first contact. */
 	private static volatile boolean bridgeUp;
+	/** Command the server announced just before running it (voice_feedback PENDING): lets the HUD attach the following action_result to it. */
+	private static volatile String pendingCommand;
+	private static volatile long pendingAtMs;
 
 	public static VoiceHudState get() {
 		return current;
@@ -30,6 +34,32 @@ public record VoiceHudState(Mic mic, long lastContactMs, String interim, String 
 	public static void reset() {
 		current = new VoiceHudState(Mic.OFF, 0, "", "", null, Result.NONE, 0, 0);
 		bridgeUp = false;
+		pendingCommand = null;
+		pendingAtMs = 0;
+	}
+
+	public static void setPending(String commandId) {
+		pendingCommand = commandId;
+		pendingAtMs = System.currentTimeMillis();
+	}
+
+	/** The command the server announced less than {@code maxAgeMs} ago, or null. */
+	public static String pendingCommand(long maxAgeMs) {
+		String c = pendingCommand;
+		return c != null && System.currentTimeMillis() - pendingAtMs <= maxAgeMs ? c : null;
+	}
+
+	/** HUD verdict for the {@code ResultCode} byte of a command the server ran. */
+	public static Result fromResultCode(int resultCode) {
+		return switch (dev.minebleach.reiatsutest.core.state.ResultCode.fromCode((byte) resultCode)) {
+			case OK -> Result.ACCEPTED;
+			case DENIED_REIATSU -> Result.DENIED_REIATSU;
+			case DENIED_RAGE -> Result.DENIED_RAGE;
+			case DENIED_ITEM -> Result.DENIED_ITEM;
+			case DENIED_NOT_DRAWN -> Result.DENIED_NOT_DRAWN;
+			case COOLDOWN -> Result.COOLDOWN;
+			case DENIED_STATE, RATE_LIMIT, BLOCKED -> Result.DENIED_STATE;
+		};
 	}
 
 	public static boolean bridgeUp() {

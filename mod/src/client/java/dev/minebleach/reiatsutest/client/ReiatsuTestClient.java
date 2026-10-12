@@ -31,6 +31,7 @@ public class ReiatsuTestClient implements ClientModInitializer {
 		dev.minebleach.reiatsutest.client.model.TpPoseLayer.register();
 		dev.minebleach.reiatsutest.client.model.FpMotion.init();
 		ClientNet.register();
+		dev.minebleach.reiatsutest.client.voice.VoiceBridgeClient.init();
 		ReiatsuKeys.init();
 		ReiatsuHud.init();
 		dev.minebleach.reiatsutest.client.book.SpellbookScreen.register();

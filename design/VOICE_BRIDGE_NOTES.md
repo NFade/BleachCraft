@@ -96,3 +96,42 @@ A command group usable without shikai (hado/bakudo spoken in any state, with or 
 - `maxAlternatives > 1`: the engine returns several candidates per final; sending them and matching each (best margin wins) would lift recall on misheard names without any new phrase. Needs a protocol field, a matcher loop and a fixture run showing 0 false positives.
 - Real-microphone run (docs/VOICE_QA.md) and a ja-JP run: manual.
 - Always-listening mode fed by synthetic audio: the page uses the real microphone through `rec.start()` there, which a headless harness cannot feed (Chrome's fake audio device reached the page's meter but the recogniser returned nothing); only the hold-to-talk track path and the Lab fixtures are driven end to end.
+
+## 9. Online: scheme as in vox-arcana (2026-10-12)
+
+Until now the bridge ran in the integrated server only and acted for "the world owner". Now it is the vox-arcana scheme: the Web
+Speech API runs in the browser of each player, the game server only receives text.
+
+**Path.** page -> `POST /voice` on the CLIENT bridge (127.0.0.1:47821, `ClientVoiceBridge` behind `VoiceHttp`, started by
+`client/voice/VoiceBridgeClient` on join of any server, stopped on disconnect) -> `VoiceTextC2S` (`voice_text`) -> server
+`server/VoiceControl` -> `core/voice/VoiceIngest` (per-player `VoiceProcessor`, gate from the own state machine of the player) -> the
+same `ZanpakutoManager.perform*` the keys use -> `VoiceFeedbackS2C` (`voice_feedback`) -> `ClientVoiceBridge#onFeedback` (HUD
+via `VoiceHudState`, reply to the page). One path for single player, LAN and dedicated; the old "owner of the integrated server"
+branch and the server-side HTTP bridge are gone (`VoiceControl` is only the packet receiver and the `Host` of `VoiceIngest`).
+
+**Why the logic stays on the server.** The client sends text only, so it cannot fire a command that the phrase matcher and the
+gates do not accept: no command id, no state, no "matched" flag crosses the wire from the client. A hand-made client can say any
+phrase, nothing more (it could do that with a microphone as well). Limits enforced by the server: text <= 200 characters
+(`too_long`), <= 3 alternatives, empty text ignored, `maxRequestsPerSecond` per player (`rate_limited`, a sliding second, rejected
+requests count), protocol version (`bad_protocol`), `voice.enabled` (`disabled`), player without session (`no_session`). The decoder
+reads a little more than the text limit (1024 characters) so a long text is answered and is no reason to drop the connection; a text
+beyond that, or more than 8 alternatives, fails to decode (the vanilla reaction to a malformed packet).
+
+**Wire.** `voice_text`: varint protocol, varint reqId, string text (<=1024 on decode), bool final, string lang (<=16), varlong utt+1,
+varint n + n strings. `voice_feedback`: varint reqId, byte verdict, strings commandId / heard / reason / state, byte ResultCode (-1 =
+none), varint confidence permille. Verdict codes: OK 0, NO_MATCH 1, GATED_OUT 2, DENIED 3, IGNORED 4, PENDING 5, REJECTED 6
+(append only). `PENDING` is sent before a command runs so that `HudModel.requestFromVoice` knows which command the next
+`action_result` (seq -1) belongs to; the final verdict follows. `heard` is the normalised key, the HUD shows the text the page sent.
+
+**Page compatibility.** The bridge answers with the same JSON as before (`matched, command, confidence, reason, text, result,
+accepted, latencyMs, state`; `/status`: `world, player, state, held, say`, new: `serverVoice`, `last`, `reason: "server_without_voice"`),
+so `index.html` is unchanged. A request waits up to 1.5 s for the answer of the server (`server_busy` otherwise; a late answer still
+updates the HUD). `latencyMs` is now measured by the bridge (page post to answer), `browserToAppliedMs` is gone (clock of another PC).
+
+**Status.** `/status` is built on the client thread from the synced attachments (state, sword in hand, reiatsu full) and the
+bundled phrase book, so the "what to say" chips follow the gate of the server; the authoritative decision is still the server one.
+
+**Tests.** `VoiceIngestTest` (two players, per-player state and rate limit, disabled, limits, alternatives, interim),
+`VoicePacketCodecTest`, `ClientVoiceBridgeTest` (fake link, plus two bridges over real loopback HTTP to one in-process ingest,
+guards, start / stop, port search). UNVERIFIED in game: the Fabric channel handshake (`canSend`), the chat link on join, the HUD
+on a second client; see `design/results/voice_online.md`.
