@@ -125,4 +125,56 @@ class BladeRowLayoutTest {
 		assertEquals(2, BladeRowLayout.lane(0, 1, 6, 2.5, 5).n);
 		assertEquals(500, BladeRowLayout.lane(10000, 1, 6, 2.5, 5).n);
 	}
+
+	// ---- r7: wide slab blades in one tight row per side (anime references ep52 / ep58)
+
+	@Test
+	void defaultWallIsTenSlabsPerSideThatAlmostTouch() {
+		BladeRowLayout l = BladeRowLayout.laneDefault(BladeRowLayout.DEFAULT_PER_SIDE, 1);
+		assertEquals(20, l.n);
+		assertEquals(1, l.ranks);
+		double scale = BladeRowLayout.DEFAULT_BLADE_SCALE;
+		double height = BladeRowLayout.BLADE_LENGTH * scale;
+		double width = BladeRowLayout.DEFAULT_BLADE_WIDTH;
+		assertTrue(height >= 7.0 && height <= 9.0, "7 to 9 blocks tall: " + height);
+		assertTrue(width >= 1.2 && width <= 1.8, "1.2 to 1.8 blocks wide: " + width);
+		double gap = BladeRowLayout.gap(BladeRowLayout.DEFAULT_PITCH, scale, BladeRowLayout.DEFAULT_BLADE_THICK);
+		assertTrue(gap > 0 && gap / width >= 0.3 && gap / width <= 0.5, "gap 30 to 50 percent of the width: " + gap / width);
+		for (int j = 0; j + 1 < BladeRowLayout.DEFAULT_PER_SIDE; j++) {
+			assertEquals(BladeRowLayout.DEFAULT_PITCH, l.along[j] - l.along[j + 1], 1e-5, "even pitch along the row");
+		}
+		assertEquals(BladeRowLayout.DEFAULT_START_AHEAD, l.along[0], 1e-5);
+		assertEquals(-BladeRowLayout.DEFAULT_HALF_WIDTH, l.across[0], 1e-5, "left side first");
+		assertEquals(BladeRowLayout.DEFAULT_HALF_WIDTH, l.across[BladeRowLayout.DEFAULT_PER_SIDE], 1e-5);
+	}
+
+	@Test
+	void laneStaysOpenAroundTheCasterEvenAtTheCurvedTips() {
+		double scale = BladeRowLayout.DEFAULT_BLADE_SCALE;
+		double kz = BladeRowLayout.widthScale(BladeRowLayout.DEFAULT_BLADE_WIDTH, scale);
+		double innerFoot = BladeRowLayout.DEFAULT_HALF_WIDTH - BladeRowLayout.DEFAULT_BLADE_WIDTH / 2;
+		assertTrue(innerFoot >= 6.0, "the inner face of a blade foot is at least 6 blocks from the axis: " + innerFoot);
+		// the mesh curve (0.826 m at the tip, stretched with the width) and the 3 degree lean bend the tip toward the axis
+		double tipAcross = BladeRowLayout.DEFAULT_HALF_WIDTH - 0.826 * scale * kz - BladeRowLayout.BLADE_LENGTH * scale * Math.sin(Math.toRadians(BladeRowLayout.LEAN_DEG + 0.5));
+		assertTrue(tipAcross >= 3.5, "the lane at the tips is at least 7 blocks wide: " + 2 * tipAcross);
+		assertTrue(tipAcross < BladeRowLayout.DEFAULT_HALF_WIDTH, "the tips lean inward");
+	}
+
+	@Test
+	void widthScaleGivesTheAskedWidth() {
+		assertEquals(1.5, BladeRowLayout.MESH_WIDTH * 1.0 * BladeRowLayout.widthScale(1.5, 1.0), 1e-9);
+		assertEquals(1.5, BladeRowLayout.MESH_WIDTH * 0.5 * BladeRowLayout.widthScale(1.5, 0.5), 1e-9, "independent of the uniform scale");
+		assertEquals(0.28, BladeRowLayout.MESH_THICK * BladeRowLayout.DEFAULT_BLADE_SCALE * BladeRowLayout.DEFAULT_BLADE_THICK, 1e-9);
+	}
+
+	@Test
+	void lowerTiersKeepTheCorridorLengthUpToTwiceThePitch() {
+		assertEquals(1.0, BladeRowLayout.tierPitch(10, 10, 1.0), 1e-9, "High keeps the pitch");
+		assertEquals(2.0, BladeRowLayout.tierPitch(5, 10, 1.0), 1e-9, "Medium: 9/4 capped at 2");
+		assertEquals(2.0, BladeRowLayout.tierPitch(3, 10, 1.0), 1e-9, "Low: capped at 2");
+		assertEquals(1.0, BladeRowLayout.tierPitch(12, 10, 1.0), 1e-9, "more than High never tightens");
+		BladeRowLayout med = BladeRowLayout.laneDefault(5, 1);
+		assertEquals(10, med.n);
+		assertEquals(2.0, med.along[0] - med.along[1], 1e-5);
+	}
 }

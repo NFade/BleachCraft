@@ -52,7 +52,7 @@ import org.joml.Vector3f;
  * keeps the hand pass ({@code NONE}), and this class plays a short gesture on the Better Combat start event
  * ({@code BetterCombatClientEvents.ATTACK_START}, public API): the hit key is reached exactly when Better Combat's upswing ends (the
  * moment of the hit), the profile follows the animation name of the attack (combo order of the katana). Switch for a comparison in
- * game: {@code pose_override.json} {@code "fp_bc_mode": 1} lets Better Combat draw its own animation again (dev only).
+ * game: since round 7 Better Combat draws its own strike animation by default, {@code pose_override.json} {@code "fp_bc_mode": 0} brings back this gesture (dev only).
  *
  * <p>Hot reload (dev only, {@link HeldPose}): all numbers of {@code core/combat} come from {@code pose_override.json}, sections
  * {@code fp_swing}, {@code fp_guard}, {@code fp_pivot}, {@code fp_bc_mode}, {@code fp_enabled}; see design/results/fp_combat.md. The
@@ -161,9 +161,13 @@ public final class FpMotion {
 		return cur;
 	}
 
-	/** Dev switch {@code "fp_bc_mode": 1}: Better Combat draws its own first person animation (cancels our hand pass); read by the mixin. */
+	/**
+	 * Round 7 (user decision): the first person strike of a zanpakuto is Better Combat's own animation (playerAnimator
+	 * {@code THIRD_PERSON_MODEL}, public API only, nothing copied). Default on; {@code "fp_bc_mode": 0} in pose_override.json brings our own
+	 * {@code FpMotion} gesture back. Read by {@link dev.minebleach.reiatsutest.client.mixin.BcFirstPersonModeMixin}.
+	 */
 	public static boolean useBcFirstPerson() {
-		return PARAMS.num("bc_mode", 0f) > 0.5f;
+		return PARAMS.num("bc_mode", 1f) > 0.5f;
 	}
 
 	private static boolean enabled(String section) {

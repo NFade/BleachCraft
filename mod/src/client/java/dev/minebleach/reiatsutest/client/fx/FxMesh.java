@@ -168,17 +168,17 @@ public final class FxMesh {
 	/**
 	 * Blade variant: vertices at local y >= {@code tipY} are lit full bright and tinted {@code tipColor} (the tip glow without a pass,
 	 * 1.7.3), the rest use {@code light} and {@code bodyColor}. {@code emissive} (0..1) pushes the whole blade toward full bright
-	 * (the moonlight sweep).
+	 * (the moonlight sweep). {@code nm} = 3x3 normal matrix (row major, see BankaiBladeRenderer.basis).
 	 */
-	public void writeBlade(BufferBuilder b, float[] m, double ox, double oy, double oz, int light, float tipY, int bodyColor, int tipColor, float emissive, float invScale) {
-		writeBlade(b, m, ox, oy, oz, light, tipY, bodyColor, tipColor, emissive, invScale, Float.MAX_VALUE);
+	public void writeBlade(BufferBuilder b, float[] m, double ox, double oy, double oz, int light, float tipY, int bodyColor, int tipColor, float emissive, float[] nm) {
+		writeBlade(b, m, ox, oy, oz, light, tipY, bodyColor, tipColor, emissive, nm, Float.MAX_VALUE);
 	}
 
 	/**
 	 * As above with a cut: every vertex above local height {@code cutY} collapses onto it (the burning dissolve and the regrowth of 6.2: the
 	 * tip quads become a flat, glowing cap at the cut; the glow test still uses the original height).
 	 */
-	public void writeBlade(BufferBuilder b, float[] m, double ox, double oy, double oz, int light, float tipY, int bodyColor, int tipColor, float emissive, float invScale, float cutY) {
+	public void writeBlade(BufferBuilder b, float[] m, double ox, double oy, double oz, int light, float tipY, int bodyColor, int tipColor, float emissive, float[] nm, float cutY) {
 		int n = quads * 4;
 		int blockL = light & 0xFFFF;
 		int skyL = (light >> 16) & 0xFFFF;
@@ -194,10 +194,16 @@ public final class FxMesh {
 			float nx0 = nrm[c * 3];
 			float ny0 = nrm[c * 3 + 1];
 			float nz0 = nrm[c * 3 + 2];
-			// the basis is a uniform scale of a rotation: dividing by the scale gives the unit normal without a square root
-			float nx = (m[0] * nx0 + m[1] * ny0 + m[2] * nz0) * invScale;
-			float ny = (m[3] * nx0 + m[4] * ny0 + m[5] * nz0) * invScale;
-			float nz = (m[6] * nx0 + m[7] * ny0 + m[8] * nz0) * invScale;
+			// r7: the basis can be an anisotropic scale of a rotation (wide slab blades): normals use the normal matrix nm (rotation times the inverse scale), normalised here
+			float nx = nm[0] * nx0 + nm[1] * ny0 + nm[2] * nz0;
+			float ny = nm[3] * nx0 + nm[4] * ny0 + nm[5] * nz0;
+			float nz = nm[6] * nx0 + nm[7] * ny0 + nm[8] * nz0;
+			float nl = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+			if (nl > 1e-6f) {
+				nx /= nl;
+				ny /= nl;
+				nz /= nl;
+			}
 			boolean tip = y0 >= tipY;
 			b.vertex(wx, wy, wz, tip ? tipColor : bodyColor, uv[c * 2], uv[c * 2 + 1], OverlayTexture.DEFAULT_UV, tip ? 0xF000F0 : boosted, nx, ny, nz);
 		}

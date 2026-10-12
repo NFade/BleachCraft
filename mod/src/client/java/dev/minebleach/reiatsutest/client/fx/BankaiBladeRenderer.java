@@ -43,6 +43,8 @@ public final class BankaiBladeRenderer {
 	private static final float TIP_Y = 6.85f;
 	private static final double TIP_Z = -0.826;
 	private static final float[] M = new float[9];
+	/** Normal matrix of the last {@link #basis} call (rotation times the inverse of the anisotropic scale). */
+	private static final float[] NM = new float[9];
 	private static FxMesh blade;
 	private static FxMesh lod;
 	private static FxMesh hilt;
@@ -107,7 +109,12 @@ public final class BankaiBladeRenderer {
 		return st.bladeScale * BladeRowLayout.riseOffset(t - l.start[i]);
 	}
 
-	/** Basis of blade i with the lean (radians toward the axis) and the scale, row major 3x3 into {@code m}. */
+	/**
+	 * Basis of blade i with the lean (radians toward the axis) and the scale, row major 3x3 into {@code m}. Mesh axes: local x = thickness (runs ALONG the row, so the
+	 * broad faces look along the lane like the pages of a book, as in the anime references), local y = length, local z = width (ACROSS the lane, the curve bends it
+	 * toward the axis). Local x is scaled by {@code bladeScale * kx}, y by {@code bladeScale}, z by {@code bladeScale * kz} (bankai.bladeThick / bankai.bladeWidth).
+	 * The normal matrix goes to {@link #NM}.
+	 */
 	static void basis(RowsFx.State st, int i, double leanRad, float[] m) {
 		double yaw = Math.toRadians(st.yawDeg);
 		double fx = -Math.sin(yaw);
@@ -122,15 +129,29 @@ public final class BankaiBladeRenderer {
 		double c = Math.cos(leanRad);
 		double sn = Math.sin(leanRad);
 		float sc = (float) (st.layout.scale[i] * st.bladeScale);
-		m[0] = (float) (xX * sc);
+		float sx = (float) (sc * st.kx);
+		float sz = (float) (sc * st.kz);
+		m[0] = (float) (xX * sx);
 		m[1] = (float) (-zX * sn * sc);
-		m[2] = (float) (zX * c * sc);
+		m[2] = (float) (zX * c * sz);
 		m[3] = 0f;
 		m[4] = (float) (c * sc);
-		m[5] = (float) (sn * sc);
-		m[6] = (float) (xZ * sc);
+		m[5] = (float) (sn * sz);
+		m[6] = (float) (xZ * sx);
 		m[7] = (float) (-zZ * sn * sc);
-		m[8] = (float) (zZ * c * sc);
+		m[8] = (float) (zZ * c * sz);
+		// normal matrix: unit rotation columns, column x divided by kx and column z by kz (inverse transpose of a rotation times a diagonal scale)
+		float ix = (float) (1.0 / st.kx);
+		float iz = (float) (1.0 / st.kz);
+		NM[0] = (float) (xX * ix);
+		NM[1] = (float) (-zX * sn);
+		NM[2] = (float) (zX * c * iz);
+		NM[3] = 0f;
+		NM[4] = (float) c;
+		NM[5] = (float) (sn * iz);
+		NM[6] = (float) (xZ * ix);
+		NM[7] = (float) (-zZ * sn);
+		NM[8] = (float) (zZ * c * iz);
 	}
 
 	/** World position of the glowing tip of blade i at row time t. */
@@ -223,7 +244,7 @@ public final class BankaiBladeRenderer {
 					double tz = st.bz[i] + M[7] * 8.0;
 					double ty = by + M[4] * 8.0;
 					if (frustum != null) {
-						double r = 0.9 * l.scale[i] * st.bladeScale;
+						double r = 0.9 * l.scale[i] * st.bladeScale * Math.max(1.0, Math.max(st.kz, st.kx)); // (the wide slab and its curve)
 						Box box = new Box(Math.min(st.bx[i], tx) - r, Math.min(by, ty) - 0.2, Math.min(st.bz[i], tz) - r, Math.max(st.bx[i], tx) + r, Math.max(by, ty) + 0.2,
 								Math.max(st.bz[i], tz) + r);
 						if (!frustum.isVisible(box)) {
@@ -235,9 +256,9 @@ public final class BankaiBladeRenderer {
 						emissive = (float) Math.min(1.0, BankaiCurves.sweepBoost(l.dist[i], t, comp) / 0.35 * 0.7);
 					}
 					FxMesh m = d < lodDist || lod == null ? blade : lod;
-					double sx = shiver == 0 ? 0 : shiver * -Math.cos(Math.toRadians(st.yawDeg));
-					double sz = shiver == 0 ? 0 : shiver * -Math.sin(Math.toRadians(st.yawDeg));
-					m.writeBlade(buf, M, st.bx[i] - cp.x + sx, by - cp.y, st.bz[i] - cp.z + sz, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, (float) (1.0 / (l.scale[i] * st.bladeScale)), cutY);
+					double sx = shiver == 0 ? 0 : shiver * -Math.sin(Math.toRadians(st.yawDeg)); // (along the row = along the normal of the broad face, so the tremble is seen)
+					double sz = shiver == 0 ? 0 : shiver * Math.cos(Math.toRadians(st.yawDeg));
+					m.writeBlade(buf, M, st.bx[i] - cp.x + sx, by - cp.y, st.bz[i] - cp.z + sz, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, NM, cutY);
 					cpuQuads += m.quads;
 					cpuBlades++;
 				}
@@ -259,7 +280,7 @@ public final class BankaiBladeRenderer {
 		frames++;
 	}
 
-	/** Command shiver of 6.2: blades tremble +-0.04 m at 18 Hz for 0.3 s before they are cut (sideways across the row). */
+	/** Command shiver of 6.2: blades tremble +-0.04 m at 18 Hz for 0.3 s before they are cut (along the row, the normal of the broad faces). */
 	private static double shiverOf(RowsFx.State st, int i) {
 		if (st.phase == RowsPhase.STANDING) {
 			return 0;
@@ -298,7 +319,7 @@ public final class BankaiBladeRenderer {
 			double lean = Math.toRadians(l.leanDeg(t, i));
 			basis(st, i, lean, M);
 			double by = st.ground[i] - 0.5;
-			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), TIP_Y, WHITE, TIP, 0f, (float) (1.0 / (l.scale[i] * st.bladeScale)));
+			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), TIP_Y, WHITE, TIP, 0f, NM);
 			quads += blade.quads;
 		}
 		BuiltBuffer built = b.endNullable();
@@ -443,7 +464,7 @@ public final class BankaiBladeRenderer {
 					if (cb == null) {
 						cb = extraBuilder(2);
 					}
-					scar(cb, dx, st.ground[i] + 0.02 - cp.y, dz, 1.7, i * 2.399, (int) (255 * reveal * fadeEnd), lightOf(st, i));
+					scar(cb, dx, st.ground[i] + 0.02 - cp.y, dz, Math.max(1.7, st.bladeWidth * 1.6), i * 2.399, (int) (255 * reveal * fadeEnd), lightOf(st, i));
 				}
 			}
 		}

@@ -24,6 +24,25 @@ public final class BladeRowLayout {
 	public static final double SINK_DEPTH = 8.5;
 	public static final double LEAN_DEG = 3.0;
 
+	// ---- r7: the wall of wide slab blades (references ep52 / ep58 of the anime: pages of a book, neighbours almost touching)
+	/** Width of the blade mesh across its flat face (blade space, metres) and its thickness; the mesh is 8 long. */
+	public static final double MESH_WIDTH = 0.55;
+	public static final double MESH_THICK = 0.14;
+	/** High tier: blades per side. */
+	public static final int DEFAULT_PER_SIDE = 10;
+	/** Blade height in blocks (bankai.bladeScale 1.0 x the 8 m mesh): 4 to 5 person heights, the reference reads as 3 to 4 plus the curve. */
+	public static final double DEFAULT_BLADE_SCALE = 1.0;
+	/** Blade width across the lane in blocks (bankai.bladeWidth): wider than a player's shoulders (0.6), 1.2 to 1.8 asked for. */
+	public static final double DEFAULT_BLADE_WIDTH = 1.5;
+	/** Multiplier of the blade thickness (bankai.bladeThick): 0.14 m x 2.0 = 0.28 blocks, so the slab edge still reads from the side. */
+	public static final double DEFAULT_BLADE_THICK = 2.0;
+	/** Distance from the axis to the blade bases (rows.halfWidth): lane wide open around the caster, blade spans 6.25 to 7.75. */
+	public static final double DEFAULT_HALF_WIDTH = 7.0;
+	/** Distance between neighbours along the row (rows.spacing): 0.28 thick slabs, so the gap is 0.72 blocks = 0.48 of the blade width (neighbours almost touch). */
+	public static final double DEFAULT_PITCH = 1.0;
+	/** First blade this many blocks ahead of the feet (rows.startAhead): the corridor runs in front of the caster too. */
+	public static final double DEFAULT_START_AHEAD = 6.0;
+
 	public final int n;
 	public final int ranks;
 	public final int perRank;
@@ -106,6 +125,32 @@ public final class BladeRowLayout {
 	public static BladeRowLayout lane(int perSide, long seed, double halfWidth, double spacing, double startAhead) {
 		int per = Math.max(1, Math.min(250, perSide));
 		return new BladeRowLayout(1, per, seed, Math.max(0.5, spacing), Math.max(1.0, halfWidth), RANK_STEP, 0.0, startAhead, 1.0);
+	}
+
+	/** The lane with the r7 defaults for {@code perSide} blades per side, spacing widened for the lower tiers (see {@link #tierPitch}). */
+	public static BladeRowLayout laneDefault(int perSide, long seed) {
+		return lane(perSide, seed, DEFAULT_HALF_WIDTH, tierPitch(perSide, DEFAULT_PER_SIDE, DEFAULT_PITCH), DEFAULT_START_AHEAD);
+	}
+
+	/**
+	 * Pitch for a tier with fewer blades: the lane keeps up to twice its High length (neighbours then stand twice as far apart at most),
+	 * so Medium (5 per side) still reads as a corridor and not as a short stub. {@code perSide >= high} keeps {@code pitch}.
+	 */
+	public static double tierPitch(int perSide, int high, double pitch) {
+		if (perSide >= high || perSide < 2) {
+			return pitch;
+		}
+		return pitch * Math.min(2.0, (high - 1.0) / (perSide - 1.0));
+	}
+
+	/** Width scale (local z of the mesh) that makes the blade {@code widthBlocks} wide at the uniform scale {@code bladeScale}. */
+	public static double widthScale(double widthBlocks, double bladeScale) {
+		return widthBlocks / (MESH_WIDTH * bladeScale);
+	}
+
+	/** Gap between two neighbouring blades along the row, blocks: pitch minus the thickness of a slab. */
+	public static double gap(double pitch, double bladeScale, double thickMul) {
+		return pitch - MESH_THICK * bladeScale * thickMul;
 	}
 
 	/** Time at which the last blade has settled (2.2 s for 200 blades, 2.8 s for 1000). */

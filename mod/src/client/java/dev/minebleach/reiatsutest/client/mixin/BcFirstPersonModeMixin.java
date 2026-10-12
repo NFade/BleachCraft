@@ -21,8 +21,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * option of the player is untouched.
  *
  * <p>BC5b: the strike gesture of the first person view is drawn by {@code FpMotion} (on the Better Combat attack start event).
- * Dev switch {@code "fp_bc_mode": 1} in pose_override.json returns the decision to Better Combat (its own third person model
- * animation in first person) for a comparison in game.
+ * Round 7 (user decision): the default is reversed. {@link dev.minebleach.reiatsutest.client.model.FpMotion#useBcFirstPerson()} is true
+ * unless {@code "fp_bc_mode": 0} is set in pose_override.json, so this mixin does not intervene and Better Combat plays its own
+ * animation (playerAnimator third person model) in first person; {@code "fp_bc_mode": 0} brings back our NONE decision and the
+ * {@code FpMotion} gesture.
  */
 @Pseudo
 @Mixin(targets = "net.bettercombat.client.compat.FirstPersonAnimationCompatibility", remap = false)

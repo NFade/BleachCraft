@@ -1074,3 +1074,21 @@ Bankai blades were the shipped 8 m mesh, not a regression: now `bankai.bladeScal
 - Task 3: `BANKAI_NOT_FULL` and every "full bar" rule removed (core, voice gate -> `bankaiReady`, HUD, lang, books, docs, tests). Rage gate 80 kept (the complaint is probably about Rage; to confirm with the user).
 - Task 4: Absolute Zero removed everywhere; passive frost territory `server/BankaiField` + `BankaiFieldSpec` (Slowness I every 20 ticks, 2.0 HP INDIRECT_MAGIC every 60 ticks, radius = frost radius 30).
 - Details, numbers, blocked-effect list and the UNVERIFIED list: `design/results/mech2.md`. `gradlew build test` green. Harnesses now waive Rage with `reiatsu dev ragefree true`.
+
+## fp finish (round 7, branch finish-r7, 2026-10-12)
+- No game run (forbidden by the coordinator): calculation + unit tests only; all visual results UNVERIFIED. Details: `design/results/fp2.md`, section "Finish (round 7)".
+- 3 failing tests fixed: `SEALED_LEFT_S` 0.16 (code), arc for H_R/H_L (code), wind/chop assertions of `TwoHandMotionTest` (test, design changed the invariant, reasons in fp2.md).
+- `ArmIk`: squaring of the fist fades out at 45 degrees and where the blade runs along the forearm (arm flips); `FpMotion.limitStrike` (fists in picture, near plane) for the strike; `FpViewTest` new (no arm in the air, no jumps).
+- `mod/run/pose_override.json` had stale `fp_two.pos/rot/guard/swing/arm` + `fp_guard.sealed` hiding the new defaults: removed, backup `.bak_fp_r7`.
+- `D:\gamelock` was created and could NOT be removed by the agent (rmdir blocked by the safety check); no game is running. Remove it by hand.
+- `gradlew compileClientJava test` green (762 tests).
+## 2026-10-12 bankai rows r7 (worktree bankai-r7, uncommitted)
+- The Byakuya blade rows were redone as one tight wall of wide slabs per side: 10 blades per side (High; 5/3 on lower tiers with wider pitch), 8 blocks tall (bladeScale 1.0), 1.5 wide (new `bankai.bladeWidth`, anisotropic mesh scale), 0.28 thick (`bankai.bladeThick`), pitch 1.0 (gap 48 percent of the width), lane half width 7. Defaults live in `BladeRowLayout.DEFAULT_*`.
+- Orientation was already right (width across the row, broad faces along the lane, as in ep52/ep58); the old blades were just 0.3 wide and 2.5 apart. The dark notched rectangle in the user's screenshot is block geometry of the world, not a mod mesh (UNVERIFIED, from the picture and the code).
+- Normals now use a normal matrix for the anisotropic scale (FxMesh.writeBlade). `gradlew compileClientJava test` green (BladeRowLayoutTest 14 tests).
+- UNVERIFIED: no game run (coordinator order); the whole look, tip glow size, curve strength (tip 2.25 blocks inward), dissolve on the stretched mesh. Details: design/results/bankai_rows_r7.md.
+
+## 2026-10-12 (round 7): first person rolled back, strike = Better Combat's own animation
+- The fp2 first person rework (ArmIk, FpArms, new poses) made all first person poses worse in the user's game check. Reverted to the main versions (hands, block, draw, strike, gestures); full patch of the reverted work kept outside the repo (scratchpad `fp2_r7_full.patch`), branch `origin/fp2` untouched. `mod/run/pose_override.json` restored from `.bak_fp_r7`. Byakuya bankai rows (BladeRowLayout, RowsFx, BankaiBladeRenderer, FxMesh) kept.
+- User decision (option 2): the first person strike of a zanpakuto is Better Combat's own animation, used through its public API as a dependency (nothing copied; BC is All Rights Reserved). `FpMotion.useBcFirstPerson()` now defaults to true, so `BcFirstPersonModeMixin` no longer forces `FirstPersonMode.NONE` and BC/playerAnimator uses `THIRD_PERSON_MODEL` during a strike. `"fp_bc_mode": 0` in pose_override.json brings back the old FpMotion gesture.
+- UNVERIFIED (known from BC5 analysis, design/results/fp_combat.md section A): during a strike the first person hand pass is cancelled, so our arm, the left hand scabbard and the sword lift disappear and the view switches to the third person body for the swing. Not checked in game.
