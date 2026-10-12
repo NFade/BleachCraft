@@ -33,6 +33,17 @@ final class ServerFx {
 		RukiaServerFx.onEffect(caster, effectId, seed);
 	}
 
+	/**
+	 * The bankai cleanup message (id 44): everybody who sees the caster drops every bankai effect of him. params = {trigger ordinal,
+	 * character code}. Sent from the one server cleanup, whatever ended the bankai.
+	 */
+	static void bankaiEnd(ServerPlayerEntity caster, CharacterId who, dev.minebleach.reiatsutest.core.state.Trigger trigger) {
+		int tick = caster.getServer().getTicks();
+		EffectEventS2C payload = new EffectEventS2C(EffectIds.BANKAI_CLEANUP, caster.getId(), tick, caster.getX(), caster.getY(), caster.getZ(),
+				0f, 0f, 0f, -1, tick, new float[] {trigger.ordinal(), who.code});
+		sendToViewers(caster, payload);
+	}
+
 	/** Shunpo effect (id 40): x y z = start, d = vector to the end, params = {distance, character code, stopped by wall (0/1)}. */
 	static void shunpo(ServerPlayerEntity caster, StateEvent.ShunpoMove m, CharacterId who) {
 		int tick = caster.getServer().getTicks();

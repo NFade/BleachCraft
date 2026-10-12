@@ -25,6 +25,13 @@ public final class EffectIds {
 	/** The field is thawing (the bankai ended): x y z = the centre, params = {radius, thaw speed in blocks per second}. */
 	public static final int FROST_THAW = 43;
 
+	/**
+	 * The bankai of the caster is over (mech2 task 2), sent to the caster and everybody tracking him by the ONE server cleanup that every
+	 * end reason runs (timer, seal, death, logout, dimension change, dev reset). x y z = where he stands, params = {trigger ordinal,
+	 * character code}. Clients drop every bankai effect of that owner at once ({@code client/fx/BankaiEnd}).
+	 */
+	public static final int BANKAI_CLEANUP = 44;
+
 	private EffectIds() {
 	}
 

@@ -146,6 +146,29 @@ public final class FxTimelines {
 		}
 	}
 
+	/** Cancels the running timelines of a caster whose effect id matches (the bankai ones). Returns how many were cancelled. */
+	public static int cancelCaster(int casterId, java.util.function.IntPredicate effectIds) {
+		int n = 0;
+		for (EffectTimeline t : ACTIVE) {
+			if (t.casterId == casterId && !t.ended && effectIds.test(t.effectId)) {
+				t.cancel();
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/** Running (not ended) timelines of a caster whose effect id matches (audit). */
+	public static int countCaster(int casterId, java.util.function.IntPredicate effectIds) {
+		int n = 0;
+		for (EffectTimeline t : ACTIVE) {
+			if (t.casterId == casterId && !t.ended && effectIds.test(t.effectId)) {
+				n++;
+			}
+		}
+		return n;
+	}
+
 	public static void clear() {
 		ACTIVE.clear();
 		FxDelayed.clear();

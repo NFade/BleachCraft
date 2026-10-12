@@ -54,6 +54,9 @@ public final class FxScene {
 			} else if (a.kind() == FxAnchorKind.ROWS) {
 				rows++;
 				RowsFx.State st = RowsFx.of(owner);
+				if (st == null && BankaiEnd.recentlyEnded(owner)) {
+					continue; // the bankai just ended: this anchor is about to be removed, it must not bring the rows back
+				}
 				if (st == null) {
 					double age = Math.max(0, (w.getTime() - a.startTime()) / 20.0);
 					st = RowsFx.lateState(owner, a.seed() * 1L, a.p0(), a.getX(), a.p1() != 0 ? a.p1() : a.getY(), a.getZ(), age, w);
@@ -87,9 +90,7 @@ public final class FxScene {
 		for (Iterator<RowsFx.State> it = RowsFx.states().values().iterator(); it.hasNext();) {
 			RowsFx.State st = it.next();
 			if (st.endAt < 0 && now - st.lastSeen > 2.0) {
-				if (st.vbo != null) {
-					st.vbo.close();
-				}
+				st.dispose(0.6); // (the screen layers of the night used to stay forever when the anchor vanished without a seal event)
 				it.remove();
 			}
 		}

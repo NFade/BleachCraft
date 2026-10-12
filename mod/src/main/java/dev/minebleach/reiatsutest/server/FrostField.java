@@ -301,6 +301,53 @@ public final class FrostField {
 		}
 	}
 
+	/**
+	 * The one bankai cleanup asks the fields of an owner to thaw NOW (no waiting for the 10 tick poll). {@code fast} = owner dead, gone or in
+	 * another dimension (everything is restored by the fast budget). Manual dev fields are left alone. Returns the fields that started to thaw.
+	 */
+	static int endOf(MinecraftServer srv, UUID owner, boolean fast) {
+		if (state == null) {
+			return 0;
+		}
+		int now = srv.getTicks();
+		int n = 0;
+		for (Field f : FIELDS) {
+			if (f.owner.equals(owner) && !f.manual && !f.thawing) {
+				ServerWorld world = worldOf(srv, f.dim);
+				if (world != null) {
+					beginThaw(world, f, now, fast, fast ? "bankai ended, fast thaw" : "bankai ended");
+					n++;
+				}
+			}
+		}
+		return n;
+	}
+
+	/** Fields of an owner that are still freezing or thawing, and the journal entries they hold (dev audit). */
+	static String liveOf(UUID owner) {
+		int fields = 0;
+		int blocks = 0;
+		boolean freezing = false;
+		for (Field f : FIELDS) {
+			if (f.owner.equals(owner)) {
+				fields++;
+				freezing |= !f.thawing;
+				blocks += state == null ? 0 : state.journal.size(f.id);
+			}
+		}
+		return fields + " field(s)" + (freezing ? " (one still freezing)" : "") + ", " + blocks + " journal block(s)";
+	}
+
+	static int liveFields(UUID owner) {
+		int fields = 0;
+		for (Field f : FIELDS) {
+			if (f.owner.equals(owner) && !f.manual) {
+				fields++;
+			}
+		}
+		return fields;
+	}
+
 	private static void checkOwner(MinecraftServer srv, ServerWorld world, Field f, int now) {
 		int age = now - f.startTick;
 		if (age >= config.maxTicks()) {

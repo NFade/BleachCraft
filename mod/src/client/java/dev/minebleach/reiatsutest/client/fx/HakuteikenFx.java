@@ -153,6 +153,26 @@ public final class HakuteikenFx {
 		return STATES.get(ownerId);
 	}
 
+	/** Bankai cleanup: the Hakuteiken of this owner ends now; its grade and vignette let go and the rows get their own night colour back. */
+	public static boolean endOwner(int ownerId) {
+		State st = STATES.remove(ownerId);
+		if (st == null) {
+			return false;
+		}
+		if (st.rows != null) {
+			st.rows.gradeLocked = false;
+		}
+		if (st.vignette != null) {
+			st.vignette.release(0.6);
+			st.vignette = null;
+		}
+		if (st.ownGrade && st.grade != null) {
+			st.grade.release(0.6);
+			st.grade = null;
+		}
+		return true;
+	}
+
 	public static void clear() {
 		for (State st : STATES.values()) {
 			if (st.rows != null) {

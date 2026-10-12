@@ -63,6 +63,29 @@ public final class RukiaServerFx {
 		ReiatsuTest.LOGGER.info("[fx] rukia bankai field anchor for {} at ({}, {}, {})", caster.getName().getString(), caster.getX(), caster.getY(), caster.getZ());
 	}
 
+	/** Ends the standing field anchor of an owner at once (the one bankai cleanup). Returns how many anchors were discarded. */
+	static int endOf(UUID owner) {
+		int n = 0;
+		for (Tracked t : TRACKED) {
+			if (t.owner().equals(owner)) {
+				n++;
+			}
+		}
+		discardOf(owner);
+		return n;
+	}
+
+	/** Number of live field anchors of an owner (dev audit). */
+	static int liveOf(UUID owner) {
+		int n = 0;
+		for (Tracked t : TRACKED) {
+			if (t.owner().equals(owner) && !t.anchor().isRemoved()) {
+				n++;
+			}
+		}
+		return n;
+	}
+
 	private static void discardOf(UUID owner) {
 		for (Iterator<Tracked> it = TRACKED.iterator(); it.hasNext();) {
 			Tracked t = it.next();

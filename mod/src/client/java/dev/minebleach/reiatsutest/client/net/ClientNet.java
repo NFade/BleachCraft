@@ -69,6 +69,7 @@ public final class ClientNet {
 		dev.minebleach.reiatsutest.client.fx.AuraFx.clear();
 		dev.minebleach.reiatsutest.client.fx.SwarmFx.clear();
 		dev.minebleach.reiatsutest.client.fx.RowsFx.clear();
+		dev.minebleach.reiatsutest.client.fx.BankaiEnd.reset();
 	}
 
 	public static int requestTransition(ZanpakutoState target, RequestSource source) {

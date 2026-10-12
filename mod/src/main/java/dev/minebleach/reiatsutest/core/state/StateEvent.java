@@ -23,6 +23,14 @@ public sealed interface StateEvent {
 	record BroadcastEffect(int effectId, int seed) implements StateEvent {
 	}
 
+	/**
+	 * The bankai of {@code who} is over, for ANY reason ({@code trigger}: the 45 s timer, seal, death, logout, dimension change,
+	 * spectator, dev command). Emitted exactly once per bankai by every machine path that leaves BANKAI, right after the
+	 * {@link StateChanged}. The glue runs ONE cleanup for it (anchors, frost field, scheduled bankai phases, client broadcast).
+	 */
+	record BankaiEnded(CharacterId who, Trigger trigger) implements StateEvent {
+	}
+
 	/** Cancel scheduled phases and running effects of this caster (the cast serial changed). */
 	record CancelEffects() implements StateEvent {
 	}

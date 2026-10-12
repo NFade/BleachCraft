@@ -122,6 +122,11 @@ public final class EffectTimeline {
 		return ended;
 	}
 
+	/** Stops the timeline now: no later action runs (mech2 bankai cleanup). The sprites and particles it spawned live out their short lives. */
+	void cancel() {
+		ended = true;
+	}
+
 	/** Advances the local clock by dt (FX seconds) and runs due actions. */
 	void advance(double dt) {
 		if (ended) {
@@ -177,11 +182,11 @@ public final class EffectTimeline {
 	}
 
 	public ScreenFx.Layer vignette(ScreenFx.Kind kind, double level, double ramp) {
-		return screen ? ScreenFx.vignette(kind, level, ramp, strength) : null;
+		return screen ? ScreenFx.vignette(kind, level, ramp, strength).owner(casterId) : null;
 	}
 
 	public ScreenFx.Layer grade(String colour, double s, double ramp) {
-		return screen ? ScreenFx.grade(FxMath.hex(colour), s, ramp, strength) : null;
+		return screen ? ScreenFx.grade(FxMath.hex(colour), s, ramp, strength).owner(casterId) : null;
 	}
 
 	public void shake(double amplitudeDeg, double duration) {

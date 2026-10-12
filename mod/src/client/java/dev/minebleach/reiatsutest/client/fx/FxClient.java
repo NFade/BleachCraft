@@ -88,6 +88,7 @@ public final class FxClient {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			AuraFx.tick(client);
 			SwarmFx.tick(client);
+			BankaiEnd.watch(client);
 		});
 		DrawFx.init();
 	}

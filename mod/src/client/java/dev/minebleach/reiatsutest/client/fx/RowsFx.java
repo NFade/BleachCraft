@@ -130,6 +130,23 @@ public final class RowsFx {
 			return FxClock.now - epoch;
 		}
 
+		/** Frees everything the state holds that is not reclaimed by itself: the static vertex buffer and the held screen layers. */
+		public void dispose(double fade) {
+			if (vbo != null) {
+				vbo.close();
+				vbo = null;
+			}
+			vboValid = false;
+			for (ScreenFx.Layer l : new ScreenFx.Layer[] {grade, vignette, vignette2}) {
+				if (l != null) {
+					l.release(fade);
+				}
+			}
+			grade = null;
+			vignette = null;
+			vignette2 = null;
+		}
+
 		/** Seconds since the sword was thrown (not the rows clock: the rows start {@link #rowsDelay()} later). */
 		public double swordTime() {
 			return FxClock.now - swordT0;
@@ -229,11 +246,28 @@ public final class RowsFx {
 
 	public static void clear() {
 		for (State s : STATES.values()) {
-			if (s.vbo != null) {
-				s.vbo.close();
-			}
+			s.dispose(0.3);
 		}
 		STATES.clear();
+	}
+
+	/**
+	 * Bankai cleanup of one owner. {@code instant} (death, logout, dimension change, hard drop): the state is gone now with its screen layers;
+	 * otherwise the rows sink as designed ({@link #end}); either way nothing of it stays: the state is removed after the sink at the latest.
+	 * Returns true when there was a state.
+	 */
+	public static boolean endOwner(int ownerId, boolean instant) {
+		State st = STATES.get(ownerId);
+		if (st == null) {
+			return false;
+		}
+		if (instant) {
+			STATES.remove(ownerId);
+			st.dispose(0.6);
+		} else {
+			end(ownerId);
+		}
+		return true;
 	}
 
 	// ------------------------------------------------------------------------------------------ phases (S3, ids 32 and 33)
@@ -300,8 +334,11 @@ public final class RowsFx {
 		t.at(0.30, x -> {
 			// others: the night is graded by the distance to the NEAREST ROW POINT (standing in the corridor = full night), not to the caster (6.1)
 			double gs = st.owner ? 1.0 : FxMath.screenStrength(nearestRowDistance(st));
-			st.grade = x.screen ? ScreenFx.grade(FxMath.hex(FxTune.s("bankai.night", NIGHT)), FxTune.d("bankai.nightStrength", 1.0), 0.6, gs) : null;
-			st.vignette = x.screen ? ScreenFx.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.45), 0.6, gs) : null;
+			if (st.endAt >= 0 || STATES.get(e.casterId()) != st) {
+				return; // the bankai already ended (or was replaced) before the night fell: no layer may be created for a dead state
+			}
+			st.grade = x.screen ? ScreenFx.grade(FxMath.hex(FxTune.s("bankai.night", NIGHT)), FxTune.d("bankai.nightStrength", 1.0), 0.6, gs).owner(e.casterId()) : null;
+			st.vignette = x.screen ? ScreenFx.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.45), 0.6, gs).owner(e.casterId()) : null;
 			x.sound("ambient.cave", 0.8, 0.6);
 			x.sound("block.respawn_anchor.charge", 0.6, 0.6);
 		});
@@ -331,6 +368,9 @@ public final class RowsFx {
 		});
 		// hold: the vignette settles to the playable level
 		t.at(comp + delay + 0.6, x -> {
+			if (st.endAt >= 0 || STATES.get(e.casterId()) != st) {
+				return;
+			}
 			if (st.vignette != null) {
 				st.vignette.release(1.0);
 			}
@@ -474,9 +514,7 @@ public final class RowsFx {
 			State st = it.next();
 			double t = st.time();
 			if (st.endAt >= 0 && FxClock.now - st.endAt > sinkDuration(st) + 0.4) {
-				if (st.vbo != null) {
-					st.vbo.close();
-				}
+				st.dispose(0.3);
 				it.remove();
 				continue;
 			}

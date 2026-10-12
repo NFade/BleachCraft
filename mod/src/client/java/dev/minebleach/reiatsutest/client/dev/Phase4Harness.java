@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.client.dev;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.ClientState;
+import dev.minebleach.reiatsutest.client.fx.BankaiEnd;
 import dev.minebleach.reiatsutest.client.fx.FxClock;
 import dev.minebleach.reiatsutest.client.fx.FxSound;
 import dev.minebleach.reiatsutest.client.fx.ShunpoFx;
@@ -232,6 +233,26 @@ public final class Phase4Harness {
 				fail = t.toString();
 			}
 			record(name, fail);
+		});
+	}
+
+	/**
+	 * Mech2 task 2: after a bankai ended (whatever the reason) wait out the rows' sink and the client audit (5 s), then require that nothing of it
+	 * is left: no anchor, no Rukia field anchor, no frost field, no scheduled bankai phase on the server; no rows, storm, Hakuteiken, Rukia passive,
+	 * crystal, held screen layer, running bankai timeline, anchor entity or freeze_desat on the client; and no dirty [bankai-audit] line.
+	 */
+	private static void bankaiAuditSteps(String what) {
+		step(what + ": wait for the sink and the audit", 140, () -> { });
+		step(what + ": checks, nothing of the bankai is left", 4, () -> {
+			sCheck(what + ": server leftovers", p -> {
+				int[] l = ZanpakutoManager.bankaiLeftovers(p);
+				return l[0] + l[1] + l[2] + l[3] == 0 ? null : "anchors " + l[0] + " fieldAnchors " + l[1] + " frostFields " + l[2] + " bankaiPhases " + l[3];
+			});
+			cCheck(what + ": client leftovers", () -> {
+				var l = BankaiEnd.leftovers(mc.player.getId());
+				return l.clean() ? null : l.toString();
+			});
+			cCheck(what + ": no dirty [bankai-audit]", () -> BankaiEnd.dirtyAudits == 0 ? null : BankaiEnd.lastAudit);
 		});
 	}
 
@@ -617,6 +638,7 @@ public final class Phase4Harness {
 		step("A13 checks: release lock", 3, () -> {
 			cCheck("A13 J during the 2 s release lock is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
 		});
+		bankaiAuditSteps("mech2 seal (Rukia)");
 
 		// ---------------- B. Byakuya
 		step("cleanup, select byakuya", 60, () -> {
@@ -686,6 +708,7 @@ public final class Phase4Harness {
 			cCheck("B5 held stack SHIKAI", () -> clientStack(ReleaseState.SHIKAI));
 			shot("13_after_bankai_timer_back_in_shikai");
 		});
+		bankaiAuditSteps("mech2 timer (Byakuya)");
 		step("B5b press G right after the timer (re-entry lock)", 14, () -> press(ReiatsuKeys.BANKAI));
 		step("B5b checks", 3, () -> {
 			cCheck("B5b bankai is locked after the timer even with a full bar (COOLDOWN)", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
@@ -747,6 +770,7 @@ public final class Phase4Harness {
 		step("B8 checks: sealed", 3, () -> {
 			sCheck("B8 server SEALED", p -> expectState(p, ZanpakutoState.SEALED, CharacterId.NONE));
 		});
+		bankaiAuditSteps("mech2 seal (Byakuya)");
 
 		// ---------------- D. shunpo (B4 step 5) and the keys
 		buildShunpoSteps();
@@ -848,10 +872,62 @@ public final class Phase4Harness {
 		stepUntil("wait for overworld", 20, 20 * 60, () -> { }, () -> mc.world != null && mc.player != null
 				&& mc.world.getRegistryKey().getValue().toString().equals("minecraft:overworld") && mc.currentScreen == null);
 
+		buildBankaiEndSteps();
+
 		step("finish", 10, () -> {
 			finish();
 			mc.scheduleStop();
 		});
+	}
+
+	// ---------------------------------------------------------------- E. every way a bankai ends (mech2 task 2)
+
+	/** Rukia into bankai: draw, release, bankai (Rage is waived by the dev switch). Her bankai starts the field anchor and the frost territory. */
+	private static void toRukiaBankaiSteps(String what) {
+		step(what + ": rukia in hand, bar full, locks cleared", 20, () -> {
+			cmd("item replace entity @s hotbar.0 with " + RUKIA, "reiatsu dev ragefree true", "reiatsu full", "reiatsu cooldowns clear", "tp @s 0.5 -60 0.5 0 20");
+			selectSlot(0);
+		});
+		step(what + ": J", 14, () -> press(ReiatsuKeys.DRAW));
+		step(what + ": R", 14, () -> press(ReiatsuKeys.RELEASE));
+		step(what + ": G", 70, () -> press(ReiatsuKeys.BANKAI));
+		step(what + ": checks, the bankai stands with its field", 3, () -> {
+			sCheck(what + ": server BANKAI/RUKIA", p -> expectState(p, ZanpakutoState.BANKAI, CharacterId.RUKIA));
+			sCheck(what + ": the bankai has something to clean (field anchor or frost field)", p -> {
+				int[] l = ZanpakutoManager.bankaiLeftovers(p);
+				return l[1] + l[2] > 0 ? null : "nothing alive: " + java.util.Arrays.toString(l);
+			});
+		});
+	}
+
+	private static void buildBankaiEndSteps() {
+		// E1 death
+		toRukiaBankaiSteps("E1 death");
+		step("E1 kill the player", 30, () -> cmd("kill @s"));
+		stepUntil("E1 respawn", 5, 400, () -> {
+			if (mc.currentScreen instanceof net.minecraft.client.gui.screen.DeathScreen) {
+				mc.player.requestRespawn();
+			}
+		}, () -> mc.player != null && mc.player.isAlive() && mc.currentScreen == null);
+		bankaiAuditSteps("E1 death");
+		// E2 dimension change
+		toRukiaBankaiSteps("E2 dimension");
+		step("E2 go to the nether", 10, () -> cmd("execute in minecraft:the_nether run tp @s 0 100 0"));
+		stepUntil("E2 wait for the nether", 20, 20 * 60, () -> { }, () -> mc.world != null && mc.player != null
+				&& mc.world.getRegistryKey().getValue().toString().equals("minecraft:the_nether") && mc.currentScreen == null);
+		bankaiAuditSteps("E2 dimension");
+		step("E2 back to the overworld", 5, () -> cmd("execute in minecraft:overworld run tp @s 0.5 -60 0.5 0 20"));
+		stepUntil("E2 wait for the overworld", 20, 20 * 60, () -> { }, () -> mc.world != null && mc.player != null
+				&& mc.world.getRegistryKey().getValue().toString().equals("minecraft:overworld") && mc.currentScreen == null);
+		// E3 /reiatsu dev reset
+		toRukiaBankaiSteps("E3 dev reset");
+		step("E3 /reiatsu dev reset", 10, () -> cmd("reiatsu dev reset"));
+		bankaiAuditSteps("E3 dev reset");
+		// E4 the 45 s timer, Rukia (the Byakuya timer is checked in section B)
+		toRukiaBankaiSteps("E4 timer");
+		stepUntil("E4 wait for the 45 s timer", 10, 20 * 60, () -> { }, () -> ClientState.zanpakuto().zanpakutoState() == ZanpakutoState.SHIKAI);
+		bankaiAuditSteps("E4 timer");
+		step("E5 back to normal: ragefree off, sealed", 10, () -> cmd("reiatsu dev ragefree false", "reiatsu dev reset"));
 	}
 
 	// ---------------------------------------------------------------- D. shunpo (B4 step 5)

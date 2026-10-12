@@ -120,6 +120,19 @@ public final class StormFx {
 		STATES.clear();
 	}
 
+	/** Bankai cleanup: the storm of this owner ends now and its screen layer lets go. Returns true when there was one. */
+	public static boolean endOwner(int ownerId) {
+		State st = STATES.remove(ownerId);
+		if (st == null) {
+			return false;
+		}
+		if (st.vignette != null) {
+			st.vignette.release(0.6);
+			st.vignette = null;
+		}
+		return true;
+	}
+
 	public static State of(int ownerId) {
 		return STATES.get(ownerId);
 	}

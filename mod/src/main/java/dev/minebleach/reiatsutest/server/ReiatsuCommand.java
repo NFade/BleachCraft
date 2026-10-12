@@ -88,6 +88,30 @@ public final class ReiatsuCommand {
 										.then(CommandManager.argument("hp", FloatArgumentType.floatArg(0.1F, 100.0F))
 												.executes(c -> dummyHit(c.getSource(), EntityArgumentType.getEntities(c, "targets"),
 														FloatArgumentType.getFloat(c, "hp"))))))
+						// /reiatsu dev reset: the dev reset of everything: back to SEALED through the same machine path as a seal (so the one
+						// bankai cleanup runs if a bankai was on), cooldowns cleared, bar full
+						.then(CommandManager.literal("reset").executes(c -> {
+							ServerPlayerEntity p = c.getSource().getPlayerOrThrow();
+							StateMachine sm = machine(c.getSource());
+							ZanpakutoManager.applyExternal(p, sm.devSetState(ZanpakutoState.SEALED, CharacterId.NONE));
+							sm.devClearCooldowns();
+							sm.devSetReiatsu(1000);
+							ZanpakutoManager.applyExternal(p, List.of());
+							c.getSource().sendFeedback(() -> Text.literal("dev reset: sealed, cooldowns cleared, bar full"), true);
+							return 1;
+						}))
+						// /reiatsu dev bankai_audit: what is still alive of a bankai on the server (anchors, Rukia field anchor, frost fields, scheduled
+						// bankai phases). All four are 0 once the bankai is over; the client logs its own [bankai-audit] line a few seconds after each end
+						.then(CommandManager.literal("bankai_audit").executes(c -> {
+							ServerPlayerEntity p = c.getSource().getPlayerOrThrow();
+							int[] l = ZanpakutoManager.bankaiLeftovers(p);
+							int sum = l[0] + l[1] + l[2] + l[3];
+							String line = "bankai_audit: anchors=" + l[0] + " rukiaFieldAnchors=" + l[1] + " frostFields=" + l[2] + " scheduledBankaiPhases=" + l[3]
+									+ " (cleanups run: " + ZanpakutoManager.bankaiCleanups() + ") -> " + (sum == 0 ? "CLEAN" : "LEFTOVERS");
+							dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[bankai-audit] server {}", line);
+							c.getSource().sendFeedback(() -> Text.literal(line), false);
+							return sum == 0 ? 1 : 0;
+						}))
 						// /reiatsu dev barrier_check: in-world check of the Byakuya barrier on you (damage cut, control effects, ice, knockback)
 						.then(CommandManager.literal("barrier_check").executes(c -> {
 							ServerPlayerEntity p = c.getSource().getPlayerOrThrow();
