@@ -151,6 +151,46 @@ JA_KIDO = {
 for _cid, _items in JA_KIDO.items():
     EXTRA_ALIASES[_cid] = EXTRA_ALIASES.get(_cid, []) + _items
 
+# --- Gin Ichimaru and Uryu Ishida (branch gin-uryu, registration skeleton). Renderings a recogniser plausibly gives for the same sounds,
+# kana forms and spaced spellings. UNVERIFIED with a real microphone; the names are rare words, so none of them is weak.
+NEW_CHARACTER_ALIASES = {
+    "gin.shikai.release": [("i korose shinso", False), ("ikoro se shinso", False), ("イコロセ シンソウ", False), ("いころせ しんそう", False),
+                           ("икоросе синсо", False), ("ikorose shinsou", False)],
+    "gin.shikai.ikorose": [("i korose", False), ("ikoro se", False), ("イコロセ", False), ("いころせ", False), ("икоросе", False),
+                           ("ikorose shinsou", False), ("ikorosey", False)],
+    "gin.shikai.hyapponzashi": [("hyappon zashi", False), ("hi appon zashi", False), ("ヒャッポンザシ", False), ("ひゃっぽんざし", False),
+                                ("хьяппон заси", False), ("hiyapponzashi", False), ("hyapon zashi", False)],
+    "gin.shikai.snake_hook": [("snake hook", False), ("the snake hook", False), ("スネークフック", False), ("すねーくふっく", False),
+                              ("змеиный крюк", False), ("snake hooks", False)],
+    "gin.bankai.release": [("bankai kamishini no yari", False), ("kami shini no yari", False), ("kamishini no yari", False),
+                           ("カミシニノヤリ", False), ("かみしにのやり", False), ("камисини но яри", False), ("банкай камисини но яри", False)],
+    "gin.bankai.butou_renjin": [("buto renjin", False), ("butou renjin", False), ("ブトウ レンジン", False), ("ぶとう れんじん", False),
+                                ("бутоу рэндзин", False), ("boo toe renjin", False), ("buto ren jin", False)],
+    "gin.bankai.korose": [("korose kamishini no yari", False), ("ko rose", False), ("コロセ", False), ("ころせ", False), ("коросэ", False),
+                          ("коросе", False), ("korose kamishini", False)],
+    "gin.bankai.hakufuku": [("haku fuku", False), ("hakufuku", False), ("ハクフク", False), ("はくふく", False), ("хакуфуку", False),
+                            ("hakufuko", False), ("haku fuko", False), ("hakufoku", False)],
+    "uryu.shikai.release": [("blood arterie", False), ("blut arteri", False), ("blood arteri", False), ("ブルート アルテリー", False),
+                            ("блут артери", False), ("blut arterie", False), ("blood artery", False)],
+    "uryu.shikai.heilig_pfeil": [("heilig pfeil", False), ("highlig pfeil", False), ("heiliger pfeil", False), ("hylig fyle", False),
+                                 ("ハイリッヒ プファイル", False), ("хайлиг пфайль", False), ("heilig pfile", False)],
+    "uryu.shikai.sprenger": [("sprenger", False), ("sprengar", False), ("shprenger", False), ("スプレンガー", False), ("шпренгер", False),
+                             ("спренгер", False), ("sprengerr", False), ("shprengar", False)],
+    "uryu.shikai.hirenkyaku": [("hiren kyaku", False), ("hiren kyaku", False), ("ヒレンキャク", False), ("ひれんきゃく", False),
+                               ("хиренкьяку", False), ("hirenkiaku", False), ("hi ren kyaku", False)],
+    "uryu.bankai.release": [("quincy vollstandig", False), ("quincy volstandig", False), ("quincy follstandig", False),
+                            ("クインシー フォルシュテンディッヒ", False), ("квинси фольштендиг", False), ("quincy full standing", False),
+                            ("volstandig", False)],
+    "uryu.bankai.licht_regen": [("licht regen", False), ("lickt regen", False), ("light regen", False), ("リヒト レーゲン", False),
+                                ("лихт реген", False), ("licht reagan", False), ("lixt regen", False), ("lihct regen", False)],
+    "uryu.bankai.homing_volley": [("homing volley", False), ("homing arrows", False), ("homing barrage", False), ("ホーミング ボレー", False),
+                                  ("самонаводящийся залп", False), ("самонаводящиеся стрелы", False), ("homing valley", False), ("homing salvo", False), ("homing arrow", False)],
+    "uryu.bankai.sternenstaub": [("sternenstaub", False), ("sternen staub", False), ("stern enstaub", False), ("シュテルネンシュタウプ", False),
+                                 ("штернэнштауб", False), ("sternen stop", False), ("stern en staub", False), ("shternenshtaub", False)],
+}
+for _cid, _items in NEW_CHARACTER_ALIASES.items():
+    EXTRA_ALIASES[_cid] = EXTRA_ALIASES.get(_cid, []) + _items
+
 # Context-gated ASR forms of "bankai" (decision: treat "bank eye" as bankai ONLY in SHIKAI + full reiatsu + item).
 GATED_ALIASES = {
     "rukia.bankai.release": [
@@ -166,6 +206,10 @@ GATED_ALIASES = {
 # same protection as the bank eye family (SHIKAI + item + full bar, whole utterance only)
 GATED_ALIASES["rukia.bankai.release"].append(("банкой", True))
 GATED_ALIASES["byakuya.bankai.release"].append(("банкой", True))
+# the same family for the bankai releases of Gin and Uryu: SHIKAI + item + a possible release, whole utterance only
+for _cid in ("gin.bankai.release", "uryu.bankai.release"):
+    GATED_ALIASES[_cid] = [("bank eye", True), ("bankeye", True), ("bank i", True), ("bank ai", True), ("bankie", True), ("banki", True),
+                           ("банкой", True)]
 
 
 def cells(line):
@@ -200,7 +244,7 @@ def parse():
             cid = strip_ticks(c[0])
             states = [s.strip() for s in c[1].split("/")]
             item = {"Rukia's zanpakuto": "rukia", "Byakuya's zanpakuto": "byakuya", "either zanpakuto": "any",
-                    "any sword or none": "any"}[c[2]]
+                    "any sword or none": "any", "Gin's Shinso": "gin", "Uryu's Quincy cross": "uryu"}[c[2]]
             say = re.sub(r"^\(mod-defined\)\s*", "", c[3])
             say = re.sub(r"\s*/\s*mod:.*$", "", say)
             say = re.sub(r"\s*\(same word as shikai\)", "", say)

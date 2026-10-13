@@ -27,7 +27,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ## 1. Command list
 
-**19 commands** (18 required, 1 optional: `byakuya.bankai.senkei`). Round 6 added `rukia.bankai.ice_spike` and `byakuya.shikai.cage`. The last three (`kido.*`, B5) are valid in every state with any sword or none.
+**19 commands** (18 required, 1 optional: `byakuya.bankai.senkei`) plus 16 more: branch gin-uryu added the 16 commands of Gin Ichimaru and Uryu Ishida (sections 1.20 to 1.35). Round 6 added `rukia.bankai.ice_spike` and `byakuya.shikai.cage`. The last three (`kido.*`, B5) are valid in every state with any sword or none.
 
 | id | state | item in hand | canonical phrase | weak | notes |
 |---|---|---|---|---|---|
@@ -49,6 +49,22 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `kido.byakurai` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Hado no yon, Byakurai | no | Kido (B5): Hado 4, white lightning beam. Castable in every state, no sword needed. Number optional, "Hado" alone never fires. |
 | `kido.shakkaho` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Hado no sanjuichi, Shakkaho | no | Kido (B5): Hado 31, red fireball with a burst. Every state, no sword. Number optional, "Hado" alone never fires. |
 | `kido.sai` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Bakudo no ichi, Sai | no | Kido (B5): Bakudo 1, short binding. Every state, no sword. Lone "Sai" and lone "Bakudo" are weak (whole utterance). |
+| `gin.shikai.release` | BASE | Gin's Shinso | Ikorose, Shinso | no | BASE to SHIKAI (the wakizashi must be drawn first). Canon release phrase (Shoot to kill). Lone "Ikorose" is the same word as the shikai ability, a different state. |
+| `gin.shikai.ikorose` | SHIKAI | Gin's Shinso | Ikorose | no | Z: the instant thrust. Canon word, same as the release but in SHIKAI. |
+| `gin.shikai.hyapponzashi` | SHIKAI | Gin's Shinso | Hyapponzashi | no | H: the held sweeping blade. Canon nickname of the shikai. |
+| `gin.shikai.snake_hook` | SHIKAI | Gin's Shinso | (mod-defined) Snake hook | no | B: the grappling thrust. No canon phrase exists: mod-defined. |
+| `gin.bankai.release` | SHIKAI | Gin's Shinso | Bankai, Kamishini no Yari | no | SHIKAI to BANKAI. Server requires 80 Rage. The anime also shows the bare name. |
+| `gin.bankai.butou_renjin` | BANKAI | Gin's Shinso | Butou: Renjin | no | Z: the mass of thrusts. Canon name. |
+| `gin.bankai.korose` | BANKAI | Gin's Shinso | Korose, Kamishini no Yari | no | H: first press marks, second press (same key or phrase) dissolves. Canon phrase of the dissolve. |
+| `gin.bankai.hakufuku` | BANKAI | Gin's Shinso | Hakufuku | no | B: hides Gin from perception. Canon kido name, used as the trigger. |
+| `uryu.shikai.release` | BASE | Uryu's Quincy cross | Blut Arterie | no | BASE to SHIKAI (the bow must be drawn first). Canon (offensive Blut). |
+| `uryu.shikai.heilig_pfeil` | SHIKAI | Uryu's Quincy cross | Heilig Pfeil | no | Z: the focus shot. Canon name. |
+| `uryu.shikai.sprenger` | SHIKAI | Uryu's Quincy cross | Sprenger | no | H: the pentagon seal and explosion. Canon name. |
+| `uryu.shikai.hirenkyaku` | SHIKAI | Uryu's Quincy cross | Hirenkyaku | no | B: the Quincy flash step dash. Canon name. |
+| `uryu.bankai.release` | SHIKAI | Uryu's Quincy cross | Quincy: Vollstandig | no | SHIKAI to BANKAI. Server requires 80 Rage. Canon name of the full form (the umlaut is left out on purpose). |
+| `uryu.bankai.licht_regen` | BANKAI | Uryu's Quincy cross | Licht Regen | no | Z: the barrage of arrows. Canon name. |
+| `uryu.bankai.homing_volley` | BANKAI | Uryu's Quincy cross | (mod-defined) Homing volley | no | H: three or more curving arrows. Mod-defined name (the canon idea is trajectory control). |
+| `uryu.bankai.sternenstaub` | BANKAI | Uryu's Quincy cross | Sternenstaub | no | B: the giant arrow of flechettes. Canon name. |
 
 "weak" = the command is made of short or very common words and is accepted only when the **whole utterance** is the phrase (section 3.1). A few strong commands also carry weak lone-word variants ("Chire", "Scatter"); these are marked in their tables.
 
@@ -466,6 +482,213 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 |  | Клетка из лепестков | `M` | `kretka is repestkov` |
 |  | Чире но ори | `X` | `cire no ori` |
 |  | Сенбонзакура лепестковая клетка | `M` | `senbonsakura repestkovaya kretka` |
+### 1.20 `gin.shikai.release`
+
+- **Required state:** BASE. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** Ikorose, Shinso
+- **Notes:** BASE to SHIKAI (the wakizashi must be drawn first). Canon release phrase (Shoot to kill). Lone "Ikorose" is the same word as the shikai ability, a different state. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Ikorose, Shinso | `C` | `ikorose sinso` |
+|  | Ikorose Shinso | `C` | `ikorose sinso` |
+|  | Ikorose | `C` | `ikorose` |
+| Russian (Cyrillic) | Икоросэ, Синсо | `X` | `ikorose sinso` |
+|  | Икоросэ | `X` | `ikorose` |
+
+### 1.21 `gin.shikai.ikorose`
+
+- **Required state:** SHIKAI. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** Ikorose
+- **Notes:** Z: the instant thrust. Canon word, same as the release but in SHIKAI. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Ikorose | `C` | `ikorose` |
+|  | Ikorose Shinso | `C` | `ikorose sinso` |
+| Russian (Cyrillic) | Икоросэ | `X` | `ikorose` |
+|  | Икоросэ, Синсо | `X` | `ikorose sinso` |
+
+### 1.22 `gin.shikai.hyapponzashi`
+
+- **Required state:** SHIKAI. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** Hyapponzashi
+- **Notes:** H: the held sweeping blade. Canon nickname of the shikai. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Hyapponzashi | `C` | `hyaponsasi` |
+|  | Hyappon zashi | `C` | `hyapon sasi` |
+| Russian (Cyrillic) | Хьяппонзаси | `X` | `hyaponsasi` |
+|  | Хьяппон заси | `X` | `hyapon sasi` |
+
+### 1.23 `gin.shikai.snake_hook`
+
+- **Required state:** SHIKAI. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** (mod-defined) Snake hook
+- **Notes:** B: the grappling thrust. No canon phrase exists: mod-defined. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| English sub | Snake hook | `M` | `snake hok` |
+|  | Snake hooks | `M` | `snake hoks` |
+|  | Hook the snake | `M` | `hok the snake` |
+| Russian (Cyrillic) | Змеиный крюк | `M` | `smeni kryuk` |
+|  | Крюк змеи | `M` | `kryuk sme` |
+
+### 1.24 `gin.bankai.release`
+
+- **Required state:** SHIKAI. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** Bankai, Kamishini no Yari
+- **Notes:** SHIKAI to BANKAI. Server requires 80 Rage. The anime also shows the bare name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Bankai, Kamishini no Yari | `C` | `bankai kamisini no yari` |
+|  | Kamishini no Yari | `C` | `kamisini no yari` |
+| English sub | God-Killing Spear | `T` | `god kiring spear` |
+| Russian (Cyrillic) | Банкай, Камисини но Яри | `X` | `bankai kamisini no yari` |
+|  | Камисини но Яри | `X` | `kamisini no yari` |
+
+### 1.25 `gin.bankai.butou_renjin`
+
+- **Required state:** BANKAI. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** Butou: Renjin
+- **Notes:** Z: the mass of thrusts. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Butou Renjin | `C` | `buto rensin` |
+|  | Buto Renjin | `C` | `buto rensin` |
+| Russian (Cyrillic) | Бутоу Рэндзин | `X` | `buto rensin` |
+|  | Буто Рэндзин | `X` | `buto rensin` |
+
+### 1.26 `gin.bankai.korose`
+
+- **Required state:** BANKAI. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** Korose, Kamishini no Yari
+- **Notes:** H: first press marks, second press (same key or phrase) dissolves. Canon phrase of the dissolve. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Korose, Kamishini no Yari | `C` | `korose kamisini no yari` |
+|  | Korose | `C` | `korose` |
+|  | Korose Kamishini no Yari | `C` | `korose kamisini no yari` |
+| Russian (Cyrillic) | Коросэ, Камисини но Яри | `X` | `korose kamisini no yari` |
+|  | Коросэ | `X` | `korose` |
+
+### 1.27 `gin.bankai.hakufuku`
+
+- **Required state:** BANKAI. **Item:** Gin's Shinso in the main hand.
+- **Canonical phrase:** Hakufuku
+- **Notes:** B: hides Gin from perception. Canon kido name, used as the trigger. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Hakufuku | `C` | `hakuhuku` |
+| Russian (Cyrillic) | Хакуфуку | `X` | `hakuhuku` |
+|  | Хаку фуку | `X` | `haku huku` |
+
+### 1.28 `uryu.shikai.release`
+
+- **Required state:** BASE. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** Blut Arterie
+- **Notes:** BASE to SHIKAI (the bow must be drawn first). Canon (offensive Blut). Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Blut Arterie | `C` | `brut arterie` |
+|  | Blut Arteri | `C` | `brut arteri` |
+| Russian (Cyrillic) | Блут Артери | `X` | `brut arteri` |
+|  | Блют Артери | `X` | `bryut arteri` |
+
+### 1.29 `uryu.shikai.heilig_pfeil`
+
+- **Required state:** SHIKAI. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** Heilig Pfeil
+- **Notes:** Z: the focus shot. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Heilig Pfeil | `C` | `herig pher` |
+|  | Heilig Pfeile | `C` | `herig phere` |
+| Russian (Cyrillic) | Хайлиг Пфайль | `X` | `hairig phair` |
+|  | Хайлиг Пфайл | `X` | `hairig phair` |
+
+### 1.30 `uryu.shikai.sprenger`
+
+- **Required state:** SHIKAI. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** Sprenger
+- **Notes:** H: the pentagon seal and explosion. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Sprenger | `C` | `sprenger` |
+| Russian (Cyrillic) | Шпренгер | `X` | `sprenger` |
+|  | Спренгер | `X` | `sprenger` |
+
+### 1.31 `uryu.shikai.hirenkyaku`
+
+- **Required state:** SHIKAI. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** Hirenkyaku
+- **Notes:** B: the Quincy flash step dash. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Hirenkyaku | `C` | `hirenkyaku` |
+|  | Hiren kyaku | `C` | `hiren kyaku` |
+| Russian (Cyrillic) | Хиренкьяку | `X` | `hirenkyaku` |
+|  | Хирэнкьяку | `X` | `hirenkyaku` |
+
+### 1.32 `uryu.bankai.release`
+
+- **Required state:** SHIKAI. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** Quincy: Vollstandig
+- **Notes:** SHIKAI to BANKAI. Server requires 80 Rage. Canon name of the full form (the umlaut is left out on purpose). Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Quincy Vollstandig | `C` | `kuincy vorstandig` |
+|  | Vollstandig | `C` | `vorstandig` |
+| Russian (Cyrillic) | Квинси Фольштендиг | `X` | `kvinsi horstendig` |
+|  | Фольштендиг | `X` | `horstendig` |
+
+### 1.33 `uryu.bankai.licht_regen`
+
+- **Required state:** BANKAI. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** Licht Regen
+- **Notes:** Z: the barrage of arrows. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Licht Regen | `C` | `rict regen` |
+| Russian (Cyrillic) | Лихт Реген | `X` | `riht regen` |
+|  | Лихт Регэн | `X` | `riht regen` |
+
+### 1.34 `uryu.bankai.homing_volley`
+
+- **Required state:** BANKAI. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** (mod-defined) Homing volley
+- **Notes:** H: three or more curving arrows. Mod-defined name (the canon idea is trajectory control). Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| English sub | Homing volley | `M` | `homing vore` |
+|  | Homing arrows | `M` | `homing arows` |
+| Russian (Cyrillic) | Самонаводящийся залп | `M` | `samonavodyasisa sarp` |
+|  | Самонаводящиеся стрелы | `M` | `samonavodyasiesa streri` |
+
+### 1.35 `uryu.bankai.sternenstaub`
+
+- **Required state:** BANKAI. **Item:** Uryu's Quincy cross in the main hand.
+- **Canonical phrase:** Sternenstaub
+- **Notes:** B: the giant arrow of flechettes. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+
+| Group | Phrase | Origin | Key form |
+|---|---|---|---|
+| Romaji | Sternenstaub | `C` | `sternenstaub` |
+| Russian (Cyrillic) | Штернэнштауб | `X` | `sternenstaub` |
+|  | Штернен штауб | `X` | `sternen staub` |
 
 ## 2. Typical ASR mis-recognitions
 

@@ -28,7 +28,7 @@ class PhraseBookTest {
 
 	@Test
 	void hasThe18CommandsOfTheDesign() {
-		assertEquals(18, book.commands().size(), "15 zanpakuto commands (ice spike and petal cage added in round 6, Absolute Zero removed in mech2 task 4) + 3 kido (B5)");
+		assertEquals(34, book.commands().size(), "15 zanpakuto commands (ice spike and petal cage added in round 6, Absolute Zero removed in mech2 task 4) + 3 kido (B5) + 16 of Gin and Uryu (gin-uryu)");
 		assertEquals(1, book.commands().stream().filter(PhraseBook.Command::optional).count(), "only senkei is optional");
 		assertTrue(book.command("byakuya.bankai.senkei").optional());
 		assertFalse(book.fillerKeys().isEmpty());
@@ -143,7 +143,7 @@ class PhraseBookTest {
 				expected.get(current).add(c[1].trim().replace(" (weak: whole utterance)", ""));
 			}
 		}
-		assertEquals(18, expected.size());
+		assertEquals(34, expected.size());
 		for (Map.Entry<String, Set<String>> e : expected.entrySet()) {
 			PhraseBook.Command c = book.command(e.getKey());
 			assertNotNull(c, e.getKey());

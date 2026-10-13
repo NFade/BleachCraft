@@ -607,6 +607,261 @@
         {"text": "bakudou no ichi sai", "origin": "A"},
         {"text": "bakudou", "origin": "A", "weak": true}
       ]
+    },
+    {
+      "id": "gin.shikai.release", "states": ["BASE"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Ikorose, Shinso",
+      "variants": [
+        {"text": "Ikorose, Shinso", "origin": "C"},
+        {"text": "Ikorose Shinso", "origin": "C"},
+        {"text": "Ikorose", "origin": "C"},
+        {"text": "Икоросэ, Синсо", "origin": "X"},
+        {"text": "Икоросэ", "origin": "X"},
+        {"text": "i korose shinso", "origin": "A"},
+        {"text": "ikoro se shinso", "origin": "A"},
+        {"text": "イコロセ シンソウ", "origin": "A"},
+        {"text": "いころせ しんそう", "origin": "A"},
+        {"text": "икоросе синсо", "origin": "A"},
+        {"text": "ikorose shinsou", "origin": "A"}
+      ]
+    },
+    {
+      "id": "gin.shikai.ikorose", "states": ["SHIKAI"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Ikorose",
+      "variants": [
+        {"text": "Ikorose", "origin": "C"},
+        {"text": "Ikorose Shinso", "origin": "C"},
+        {"text": "Икоросэ", "origin": "X"},
+        {"text": "Икоросэ, Синсо", "origin": "X"},
+        {"text": "i korose", "origin": "A"},
+        {"text": "ikoro se", "origin": "A"},
+        {"text": "イコロセ", "origin": "A"},
+        {"text": "いころせ", "origin": "A"},
+        {"text": "икоросе", "origin": "A"},
+        {"text": "ikorose shinsou", "origin": "A"},
+        {"text": "ikorosey", "origin": "A"}
+      ]
+    },
+    {
+      "id": "gin.shikai.hyapponzashi", "states": ["SHIKAI"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Hyapponzashi",
+      "variants": [
+        {"text": "Hyapponzashi", "origin": "C"},
+        {"text": "Hyappon zashi", "origin": "C"},
+        {"text": "Хьяппонзаси", "origin": "X"},
+        {"text": "Хьяппон заси", "origin": "X"},
+        {"text": "hi appon zashi", "origin": "A"},
+        {"text": "ヒャッポンザシ", "origin": "A"},
+        {"text": "ひゃっぽんざし", "origin": "A"},
+        {"text": "hiyapponzashi", "origin": "A"},
+        {"text": "hyapon zashi", "origin": "A"}
+      ]
+    },
+    {
+      "id": "gin.shikai.snake_hook", "states": ["SHIKAI"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Snake hook",
+      "variants": [
+        {"text": "Snake hook", "origin": "M"},
+        {"text": "Snake hooks", "origin": "M"},
+        {"text": "Hook the snake", "origin": "M"},
+        {"text": "Змеиный крюк", "origin": "M"},
+        {"text": "Крюк змеи", "origin": "M"},
+        {"text": "the snake hook", "origin": "A"},
+        {"text": "スネークフック", "origin": "A"},
+        {"text": "すねーくふっく", "origin": "A"}
+      ]
+    },
+    {
+      "id": "gin.bankai.release", "states": ["SHIKAI"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Bankai, Kamishini no Yari",
+      "variants": [
+        {"text": "Bankai, Kamishini no Yari", "origin": "C"},
+        {"text": "Kamishini no Yari", "origin": "C"},
+        {"text": "God-Killing Spear", "origin": "T"},
+        {"text": "Банкай, Камисини но Яри", "origin": "X"},
+        {"text": "Камисини но Яри", "origin": "X"},
+        {"text": "bankai kamishini no yari", "origin": "A"},
+        {"text": "kami shini no yari", "origin": "A"},
+        {"text": "カミシニノヤリ", "origin": "A"},
+        {"text": "かみしにのやり", "origin": "A"},
+        {"text": "банкай камисини но яри", "origin": "A"},
+        {"text": "bank eye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bankeye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank i", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank ai", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bankie", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "banki", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "банкой", "origin": "A", "weak": true, "requires": ["bankai_ready"]}
+      ]
+    },
+    {
+      "id": "gin.bankai.butou_renjin", "states": ["BANKAI"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Butou: Renjin",
+      "variants": [
+        {"text": "Butou Renjin", "origin": "C"},
+        {"text": "Buto Renjin", "origin": "C"},
+        {"text": "Бутоу Рэндзин", "origin": "X"},
+        {"text": "Буто Рэндзин", "origin": "X"},
+        {"text": "ブトウ レンジン", "origin": "A"},
+        {"text": "ぶとう れんじん", "origin": "A"},
+        {"text": "boo toe renjin", "origin": "A"},
+        {"text": "buto ren jin", "origin": "A"}
+      ]
+    },
+    {
+      "id": "gin.bankai.korose", "states": ["BANKAI"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Korose, Kamishini no Yari",
+      "variants": [
+        {"text": "Korose, Kamishini no Yari", "origin": "C"},
+        {"text": "Korose", "origin": "C"},
+        {"text": "Korose Kamishini no Yari", "origin": "C"},
+        {"text": "Коросэ, Камисини но Яри", "origin": "X"},
+        {"text": "Коросэ", "origin": "X"},
+        {"text": "ko rose", "origin": "A"},
+        {"text": "コロセ", "origin": "A"},
+        {"text": "ころせ", "origin": "A"},
+        {"text": "коросе", "origin": "A"},
+        {"text": "korose kamishini", "origin": "A"}
+      ]
+    },
+    {
+      "id": "gin.bankai.hakufuku", "states": ["BANKAI"], "item": "gin",
+      "interimSafe": false, "optional": false, "say": "Hakufuku",
+      "variants": [
+        {"text": "Hakufuku", "origin": "C"},
+        {"text": "Хакуфуку", "origin": "X"},
+        {"text": "Хаку фуку", "origin": "X"},
+        {"text": "haku fuku", "origin": "A"},
+        {"text": "ハクフク", "origin": "A"},
+        {"text": "はくふく", "origin": "A"},
+        {"text": "hakufuko", "origin": "A"},
+        {"text": "haku fuko", "origin": "A"},
+        {"text": "hakufoku", "origin": "A"}
+      ]
+    },
+    {
+      "id": "uryu.shikai.release", "states": ["BASE"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Blut Arterie",
+      "variants": [
+        {"text": "Blut Arterie", "origin": "C"},
+        {"text": "Blut Arteri", "origin": "C"},
+        {"text": "Блут Артери", "origin": "X"},
+        {"text": "Блют Артери", "origin": "X"},
+        {"text": "blood arterie", "origin": "A"},
+        {"text": "blood arteri", "origin": "A"},
+        {"text": "ブルート アルテリー", "origin": "A"},
+        {"text": "blood artery", "origin": "A"}
+      ]
+    },
+    {
+      "id": "uryu.shikai.heilig_pfeil", "states": ["SHIKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Heilig Pfeil",
+      "variants": [
+        {"text": "Heilig Pfeil", "origin": "C"},
+        {"text": "Heilig Pfeile", "origin": "C"},
+        {"text": "Хайлиг Пфайль", "origin": "X"},
+        {"text": "Хайлиг Пфайл", "origin": "X"},
+        {"text": "highlig pfeil", "origin": "A"},
+        {"text": "heiliger pfeil", "origin": "A"},
+        {"text": "hylig fyle", "origin": "A"},
+        {"text": "ハイリッヒ プファイル", "origin": "A"},
+        {"text": "heilig pfile", "origin": "A"}
+      ]
+    },
+    {
+      "id": "uryu.shikai.sprenger", "states": ["SHIKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Sprenger",
+      "variants": [
+        {"text": "Sprenger", "origin": "C"},
+        {"text": "Шпренгер", "origin": "X"},
+        {"text": "Спренгер", "origin": "X"},
+        {"text": "sprengar", "origin": "A"},
+        {"text": "shprenger", "origin": "A"},
+        {"text": "スプレンガー", "origin": "A"},
+        {"text": "sprengerr", "origin": "A"},
+        {"text": "shprengar", "origin": "A"}
+      ]
+    },
+    {
+      "id": "uryu.shikai.hirenkyaku", "states": ["SHIKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Hirenkyaku",
+      "variants": [
+        {"text": "Hirenkyaku", "origin": "C"},
+        {"text": "Hiren kyaku", "origin": "C"},
+        {"text": "Хиренкьяку", "origin": "X"},
+        {"text": "Хирэнкьяку", "origin": "X"},
+        {"text": "ヒレンキャク", "origin": "A"},
+        {"text": "ひれんきゃく", "origin": "A"},
+        {"text": "hirenkiaku", "origin": "A"},
+        {"text": "hi ren kyaku", "origin": "A"}
+      ]
+    },
+    {
+      "id": "uryu.bankai.release", "states": ["SHIKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Quincy: Vollstandig",
+      "variants": [
+        {"text": "Quincy Vollstandig", "origin": "C"},
+        {"text": "Vollstandig", "origin": "C"},
+        {"text": "Квинси Фольштендиг", "origin": "X"},
+        {"text": "Фольштендиг", "origin": "X"},
+        {"text": "quincy volstandig", "origin": "A"},
+        {"text": "quincy follstandig", "origin": "A"},
+        {"text": "クインシー フォルシュテンディッヒ", "origin": "A"},
+        {"text": "quincy full standing", "origin": "A"},
+        {"text": "volstandig", "origin": "A"},
+        {"text": "bank eye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bankeye", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank i", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bank ai", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "bankie", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "banki", "origin": "A", "weak": true, "requires": ["bankai_ready"]},
+        {"text": "банкой", "origin": "A", "weak": true, "requires": ["bankai_ready"]}
+      ]
+    },
+    {
+      "id": "uryu.bankai.licht_regen", "states": ["BANKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Licht Regen",
+      "variants": [
+        {"text": "Licht Regen", "origin": "C"},
+        {"text": "Лихт Реген", "origin": "X"},
+        {"text": "Лихт Регэн", "origin": "X"},
+        {"text": "lickt regen", "origin": "A"},
+        {"text": "light regen", "origin": "A"},
+        {"text": "リヒト レーゲン", "origin": "A"},
+        {"text": "licht reagan", "origin": "A"},
+        {"text": "lixt regen", "origin": "A"},
+        {"text": "lihct regen", "origin": "A"}
+      ]
+    },
+    {
+      "id": "uryu.bankai.homing_volley", "states": ["BANKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Homing volley",
+      "variants": [
+        {"text": "Homing volley", "origin": "M"},
+        {"text": "Homing arrows", "origin": "M"},
+        {"text": "Самонаводящийся залп", "origin": "M"},
+        {"text": "Самонаводящиеся стрелы", "origin": "M"},
+        {"text": "homing barrage", "origin": "A"},
+        {"text": "ホーミング ボレー", "origin": "A"},
+        {"text": "homing valley", "origin": "A"},
+        {"text": "homing salvo", "origin": "A"},
+        {"text": "homing arrow", "origin": "A"}
+      ]
+    },
+    {
+      "id": "uryu.bankai.sternenstaub", "states": ["BANKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Sternenstaub",
+      "variants": [
+        {"text": "Sternenstaub", "origin": "C"},
+        {"text": "Штернэнштауб", "origin": "X"},
+        {"text": "Штернен штауб", "origin": "X"},
+        {"text": "sternen staub", "origin": "A"},
+        {"text": "stern enstaub", "origin": "A"},
+        {"text": "シュテルネンシュタウプ", "origin": "A"},
+        {"text": "sternen stop", "origin": "A"},
+        {"text": "stern en staub", "origin": "A"},
+        {"text": "shternenshtaub", "origin": "A"}
+      ]
     }
   ]
 }
