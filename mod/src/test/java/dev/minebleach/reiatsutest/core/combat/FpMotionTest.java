@@ -156,10 +156,12 @@ class FpMotionTest {
 		assertTrue(GuardMotion.stance(pr, 0f).isNearZero());
 		assertArrayEquals(GuardMotion.GUARD.rot(), GuardMotion.stance(pr, 1f).rot(), EPS);
 		assertArrayEquals(GuardMotion.GUARD.pos(), GuardMotion.stance(pr, 1f).pos(), EPS);
-		// the guard puts the blade across the view: from up to pointing left, tip not at the face
-		float[] d = GuardMotion.GUARD.applyDir(new float[] {0.12f, 0.97f, 0.23f});
-		assertTrue(d[0] < -0.7f, "tip to the left: " + d[0]);
-		assertTrue(d[2] < 0.1f, "tip not at the face: " + d[2]);
+		// the user's cross-body guard: the blade in the frontal plane, tip up and to the left, not at the face (blade axis of the real rig)
+		float[] d = GuardMotion.GUARD.applyDir(FpRig.DEFAULT.axis());
+		assertTrue(d[0] < -0.45f && d[1] > 0.7f, "tip up and to the left: " + d[0] + " " + d[1]);
+		assertTrue(Math.abs(d[2]) < 0.1f, "in the frontal plane, tip not at the face: " + d[2]);
+		assertEquals(-0.508f, d[0], 0.07f);
+		assertEquals(0.860f, d[1], 0.05f);
 	}
 
 	@Test

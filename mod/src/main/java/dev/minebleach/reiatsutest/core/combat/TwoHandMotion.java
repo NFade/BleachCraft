@@ -16,7 +16,8 @@ package dev.minebleach.reiatsutest.core.combat;
  * <li>{@link #STANCE}: hands low and close to the player, the blade leaning about 27 degrees forward and a little to the right, the right fist
  * flush under the tsuba ({@link #ARM_SHIFT}, {@link #ARM_ROT}), the left fist right under it on the hilt.</li>
  * <li>{@link #keys}: wind, hit, follow and arc of the six strike profiles of {@link SwingMotion}; the sword returns to the stance.</li>
- * <li>{@link #guard}: the two handed block: the blade across the view, tip up to the left.</li>
+ * <li>{@link #guard}: the two handed block, the user's own pose (2026-10-13, replaces Pose B): the cross-body diagonal guard, the blade enters the
+ * picture from the bottom edge at the middle and rises to the upper left, hilt and fists at the bottom edge.</li>
  * </ul>
  * Numbers were laid out against a projection (FOV 70, 16:9) of the real sword model and are UNVERIFIED in game. Every one can be
  * replaced from {@code pose_override.json}, section {@code fp_two} (see design/results/fp_two_handed.md).
@@ -30,10 +31,18 @@ public final class TwoHandMotion {
 	 */
 	public static final FpPose STANCE = FpPose.of(-0.47f, 0.005f, 0.06f, -36f, 0f, -8f);
 	/**
-	 * Two handed block pose. r8: 0.12 lower than before (y 0.22 to 0.10): the right forearm of the old pose reached the middle of the picture
-	 * (margin to the central keep-out rectangle -0.013, now +0.13, see {@link FpCentre}).
+	 * Two handed block pose: the user's own pose from Blockbench (2026-10-13; replaces Pose B (-0.36, -0.25, -0.12, -41.5, 0.5, -5.3) and the r8 pose
+	 * (-0.32, 0.10, -0.06, -14, -16, 54); see design/results/block_pose_user_fp.md). Target in camera space (+x right, +y up, -z ahead): blade direction
+	 * (-0.508, 0.860, -0.037) (86 degrees left of straight ahead, 59 degrees up: a diagonal in the frontal plane, tip up left), the cutting edge (model +Z) in the
+	 * frontal plane pointing up and right (0.861, 0.509, 0), the flats of the blade facing forward and back. The ROTATION is that target exactly (the
+	 * Euler triple {@code Rx Ry Rz} is the one of three equivalent triples with the smoothest and safest blend from the stance, 123 degrees of total
+	 * turn); the SHIFT was searched with the projection of {@link FpGeometry} (vertical FOV 70) so that the blade line on the screen is the one of the
+	 * user's pose: it enters at the bottom edge 2 degrees right of the middle, crosses the horizon 20 degrees left, leaves through the upper left; closest
+	 * approach to the crosshair 17.7 degrees; the right fist is at the bottom edge (ndc -0.05, -0.91), the left fist rides on the hilt below the picture;
+	 * the arms stay clear of the central keep-out rectangle (margin 0.29) and 0.21 blocks in front of the camera. The user's own sword is 1.5 times smaller
+	 * than the first person one (display scale 2.4 against 1.6), so the hilt is farther from the eye than in the rig. UNVERIFIED in game.
 	 */
-	public static final FpPose GUARD = FpPose.of(-0.32f, 0.10f, -0.06f, -14f, -16f, 54f);
+	public static final FpPose GUARD = FpPose.of(-0.574f, 0.158f, 0.445f, -89.3f, -112.5f, -80.3f);
 	/** Pivot of the rotations, model units along the blade from the grip (negative: towards the pommel). */
 	public static final float PIVOT_S = -0.10f;
 	/**

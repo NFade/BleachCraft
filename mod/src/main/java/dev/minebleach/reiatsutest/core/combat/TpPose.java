@@ -20,8 +20,13 @@ import dev.minebleach.reiatsutest.core.obj.DrawRig;
  * left hand follows the sword to the lower hilt.</li>
  * <li>Held ({@code p = 1}): the sword stands upright in front of the body in both hands (right hand just under the tsuba,
  * left hand on the lower hilt). Sheathing runs the same path backwards.</li>
- * <li>Block ({@code b > 0}): both hands carry the sword (or the scabbard with the sword in it while it is sheathed) diagonally across
- * the chest, grip at the lower left of the torso, tip toward the right shoulder and up ({@code guard.*}); the weight is eased.</li>
+ * <li>Block ({@code b > 0}), the user's own pose (2026-10-13, replaces round3 and the short-lived "Pose B"): the sword held diagonally in front
+ * of the chest in the frontal plane, hilt low right of centre, tip up and to the LEFT ({@code guard.*}: 59 degrees above the horizontal,
+ * 86 degrees to the left of straight ahead), the flat of the blade facing forward and the cutting edge up and to the right. Both fists
+ * grip the hilt just behind the tsuba. The arms are not solved here: while blocking they are the arms the user posed in Blockbench
+ * ({@code guard.arm_r}, {@code guard.arm_l}: pitch, yaw, roll in degrees, dx, dy, dz in px; see {@link #GUARD_ARM_R}), blended in with the
+ * eased block weight, and the item correction G still puts the sword exactly on its frame. The rig also turns the torso by -7.6 degrees;
+ * that yaw belongs to the whole body, not to the arm solver, and is NOT part of this pose; the weight is eased.</li>
  * </ol>
  * The arms are solved by a closed form IK: the hand centre must be at a point of the sword axis, the arm direction follows from
  * the point (yaw 0), and the shoulder pivot slides along the arm by the missing length (at most {@code arm.max_shift} px).
@@ -101,14 +106,33 @@ public final class TpPose {
 
 	// ------------------------------------------------------------------ tunable numbers (px, degrees, right handed layout)
 
-	/** Default guard (round3): grip centre (px), tip angle above the horizontal (degrees). */
-	public static final double[] GUARD_POS = {0.5, 7.5, -6.0};
-	public static final double GUARD_TILT = 40.0;
-	public static final double GUARD_FWD = 5.0;
-	/** Default lateral and along-the-hilt places of the fists in the guard (px). */
-	public static final double GUARD_LAT_R = 1.3;
-	public static final double GUARD_LAT_L = -1.3;
+	/**
+	 * Default guard, the user's pose (2026-10-13; round3 was pos (0.5, 7.5, -6.0), tilt 40, fwd 5, lat 1.3 / -1.3, c_l -2.4): grip centre (px, body
+	 * space: x_body = -x_bb, y_body = 24 - y_bb) = the tsuba point of the user's sword prop (3.9, 18.1, -6.1) in Blockbench px minus
+	 * {@link #TSUBA_PX} along the blade. Blade direction (0.50843, -0.86031, -0.03685) in body space.
+	 */
+	public static final double[] GUARD_POS = {-4.7643, 7.3625, -6.0374};
+	/** Tip angle above the horizontal (degrees): 59.35 degrees. */
+	public static final double GUARD_TILT = 59.352;
+	/**
+	 * Blade turned forward (degrees) in the parametrisation {@code tip = (-cos t cos f, -sin t, -cos t sin f)}: {@code f = 175.855} points the tip
+	 * 85.9 degrees to the character's LEFT of straight ahead (f = 90 would point straight ahead, f = 0 straight to the right).
+	 */
+	public static final double GUARD_FWD = 175.855;
+	/** Roll of the cutting edge about the blade (degrees, 0 = edge forward): -89.9 turns it into the frontal plane, up and to the right. */
+	public static final double GUARD_EDGE = -89.9;
+	/** Default lateral and along-the-hilt places of the fists while the arms are still being blended in (px); the final arms are authored. */
+	public static final double GUARD_LAT_R = 0.0;
+	public static final double GUARD_LAT_L = 0.0;
 	public static final double GUARD_C_L = C_L;
+	/**
+	 * The arms of the block as the user posed them in Blockbench (design/anim/player_game_rig.bbmodel, animation block_poses, pose at 0 s),
+	 * converted to the game: pitch/yaw/roll in degrees ({@code pitch = -rx}, {@code yaw = -ry}, {@code roll = +rz}), then dx, dy, dz in px as the
+	 * shoulder pivot offset from its rest place ({@code dx = -x_bb}, {@code dy = -y_bb}, {@code dz = z_bb}). Right hander layout: the sword arm,
+	 * then the other arm.
+	 */
+	public static final double[] GUARD_ARM_R = {-43.9005, -15.798, 3.8136, 0.048, -0.003, 0.649};
+	public static final double[] GUARD_ARM_L = {-40.034, 51.6452, 16.4722, -1.09, 0.0, -0.7};
 
 	static double[] holdPos(Params pr) {
 		return pr.vec("hold.pos", new double[] {0.0, 6.5, -5.4});
@@ -185,15 +209,16 @@ public final class TpPose {
 	}
 
 	/**
-	 * Sword across the chest (round3: a diagonal guard in front of the torso): the grip at the lower left of the chest, the blade rising
-	 * across the body to the right shoulder, the tip toward the right side of the character and up by {@code guard.tilt} degrees, a little
-	 * forward by {@code guard.fwd} degrees, so the blade crosses the torso instead of sticking out sideways.
+	 * Sword held diagonally in front of the chest (the user's pose): the grip low right of centre, the blade in the frontal plane rising to
+	 * the character's LEFT, the tip up by {@code guard.tilt} degrees; the second angle {@code guard.fwd} is measured in the horizontal plane
+	 * from the character's own right (90 = straight ahead, 180 = straight to the left), so 175.9 puts the tip 85.9 degrees left of
+	 * straight ahead. {@code guard.edge} rolls the cutting edge about the blade (0 = forward).
 	 */
 	public static TpMat4 guardFrame(Params pr, double scale) {
 		double t = Math.toRadians(guardTilt(pr));
 		double f = Math.toRadians(pr.num("guard.fwd", GUARD_FWD));
 		double[] tip = {-Math.cos(t) * Math.cos(f), -Math.sin(t), -Math.cos(t) * Math.sin(f)};
-		double[] edge = rotAbout(new double[] {0, 0, -1}, normalize(tip), Math.toRadians(pr.num("guard.edge", 0)));
+		double[] edge = rotAbout(new double[] {0, 0, -1}, normalize(tip), Math.toRadians(pr.num("guard.edge", GUARD_EDGE)));
 		return frame(guardPos(pr), orient(tip, edge), scale);
 	}
 
@@ -266,6 +291,30 @@ public final class TpPose {
 		return new ArmSol(new Arm(pitch, yaw, roll, shift[0], shift[1], shift[2]), pivot);
 	}
 
+	/** Hand centre of an arm solution (pivot plus the rotated centre of the lower 4 px of the arm cube), virtual right handed space. */
+	private static double[] handCentre(boolean main, boolean thin, ArmSol s) {
+		double sx = main ? -1 : 1;
+		double[] h = TpMat4.rotZYX(s.arm().roll(), s.arm().yaw(), s.arm().pitch()).dir(sx * (thin ? 0.5 : 1.0), 8.0, 0);
+		return new double[] {s.pivot()[0] + h[0], s.pivot()[1] + h[1], s.pivot()[2] + h[2]};
+	}
+
+	/**
+	 * Blends an authored arm (degrees and px, see {@link #GUARD_ARM_R}) over the solved one with weight {@code k}: rotation and shoulder shift
+	 * are interpolated component wise, so {@code k = 0} is exactly the IK solution and {@code k = 1} exactly the authored arm.
+	 */
+	private static ArmSol authoredArm(boolean main, boolean thin, ArmSol ik, double[] a, double k) {
+		Arm i = ik.arm();
+		double pitch = i.pitch() + (Math.toRadians(a[0]) - i.pitch()) * k;
+		double yaw = i.yaw() + (Math.toRadians(a[1]) - i.yaw()) * k;
+		double roll = i.roll() + (Math.toRadians(a[2]) - i.roll()) * k;
+		double dx = i.dx() + (a[3] - i.dx()) * k;
+		double dy = i.dy() + (a[4] - i.dy()) * k;
+		double dz = i.dz() + (a[5] - i.dz()) * k;
+		double sx = main ? -1 : 1;
+		double[] pivot = {5 * sx + dx, (thin ? 2.5 : 2.0) + dy, dz};
+		return new ArmSol(new Arm(pitch, yaw, roll, dx, dy, dz), pivot);
+	}
+
 	/**
 	 * The mirror image of an item frame for a left hander: the grip point and the axes are reflected across x = 0, the model centre
 	 * stays the pivot of the item (reflection about its own centre plane, the mesh is symmetric across it).
@@ -323,6 +372,13 @@ public final class TpPose {
 		double[] tL = lerp(tSaya, tSwordL, sl);
 		ArmSol main = solveArm(true, in.thin(), tR, pr.num("arm.yaw_r", 0), maxShift);
 		ArmSol off = solveArm(false, in.thin(), tL, pr.num("arm.yaw_l", 0), maxShift);
+		if (bs > 0) {
+			// the block arms are authored (the user's own pose), blended in with the eased weight; hand targets follow the real hand centres
+			main = authoredArm(true, in.thin(), main, pr.vec("guard.arm_r", GUARD_ARM_R), bs);
+			off = authoredArm(false, in.thin(), off, pr.vec("guard.arm_l", GUARD_ARM_L), bs);
+			tR = handCentre(true, in.thin(), main);
+			tL = handCentre(false, in.thin(), off);
+		}
 		double wMain = 1.0; // the sword arm is posed in every state: on the hilt of the sealed sword, in the draw, held, blocking
 
 		// the item correction G: arm chain * turn/offset of the held item * G * display = sword frame

@@ -5,8 +5,9 @@ package dev.minebleach.reiatsutest.core.combat;
  * {@link CombatConfig}). Pure maths; the client feeds in time and weights and draws the result.
  *
  * <ul>
- * <li>Stance: the right hand with the sword moves from rest to the GUARD pose (blade across the view, tip up and to the left,
- * hand towards the centre) in {@code guard.in} seconds and back in {@code guard.out}; the weight is a smoothstep of a linear ramp.</li>
+ * <li>Stance: the right hand with the sword moves from rest to the GUARD pose (the user's cross-body diagonal guard: the blade enters from the bottom edge
+ * at the middle and rises to the upper left, hand at the bottom edge) in {@code guard.in} seconds and back in {@code guard.out}; the weight is a smoothstep of a
+ * linear ramp.</li>
  * <li>The free left hand supports the blade ({@link #leftFist}) and arrives slightly after the stance has started.</li>
  * <li>Parry: the sword jerks forward and up, overshoots back and settles (damped cosine envelope, {@link #envelope}).</li>
  * <li>Blocked hit (damage reduced): a short push of the sword back at the face.</li>
@@ -14,7 +15,15 @@ package dev.minebleach.reiatsutest.core.combat;
  * Pose numbers are UNVERIFIED in game; every one can be replaced from {@code pose_override.json} (key paths {@code guard.*}).
  */
 public final class GuardMotion {
-	public static final FpPose GUARD = FpPose.of(-0.22f, 0.14f, -0.04f, -12f, -22f, 62f);
+	/**
+	 * One handed block (fallback when the two handed hold is off), 2026-10-13: the user's cross-body diagonal guard as in {@link TwoHandMotion#GUARD} (same
+	 * rotation, so the same blade direction and roll) but about the grip instead of the point {@code two.pivot_s}; the shift was searched again for the grip
+	 * pivot and the vanilla one handed arms (no {@code two.arm.shift} / {@code two.arm.rot}): the blade line on the screen is the same (bottom edge 2 degrees right
+	 * of the middle, horizon 20 degrees left, closest approach 17.8 degrees), the right fist at the bottom edge (ndc -0.05, -0.90). The left hand supports the blade
+	 * 0.72 blocks up the hilt ({@code guard.left.s}), so it ends at the upper left of the picture (ndc -0.66, 0.97); both arms clear the keep-out rectangle (margins
+	 * 0.18 and 0.50 at 16:9). Replaces the Pose B pose (-0.317, -0.208, -0.337, -41.5, 0.5, -5.3) and the old pose (-0.22, 0.14, -0.04, -12, -22, 62). UNVERIFIED in game.
+	 */
+	public static final FpPose GUARD = FpPose.of(-0.802f, 0.272f, 0.418f, -89.3f, -112.5f, -80.3f);
 	/**
 	 * Block with the sheathed sword (SEALED, round 5): the scabbard with the sword in it is carried as one body in both hands across the view,
 	 * the mouth near the right fist, the scabbard rising to the upper left at about 30 degrees on the screen (blade tilt 20 forward, 36 about the

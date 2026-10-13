@@ -141,7 +141,10 @@ class TwoHandMotionTest {
 		assertEquals(on[0] + 0.1f, TwoHandMotion.leftFist(o, FpPose.ZERO, pivot, on, true)[0], 1e-5f);
 		float[] g = TwoHandMotion.leftFist(o, TwoHandMotion.guard(d), pivot, on);
 		float[] rg = TwoHandMotion.guard(d).apply(pivot, on);
-		assertTrue(Math.abs((g[0] - rg[0]) + 0.1f) > 0.02f, "the offset turns with the blade");
+		// the offset is carried by exactly the rotation of the pose
+		float[] turned = TwoHandMotion.guard(d).applyDir(new float[] {-0.1f, 0f, 0f});
+		assertArrayEquals(turned, new float[] {g[0] - rg[0], g[1] - rg[1], g[2] - rg[2]}, 1e-5f);
+		assertTrue(Math.abs(turned[1]) + Math.abs(turned[2]) > 0.005f, "the offset turns with the blade");
 	}
 
 	@Test
@@ -223,10 +226,34 @@ class TwoHandMotionTest {
 		}
 	}
 
+	/**
+	 * The user's own pose (2026-10-13): the cross-body diagonal guard. Camera frame (+x right, +y up, -z ahead): the blade (-0.508, 0.860, -0.037) is a diagonal
+	 * in the frontal plane with the tip up and to the left, the cutting edge (model +Z) points up and right (0.861, 0.509, 0), the flats face forward and back.
+	 */
 	@Test
-	void guardIsAcrossTheViewWithTheTipUpAndLeft() {
-		float[] d = TwoHandMotion.guard(FpParams.DEFAULTS).applyDir(BLADE);
-		assertTrue(d[0] < -0.5f && d[1] > 0.3f, "across the view, tip up to the left");
+	void guardIsTheCrossBodyDiagonalWithTheTipUpAndLeft() {
+		FpPose g = TwoHandMotion.guard(FpParams.DEFAULTS);
+		float[] d = g.applyDir(FpRig.DEFAULT.axis());
+		assertTrue(d[0] < -0.45f && d[1] > 0.7f && Math.abs(d[2]) < 0.1f, "across the chest, tip up left: " + java.util.Arrays.toString(d));
+		assertEquals(0f, angleDeg(d, new float[] {-0.508f, 0.860f, -0.037f}), 1f, "blade direction of the user's pose");
+		float[] edge = g.applyDir(modelDir(0f, 0f, 1f));
+		assertEquals(0f, angleDeg(edge, new float[] {0.861f, 0.509f, 0f}), 1f, "cutting edge up and right in the frontal plane");
+		float[] flat = g.applyDir(modelDir(1f, 0f, 0f));
+		assertTrue(Math.abs(flat[2]) > 0.99f, "the flats of the blade face forward and back: " + flat[2]);
+	}
+
+	private static float[] modelDir(float x, float y, float z) {
+		float[] a = FpRig.DEFAULT.hand(0.5f, 0.5f, 0.5f);
+		float[] b = FpRig.DEFAULT.hand(0.5f + 0.1f * x, 0.5f + 0.1f * y, 0.5f + 0.1f * z);
+		float l = (float) Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+		return new float[] {(b[0] - a[0]) / l, (b[1] - a[1]) / l, (b[2] - a[2]) / l};
+	}
+
+	private static float angleDeg(float[] a, float[] b) {
+		double la = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+		double lb = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
+		double c = (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (la * lb);
+		return (float) Math.toDegrees(Math.acos(Math.max(-1, Math.min(1, c))));
 	}
 
 	@Test

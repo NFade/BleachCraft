@@ -203,33 +203,95 @@ class TpPoseTest {
 	}
 
 	/**
-	 * Block (round3): the sword is carried diagonally across the chest in both hands, the tip toward the right side of the character and
-	 * up; from the front the blade covers the torso. Both states (drawn, sealed) alike.
+	 * Block (the user's own pose, 2026-10-13): the sword is carried diagonally in front of the chest in the frontal plane, hilt low right of centre,
+	 * blade up and to the LEFT (59 degrees up, 86 degrees left of straight ahead), the flat of the blade facing forward and the cutting edge up
+	 * and to the right. Both states (drawn, sealed) alike. The numbers are those of the user's sword prop in Blockbench (tip direction in body
+	 * px (0.50843, -0.86031, -0.03685), edge (-0.86093, -0.50872, -0.00176), tsuba point (3.9, 18.1, -6.1) in Blockbench px), checked here
+	 * independently of the constants of TpPose.
 	 */
 	@Test
-	void blockCarriesTheSwordAcrossTheChest() {
+	void blockCarriesTheSwordDiagonallyAcrossTheChestWithTheTipUpAndLeft() {
+		double[] wantTip = {0.50843, -0.86031, -0.03685};
+		double[] wantEdge = {-0.86093, -0.50872, -0.00176};
+		// the sword prop of the user: tsuba point (3.9, 18.1, -6.1) in Blockbench px = body (-3.9, 5.9, -6.1); the grip centre is 1.7 px behind it
+		double[] grip = new double[3];
+		for (int k = 0; k < 3; k++) {
+			grip[k] = new double[] {-3.9, 5.9, -6.1}[k] - TpPose.TSUBA_PX * wantTip[k];
+		}
 		for (double p : new double[] {0, 1}) {
-			TpPose.Result r = solve(p, 1, false, false);
-			double[] tip = r.sword().matrix().dir(0, 1, 0);
-			double n = Math.sqrt(tip[0] * tip[0] + tip[1] * tip[1] + tip[2] * tip[2]);
-			assertTrue(-tip[0] / n > 0.6, "tip toward the right side (negative x) " + tip[0] / n);
-			assertTrue(tip[1] / n < -0.45, "tip up " + tip[1] / n);
-			assertEquals(1.0, r.wMain(), EPS, "the sword arm is fully posed in a block");
-			double over = bladeOverTorso(r);
-			assertTrue(over > 8, "the sword covers the chest: " + over + " px over the torso");
-			// both fists are on the hilt in front of the chest (z in front of the torso, y at chest to belly height)
-			for (double[] h : new double[][] {r.handTargetMain(), r.handTargetOff()}) {
-				assertTrue(h[2] < -3.5, "hand in front of the torso " + h[2]);
-				assertTrue(h[1] > 3 && h[1] < 11, "hand at chest height " + h[1]);
-				assertTrue(Math.abs(h[0]) < 5, "hand near the middle " + h[0]);
+			for (boolean left : new boolean[] {false, true}) {
+				TpPose.Result r = solve(p, 1, left, false);
+				double[] tip = r.sword().matrix().dir(0, 1, 0);
+				double[] edge = r.sword().matrix().dir(0, 0, 1);
+				double nt = Math.sqrt(tip[0] * tip[0] + tip[1] * tip[1] + tip[2] * tip[2]);
+				double ne = Math.sqrt(edge[0] * edge[0] + edge[1] * edge[1] + edge[2] * edge[2]);
+				double[] g = r.sword().matrix().point(0.5, 0.5, 0.5);
+				for (int k = 0; k < 3; k++) {
+					double mirror = left && k == 0 ? -1 : 1;
+					assertEquals(mirror * wantTip[k], tip[k] / nt, 2e-4, "tip axis " + k + " p=" + p + " left=" + left);
+					assertEquals(mirror * wantEdge[k], edge[k] / ne, 2e-4, "edge axis " + k + " p=" + p + " left=" + left);
+					assertEquals(mirror * grip[k], g[k] * 16, 5e-3, "grip centre axis " + k + " p=" + p + " left=" + left);
+				}
 			}
+			assertEquals(1.0, solve(p, 1, false, false).wMain(), EPS, "the sword arm is fully posed in a block");
 		}
 		TpPose.Result sealed = solve(0, 1, false, false);
 		assertSameMatrix(sealed.saya().matrix(), sealed.sword().matrix(), "the scabbard travels with the sword in a sealed block");
 		TpPose.Result drawn = solve(1, 1, false, false);
 		assertSameMatrix(drawn.saya().matrix(), TpPose.hipFrame(HIP), "a drawn sword leaves the scabbard on the hip while blocking");
-		// without the block the held sword does not cover the chest sideways: the guard is the thing that does
-		assertTrue(bladeOverTorso(solve(1, 1, false, false)) > 0);
+	}
+
+	private static void assertArm(TpPose.Arm got, double[] want, double sign, String what) {
+		assertEquals(Math.toRadians(want[0]), got.pitch(), 1e-9, what + " pitch");
+		assertEquals(sign * Math.toRadians(want[1]), got.yaw(), 1e-9, what + " yaw");
+		assertEquals(sign * Math.toRadians(want[2]), got.roll(), 1e-9, what + " roll");
+		assertEquals(sign * want[3], got.dx(), 1e-9, what + " dx");
+		assertEquals(want[4], got.dy(), 1e-9, what + " dy");
+		assertEquals(want[5], got.dz(), 1e-9, what + " dz");
+	}
+
+	/**
+	 * The arms of the block are the arms the user posed in Blockbench (right arm rx 43.9, ry 15.8, rz 3.8; left arm rx 40.0, ry -51.6, rz 16.5):
+	 * game values pitch = -rx, yaw = -ry, roll = +rz, shoulder offsets dx = -x_bb, dy = -y_bb, dz = z_bb. Fully blended in at b = 1, plain IK at b = 0.
+	 */
+	@Test
+	void blockArmsAreTheOnesTheUserPosed() {
+		double[] userR = {-43.9005, -15.798, 3.8136, 0.048, -0.003, 0.649};
+		double[] userL = {-40.034, 51.6452, 16.4722, -1.09, 0.0, -0.7};
+		for (boolean thin : new boolean[] {false, true}) {
+			for (double p : new double[] {0, 1}) {
+				TpPose.Result r = solve(p, 1, false, thin);
+				assertArm(r.main(), userR, 1, "right hander sword arm thin=" + thin + " p=" + p);
+				assertArm(r.off(), userL, 1, "right hander other arm thin=" + thin + " p=" + p);
+				TpPose.Result l = solve(p, 1, true, thin);
+				// a left hander is the mirror image: pitch kept, yaw, roll and the x shift negated
+				assertArm(l.main(), userR, -1, "left hander sword arm thin=" + thin + " p=" + p);
+				assertArm(l.off(), userL, -1, "left hander other arm thin=" + thin + " p=" + p);
+			}
+			// the weight is eased and the arms really are a blend in between, not a jump
+			TpPose.Arm none = solve(1, 0, false, thin).main();
+			TpPose.Arm half = solve(1, 0.5, false, thin).main();
+			TpPose.Arm full = solve(1, 1, false, thin).main();
+			assertTrue(Math.abs(half.yaw() - none.yaw()) > 0.01 && Math.abs(half.yaw() - full.yaw()) > 0.01, "the half block is in between");
+		}
+		// the hand centres are the targets reported by the solver (so finishPass and the layer agree) and stay close to the hilt
+		TpPose.Result r = solve(1, 1, false, false);
+		double[] hm = handCentre(r.main(), -5, false, true);
+		double[] ho = handCentre(r.off(), 5, false, false);
+		for (int k = 0; k < 3; k++) {
+			assertEquals(r.handTargetMain()[k], hm[k], 1e-6, "main hand " + k);
+			assertEquals(r.handTargetOff()[k], ho[k], 1e-6, "off hand " + k);
+		}
+		double[] g = r.sword().matrix().point(0.5, 0.5, 0.5);
+		double[] dir = r.sword().matrix().dir(0, 1, 0);
+		double n = Math.sqrt(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+		for (double[] h : new double[][] {hm, ho}) {
+			double[] d = {h[0] - g[0] * 16, h[1] - g[1] * 16, h[2] - g[2] * 16};
+			double along = (d[0] * dir[0] + d[1] * dir[1] + d[2] * dir[2]) / n;
+			double off = Math.sqrt(Math.max(0, d[0] * d[0] + d[1] * d[1] + d[2] * d[2] - along * along));
+			assertTrue(along > TpPose.POMMEL_PX && along < TpPose.TSUBA_PX + 1.0, "the fist is on the hilt: " + along + " px from the grip centre");
+			assertTrue(off < 3.6, "the fist is next to the hilt: " + off + " px off the axis");
+		}
 	}
 
 	/** The block enters and leaves smoothly (eased weight): the sword frame moves gradually, no jump in the middle. */
