@@ -60,6 +60,15 @@ public final class DmgLog {
 				target.getName().getString(), fmt(asked), fmt(lost), outcome);
 	}
 
+	/** The target held the zanpakuto block: the ability damage was cut before it reached the barrier and the armor (r8 item 1). */
+	static void blockCut(ServerPlayerEntity caster, LivingEntity target, float asked, float reduced) {
+		if (!enabled) {
+			return;
+		}
+		ReiatsuTest.LOGGER.info("[dmg] {} {} -> {} block cut {} -> {}", ability, caster.getName().getString(), target.getName().getString(),
+				fmt(asked), fmt(reduced));
+	}
+
 	/** A player (not a mob: those would flood the log) that the area query refused. */
 	static void refused(ServerPlayerEntity caster, LivingEntity target, HitRules.Refusal why) {
 		if (!enabled) {

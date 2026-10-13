@@ -32,11 +32,60 @@ public record BalanceConfig(
 		boolean barrierControlImmune,
 		BankaiFieldSpec bankaiField,
 		ShunpoSpec shunpo,
-		Map<AbilityId, AbilitySpec> abilities) {
+		Map<AbilityId, AbilitySpec> abilities,
+		MechSpec mech) {
 
 	public BalanceConfig {
 		rates = Map.copyOf(rates);
 		abilities = Map.copyOf(abilities);
+		mech = mech == null ? MechSpec.defaults() : mech;
+	}
+
+	/** Block against abilities (r8 item 1): the share of ability damage a holder of a zanpakuto block does not take (0.30 = 30 percent less). */
+	public double abilityBlockReduction() {
+		return mech.abilityBlockReduction();
+	}
+
+	/**
+	 * Melee hit reiatsu (r8 item 5), in reiatsu POINTS as the HUD shows them (the bar is 0..100.0 points; {@link #maxTenths} 1000 = 100.0).
+	 * Every landed zanpakuto melee hit restores this much; {@link #meleeHitTenths} is the same in the machine's unit.
+	 */
+	public double meleeHitReiatsu() {
+		return mech.meleeHitReiatsu();
+	}
+
+	/** {@link #meleeHitReiatsu} in tenths of a point (the unit of every cost and of the bar), never negative. */
+	public int meleeHitTenths() {
+		return (int) Math.max(0L, Math.round(mech.meleeHitReiatsu() * 10.0));
+	}
+
+	/** Ticks a victim is immune to the Byakuya attack mode after one of its damage ticks, per victim and caster (r8 item 2). */
+	public int byakuyaAttackTickInterval() {
+		return mech.byakuyaAttackTickInterval();
+	}
+
+	public double barrierPushRadius() {
+		return mech.barrierPushRadius();
+	}
+
+	public double barrierPushStrength() {
+		return mech.barrierPushStrength();
+	}
+
+	public double barrierPushUp() {
+		return mech.barrierPushUp();
+	}
+
+	public int barrierPushIntervalTicks() {
+		return mech.barrierPushIntervalTicks();
+	}
+
+	/** A copy with other r8 numbers (tests). */
+	public BalanceConfig withMech(MechSpec newMech) {
+		return new BalanceConfig(maxTenths, regenBatchTicks, rates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
+				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
+				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, barrierPoolTenths, barrierReductionPercent,
+				barrierControlImmune, bankaiField, shunpo, abilities, newMech);
 	}
 
 	public Rate rate(ZanpakutoState s) {
@@ -53,7 +102,7 @@ public record BalanceConfig(
 		return new BalanceConfig(maxTenths, regenBatchTicks, newRates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
 				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
 				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, barrierPoolTenths, barrierReductionPercent,
-				barrierControlImmune, bankaiField, shunpo, abilities);
+				barrierControlImmune, bankaiField, shunpo, abilities, mech);
 	}
 
 	/** A copy with another territory spec (tests). */
@@ -61,7 +110,7 @@ public record BalanceConfig(
 		return new BalanceConfig(maxTenths, regenBatchTicks, rates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
 				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
 				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, barrierPoolTenths, barrierReductionPercent,
-				barrierControlImmune, field, shunpo, abilities);
+				barrierControlImmune, field, shunpo, abilities, mech);
 	}
 
 	/** A copy with other barrier numbers: pool in tenths of a HP (0 = unlimited), reduction percent, control immunity. */
@@ -69,7 +118,7 @@ public record BalanceConfig(
 		return new BalanceConfig(maxTenths, regenBatchTicks, rates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
 				handGraceTicks, transitionLockTicks, gcdTicks, settleTicks, sealLockTicks, sheatheLockTicks, bankaiReentryTicks,
 				rateLimitPerSecond, respawnTenths, attackModeTicks, barrierTicks, poolTenths, reductionPercent,
-				controlImmune, bankaiField, shunpo, abilities);
+				controlImmune, bankaiField, shunpo, abilities, mech);
 	}
 
 	/**
@@ -91,8 +140,10 @@ public record BalanceConfig(
 				AbilityParams.RADIUS, 7.0, AbilityParams.HEIGHT, 4.0, AbilityParams.MAX_TARGETS, 24, AbilityParams.SLOW_AMP, 3, AbilityParams.STATUS_TICKS, 60, AbilityParams.DAMAGE, 3.0, AbilityParams.SPLIT_RADIUS, 16.0)));
 		a.put(AbilityId.HAKUREN, new AbilitySpec(AbilityId.HAKUREN, 200, 160, 21, true, List.of(20, 22, 24, 26, 28, 30, 32, 34), p(
 				AbilityParams.LENGTH, 20.0, AbilityParams.HALF_WIDTH, 3.5, AbilityParams.MAX_TARGETS, 20, AbilityParams.DAMAGE, 2.0, AbilityParams.SLOW_AMP, 1, AbilityParams.STATUS_TICKS, 60, AbilityParams.MAX_BLOCKS, 64)));
+		// Shirafune (r8 item 3): 12 ticks of cast time, then the thrust leaves in the direction the caster looks AT THAT MOMENT (aimAtRelease),
+		// not where he looked when he pressed the key; the effect event is sent at the release too
 		a.put(AbilityId.SHIRAFUNE, new AbilitySpec(AbilityId.SHIRAFUNE, 150, 100, 22, true, List.of(12), p(
-				AbilityParams.LENGTH, 14.0, AbilityParams.DAMAGE, 3.5, AbilityParams.SLOW_AMP, 2, AbilityParams.STATUS_TICKS, 80)));
+				AbilityParams.LENGTH, 14.0, AbilityParams.DAMAGE, 3.5, AbilityParams.SLOW_AMP, 2, AbilityParams.STATUS_TICKS, 80, AbilityParams.AIM_AT_RELEASE, 1.0)));
 		// ---- Rukia bankai: the ice spike is the one ability; the second slot became the passive frost territory (BankaiFieldSpec, mech2 task 4)
 		// Ice spike (U): a 36 block thrust of ice spikes along the look ray (the wave runs 6 blocks per 2 ticks), one hit per target,
 		// 9 HP and Slowness III for 4 s, 15 reiatsu, 8 s cooldown. About 1.1 HP per second when spammed.
@@ -122,7 +173,7 @@ public record BalanceConfig(
 				10, 500, 30, 100, 0, 80, true,
 				// passive frost territory of the Rukia bankai (mech2 task 4)
 				BankaiFieldSpec.defaults(),
-				new ShunpoSpec(50, 50, 9.0, 1.5, 0.25, 3), a);
+				new ShunpoSpec(50, 50, 9.0, 1.5, 0.25, 3), a, MechSpec.defaults());
 	}
 
 	private static Map<String, Double> p(Object... kv) {

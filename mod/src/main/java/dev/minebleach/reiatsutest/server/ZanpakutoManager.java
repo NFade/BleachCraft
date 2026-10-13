@@ -126,6 +126,7 @@ public final class ZanpakutoManager {
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register(ZanpakutoManager::allowDamage);
 		BlockParry.init();
 		BladeFlights.init(); // after the tick registration above: the flight ticks after the scheduled landing phases
+		MeleeReiatsu.init();
 	}
 
 	// ------------------------------------------------------------------ sessions
@@ -290,7 +291,7 @@ public final class ZanpakutoManager {
 					seed = b.seed();
 				}
 			}
-			ctx = CastContext.capture(p, ability, s.sm.config().spec(ability), seed);
+			ctx = CastContext.capture(p, ability, s.sm.config().spec(ability), seed, s.sm.config().byakuyaAttackTickInterval());
 		}
 		apply(p, s, r.events(), ctx);
 		if (ctx != null && ability == AbilityId.MODE_ATTACK) {
@@ -340,7 +341,11 @@ public final class ZanpakutoManager {
 					case StateEvent.RageSpent r -> RageManager.spend(p, r.tenths());
 				case StateEvent.CooldownStarted c -> { }
 				case StateEvent.BroadcastEffect b -> {
-						ServerFx.effect(p, b.effectId(), b.seed(), ctx);
+						// r8 item 3: an ability that is aimed at its release (Shirafune) sends its effect event from the release phase
+						// (AbilityExecutor.run), with the position and look of that moment; sending it now would show the press-time aim
+						if (ctx == null || !ctx.spec.aimsAtRelease()) {
+							ServerFx.effect(p, b.effectId(), b.seed(), ctx);
+						}
 						AnchorManager.onEffect(p, b.effectId(), b.seed());
 					}
 				case StateEvent.CancelEffects c -> SCHEDULER.cancel(p.getUuid());
@@ -418,6 +423,9 @@ public final class ZanpakutoManager {
 			}
 			apply(p, s, ev, null);
 
+			if (sm.barrierActive()) {
+				BarrierShove.tick(p, sm.config(), now); // r8 item 6: nobody comes close to the dome, they are shoved out, no damage
+			}
 			if (sm.state() == ZanpakutoState.BANKAI && sm.character() == CharacterId.RUKIA) {
 				BankaiField.tick(p, sm.config().bankaiField(), now); // the passive frost territory (mech2 task 4)
 			}
@@ -558,6 +566,34 @@ public final class ZanpakutoManager {
 		int phases = SCHEDULER.countFor(p.getUuid(), a -> a.requiredState == ZanpakutoState.BANKAI);
 		return new int[] {AnchorManager.countRows(p), RukiaServerFx.liveOf(p.getUuid()), FrostField.liveFields(p.getUuid()), phases, BankaiField.live(p.getUuid())};
 	}
+
+	// ------------------------------------------------------------------ reiatsu from melee hits (r8 item 5)
+
+	/**
+	 * Gives the player reiatsu for a landed melee hit ({@link MeleeReiatsu}): {@code tenths} of a point ({@link BalanceConfig#meleeHitTenths()},
+	 * 10 = 1.0 point by default), clamped to the maximum, synced at once. Returns the tenths really added.
+	 */
+	static int grantMeleeReiatsu(ServerPlayerEntity p, int tenths) {
+		Session s = SESSIONS.get(p.getUuid());
+		if (s == null || p.isDead()) {
+			return 0;
+		}
+		int added = s.sm.grantReiatsu(tenths);
+		if (added > 0) {
+			flush(p, s);
+		}
+		ReiatsuTest.LOGGER.info("[reiatsu] {} melee hit: +{} (reiatsu {}/{} tenths)", p.getName().getString(), added, s.sm.reiatsu().value(),
+				s.sm.reiatsu().max());
+		return added;
+	}
+
+	/** The balance numbers of a player's machine (the glue classes of r8 read their knobs here), or the defaults without a session. */
+	static BalanceConfig configOf(ServerPlayerEntity p) {
+		Session s = SESSIONS.get(p.getUuid());
+		return s == null ? FALLBACK_CONFIG : s.sm.config();
+	}
+
+	private static final BalanceConfig FALLBACK_CONFIG = BalanceConfig.defaults();
 
 	// ------------------------------------------------------------------ barrier: control immunity (mech2 task 1)
 

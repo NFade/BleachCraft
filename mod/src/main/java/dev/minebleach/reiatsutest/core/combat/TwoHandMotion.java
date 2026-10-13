@@ -23,13 +23,17 @@ package dev.minebleach.reiatsutest.core.combat;
  */
 public final class TwoHandMotion {
 	/**
-	 * Two handed hold (round 5): hands low and close to the player, the blade leaning about 27 degrees forward and 15 degrees to the right
+	 * Two handed hold (round 5, lowered 0.10 blocks in r8 after the play test said the hands sit too high: the top of the right forearm moves from ndc y -0.34 to -0.46,
+	 * the fist from -0.56 to -0.70): hands low and close to the player, the blade leaning about 27 degrees forward and 15 degrees to the right
 	 * (the tip is in the upper third of the screen right of the middle), the right fist in the lower quarter near the middle (ndc 0.2, -0.56).
 	 * Laid out in a python model of the projection (vertical FOV 70) against the real sword model, UNVERIFIED in game.
 	 */
-	public static final FpPose STANCE = FpPose.of(-0.47f, 0.105f, 0.06f, -36f, 0f, -8f);
-	/** Two handed block pose. */
-	public static final FpPose GUARD = FpPose.of(-0.32f, 0.22f, -0.06f, -14f, -16f, 54f);
+	public static final FpPose STANCE = FpPose.of(-0.47f, 0.005f, 0.06f, -36f, 0f, -8f);
+	/**
+	 * Two handed block pose. r8: 0.12 lower than before (y 0.22 to 0.10): the right forearm of the old pose reached the middle of the picture
+	 * (margin to the central keep-out rectangle -0.013, now +0.13, see {@link FpCentre}).
+	 */
+	public static final FpPose GUARD = FpPose.of(-0.32f, 0.10f, -0.06f, -14f, -16f, 54f);
 	/** Pivot of the rotations, model units along the blade from the grip (negative: towards the pommel). */
 	public static final float PIVOT_S = -0.10f;
 	/**

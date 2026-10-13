@@ -321,9 +321,13 @@ final class BladeFlights {
 				if (budget <= 0) {
 					break;
 				}
-				if (!a.cooldown.tryHit(c.e.getId(), now, leg)) {
+				// r8 item 2: besides the flight's own cooldown, a victim is immune to this cast for byakuyaAttackTickInterval ticks after
+				// ANY damage tick of it (the landing burst shares the gate); a refused tick spends neither the cooldown nor a flight hit
+				if (!a.cooldown.ready(c.e.getId(), now, leg) || !a.ctx.hitGate.ready(c.e.getId(), now)) {
 					continue;
 				}
+				a.cooldown.tryHit(c.e.getId(), now, leg);
+				a.ctx.hitGate.record(c.e.getId(), now);
 				budget--;
 				a.flightHits++;
 				if (Targeting.hurt(p, c.e, (float) a.cfg.hitDamage(), DamageTypes.INDIRECT_MAGIC, true) == HitRules.Outcome.DAMAGED) {

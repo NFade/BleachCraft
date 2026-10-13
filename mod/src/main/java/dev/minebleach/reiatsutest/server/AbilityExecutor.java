@@ -30,6 +30,12 @@ final class AbilityExecutor {
 	static void run(ServerPlayerEntity p, AbilityId ability, int phase, CastContext ctx) {
 		DmgLog.begin(ability.commandId + "#" + phase);
 		try {
+			if (ctx.spec.aimsAtRelease() && phase == ctx.spec.releasePhase()) {
+				// r8 item 3: the cast time is over and the thrust leaves NOW, along the look of this moment (position, eye, direction, aimed
+				// point and ray length are read again); the client effect event is sent here too, so it carries the same new aim
+				ctx = ctx.resampled(p);
+				ServerFx.effect(p, ctx.spec.effectId(), ctx.seed, ctx);
+			}
 			dispatch(p, ability, phase, ctx);
 		} finally {
 			DmgLog.end();
@@ -170,9 +176,15 @@ final class AbilityExecutor {
 	private static void modeAttack(ServerPlayerEntity p, CastContext ctx) {
 		AbilitySpec sp = ctx.spec;
 		// the landing burst sits at the cast's aimed point, or at the swarm head when the caster steered it (BladeFlights)
-		List<LivingEntity> hit = Targeting.sphere(p, BladeFlights.landingCenter(p, ctx), sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
-		for (LivingEntity e : hit) {
+		List<LivingEntity> inReach = Targeting.sphere(p, BladeFlights.landingCenter(p, ctx), sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
+		// r8 item 2: a victim that took a damage tick of this cast less than byakuyaAttackTickInterval ticks ago (landing or flight) is skipped
+		List<LivingEntity> hit = new ArrayList<>();
+		for (LivingEntity e : inReach) {
+			if (!ctx.hitGate.tryHit(e.getId(), now(p))) {
+				continue;
+			}
 			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
+			hit.add(e);
 		}
 		BladeFlights.markLanding(p, ctx, hit);
 		ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks of the swarm envelope

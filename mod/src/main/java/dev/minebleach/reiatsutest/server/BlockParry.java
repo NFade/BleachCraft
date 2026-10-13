@@ -14,7 +14,6 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -71,18 +70,19 @@ public final class BlockParry {
 				attacker.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, CONFIG.staggerTicks(),
 						CONFIG.staggerAmplifier(), false, false, true), defender);
 			}
-			world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ITEM_TRIDENT_HIT, SoundCategory.PLAYERS, 0.9F, 1.7F);
-			world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ENTITY_PLAYER_ATTACK_KNOCKBACK, SoundCategory.PLAYERS, 0.7F, 1.4F);
-			world.spawnParticles(ParticleTypes.ELECTRIC_SPARK, mid.x, mid.y, mid.z, 14, 0.25, 0.25, 0.25, 0.25);
-			world.spawnParticles(ParticleTypes.CRIT, mid.x, mid.y, mid.z, 8, 0.2, 0.2, 0.2, 0.3);
 			ReiatsuTest.LOGGER.info("[parry] {} parried {} at {} ticks, {} damage cancelled", defender.getName().getString(),
 					attacker.getName().getString(), elapsed, amount);
 			ParryBus.fire(new ParryEvent(defender.getUuid(), attacker.getUuid(), defender.getServer().getTicks(), amount));
-			ServerFx.blockFeedback(defender, attacker, true, amount);
+			// r8 fx2: the sparks, rings and sounds are drawn by the clients from the feedback event (client/fx/BlockFx); the plain server
+			// sound below only plays when the rate limit refused the event (a flood of hits), so a parry is never silent
+			if (!ServerFx.blockFeedback(defender, attacker, true, amount)) {
+				world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ITEM_TRIDENT_HIT, SoundCategory.PLAYERS, 0.9F, 1.7F);
+				world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ENTITY_PLAYER_ATTACK_KNOCKBACK, SoundCategory.PLAYERS, 0.7F, 1.4F);
+			}
 		} else {
-			world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ITEM_SHIELD_BLOCK, SoundCategory.PLAYERS, 0.8F, 1.1F);
-			if (source.getAttacker() instanceof LivingEntity attacker) {
-				ServerFx.blockFeedback(defender, attacker, false, amount);
+			boolean sent = source.getAttacker() instanceof LivingEntity attacker && ServerFx.blockFeedback(defender, attacker, false, amount);
+			if (!sent) {
+				world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ITEM_SHIELD_BLOCK, SoundCategory.PLAYERS, 0.8F, 1.1F);
 			}
 		}
 		return out;

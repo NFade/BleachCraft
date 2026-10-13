@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.combat.AbilityHitGate;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.AbilityParams;
 import dev.minebleach.reiatsutest.core.state.AbilitySpec;
@@ -35,8 +36,14 @@ final class CastContext {
 	final Vec3d center;
 	/** Length of the free ray of the ice spike (the look ray up to the first block, at most LENGTH). */
 	final double rayLength;
+	/**
+	 * Per victim immunity window between two damage ticks of this cast (r8 item 2). Shared by every phase of the cast, so the landing
+	 * burst and the flight of the Byakuya attack mode cannot stack ticks inside the window. Unused (a 1 tick window) by other abilities.
+	 */
+	final AbilityHitGate hitGate;
 
-	private CastContext(AbilityId ability, AbilitySpec spec, int seed, Vec3d origin, Vec3d eye, Vec3d dir, Vec3d flatDir, Vec3d aim, Vec3d center) {
+	private CastContext(AbilityId ability, AbilitySpec spec, int seed, Vec3d origin, Vec3d eye, Vec3d dir, Vec3d flatDir, Vec3d aim, Vec3d center,
+			AbilityHitGate hitGate) {
 		this.ability = ability;
 		this.spec = spec;
 		this.seed = seed;
@@ -46,10 +53,23 @@ final class CastContext {
 		this.flatDir = flatDir;
 		this.aim = aim;
 		this.center = center;
+		this.hitGate = hitGate;
 		this.rayLength = ability == AbilityId.ICE_SPIKE ? Math.min(spec.num(AbilityParams.LENGTH), eye.distanceTo(aim)) : 0.0;
 	}
 
-	static CastContext capture(ServerPlayerEntity p, AbilityId ability, AbilitySpec spec, int seed) {
+	static CastContext capture(ServerPlayerEntity p, AbilityId ability, AbilitySpec spec, int seed, int attackTickInterval) {
+		return capture(p, ability, spec, seed, new AbilityHitGate(attackTickInterval));
+	}
+
+	/**
+	 * The same cast looked at again NOW (r8 item 3, Shirafune): position, eye, look direction, aimed point and the ray length are read
+	 * from the caster as he is at this moment, the spec, the seed and the hit gate stay those of the cast.
+	 */
+	CastContext resampled(ServerPlayerEntity p) {
+		return capture(p, ability, spec, seed, hitGate);
+	}
+
+	private static CastContext capture(ServerPlayerEntity p, AbilityId ability, AbilitySpec spec, int seed, AbilityHitGate gate) {
 		Vec3d eye = p.getEyePos();
 		Vec3d dir = p.getRotationVec(1.0F).normalize();
 		Vec3d flat = new Vec3d(dir.x, 0, dir.z);
@@ -70,7 +90,7 @@ final class CastContext {
 				center = aim.add(0, 1.6, 0);
 			}
 		}
-		return new CastContext(ability, spec, seed, p.getPos(), eye, dir, flat, aim, center);
+		return new CastContext(ability, spec, seed, p.getPos(), eye, dir, flat, aim, center, gate);
 	}
 
 	/**

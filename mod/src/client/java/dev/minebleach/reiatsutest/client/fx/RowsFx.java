@@ -92,6 +92,8 @@ public final class RowsFx {
 		int vboLightHash;
 		long lastLightCheck;
 		boolean vboValid;
+		/** bankai.bladeCurve the static buffer was built for (a change rebuilds it). */
+		double vboCurve = Double.NaN;
 
 		State(int ownerId, long seed, BladeRowLayout layout, double epoch, double yawDeg, double fx, double fy, double fz, ClientWorld w) {
 			this.ownerId = ownerId;

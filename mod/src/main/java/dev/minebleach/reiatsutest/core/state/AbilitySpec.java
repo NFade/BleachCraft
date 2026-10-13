@@ -25,6 +25,16 @@ public record AbilitySpec(AbilityId id, int costTenths, int cooldownTicks, int e
 		return v == null ? 0.0 : v;
 	}
 
+	/** True when the ability is aimed at its release (the cast time has run out) and not at the key press, see {@link AbilityParams#AIM_AT_RELEASE}. */
+	public boolean aimsAtRelease() {
+		return num(AbilityParams.AIM_AT_RELEASE) > 0.5 && !phaseOffsets.isEmpty();
+	}
+
+	/** Index of the phase that releases an {@link #aimsAtRelease} ability: the last one. */
+	public int releasePhase() {
+		return phaseOffsets.size() - 1;
+	}
+
 	public int intNum(String key) {
 		return (int) Math.round(num(key));
 	}

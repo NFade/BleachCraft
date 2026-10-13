@@ -479,6 +479,22 @@ public final class StateMachine {
 		return damageTenths - absorbed;
 	}
 
+	// ------------------------------------------------------------------ reiatsu gain from play (r8 item 5)
+
+	/**
+	 * Adds {@code tenths} of a reiatsu point (the unit of every cost; 10 tenths = 1.0 point on the HUD) to the bar, clamped to the
+	 * maximum. Used by the melee hit reward. Ignored while dead and for a non-positive amount. Returns how much was really added
+	 * (less than asked near the top, 0 on a full bar).
+	 */
+	public int grantReiatsu(int tenths) {
+		if (tenths <= 0 || isDead()) {
+			return 0;
+		}
+		int before = reiatsu.value();
+		reiatsu = reiatsu.plus(tenths);
+		return reiatsu.value() - before;
+	}
+
 	// ------------------------------------------------------------------ dev / test hooks
 
 	public List<StateEvent> devSetReiatsu(int tenths) {

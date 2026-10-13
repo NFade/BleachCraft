@@ -19,9 +19,9 @@ Reiatsu bar is 100.0 and regenerates 4.0/s when sealed or drawn. UNVERIFIED by p
 | | Byakurai | Shakkaho | Sai |
 |---|---|---|---|
 | cost (reiatsu) | 10.0 | 20.0 | 6.0 |
-| cooldown | 3 s (60 t) | 7 s (140 t) | 5 s (100 t) |
+| cooldown | 5 s (100 t) | 10 s (200 t) | 5 s (100 t) |
 | range | 30 blocks | 24 blocks | 8 blocks |
-| damage | 6 hp (3 hearts), first target only | 10 hp in the centre, linear falloff to 40 percent at radius 3.5 | 0 |
+| damage | 1.25 hp (r8, half of the 2.5 of the 2026-10-12 rebalance; the original was 6), first target only | 2.0 hp in the centre (r8, half of 4.0; the original was 10), linear falloff to 40 percent at radius 3.5 (0.8 hp at the edge) | 0 |
 | area | beam half width 0.35 | burst radius 3.5, targets burn 3 s, knockback 0.5, NO block damage | first target, half width 0.4 |
 | speed | instant (hitscan) | 1.2 blocks/tick (24 b/s), 20 t at full range, burst at the end of the flight | instant |
 | status | none | fire 60 t | slowness 7 (speed 0) for 3 s (60 t) |
@@ -67,7 +67,7 @@ Changed: `StateMachine` (castKido, kido cooldown map), `StateEvent` (KidoCast), 
 1. Keys K / N / M in SEALED with an empty hand: each casts, reiatsu drops by 10 / 20 / 6, a second press inside 0.5 s or inside the cooldown does nothing (cooldown shake), with low reiatsu the bar flashes.
 2. Same in BASE (sword drawn), SHIKAI and BANKAI of both characters; the zanpakuto state does not change (a cast also counts as activity for the shikai idle timer).
 3. Holding right mouse (block): all three are refused (denied message), nothing is spent.
-4. Byakurai on a zombie at 20 blocks: 6 hp, white line from the right hand to the body, no damage through a wall. Shakkaho on a mob group: ball arrives after about 1 s at 24 blocks, burst radius 3.5, centre 10 hp, edge 4 hp, mobs burn, no crater. Sai: a zombie within 8 blocks stops walking for 3 s.
+4. Byakurai on a zombie at 20 blocks: 1.25 hp (r8), white line from the right hand to the body, no damage through a wall. Shakkaho on a mob group: ball arrives after about 1 s at 24 blocks, burst radius 3.5, centre 2.0 hp, edge 0.8 hp (r8), mobs burn, no crater. Sai: a zombie within 8 blocks stops walking for 3 s.
 5. A mob with a blocking player target (PvP on, `Tuning.affectPlayers`): the kido hit lands through a block and a parry.
 6. Voice: "Byakurai", "Хадо четыре Бякурай", "Shakkaho", "Сякухо", "Бакудо один Сай", lone "Sai", in SEALED with empty hands. Watch the log line `[voice] heard ...` for spellings that miss and add them to the generator; normal talk should not cast.
 7. Visuals: hand offset (right/down) in first and third person, zigzag amplitude, ball size and flight against the server burst time (burst should coincide with the damage), ring on the target for Sai (it does not follow a moving target, the binding itself has no lasting visual yet).

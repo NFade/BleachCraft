@@ -1,5 +1,7 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.combat.FeedbackLimiter;
+import dev.minebleach.reiatsutest.core.fx.BlockFxMath;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.kido.KidoMath;
 import dev.minebleach.reiatsutest.core.kido.KidoSpec;
@@ -53,16 +55,50 @@ final class ServerFx {
 		sendToViewers(caster, payload);
 	}
 
+	/** Rate limit of the block feedback (r8 fx2): 4 events per second per defender, a parry may bring it to 6. */
+	private static final FeedbackLimiter BLOCK_LIMIT = FeedbackLimiter.standard();
+
 	/**
-	 * Block feedback (id 41, BC5b): the defender's client plays the first person recoil, screen kick and sparks; others ignore it.
-	 * x y z = the defender, d = horizontal vector to the attacker, params = {parried (1/0), damage of the hit}.
+	 * Block feedback (id 41) of a melee hit that the zanpakuto block took: everybody who sees the defender gets the sparks and the sound at
+	 * the contact point, the defender's own client also gets the recoil, the screen kick and (parry) the flash. x y z = the CONTACT POINT
+	 * (chest height, 0.6 blocks from the defender towards the attacker), d = horizontal vector from the defender to the attacker,
+	 * target = the attacker, params = {variant ({@link BlockFxMath#BLOCK} / {@link BlockFxMath#PARRY}), damage of the hit, blade source (1)}.
+	 * Returns false when the rate limit refused the event (the caller then plays its plain server sound).
 	 */
-	static void blockFeedback(ServerPlayerEntity defender, LivingEntity attacker, boolean parried, float damage) {
+	static boolean blockFeedback(ServerPlayerEntity defender, LivingEntity attacker, boolean parried, float damage) {
+		return blockEvent(defender, attacker.getPos(), attacker.getId(), parried ? BlockFxMath.PARRY : BlockFxMath.BLOCK, damage, true);
+	}
+
+	/**
+	 * The same event for an ABILITY or kido hit that the block cut by 30 percent (variant {@link BlockFxMath#ABILITY}): a lighter picture
+	 * and sound; {@code bladeSource} is false for petals, ice, kido (no scrape), true when the hit came from a sword. The damage numbers
+	 * are not touched here.
+	 */
+	static boolean blockFeedbackAbility(ServerPlayerEntity defender, LivingEntity caster, float damageCut, boolean bladeSource) {
+		return blockEvent(defender, caster.getPos(), caster.getId(), BlockFxMath.ABILITY, damageCut, bladeSource);
+	}
+
+	private static boolean blockEvent(ServerPlayerEntity defender, Vec3d from, int sourceId, int variant, float damage, boolean blade) {
 		int tick = defender.getServer().getTicks();
-		Vec3d to = attacker.getPos().subtract(defender.getPos());
-		EffectEventS2C payload = new EffectEventS2C(EffectIds.BLOCK_FEEDBACK, defender.getId(), tick, defender.getX(), defender.getY(),
-				defender.getZ(), (float) to.x, 0f, (float) to.z, attacker.getId(), tick, new float[] {parried ? 1f : 0f, damage});
+		if (tick % 200 == 0) {
+			BLOCK_LIMIT.purge(tick);
+		}
+		if (!BLOCK_LIMIT.tryAcquire(defender.getUuid(), tick, variant == BlockFxMath.PARRY)) {
+			return false;
+		}
+		Vec3d to = from.subtract(defender.getPos());
+		double nx = to.x;
+		double nz = to.z;
+		if (Math.hypot(nx, nz) < 1e-4) { // attacker inside the defender: use the side he looks at
+			Vec3d look = defender.getRotationVec(1.0F);
+			nx = look.x;
+			nz = look.z;
+		}
+		double[] c = BlockFxMath.contactPoint(defender.getX(), defender.getY(), defender.getZ(), defender.getHeight(), nx, nz, 0.6, 0.62);
+		EffectEventS2C payload = new EffectEventS2C(EffectIds.BLOCK_FEEDBACK, defender.getId(), tick, c[0], c[1], c[2], (float) nx, 0f, (float) nz, sourceId,
+				tick, new float[] {variant, damage, blade ? 1f : 0f});
 		sendToViewers(defender, payload);
+		return true;
 	}
 
 	/**

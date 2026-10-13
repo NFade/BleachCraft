@@ -122,7 +122,7 @@ class FreeHandsTest {
 		// the right hand is raised in front of the body, the left one low
 		float[] r = fistCam(false, FreeHands.frame(P, false, null, 0f, 0f, 1f));
 		float[] l = fistCam(true, FreeHands.frame(P, true, null, 0f, 0f, 1f));
-		assertTrue(r[1] > l[1] + 0.1f, "the right hand is higher than the left one");
+		assertTrue(r[1] > l[1] + 0.05f, "the right hand is higher than the left one (r8: the right idle is 0.12 lower, it was 0.2 higher)");
 		assertEquals(FreeHands.IDLE_R[0], r[0], 1e-4f);
 		assertEquals(FreeHands.IDLE_L[1], l[1], 1e-4f);
 	}

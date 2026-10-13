@@ -31,7 +31,7 @@ public final class FreeHands {
 	public static final float[] REST_FIST = {0.694f, -0.538f, -1.036f};
 
 	/** Idle of the main (right) hand: the forearm raised in front of the body across to the left, palm down and a little inward. */
-	public static final float[] IDLE_R = {0.20f, -0.27f, -0.85f};
+	public static final float[] IDLE_R = {0.20f, -0.39f, -0.85f};
 	public static final float[] IDLE_R_DIR = {-0.45f, 0.55f, -0.70f};
 	public static final float[] IDLE_R_PALM = {-0.45f, -1f, 0f};
 	/** Idle of the other (left) hand: low at the hip, partly out of the picture, palm to the body. */

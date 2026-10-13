@@ -131,6 +131,10 @@ public final class ClientNet {
 		if (req == null && r.clientSeq() < 0) {
 			req = HudModel.requestFromVoice();
 		}
+		if (code == ResultCode.OK && req != null && req.ability() == AbilityId.SHIRAFUNE) {
+			// r8 fx2: the blade leaves 0.6 s after the key (the server aims at the release); the cast time shows a pale-blue gathering on the sword
+			dev.minebleach.reiatsutest.client.fx.ShirafuneCast.start();
+		}
 		if (FxConfig.hud) {
 			HudModel.onResult(code, req);
 			return;

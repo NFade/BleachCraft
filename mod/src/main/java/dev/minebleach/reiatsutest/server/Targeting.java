@@ -1,6 +1,8 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.combat.BlockRules;
 import dev.minebleach.reiatsutest.core.combat.HitRules;
+import dev.minebleach.reiatsutest.registry.ZanpakutoItem;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -10,6 +12,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.Tameable;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
@@ -159,8 +162,25 @@ final class Targeting {
 	/**
 	 * Damages {@code target} on behalf of {@code caster} and writes the outcome to the {@code [dmg]} log (who, how much, and the
 	 * reason when nothing was lost: Creative, parry, barrier, i-frames, team ...).
+	 *
+	 * <p>THE one damage function of every ability and kido of the mod (area hits, beams, damage over time ticks of the fields, the
+	 * flight of the swarm), so the r8 block rule lives here: a target that holds the zanpakuto block (right mouse) takes
+	 * {@code abilityBlockReduction} (30 percent) less. The reduced amount then goes through {@code LivingEntity.damage}, where the
+	 * Byakuya barrier cut (80 percent), armor and resistance apply to it as usual, so the cuts multiply (30 + 80 percent leave 14
+	 * percent of the hit) and the total can never pass 100 percent.
 	 */
 	static HitRules.Outcome hurt(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
+		float asked = hp;
+		if (ZanpakutoItem.isBlocking(target)) {
+			hp = BlockRules.abilityDamage(true, hp, ZanpakutoManager.configOf(caster).abilityBlockReduction());
+			if (hp != asked) {
+				DmgLog.blockCut(caster, target, asked, hp);
+				if (target instanceof ServerPlayerEntity defender) {
+					// r8 fx2: the lighter block picture and sound; a blade scrape only when the hit came from a sword, never changes the numbers
+					ServerFx.blockFeedbackAbility(defender, caster, asked - hp, type.equals(DamageTypes.PLAYER_ATTACK) || type.equals(DamageTypes.MOB_ATTACK));
+				}
+			}
+		}
 		DamageSource src = caster.getServerWorld().getDamageSources().create(type, caster);
 		if (resetInvulnerability) {
 			target.timeUntilRegen = 0; // multi-hit abilities are meant to land every hit
@@ -175,7 +195,7 @@ final class Targeting {
 		float lost = before - (target.getHealth() + target.getAbsorptionAmount());
 		HitRules.Outcome out = HitRules.outcome(hp, returned, lost, DmgLog.vetoFor(target), creative, invulnerable, team, iframes);
 		DmgLog.clearVeto();
-		DmgLog.hit(caster, target, hp, Math.max(0.0F, lost), out);
+		DmgLog.hit(caster, target, asked, Math.max(0.0F, lost), out);
 		return out;
 	}
 

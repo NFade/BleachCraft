@@ -62,6 +62,7 @@ public final class FxClient {
 		ReleaseHold.init();
 		ShikaiDissolve.init();
 		BankaiBladeRenderer.init();
+		MeleeTrailFx.init();
 		StormRenderer.init();
 		WingHaloRenderer.init();
 		WorldRenderEvents.BEFORE_DEBUG_RENDER.register(ctx -> FxDepth.capture());

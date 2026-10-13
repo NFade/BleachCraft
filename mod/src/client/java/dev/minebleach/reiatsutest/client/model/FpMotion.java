@@ -394,6 +394,12 @@ public final class FpMotion {
 		}
 		FpPose pose = GuardMotion.pose(PARAMS, baseUse, guardPose, weight, time, parry, hit);
 		sealedBlock = sealed ? dev.minebleach.reiatsutest.core.combat.FpEase.smooth(weight) : 0f;
+		if (sealed) {
+			// r8: the sheathed hold sits lower (the scabbard, the sword in it and both hands follow the pose); it gives way to the block pose
+			float[] low = GuardMotion.sealedRest(PARAMS);
+			float k = 1f - sealedBlock;
+			pose = pose.plus(FpPose.of(low[0] * k, low[1] * k, low[2] * k, 0f, 0f, 0f));
+		}
 		// ability gesture (FpCast): a delta on the stance, rigid with the sword about the pivot between the fists; the breath gives way to it
 		dev.minebleach.reiatsutest.core.combat.CastGesture.Sample gs = FpCast.fpSample();
 		if (twoKeys) {
@@ -436,10 +442,12 @@ public final class FpMotion {
 			return gs;
 		}
 		float fwd = FpCast.clampNum("fwd", 0.30f);
-		float[] r = gs.r().clone();
-		float[] l = gs.l().clone();
-		r[2] = FpClamp.softForward(r[2], fwd);
-		l[2] = FpClamp.softForward(l[2], fwd);
+		// r8: both hand rows are made smaller (hands.scale, hands.drop) and softly limited forward, then the reach factors below keep every arm out of the
+		// central rectangle of the picture (FpCentre) as well as in front of the camera
+		dev.minebleach.reiatsutest.core.combat.FpCentre.Shaped shaped = dev.minebleach.reiatsutest.core.combat.FpCentre.shape(gs.r(), gs.l(), gs.env(),
+				FpCast.handsNum("scale", FpCast.HANDS_SCALE), FpCast.handsNum("drop", FpCast.HANDS_DROP), fwd);
+		float[] r = shaped.r();
+		float[] l = shaped.l();
 		float tr = 1f;
 		float tl = 1f;
 		if (obj != null) {
@@ -452,7 +460,9 @@ public final class FpMotion {
 				float aspect = mc.getWindow().getFramebufferHeight() > 0
 						? (float) mc.getWindow().getFramebufferWidth() / mc.getWindow().getFramebufferHeight() : 16f / 9f;
 				FpClamp.Limits lim = new FpClamp.Limits(FpCast.clampNum("near", FpClamp.NEAR), aspect, FpCast.clampNum("screen_x", 1.0f),
-						FpCast.clampNum("screen_y_min", -1.05f), FpCast.clampNum("screen_y_max", 0.95f));
+						FpCast.clampNum("screen_y_min", -1.2f), FpCast.clampNum("screen_y_max", 0.95f),
+						FpCast.clampNum("centre_x", dev.minebleach.reiatsutest.core.combat.FpCentre.HALF_X),
+						FpCast.clampNum("centre_y", dev.minebleach.reiatsutest.core.combat.FpCentre.HALF_Y));
 				FpClamp.Factors f = FpClamp.factors(hold, rig, base, r, l, lim);
 				tr = f.right();
 				tl = f.left();

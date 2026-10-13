@@ -44,4 +44,21 @@ public final class BlockRules {
 		}
 		return new BlockOutcome(BlockOutcome.Kind.BLOCKED, damage * cfg.blockedDamageMultiplier());
 	}
+
+	/**
+	 * What the block does to damage from ABILITIES and kido (r8 item 1): the zanpakuto block cuts it by {@code reduction}
+	 * (a fraction, 0.30 = 30 percent), with no parry window (a parry is for melee only). Not blocking, no damage or a non-finite
+	 * damage: untouched. The result is never below 0 and never above the input, whatever {@code reduction} is.
+	 *
+	 * <p>It composes by multiplication with the other cuts the hit meets afterwards (the Byakuya barrier keeps 20 percent, armor and
+	 * resistance are vanilla), so two cuts never add up past 100 percent: 30 percent block and 80 percent barrier leave
+	 * 0.7 * 0.2 = 14 percent of the hit.
+	 */
+	public static float abilityDamage(boolean blocking, float damage, double reduction) {
+		if (!blocking || !(damage > 0.0F) || Float.isInfinite(damage)) {
+			return damage;
+		}
+		double r = Double.isNaN(reduction) ? 0.0 : Math.max(0.0, Math.min(1.0, reduction));
+		return (float) (damage * (1.0 - r));
+	}
 }

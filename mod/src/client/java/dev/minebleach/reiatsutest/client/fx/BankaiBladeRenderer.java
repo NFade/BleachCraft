@@ -3,6 +3,7 @@ package dev.minebleach.reiatsutest.client.fx;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
+import dev.minebleach.reiatsutest.core.fx.BladeStraighten;
 import dev.minebleach.reiatsutest.core.fx.BladeRowLayout;
 import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -41,12 +42,22 @@ public final class BankaiBladeRenderer {
 	private static final int WHITE = 0xFFFFFFFF;
 	private static final int TIP = 0xFFF2E9FF;
 	private static final float TIP_Y = 6.85f;
-	private static final double TIP_Z = -0.826;
+	/** Local z of the apex of the mesh as exported (the 0.826 m of sori); the shipped apex is this times {@link #curve()} (r8 straightening). */
+	private static final double TIP_Z_EXPORT = -0.826;
+	/** bankai.bladeCurve default: 0 = straight katana slab, 1 = the mesh as exported (a scimitar, 0.83 m of sori, 1.24 m with the width scale). */
+	public static final double DEFAULT_CURVE = 0.2;
 	private static final float[] M = new float[9];
 	/** Normal matrix of the last {@link #basis} call (rotation times the inverse of the anisotropic scale). */
 	private static final float[] NM = new float[9];
 	private static FxMesh blade;
 	private static FxMesh lod;
+	/** The meshes as exported (the straightened ones above are derived from them whenever bankai.bladeCurve changes). */
+	private static FxMesh bladeExport;
+	private static FxMesh lodExport;
+	/** Spine table of the exported full mesh (BladeStraighten.spine); the LOD mesh is sheared with the same table so both share one apex. */
+	private static double[] spine = new double[0];
+	/** Curve the current {@link #blade} and {@link #lod} were built for (NaN before the first build). */
+	private static double builtCurve = Double.NaN;
 	private static FxMesh hilt;
 	private static FxMesh ripple;
 	private static boolean meshesTried;
@@ -85,13 +96,50 @@ public final class BankaiBladeRenderer {
 			return;
 		}
 		meshesTried = true;
-		blade = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade");
-		lod = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade_lod");
+		bladeExport = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade");
+		lodExport = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade_lod");
+		blade = bladeExport;
+		lod = lodExport;
+		if (bladeExport != null) {
+			spine = BladeStraighten.spine(bladeExport.pos);
+		}
 		hilt = FxMesh.load("byakuya_bankai", "byakuya_bankai_hilt_ground");
 		ripple = FxMesh.load("byakuya_bankai", "byakuya_bankai_ripple");
 		bladeLayer = RenderLayer.getEntityCutoutNoCull(TEXTURE);
 		rippleLayer = RenderLayer.getEntityTranslucentEmissive(TEXTURE);
 		crackLayer = RenderLayer.getEntityTranslucent(CRACK);
+	}
+
+	// ------------------------------------------------------------------------------------------ straightening (r8)
+
+	/** bankai.bladeCurve (0 straight .. 1 as exported), read live. */
+	public static double curve() {
+		return BladeStraighten.clampCurve(FxTune.d("bankai.bladeCurve", DEFAULT_CURVE));
+	}
+
+	/** Local z of the glowing apex of the blade as drawn with the current curve (the tip glow, the cut cap and every tip bound hang on it). */
+	static double tipZ() {
+		double ex = spine.length == 0 ? TIP_Z_EXPORT : BladeStraighten.spineAt(spine, bladeExport.maxY);
+		return ex * curve();
+	}
+
+	/** Rebuilds the sheared copies of the full and the LOD mesh when bankai.bladeCurve changed (about 100 vertices: free). Returns true when it did. */
+	private static boolean refreshCurve() {
+		double c = curve();
+		if (bladeExport == null || c == builtCurve) {
+			return false;
+		}
+		builtCurve = c;
+		blade = shear(bladeExport, c);
+		lod = lodExport == null ? null : shear(lodExport, c);
+		return true;
+	}
+
+	private static FxMesh shear(FxMesh m, double c) {
+		if (c >= 1.0) {
+			return m;
+		}
+		return m.reshaped(BladeStraighten.straighten(m.pos, spine, c), BladeStraighten.normals(m.pos, m.nrm, spine, c));
 	}
 
 	// ------------------------------------------------------------------------------------------ blade pose
@@ -165,9 +213,10 @@ public final class BankaiBladeRenderer {
 		basis(st, i, lean, M);
 		double off = offsetOf(st, i, t);
 		double by = st.ground[i] - 0.5 + off;
-		out[0] = st.bx[i] + (M[1] * BladeRowLayout.BLADE_LENGTH + M[2] * TIP_Z) * f;
-		out[1] = by + (M[4] * BladeRowLayout.BLADE_LENGTH + M[5] * TIP_Z) * f;
-		out[2] = st.bz[i] + (M[7] * BladeRowLayout.BLADE_LENGTH + M[8] * TIP_Z) * f;
+		double tz = tipZ();
+		out[0] = st.bx[i] + (M[1] * BladeRowLayout.BLADE_LENGTH + M[2] * tz) * f;
+		out[1] = by + (M[4] * BladeRowLayout.BLADE_LENGTH + M[5] * tz) * f;
+		out[2] = st.bz[i] + (M[7] * BladeRowLayout.BLADE_LENGTH + M[8] * tz) * f;
 	}
 
 	private static int lightOf(RowsFx.State st, int i) {
@@ -190,6 +239,7 @@ public final class BankaiBladeRenderer {
 		if (blade == null) {
 			return;
 		}
+		refreshCurve();
 		long t0 = System.nanoTime();
 		ClientWorld world = ctx.world();
 		Camera cam = ctx.camera();
@@ -333,6 +383,7 @@ public final class BankaiBladeRenderer {
 		}
 		st.vboVertices = quads * 4;
 		st.vboValid = true;
+		st.vboCurve = builtCurve;
 		int h = 0;
 		for (int i = 0; i < l.n; i++) {
 			h = h * 31 + st.light[i];

@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
+import dev.minebleach.reiatsutest.core.fx.ShirafuneTimeline;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.ArrayList;
 import java.util.List;
@@ -378,10 +379,16 @@ public final class RukiaShikaiFx {
 		Vec3d end = tip0.add(bd.multiply(U));
 		double lk = FxMath.clamp(U / 8.0, 0.8, 2.0);
 		final FxMeshPass.Crystal[] tipCrystal = new FxMeshPass.Crystal[1];
-		t.lifetime(2.4);
+		// r8 fx2 item 3: the event arrives at the RELEASE (the server hits at the same moment), so the clock starts at the hit: the blade grows
+		// at once and the contact lands when it has reached its end. The 0.6 s of cast time before it is the local telegraph (ShirafuneCast).
+		ShirafuneTimeline tl = ShirafuneTimeline.atRelease(d("shira.lead", 0.0), d("shira.growTime", ShirafuneTimeline.GROW));
+		t.lifetime(tl.lifetime);
+		if (t.localCaster) {
+			ShirafuneCast.onRelease();
+		}
 
-		// 0.0 mote swirl converging on the blade tip
-		t.at(0.0, x -> {
+		// at the release: a quick mote swirl that closes on the blade tip while the blade leaves (0.15 s, the old lead-in was 0.4 s before the blade)
+		t.at(tl.bladeAt, x -> {
 			Random r = x.rng(70);
 			int n = RukiaKit.count(30);
 			for (int i = 0; i < n; i++) {
@@ -390,14 +397,14 @@ public final class RukiaShikaiFx {
 				double px = tip0.x + Math.cos(a) * 1.0;
 				double py = tip0.y + b * 0.5;
 				double pz = tip0.z + Math.sin(a) * 1.0;
-				FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(px, py, pz).vel((tip0.x - px) / 0.4 - Math.sin(a) * 1.5, (tip0.y - py) / 0.4, (tip0.z - pz) / 0.4 + Math.cos(a) * 1.5).drag(1.0)
-						.life(8).size(RukiaKit.size(0.36)).seed(i).color("#FFFFFF").colorTo("#9ED3F0").fade(0.4).owner(x).spawn();
+				FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(px, py, pz).vel((tip0.x - px) / 0.15 - Math.sin(a) * 1.5, (tip0.y - py) / 0.15, (tip0.z - pz) / 0.15 + Math.cos(a) * 1.5).drag(1.0)
+						.life(3).size(RukiaKit.size(0.36)).seed(i).color("#FFFFFF").colorTo("#9ED3F0").fade(0.4).owner(x).spawn();
 			}
 			RukiaKit.stars(x, r, GlowSprite.STAR6, 10, tip0.x, tip0.y, tip0.z, 0.6, 0.6, 0.0, 0.0, 0.3, 0.55, "#FFFFFF", 0.9);
-			x.sound("block.amethyst_block.resonate", 1.4, 0.6);
+			x.sound("block.amethyst_block.resonate", 1.4, 0.4);
 		});
-		// 0.3 the blade of ice grows along the aim in 0.2 s (easeOutExpo), a crystal rides the tip
-		t.at(0.3, x -> {
+		// the blade of ice grows along the aim in 0.2 s (easeOutExpo), a crystal rides the tip
+		t.at(tl.bladeAt, x -> {
 			dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[fx] shirafune blade tip0={} end={} U={} dir={}", tip0, end, U, bd);
 			double grow = d("shira.growTime", 0.2);
 			FxShapes.Strip glow = FxShapes.strip(tip0.x, tip0.y, tip0.z, bd.x, bd.y, bd.z, 0).length(a -> bladeLen(a, U, grow)).width(a -> d("shira.glowWidth", 0.8) * FxMath.clamp(1.0 - (a - 1.7) / 0.2));
@@ -425,13 +432,13 @@ public final class RukiaShikaiFx {
 			FxGlowBatch.sprite(GlowSprite.GLOW_CORE).at(tip0.x, tip0.y, tip0.z).size(RukiaKit.size(0.6), RukiaKit.size(1.3)).life(0.3).color("#EAF8FF").peak(g(0.8)).owner(x).spawn();
 			x.sound("item.trident.throw", 1.1, 0.8);
 		});
-		t.at(0.46, x -> {
+		t.at(tl.crystalAt, x -> {
 			Vec3d base = end.subtract(bd.multiply(0.85));
 			tipCrystal[0] = FxMeshPass.crystal(FxMeshes.CRYSTAL_B, base.x, base.y, base.z, bd.x, bd.y, bd.z, 0.8, d("shira.tipScale", 2.4), 0.0);
 			tipCrystal[0].grow = 0.12;
 		});
-		// 0.6 the thrust arrives: contact burst
-		t.at(0.6, x -> {
+		// the thrust arrives (half the growth time after the release, with the server hit): contact burst
+		t.at(tl.contactAt, x -> {
 			Random r = x.rng(90);
 			FxGlowBatch.sprite(GlowSprite.FLARE).at(end.x, end.y, end.z).size(RukiaKit.size(d("shira.flare", 3.2))).life(0.18).curve(0.02, 0.7).color("#FFFFFF").peak(g(0.95)).owner(x).spawn();
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(end.x, end.y, end.z).size(RukiaKit.size(1.6), RukiaKit.size(2.6)).life(0.3).curve(0.02, 0.7).color("#CFEFFF").peak(g(0.7)).owner(x).spawn();
@@ -444,9 +451,9 @@ public final class RukiaShikaiFx {
 			x.soundAt("entity.player.attack.crit", end, 1.0, 0.9);
 			x.soundAt("block.glass.break", end, 1.3, 0.7);
 		});
-		t.at(1.0, x -> x.soundAt("entity.player.hurt_freeze", end, 1.1, 0.6));
-		// 2.0 the blade retracts (0.2 s), the tip crystal shatters
-		t.at(2.0, x -> {
+		t.at(tl.chillAt, x -> x.soundAt("entity.player.hurt_freeze", end, 1.1, 0.6));
+		// the blade retracts (0.2 s), the tip crystal shatters
+		t.at(tl.retractAt, x -> {
 			Random r = x.rng(95);
 			if (tipCrystal[0] != null) {
 				FxMeshPass.shatter(tipCrystal[0], (int) d("shira.tipShards", 6), 4.0, r.nextLong());

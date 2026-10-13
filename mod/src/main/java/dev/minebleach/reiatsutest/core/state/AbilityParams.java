@@ -31,6 +31,12 @@ public final class AbilityParams {
 	/** Tornado radius around the caster (Byakuya scatter). */
 	public static final String TORNADO_RADIUS = "tornadoRadius";
 
+	/**
+	 * 1 = the ability is aimed when it is RELEASED (the last scheduled phase), not when the key was pressed (r8 item 3, Shirafune): the
+	 * server reads position and look again at that tick and the effect event is sent then. Absent or 0 = aimed at the press.
+	 */
+	public static final String AIM_AT_RELEASE = "aimAtRelease";
+
 	private AbilityParams() {
 	}
 }

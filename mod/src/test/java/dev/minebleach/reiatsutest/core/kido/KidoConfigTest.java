@@ -50,13 +50,13 @@ class KidoConfigTest {
 		assertEquals(100, b.costTenths());
 		assertEquals(100, b.cooldownTicks());
 		assertEquals(30.0, b.range());
-		assertEquals(2.5, b.damage());
+		assertEquals(1.25, b.damage(), "r8: half of the 2.5 of the 2026-10-12 rebalance");
 		assertEquals(0.0, b.speed(), "instant");
 		KidoSpec s = c.spec(KidoId.SHAKKAHO);
 		assertEquals(200, s.costTenths());
 		assertEquals(200, s.cooldownTicks());
 		assertEquals(24.0, s.range());
-		assertEquals(4.0, s.damage());
+		assertEquals(2.0, s.damage(), "r8: half of the 4.0 of the 2026-10-12 rebalance");
 		assertEquals(3.5, s.radius());
 		assertEquals(1.2, s.speed());
 		assertEquals(60, s.fireTicks());
@@ -107,7 +107,7 @@ class KidoConfigTest {
 		KidoSpec b = c.spec(KidoId.BYAKURAI);
 		assertEquals(1000, b.costTenths());
 		assertEquals(1.0, b.range());
-		assertEquals(2.5, b.damage(), "a string keeps the default");
+		assertEquals(1.25, b.damage(), "a string keeps the default");
 		assertEquals(100, b.cooldownTicks());
 		assertFalse(b.enabled());
 		assertEquals(KidoConfig.defaults().spec(KidoId.SAI), c.spec(KidoId.SAI));

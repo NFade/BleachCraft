@@ -41,6 +41,9 @@ import org.joml.Vector3f;
  * ({@code "rukia.shikai.release": {"enabled": 1, "dur": 1.3, "in": .1, "out": .35, "R": [[t, px, py, pz, rx, ry, rz, ease], ...], "L":
  * [[t, px, py, pz, arx, ary, arz, free, ease], ...], "C": [[t, pitch, yaw, roll, fov, ease], ...], "TR"/"TL": [[t, pitch, yaw, roll,
  * ease], ...], "orbit": [["P"|"T"|"L", t0, t1, radius, hz, phase]], "vib": [["R"|"L", t0, t1, amp, hz]], "holds": [[at, len]]}}).
+ * r8 keys (flat, in {@code fp_cast}): {@code hands.scale} (amplitude of the hand rows of every gesture, default 0.75), {@code hands.drop} (blocks the hands work lower
+ * at full envelope, default 0), {@code clamp.centre_x} / {@code clamp.centre_y} (half width and height in ndc of the central rectangle no arm may enter, 0.18 each,
+ * 0 switches the rule off), {@code free.release} (seconds the empty hands take to come back after being limited).
  * A channel that is present replaces the shipped one. Ease: 0 smooth, 1 out, 2 in, 3 linear, 4 spring. See design/results/fp_abilities_s1.md.
  */
 public final class FpCast {
@@ -144,6 +147,14 @@ public final class FpCast {
 		} catch (RuntimeException ex) {
 			return def;
 		}
+	}
+
+	/** r8 hand rows of a gesture: amplitude (0.75) and drop (blocks, 0) before the reach limits, keys {@code hands.scale} / {@code hands.drop} of {@code fp_cast}. */
+	static final float HANDS_SCALE = 0.75f;
+	static final float HANDS_DROP = 0f;
+
+	static float handsNum(String key, float def) {
+		return num("hands." + key, def);
 	}
 
 	private static boolean on(String key) {
@@ -486,6 +497,9 @@ public final class FpCast {
 	/** Smoothed presence of the empty hands (0 hidden below the screen edge, 1 in the idle pose) and the clock that steps it. */
 	private static float freeWeight;
 	private static long freeLast;
+	/** r8: smoothed centre keep-out factors of the empty hands (main, other). */
+	private static float freeKR = 1f;
+	private static float freeKL = 1f;
 
 	/**
 	 * Draws the empty hands of the local player while the held zanpakuto shows no sword in the hand (the Byakuya bankai: the sword is scattered,
@@ -525,11 +539,32 @@ public final class FpCast {
 		float breath = FxConfig.reduceMotion || FxConfig.photosensitiveSafe ? 0f : (s == null ? 1f : 1f - Math.max(0f, Math.min(1f, s.env())));
 		// the forward reach of the empty hands is limited softly (free.fwd, blocks) like the hands with the sword
 		float fwd = num("free.fwd", 0.50f);
-		float[] rr = s == null ? null : s.r().clone();
-		float[] ll = s == null ? null : s.l().clone();
+		float[] rr = null;
+		float[] ll = null;
+		if (s != null) {
+			dev.minebleach.reiatsutest.core.combat.FpCentre.Shaped sh = dev.minebleach.reiatsutest.core.combat.FpCentre.shape(s.r(), s.l(), s.env(),
+					handsNum("scale", HANDS_SCALE), handsNum("drop", HANDS_DROP), fwd);
+			rr = sh.r();
+			ll = sh.l();
+		}
+		// r8: no part of an empty arm in the central rectangle of the picture: a factor of every row (falls at once, comes back over free.release seconds)
+		float hx = clampNum("centre_x", dev.minebleach.reiatsutest.core.combat.FpCentre.HALF_X);
+		float hy = clampNum("centre_y", dev.minebleach.reiatsutest.core.combat.FpCentre.HALF_Y);
+		float aspect = mc.getWindow().getFramebufferHeight() > 0 ? (float) mc.getWindow().getFramebufferWidth() / mc.getWindow().getFramebufferHeight() : 16f / 9f;
+		float tr = 1f;
+		float tl = 1f;
+		if (rr != null && hx > 0f && hy > 0f) {
+			tr = dev.minebleach.reiatsutest.core.combat.FpCentre.freeFactor(FREE, false, rr, time, aspect, hx, hy);
+			tl = dev.minebleach.reiatsutest.core.combat.FpCentre.freeFactor(FREE, true, ll, time, aspect, hx, hy);
+		}
+		float rel = Math.max(0.01f, num("free.release", 0.15f));
+		freeKR = dev.minebleach.reiatsutest.core.combat.FpClamp.release(freeKR, tr, dt, rel);
+		freeKL = dev.minebleach.reiatsutest.core.combat.FpClamp.release(freeKL, tl, dt, rel);
 		if (rr != null) {
-			rr[2] = dev.minebleach.reiatsutest.core.combat.FpClamp.softForward(rr[2], fwd);
-			ll[2] = dev.minebleach.reiatsutest.core.combat.FpClamp.softForward(ll[2], fwd);
+			for (int k = 0; k < 6; k++) {
+				rr[k] *= freeKR;
+				ll[k] *= freeKL;
+			}
 		}
 		// main hand: the right hand layout (mirrored for a left hander)
 		drawFreeArm(mc, player, m, vcp, light, left, i * 0.56f, -0.52f + eqY, left, FreeHands.frame(FREE, false, rr, time, breath, freeWeight));

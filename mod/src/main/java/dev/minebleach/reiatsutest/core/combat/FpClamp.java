@@ -24,9 +24,15 @@ public final class FpClamp {
 	 * What the hands must keep: {@code near} blocks in front of the camera, and the centres of the fists inside the picture ({@code xMax} of the
 	 * half width, between {@code yMin} and {@code yMax} of the half height; a fist at the lower edge is half out of the picture).
 	 */
-	public record Limits(float near, float aspect, float xMax, float yMin, float yMax) {
+	public record Limits(float near, float aspect, float xMax, float yMin, float yMax, float centreX, float centreY) {
+		/** Without the keep-out rectangle of the picture centre (the strikes, old callers). */
+		public Limits(float near, float aspect, float xMax, float yMin, float yMax) {
+			this(near, aspect, xMax, yMin, yMax, 0f, 0f);
+		}
+
+		/** The shipped limits including the r8 rule: no arm in the central {@link FpCentre#HALF_X} x {@link FpCentre#HALF_Y} of the picture. */
 		public static Limits of(float aspect) {
-			return new Limits(NEAR, aspect, 1.0f, -1.05f, 0.95f);
+			return new Limits(NEAR, aspect, 1.0f, -1.2f, 0.95f, FpCentre.HALF_X, FpCentre.HALF_Y);
 		}
 	}
 
@@ -83,6 +89,9 @@ public final class FpClamp {
 		}
 		min = Math.min(min, bladeMargin(h, rig, pose, lim.near, lim.aspect));
 		min = Math.min(min, screenMargin(FpGeometry.ndc(FpGeometry.cam(FpGeometry.rightFist(h, pose)), lim.aspect), lim));
+		if (lim.centreX > 0f && lim.centreY > 0f) {
+			min = Math.min(min, FpCentre.right(h, pose, lim.aspect, lim.centreX, lim.centreY));
+		}
 		if (h.left()) {
 			min = Math.min(min, leftMargin(h, pose, stanceBase, l, lim));
 		}
@@ -135,7 +144,11 @@ public final class FpClamp {
 		for (float[] c : FpGeometry.leftArm(fist, pose, stanceBase, free, h.leftArmRot(), extra)) {
 			min = Math.min(min, -c[2] - lim.near);
 		}
-		return Math.min(min, screenMargin(FpGeometry.ndc(FpGeometry.cam(fist), lim.aspect), lim));
+		min = Math.min(min, screenMargin(FpGeometry.ndc(FpGeometry.cam(fist), lim.aspect), lim));
+		if (lim.centreX > 0f && lim.centreY > 0f) {
+			min = Math.min(min, FpCentre.boxMargin(FpGeometry.leftArm(fist, pose, stanceBase, free, h.leftArmRot(), extra), lim.aspect, lim.centreX, lim.centreY));
+		}
+		return min;
 	}
 
 	/**

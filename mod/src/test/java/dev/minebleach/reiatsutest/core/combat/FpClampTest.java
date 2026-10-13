@@ -10,7 +10,8 @@ import org.junit.jupiter.api.Test;
 class FpClampTest {
 	private static final FpRig RIG = FpRig.DEFAULT;
 	private static final float ASPECT = 16f / 9f;
-	private static final FpClamp.Limits LIM = FpClamp.Limits.of(ASPECT);
+	/** The reach limits of round 5 (near plane and fists on the screen); the keep-out rectangle of the centre has its own test, {@link FpCentreTest}. r8: fists down to -1.2 (the lowered stance). */
+	private static final FpClamp.Limits LIM = new FpClamp.Limits(FpClamp.NEAR, ASPECT, 1.0f, -1.2f, 0.95f);
 	/** Near plane only (the strikes may take the hands anywhere on the screen). */
 	private static final FpClamp.Limits NEAR_ONLY = new FpClamp.Limits(FpGeometry.NEAR, ASPECT, 9f, -9f, 9f);
 
@@ -110,9 +111,9 @@ class FpClampTest {
 				worstMargin = Math.min(worstMargin, FpClamp.margin(h, RIG, pose, st, l, LIM));
 				// the fists stay on the screen
 				float[] rf = FpGeometry.ndc(FpGeometry.cam(FpGeometry.rightFist(h, pose)), ASPECT);
-				assertTrue(rf != null && Math.abs(rf[0]) < 1f && rf[1] > -1.06f && rf[1] < 0.96f, e.getKey() + " right fist on screen at " + t);
+				assertTrue(rf != null && Math.abs(rf[0]) < 1f && rf[1] > -1.21f && rf[1] < 0.96f, e.getKey() + " right fist on screen at " + t);
 				float[] lf = FpGeometry.ndc(FpGeometry.cam(FpGeometry.leftFist(h, pose, st, l[6], new float[] {l[0], l[1], l[2]})), ASPECT);
-				assertTrue(lf != null && Math.abs(lf[0]) < 1f && lf[1] > -1.06f && lf[1] < 0.96f, e.getKey() + " left fist on screen at " + t);
+				assertTrue(lf != null && Math.abs(lf[0]) < 1f && lf[1] > -1.21f && lf[1] < 0.96f, e.getKey() + " left fist on screen at " + t);
 			}
 			assertTrue(worst > 0.9f, e.getKey() + " needs the reach limit: factor " + worst);
 			assertTrue(worstMargin >= -0.01f, e.getKey() + " too close to the camera: margin " + worstMargin);

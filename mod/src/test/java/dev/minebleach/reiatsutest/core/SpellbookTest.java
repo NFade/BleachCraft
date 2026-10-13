@@ -169,6 +169,8 @@ class SpellbookTest {
 		}
 		assertEquals("25", BookFacts.tenths(250));
 		assertEquals("1.5", BookFacts.tenths(15));
+		assertEquals("1.25", BookFacts.number(1.25), "r8: Byakurai deals 1.25 hp, the book must not round it to 1.3");
+		assertEquals("2", BookFacts.number(2.0));
 		assertEquals("12", BookFacts.ticksToSeconds(240));
 		assertEquals("7.5", BookFacts.ticksToSeconds(150));
 	}

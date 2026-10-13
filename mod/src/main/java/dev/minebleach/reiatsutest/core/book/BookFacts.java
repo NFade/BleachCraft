@@ -56,10 +56,13 @@ public final class BookFacts {
 		return number(ticks / 20.0);
 	}
 
-	/** Integers without a decimal part, others with one decimal, always a dot. */
+	/** Integers without a decimal part, others with one decimal (two when the value has a real hundredth, 1.25), always a dot. */
 	public static String number(double v) {
 		if (Math.abs(v - Math.rint(v)) < 0.05) {
 			return Long.toString(Math.round(v));
+		}
+		if (Math.abs(v * 10.0 - Math.rint(v * 10.0)) >= 0.04) {
+			return String.format(Locale.ROOT, "%.2f", v);
 		}
 		return String.format(Locale.ROOT, "%.1f", v);
 	}

@@ -21,6 +21,11 @@ public final class GuardMotion {
 	 * view axis); the pivot is the grip. Laid out in a python model of the projection (vertical FOV 70) against the stow pose, UNVERIFIED in game.
 	 */
 	public static final FpPose SEALED_GUARD = FpPose.of(-0.212f, -0.15f, 0f, -20f, 0f, -36f);
+	/**
+	 * r8: shift of the sheathed hold (rest, no block) in the hand frame, blocks, key {@code guard.sealed.rest}: the sword in its scabbard, the right fist and the hand
+	 * that holds the scabbard sit this much lower (the play test: hands too high everywhere). Fades out while the sealed block comes up.
+	 */
+	public static final float[] SEALED_REST = {0f, -0.04f, 0f};
 	/** Where the left hand holds the scabbard in the sealed block, model units (metres) from the grip along the scabbard. */
 	public static final float SEALED_LEFT_S = 0.18f;
 	/** Turn of the left forearm about its fist in the sealed block (degrees x y z, camera frame, right hander layout; a left hander mirrors y and z): the arm comes in from the lower left. */
@@ -66,6 +71,11 @@ public final class GuardMotion {
 	/** The sealed block pose of the main hand and the scabbard (absolute), numbers from {@code guard.sealed.pos / guard.sealed.rot}. */
 	public static FpPose sealedGuard(FpParams pr) {
 		return FpPose.of(pr.vec("guard.sealed.pos", SEALED_GUARD.pos()), pr.vec("guard.sealed.rot", SEALED_GUARD.rot()));
+	}
+
+	/** The shift of the sheathed rest hold ({@code guard.sealed.rest}), hand frame, right hander layout. */
+	public static float[] sealedRest(FpParams pr) {
+		return pr.vec("guard.sealed.rest", SEALED_REST);
 	}
 
 	/** Place of the left hand on the scabbard (metres from the grip) while the sealed block is up, {@code guard.sealed.left_s}. */
