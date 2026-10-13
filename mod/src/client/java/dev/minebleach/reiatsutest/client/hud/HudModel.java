@@ -9,6 +9,7 @@ import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.AbilitySpec;
 import dev.minebleach.reiatsutest.core.state.BalanceConfig;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.EffectIds;
 import dev.minebleach.reiatsutest.core.state.ResultCode;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
@@ -513,17 +514,22 @@ public final class HudModel {
 		}
 	}
 
+	/** Lang key part of the character a command id belongs to ("byakuya", "gin.", "uryu."); Rukia is the old fallback. */
+	private static String commandCharacter(String cmd) {
+		return cmd.startsWith("byakuya") ? "byakuya" : cmd.startsWith("gin.") ? "gin" : cmd.startsWith("uryu.") ? "uryu" : "rukia";
+	}
+
 	private static String commandName(String cmd) {
 		if (cmd == null) {
 			return "";
 		}
 		if (cmd.endsWith(".shikai.release")) {
 			return Text.translatable("hud.reiatsu_test.state.shikai").getString() + ": "
-					+ Text.translatable("hud.reiatsu_test.zanpakuto." + (cmd.startsWith("byakuya") ? "byakuya" : "rukia")).getString();
+					+ Text.translatable("hud.reiatsu_test.zanpakuto." + commandCharacter(cmd)).getString();
 		}
 		if (cmd.endsWith(".bankai.release")) {
 			return Text.translatable("hud.reiatsu_test.state.bankai").getString() + ": "
-					+ Text.translatable("hud.reiatsu_test.zanpakuto." + (cmd.startsWith("byakuya") ? "byakuya" : "rukia") + ".bankai").getString();
+					+ Text.translatable("hud.reiatsu_test.zanpakuto." + commandCharacter(cmd) + ".bankai").getString();
 		}
 		if (cmd.equals("common.seal")) {
 			return Text.translatable("hud.reiatsu_test.state.sealed").getString();
@@ -545,6 +551,14 @@ public final class HudModel {
 			c.start = now;
 			card = c;
 			lastActivity = now;
+		} else if (effectId == EffectIds.GIN_SHIKAI_RELEASE || effectId == EffectIds.GIN_BANKAI_RELEASE
+				|| effectId == EffectIds.URYU_SHIKAI_RELEASE || effectId == EffectIds.URYU_BANKAI_RELEASE) {
+			Card c = new Card();
+			c.bankai = effectId == EffectIds.GIN_BANKAI_RELEASE || effectId == EffectIds.URYU_BANKAI_RELEASE;
+			c.character = effectId < 70 ? CharacterId.GIN : CharacterId.URYU;
+			c.start = now;
+			card = c;
+			lastActivity = now;
 		} else if (effectId == 10) {
 			if (lockStart < 0) {
 				startLock(CFG.sealLockTicks() / 20.0);
@@ -556,6 +570,13 @@ public final class HudModel {
 			Technique t = new Technique();
 			t.text = Text.translatable("hud.reiatsu_test.technique." + effectId);
 			t.character = effectId <= 24 ? CharacterId.RUKIA : CharacterId.BYAKUYA; // 20 to 24 Rukia (24 = ice spike), 30 to 35 Byakuya (35 = petal cage)
+			t.start = now;
+			technique = t;
+			lastActivity = now;
+		} else if ((effectId >= 62 && effectId <= 67) || (effectId >= 72 && effectId <= 77)) {
+			Technique t = new Technique();
+			t.text = Text.translatable("hud.reiatsu_test.technique." + effectId);
+			t.character = effectId < 70 ? CharacterId.GIN : CharacterId.URYU;
 			t.start = now;
 			technique = t;
 			lastActivity = now;

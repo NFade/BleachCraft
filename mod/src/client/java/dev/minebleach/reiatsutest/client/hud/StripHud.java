@@ -29,6 +29,16 @@ final class StripHud {
 			case SENKEI -> 8;
 			case ICE_SPIKE -> 12; // second row of 4 after the 12 cells of round 5 (gen_hud_textures.py: 4 x 4 cells)
 			case CAGE -> 13;
+			// Gin and Uryu: no own icons yet, existing cells as placeholders
+			case IKOROSE, HEILIG_PFEIL -> 2;
+			case HYAPPONZASHI -> 1;
+			case SNAKE_HOOK, BUTOU_RENJIN -> 12;
+			case KOROSE, STERNENSTAUB -> 7;
+			case HAKUFUKU -> 5;
+			case SPRENGER -> 0;
+			case HIRENKYAKU -> 4;
+			case LICHT_REGEN -> 6;
+			case HOMING_VOLLEY -> 8;
 		};
 	}
 

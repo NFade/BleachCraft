@@ -193,7 +193,7 @@ final class PlateHud {
 
 	private static void drawNameLine(HudGfx g, TextRenderer font, int x, int y, CharacterId ch, ZanpakutoState st, float[] accent, float alpha, int barW) {
 		int accentRgb = HudGfx.argb(accent, 1f) & 0x00FFFFFF;
-		String key = "hud.reiatsu_test.zanpakuto." + (ch == CharacterId.BYAKUYA ? "byakuya" : "rukia") + (st == ZanpakutoState.BANKAI ? ".bankai" : "");
+		String key = "hud.reiatsu_test.zanpakuto." + ch.langKey() + (st == ZanpakutoState.BANKAI ? ".bankai" : "");
 		String ck = st + "|" + key + "|" + accentRgb + "|" + barW + "|" + HudText.generation();
 		if (!ck.equals(nameKey)) {
 			String word = HudText.tr("hud.reiatsu_test.state." + st.name().toLowerCase(java.util.Locale.ROOT)).toUpperCase(java.util.Locale.ROOT);

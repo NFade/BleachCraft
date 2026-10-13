@@ -16,6 +16,11 @@ import net.minecraft.registry.Registry;
 public final class ModItems {
 	public static final Item SODE_NO_SHIRAYUKI = register("sode_no_shirayuki", CharacterId.RUKIA);
 	public static final Item SENBONZAKURA = register("senbonzakura", CharacterId.BYAKUYA);
+	/** Gin Ichimaru's wakizashi (design/GIN.md). */
+	public static final Item GIN_SHINSO = register("gin_shinso", CharacterId.GIN);
+	/** Uryu Ishida's Quincy cross pendant (design/URYU.md); the Heilig Bogen comes with the gameplay steps. */
+	public static final Item URYU_CROSS = Registry.register(Registries.ITEM, ReiatsuTest.id("uryu_cross"),
+			new UryuCrossItem(new Item.Settings().maxCount(1).component(ModComponents.RELEASE_STATE, ReleaseState.SEALED), CharacterId.URYU));
 
 	/** Spike 2b test asset; kept so the spike harness (runSpike) stays usable. Not a zanpakuto for the state machine. */
 	public static final Item SPIKE_ITEM = Registry.register(
@@ -58,6 +63,8 @@ public final class ModItems {
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(entries -> {
 			entries.add(new ItemStack(SODE_NO_SHIRAYUKI));
 			entries.add(new ItemStack(SENBONZAKURA));
+			entries.add(new ItemStack(GIN_SHINSO));
+			entries.add(new ItemStack(URYU_CROSS));
 		});
 		ModBooks.init();
 	}

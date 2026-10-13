@@ -93,7 +93,7 @@ final class OverlayHud {
 		g.quad(TITLE_BAND, 300, 32, bandX + dx + 2, yc - 14, vis, 32, 0, 0, vis, 32, INK[0], INK[1], INK[2], ba * 0.55f, HudGfx.NORMAL);
 		g.quad(TITLE_BAND, 300, 32, bandX + dx, yc - 16, vis, 32, 0, 0, vis, 32, deep[0], deep[1], deep[2], ba, HudGfx.NORMAL);
 		int scale = w < 400 ? 1 : 2;
-		String phrase = Text.translatable("hud.reiatsu_test.release." + (c.character == CharacterId.BYAKUYA ? "byakuya" : "rukia")).getString();
+		String phrase = Text.translatable("hud.reiatsu_test.release." + c.character.langKey()).getString();
 		double pt = FxMath.clamp((t - 0.08) / 0.2);
 		float off = rm ? 0 : (float) ((1 - FxMath.oc(pt)) * 12);
 		float pa = (float) pt * fade;
@@ -174,7 +174,7 @@ final class OverlayHud {
 			ms.pop();
 		}
 		// bankai name, revealed letter by letter, scale 2 with +1 px tracking
-		String name = Text.translatable("hud.reiatsu_test.zanpakuto." + (c.character == CharacterId.BYAKUYA ? "byakuya" : "rukia") + ".bankai").getString()
+		String name = Text.translatable("hud.reiatsu_test.zanpakuto." + c.character.langKey() + ".bankai").getString()
 				.toUpperCase(java.util.Locale.ROOT);
 		int count = rm ? name.length() : (int) Math.max(0, Math.min(name.length(), Math.floor((t - 0.35) / 0.02)));
 		float na = (float) (rm ? FxMath.clamp((t - 0.35) / 0.2) : 1.0) * fade;
@@ -203,7 +203,7 @@ final class OverlayHud {
 		}
 		double tt = FxMath.clamp((t - 0.9) / 0.3);
 		if (tt > 0.01) {
-			String tr = Text.translatable("hud.reiatsu_test.translation." + (c.character == CharacterId.BYAKUYA ? "byakuya" : "rukia") + ".bankai").getString();
+			String tr = Text.translatable("hud.reiatsu_test.translation." + c.character.langKey() + ".bankai").getString();
 			int a2 = PlateHud.alphaInt((float) tt * fade);
 			g.text(font, tr, (w - font.getWidth(tr)) / 2f, ny + 8 * nscale + 6, 0x00AEB9C9 | a2 << 24, true);
 		}

@@ -121,6 +121,8 @@ public final class PhraseBook {
 			CharacterId item = switch (string(c, "item", id)) {
 				case "rukia" -> CharacterId.RUKIA;
 				case "byakuya" -> CharacterId.BYAKUYA;
+				case "gin" -> CharacterId.GIN;
+				case "uryu" -> CharacterId.URYU;
 				case "any" -> CharacterId.NONE;
 				default -> throw new IllegalArgumentException(id + ": item must be rukia, byakuya or any");
 			};
