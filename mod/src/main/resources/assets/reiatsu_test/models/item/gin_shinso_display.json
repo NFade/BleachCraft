@@ -1,6 +1,6 @@
 {
   "gui_light": "front",
-  "textures": { "particle": "reiatsu_test:item/rukia_sealed_diffuse" },
+  "textures": { "particle": "reiatsu_test:item/gin_shinso_diffuse" },
   "display": {
     "thirdperson_righthand": { "rotation": [45, 180, 0], "translation": [0, -2, 1.75], "scale": [1.6, 1.6, 1.6] },
     "thirdperson_lefthand": { "rotation": [45, 180, 0], "translation": [0, -2, 1.75], "scale": [1.6, 1.6, 1.6] },

@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "units": "m",
+  "space": "blender_zup",
+  "empties": {
+    "grip_hand": [
+      0.0,
+      0.0,
+      0.12
+    ],
+    "tip": [
+      0.0,
+      0.024,
+      0.656
+    ],
+    "saya_mouth": [
+      0.0,
+      0.0,
+      0.206
+    ]
+  },
+  "objects": {
+    "gin_shinso_sheathed": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "gin_shinso": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "gin_shinso_saya": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "gin_shinso_ray": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "blade_axis": {
+    "origin": [
+      0.0,
+      0.0,
+      0.206
+    ],
+    "direction": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "draw_direction": [
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "blade_length": 0.45,
+    "clear_travel": 0.45,
+    "note": "origin = centre of the saya mouth (tsuba touches it when sheathed); direction = tip direction of the sheathed blade; blade_length = distance from the mouth plane to the tip along the axis = the pull-out travel after which the whole blade has left the saya. A straight pull along draw_direction already clips the blade through the curved saya wall at 0.1 m (fine at 0.02 m); for the exact draw rotate the drawn sword about sori_arc.center around +X by +d / radius radians (d = travel along the blade), 0.5 m = 9.5 degrees.",
+    "sori_arc": {
+      "center": [
+        0.0,
+        4.21875,
+        0.206
+      ],
+      "radius": 4.21875,
+      "rotation_axis": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    }
+  }
+}

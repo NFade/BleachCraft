@@ -1,21 +1,22 @@
 {
-  "model": "rukia_sealed",
+  "model": "gin_shinso",
   "display_model": "reiatsu_test:item/gin_shinso_display",
-  "emissive_tint": "FFE8F4FF",
+  "emissive_tint": "FFFFFFFF",
   "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
-  "draw": {"saya": "rukia_sealed_saya", "blade": "rukia_sealed_drawn", "hold": [0, 0, 0.33], "regrip": 0.3, "overshoot": 1.12,
+  "draw": {"saya": "gin_shinso_saya", "blade": "gin_shinso", "hold": [0, 0, 0.28], "regrip": 0.3, "overshoot": 1.12,
     "stow": {"rot": [0, 0, 104], "move": [-0.4, 0.24, 0], "slide_end": 0.55, "pull": 0.55, "retract": 0.15, "arm_roll_stow": 80, "arm_roll_held": 0},
     "held": {"lift": [0, 0.06, 0], "arm": [0, -0.12, 0]},
     "hip": {"pos_px": [3.0, 9.0, -2.5], "dir": [0.35, 0.3, 0.89], "scale": 1.6}},
   "objects": {
-    "rukia_sealed_drawn": {"diffuse": "rukia_sealed_diffuse"},
-    "rukia_sealed_sheathed": {"diffuse": "rukia_sealed_diffuse"},
-    "rukia_sealed_saya": {"diffuse": "rukia_sealed_diffuse"}
+    "gin_shinso": {"diffuse": "gin_shinso_diffuse"},
+    "gin_shinso_sheathed": {"diffuse": "gin_shinso_diffuse"},
+    "gin_shinso_saya": {"diffuse": "gin_shinso_diffuse"},
+    "gin_shinso_ray": {"diffuse": "gin_shinso_diffuse", "emissive": "gin_shinso_emissive"}
   },
   "states": {
-    "sealed": {"hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_sheathed"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
-    "base": {"hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_drawn"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
-    "shikai": {"hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_drawn"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
-    "bankai": {"hand": ["rukia_sealed_drawn"], "other": ["rukia_sealed_drawn"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"}
+    "sealed": {"hand": ["gin_shinso"], "other": ["gin_shinso_sheathed"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
+    "base": {"hand": ["gin_shinso"], "other": ["gin_shinso"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
+    "shikai": {"hand": ["gin_shinso"], "other": ["gin_shinso"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
+    "bankai": {"hand": ["gin_shinso"], "other": ["gin_shinso"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"}
   }
 }

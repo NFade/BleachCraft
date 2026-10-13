@@ -28,7 +28,8 @@ class DrawAnimationTest {
 	private record Case(String item, String model) {
 	}
 
-	private static final Case[] CASES = {new Case("sode_no_shirayuki", "rukia_sealed"), new Case("senbonzakura", "byakuya_sealed")};
+	private static final Case[] CASES = {new Case("sode_no_shirayuki", "rukia_sealed"), new Case("senbonzakura", "byakuya_sealed"),
+			new Case("gin_shinso", "gin_shinso")};
 
 	@Test
 	void manifestsDeclareTheSayaAndTheDrawEntry() throws IOException {

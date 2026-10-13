@@ -36,6 +36,10 @@ public final class FxEvents {
 			BankaiEnd.onEvent(e);
 			return;
 		}
+		if (GinFx.handles(id)) {
+			GinFx.play(client, e);
+			return;
+		}
 		if (KidoFx.handles(id)) {
 			KidoFx.play(client, e);
 			return;
