@@ -32,14 +32,23 @@ public final class EffectIds {
 	 */
 	public static final int BANKAI_CLEANUP = 44;
 
+	// ---- Gin (60 to 69): release events, then one id per ability (design/GIN.md)
+	public static final int GIN_SHIKAI_RELEASE = 60;
+	public static final int GIN_BANKAI_RELEASE = 61;
+	// ---- Uryu (70 to 79): release events, then one id per ability (design/URYU.md)
+	public static final int URYU_SHIKAI_RELEASE = 70;
+	public static final int URYU_BANKAI_RELEASE = 71;
+
 	private EffectIds() {
 	}
 
 	public static int shikaiRelease(CharacterId c) {
-		return c == CharacterId.BYAKUYA ? BYAKUYA_SHIKAI_RELEASE : RUKIA_SHIKAI_RELEASE;
+		return c == CharacterId.GIN ? GIN_SHIKAI_RELEASE : c == CharacterId.URYU ? URYU_SHIKAI_RELEASE
+				: c == CharacterId.BYAKUYA ? BYAKUYA_SHIKAI_RELEASE : RUKIA_SHIKAI_RELEASE;
 	}
 
 	public static int bankaiRelease(CharacterId c) {
-		return c == CharacterId.BYAKUYA ? BYAKUYA_BANKAI_RELEASE : RUKIA_BANKAI_RELEASE;
+		return c == CharacterId.GIN ? GIN_BANKAI_RELEASE : c == CharacterId.URYU ? URYU_BANKAI_RELEASE
+				: c == CharacterId.BYAKUYA ? BYAKUYA_BANKAI_RELEASE : RUKIA_BANKAI_RELEASE;
 	}
 }

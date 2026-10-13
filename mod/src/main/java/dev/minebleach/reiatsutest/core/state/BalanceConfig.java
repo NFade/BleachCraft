@@ -164,6 +164,32 @@ public record BalanceConfig(
 		a.put(AbilityId.HAKUTEIKEN, new AbilitySpec(AbilityId.HAKUTEIKEN, 0, 600, 33, true, List.of(30, 36), p(
 				AbilityParams.LENGTH, 28.0, AbilityParams.HALF_WIDTH, 2.0, AbilityParams.DAMAGE2, 5.0, AbilityParams.RADIUS, 12.0, AbilityParams.DAMAGE, 9.0, AbilityParams.KNOCKBACK, 1.5, AbilityParams.MAX_TARGETS, 48)));
 		a.put(AbilityId.SENKEI, new AbilitySpec(AbilityId.SENKEI, 0, 500, 34, false, List.of()));
+		// ---- Gin and Uryu (design/GIN.md, design/URYU.md): registration skeleton, first-guess cost and cooldown only, one phase at tick 0 (stub executors);
+		// area, damage and timing numbers come with the gameplay steps
+		// Gin shikai Z: 10 reiatsu, 4 s
+		a.put(AbilityId.IKOROSE, new AbilitySpec(AbilityId.IKOROSE, 100, 80, 62, true, List.of(0)));
+		// Gin shikai H: 18 reiatsu, 9 s
+		a.put(AbilityId.HYAPPONZASHI, new AbilitySpec(AbilityId.HYAPPONZASHI, 180, 180, 63, true, List.of(0)));
+		// Gin shikai B: 12 reiatsu, 8 s
+		a.put(AbilityId.SNAKE_HOOK, new AbilitySpec(AbilityId.SNAKE_HOOK, 120, 160, 64, true, List.of(0)));
+		// Gin bankai Z: 28 reiatsu, 14 s
+		a.put(AbilityId.BUTOU_RENJIN, new AbilitySpec(AbilityId.BUTOU_RENJIN, 280, 280, 65, true, List.of(0)));
+		// Gin bankai H, press 1 (the recast is free; the 30 s cooldown after the dissolve comes in step 2): 25 reiatsu, 12 s
+		a.put(AbilityId.KOROSE, new AbilitySpec(AbilityId.KOROSE, 250, 240, 66, true, List.of(0)));
+		// Gin bankai B: 15 reiatsu, 18 s
+		a.put(AbilityId.HAKUFUKU, new AbilitySpec(AbilityId.HAKUFUKU, 150, 360, 67, true, List.of(0)));
+		// Uryu shikai Z: 12 reiatsu, 3 s
+		a.put(AbilityId.HEILIG_PFEIL, new AbilitySpec(AbilityId.HEILIG_PFEIL, 120, 60, 72, true, List.of(0)));
+		// Uryu shikai H: 25 reiatsu, 14 s
+		a.put(AbilityId.SPRENGER, new AbilitySpec(AbilityId.SPRENGER, 250, 280, 73, true, List.of(0)));
+		// Uryu shikai B: 10 reiatsu, 6 s
+		a.put(AbilityId.HIRENKYAKU, new AbilitySpec(AbilityId.HIRENKYAKU, 100, 120, 74, true, List.of(0)));
+		// Uryu bankai Z: 28 reiatsu, 16 s
+		a.put(AbilityId.LICHT_REGEN, new AbilitySpec(AbilityId.LICHT_REGEN, 280, 320, 75, true, List.of(0)));
+		// Uryu bankai H: 30 reiatsu, 16 s
+		a.put(AbilityId.HOMING_VOLLEY, new AbilitySpec(AbilityId.HOMING_VOLLEY, 300, 320, 76, true, List.of(0)));
+		// Uryu bankai B: 50 reiatsu, 40 s
+		a.put(AbilityId.STERNENSTAUB, new AbilitySpec(AbilityId.STERNENSTAUB, 500, 800, 77, true, List.of(0)));
 
 		return new BalanceConfig(
 				1000, 5, rates,

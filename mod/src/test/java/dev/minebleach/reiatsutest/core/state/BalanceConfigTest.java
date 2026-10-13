@@ -112,6 +112,6 @@ class BalanceConfigTest {
 		assertTrue(all.contains(CommandIds.SEAL));
 		assertEquals(Set.of(ZanpakutoState.BASE, ZanpakutoState.SHIKAI, ZanpakutoState.BANKAI), book.command(CommandIds.SEAL).states());
 		assertNull(CommandIds.forTransition(CharacterId.RUKIA, ZanpakutoState.BASE), "the draw has no voice command");
-		assertEquals(18, all.size(), "15 zanpakuto commands + 3 kido, which have no AbilityId (see KidoId)");
+		assertEquals(34, all.size(), "15 zanpakuto commands + 3 kido, which have no AbilityId (see KidoId), + 16 of Gin and Uryu (12 abilities, 4 releases)");
 	}
 }

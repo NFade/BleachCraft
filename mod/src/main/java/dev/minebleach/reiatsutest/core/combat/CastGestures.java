@@ -83,6 +83,18 @@ public final class CastGestures {
 			case HAKUTEIKEN -> 33;
 			case SENKEI -> 34;
 			case CAGE -> 35;
+			case IKOROSE -> 62;
+			case HYAPPONZASHI -> 63;
+			case SNAKE_HOOK -> 64;
+			case BUTOU_RENJIN -> 65;
+			case KOROSE -> 66;
+			case HAKUFUKU -> 67;
+			case HEILIG_PFEIL -> 72;
+			case SPRENGER -> 73;
+			case HIRENKYAKU -> 74;
+			case LICHT_REGEN -> 75;
+			case HOMING_VOLLEY -> 76;
+			case STERNENSTAUB -> 77;
 		};
 	}
 
@@ -412,6 +424,7 @@ public final class CastGestures {
 				.tl(0.25, OUT, -35, 0, 10)
 				.tl(0.75, SM, 0, 0, 0));
 		ExtraGestures.addTo(m); // round 6: ice spike, petal cage
+		NewCharacterGestures.addTo(m); // gin-uryu: placeholder gestures of Gin and Uryu
 		return java.util.Collections.unmodifiableMap(m);
 	}
 }

@@ -53,7 +53,7 @@ public final class ReiatsuCommand {
 								.suggests((c, b) -> CommandSource.suggestMatching(List.of("sealed", "shikai", "bankai"), b))
 								.executes(c -> setState(c.getSource(), StringArgumentType.getString(c, "state"), null))
 								.then(CommandManager.argument("character", StringArgumentType.word())
-										.suggests((c, b) -> CommandSource.suggestMatching(List.of("rukia", "byakuya"), b))
+										.suggests((c, b) -> CommandSource.suggestMatching(List.of("rukia", "byakuya", "gin", "uryu"), b))
 										.executes(c -> setState(c.getSource(), StringArgumentType.getString(c, "state"),
 												StringArgumentType.getString(c, "character"))))))
 				// /reiatsu frost status | start | rollback: the Rukia bankai territory freeze (start = a field at your feet, rollback = restore all now)

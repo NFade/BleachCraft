@@ -19,7 +19,22 @@ public enum AbilityId {
 	 */
 	ICE_SPIKE(10, "rukia.bankai.ice_spike", CharacterId.RUKIA, ZanpakutoState.BANKAI),
 	/** Byakuya shikai, third slot: the petal cage around the aimed target or point (round 6). */
-	CAGE(11, "byakuya.shikai.cage", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI);
+	CAGE(11, "byakuya.shikai.cage", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI),
+	// ---- Gin Ichimaru (design/GIN.md), codes 12 to 17
+	IKOROSE(12, "gin.shikai.ikorose", CharacterId.GIN, ZanpakutoState.SHIKAI),
+	HYAPPONZASHI(13, "gin.shikai.hyapponzashi", CharacterId.GIN, ZanpakutoState.SHIKAI),
+	SNAKE_HOOK(14, "gin.shikai.snake_hook", CharacterId.GIN, ZanpakutoState.SHIKAI),
+	BUTOU_RENJIN(15, "gin.bankai.butou_renjin", CharacterId.GIN, ZanpakutoState.BANKAI),
+	/** Press 1 marks, press 2 (same key) dissolves the sliver; ONE ability, the recast lives in the executor. */
+	KOROSE(16, "gin.bankai.korose", CharacterId.GIN, ZanpakutoState.BANKAI),
+	HAKUFUKU(17, "gin.bankai.hakufuku", CharacterId.GIN, ZanpakutoState.BANKAI),
+	// ---- Uryu Ishida (design/URYU.md), codes 18 to 23
+	HEILIG_PFEIL(18, "uryu.shikai.heilig_pfeil", CharacterId.URYU, ZanpakutoState.SHIKAI),
+	SPRENGER(19, "uryu.shikai.sprenger", CharacterId.URYU, ZanpakutoState.SHIKAI),
+	HIRENKYAKU(20, "uryu.shikai.hirenkyaku", CharacterId.URYU, ZanpakutoState.SHIKAI),
+	LICHT_REGEN(21, "uryu.bankai.licht_regen", CharacterId.URYU, ZanpakutoState.BANKAI),
+	HOMING_VOLLEY(22, "uryu.bankai.homing_volley", CharacterId.URYU, ZanpakutoState.BANKAI),
+	STERNENSTAUB(23, "uryu.bankai.sternenstaub", CharacterId.URYU, ZanpakutoState.BANKAI);
 
 	public final byte code;
 	public final String commandId;
@@ -55,9 +70,9 @@ public enum AbilityId {
 	/** Ability slot (0..2) of this ability for its character and state: Z / H / B. */
 	public int slot() {
 		return switch (this) {
-			case TSUKISHIRO, ICE_SPIKE, MODE_ATTACK, SCATTER -> 0;
-			case HAKUREN, MODE_BARRIER, HAKUTEIKEN -> 1;
-			case SHIRAFUNE, SENKEI, CAGE -> 2;
+			case TSUKISHIRO, ICE_SPIKE, MODE_ATTACK, SCATTER, IKOROSE, BUTOU_RENJIN, HEILIG_PFEIL, LICHT_REGEN -> 0;
+			case HAKUREN, MODE_BARRIER, HAKUTEIKEN, HYAPPONZASHI, KOROSE, SPRENGER, HOMING_VOLLEY -> 1;
+			case SHIRAFUNE, SENKEI, CAGE, SNAKE_HOOK, HAKUFUKU, HIRENKYAKU, STERNENSTAUB -> 2;
 		};
 	}
 
