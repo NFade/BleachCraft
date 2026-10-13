@@ -92,6 +92,7 @@ final class CastContext {
 		double range = switch (ability) {
 			case SHIRAFUNE, HAKUTEIKEN, ICE_SPIKE -> spec.num(AbilityParams.LENGTH);
 			case MODE_ATTACK, SCATTER, CAGE -> spec.num(AbilityParams.AIM_RANGE);
+			case IKOROSE, SNAKE_HOOK, BUTOU_RENJIN, KOROSE -> spec.num(AbilityParams.LENGTH); // Gin hitscan lines, like Shirafune
 			case SPRENGER -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RANGE; // Uryu: aimed ground point
 			case LICHT_REGEN -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_RANGE;
 			default -> 0.0;
@@ -131,6 +132,8 @@ final class CastContext {
 				size2 = spec.floatNum(AbilityParams.HALF_WIDTH);
 			}
 			case SHIRAFUNE -> size = spec.floatNum(AbilityParams.LENGTH);
+			case IKOROSE, SNAKE_HOOK, BUTOU_RENJIN, KOROSE -> size = spec.floatNum(AbilityParams.LENGTH); // Gin: the strike has its own event
+			case HYAPPONZASHI -> size = spec.floatNum(AbilityParams.RADIUS);
 			case ICE_SPIKE -> size = spec.floatNum(AbilityParams.LENGTH);
 			case SCATTER -> {
 				size = spec.floatNum(AbilityParams.RADIUS);

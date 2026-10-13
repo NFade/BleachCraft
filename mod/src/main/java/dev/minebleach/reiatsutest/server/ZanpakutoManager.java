@@ -79,6 +79,8 @@ public final class ZanpakutoManager {
 	private static final PhaseScheduler SCHEDULER = new PhaseScheduler();
 	private static MinecraftServer server;
 	private static boolean reentrantDamage;
+	/** Set by {@link GinManager} around the Korose dissolve (poison, not a hit): the damage skips the sword block and the Byakuya barrier below. */
+	static boolean bypassMitigation;
 
 	private ZanpakutoManager() {
 	}
@@ -127,6 +129,7 @@ public final class ZanpakutoManager {
 		BlockParry.init();
 		BladeFlights.init(); // after the tick registration above: the flight ticks after the scheduled landing phases
 		MeleeReiatsu.init();
+		GinManager.init(); // Gin: sliver registry, recast, cover (design/GIN.md)
 	}
 
 	// ------------------------------------------------------------------ sessions
@@ -284,6 +287,14 @@ public final class ZanpakutoManager {
 			ZanpakutoState st = s.sm.state();
 			reply(p, seq, ResultCode.DENIED_STATE);
 			return new TransitionResult(ResultCode.DENIED_STATE, dev.minebleach.reiatsutest.core.state.RejectReason.NOT_IN_STATE, st, st, List.of());
+		}
+		if (ability == AbilityId.KOROSE) {
+			// Gin: the second press of the same key is the free recast and never reaches the machine; null = a normal first cast
+			TransitionResult recast = GinManager.tryRecast(p, s);
+			if (recast != null) {
+				reply(p, seq, recast.code());
+				return recast;
+			}
 		}
 		CharacterId held = ModItems.characterOf(p.getMainHandStack());
 		TransitionResult r = s.sm.cast(new AbilityRequest(ability, source, seq, held));
@@ -480,7 +491,7 @@ public final class ZanpakutoManager {
 	// ------------------------------------------------------------------ barrier
 
 	private static boolean allowDamage(net.minecraft.entity.LivingEntity entity, DamageSource source, float amount) {
-		if (reentrantDamage || !(entity instanceof ServerPlayerEntity p)) {
+		if (reentrantDamage || bypassMitigation || !(entity instanceof ServerPlayerEntity p)) {
 			return true;
 		}
 		if (source.isIn(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -551,6 +562,7 @@ public final class ZanpakutoManager {
 		int fields = p.getServer() == null ? 0 : FrostField.endOf(p.getServer(), id, fast);
 		int phases = SCHEDULER.cancelIf(id, a -> a.requiredState == ZanpakutoState.BANKAI);
 		dev.minebleach.reiatsutest.server.uryu.UryuManager.onBankaiEnd(id); // Uryu: the barrage and the bankai arrows in the air stop
+		GinManager.onBankaiEnded(p, who, why); // Gin: slivers, channel, root, cover
 		ServerFx.bankaiEnd(p, who, why);
 		ReiatsuTest.LOGGER.info("[bankai-end] {} {} ended ({}): {} anchor(s), {} field anchor(s), territory {}, {} frost field(s) thawing{}, {} scheduled phase(s) dropped",
 				p.getName().getString(), who, why, anchors, fieldAnchors, territory ? "ended" : "-", fields, fast ? " fast" : "", phases);
