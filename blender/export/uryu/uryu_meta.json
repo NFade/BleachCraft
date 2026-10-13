@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "units": "m",
+  "space": "blender_zup",
+  "empties": {
+    "bow_grip_hand": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "bow_string_top": [
+      0.0,
+      0.105,
+      0.55
+    ],
+    "bow_string_bottom": [
+      0.0,
+      0.105,
+      -0.55
+    ],
+    "arrow_tip": [
+      0.0,
+      0.0,
+      0.5
+    ],
+    "seele_tip": [
+      0.001,
+      0.0,
+      0.3
+    ],
+    "cross_hang": [
+      0.0,
+      0.0,
+      0.06
+    ]
+  },
+  "objects": {
+    "uryu_cross": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "uryu_bow": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "uryu_bow_string": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "uryu_arrow": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "uryu_seele": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+{
+ "gin_shinso_sheathed": {
+  "src_verts": 332,
+  "src_faces": 260,
+  "src_quads": 228,
+  "imp_verts": 332,
+  "imp_faces": 260,
+  "obj_lines": {
+   "v": 332,
+   "vt": 105,
+   "vn": 204,
+   "f": 260,
+   "tris": 32,
+   "quads": 228,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.6566128730773926e-07,
+  "src_bbox": [
+   [
+    -0.024,
+    -0.0336,
+    0.0
+   ],
+   [
+    0.024,
+    0.0394,
+    0.668
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "gin_shinso": {
+  "src_verts": 266,
+  "src_faces": 221,
+  "src_quads": 193,
+  "imp_verts": 266,
+  "imp_faces": 221,
+  "obj_lines": {
+   "v": 266,
+   "vt": 97,
+   "vn": 159,
+   "f": 221,
+   "tris": 28,
+   "quads": 193,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.954636096954346e-07,
+  "src_bbox": [
+   [
+    -0.024,
+    -0.0336,
+    0.0
+   ],
+   [
+    0.024,
+    0.0336,
+    0.656
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "gin_shinso_saya": {
+  "src_verts": 144,
+  "src_faces": 108,
+  "src_quads": 96,
+  "imp_verts": 144,
+  "imp_faces": 108,
+  "obj_lines": {
+   "v": 144,
+   "vt": 41,
+   "vn": 104,
+   "f": 108,
+   "tris": 12,
+   "quads": 96,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.4330954551696777e-07,
+  "src_bbox": [
+   [
+    -0.0115,
+    -0.0195,
+    0.206
+   ],
+   [
+    0.0115,
+    0.0394,
+    0.668
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "gin_shinso_ray": {
+  "src_verts": 7,
+  "src_faces": 7,
+  "src_quads": 3,
+  "imp_verts": 7,
+  "imp_faces": 7,
+  "obj_lines": {
+   "v": 7,
+   "vt": 10,
+   "vn": 7,
+   "f": 7,
+   "tris": 4,
+   "quads": 3,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 7.078051567077637e-08,
+  "src_bbox": [
+   [
+    0.0,
+    -0.02,
+    0.0
+   ],
+   [
+    0.0035,
+    0.02,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ }
+}

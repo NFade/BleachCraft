@@ -1,0 +1,187 @@
+{
+ "uryu_cross": {
+  "src_verts": 26,
+  "src_faces": 30,
+  "src_quads": 6,
+  "imp_verts": 26,
+  "imp_faces": 30,
+  "obj_lines": {
+   "v": 26,
+   "vt": 4,
+   "vn": 26,
+   "f": 30,
+   "tris": 24,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 0.0,
+  "src_bbox": [
+   [
+    -0.008,
+    -0.04,
+    -0.06
+   ],
+   [
+    0.008,
+    0.04,
+    0.06
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "uryu_bow": {
+  "src_verts": 50,
+  "src_faces": 54,
+  "src_quads": 42,
+  "imp_verts": 50,
+  "imp_faces": 54,
+  "obj_lines": {
+   "v": 50,
+   "vt": 68,
+   "vn": 54,
+   "f": 54,
+   "tris": 12,
+   "quads": 42,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.8777867555618286e-07,
+  "src_bbox": [
+   [
+    -0.018,
+    -0.01,
+    -0.55
+   ],
+   [
+    0.018,
+    0.105,
+    0.55
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "uryu_bow_string": {
+  "src_verts": 8,
+  "src_faces": 2,
+  "src_quads": 2,
+  "imp_verts": 8,
+  "imp_faces": 2,
+  "obj_lines": {
+   "v": 8,
+   "vt": 4,
+   "vn": 2,
+   "f": 2,
+   "tris": 0,
+   "quads": 2,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.470348358154297e-08,
+  "src_bbox": [
+   [
+    -0.0025,
+    0.1025,
+    -0.55
+   ],
+   [
+    0.0025,
+    0.1075,
+    0.55
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "uryu_arrow": {
+  "src_verts": 45,
+  "src_faces": 21,
+  "src_quads": 9,
+  "imp_verts": 45,
+  "imp_faces": 21,
+  "obj_lines": {
+   "v": 45,
+   "vt": 13,
+   "vn": 13,
+   "f": 21,
+   "tris": 12,
+   "quads": 9,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.019915872926049e-09,
+  "src_bbox": [
+   [
+    -0.04,
+    -0.04,
+    0.0
+   ],
+   [
+    0.04,
+    0.04,
+    0.5
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "uryu_seele": {
+  "src_verts": 18,
+  "src_faces": 12,
+  "src_quads": 8,
+  "imp_verts": 18,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 18,
+   "vt": 3,
+   "vn": 10,
+   "f": 12,
+   "tris": 4,
+   "quads": 8,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 5.587935447692871e-09,
+  "src_bbox": [
+   [
+    0.0,
+    -0.028,
+    0.0
+   ],
+   [
+    0.0055,
+    0.028,
+    0.3
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ }
+}
