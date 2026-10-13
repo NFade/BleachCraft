@@ -40,6 +40,10 @@ public final class FxEvents {
 			KidoFx.play(client, e);
 			return;
 		}
+		if (UryuFx.handles(id)) {
+			UryuFx.play(client, e);
+			return;
+		}
 		if (id == 30 || id == 31) {
 			ReiatsuTest.LOGGER.info("[fx] effect_event id={} caster={} seed={}", id, e.casterId(), e.seed());
 			handled++;

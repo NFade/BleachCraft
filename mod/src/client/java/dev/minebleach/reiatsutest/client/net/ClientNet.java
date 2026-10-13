@@ -49,6 +49,8 @@ public final class ClientNet {
 		});
 		ClientPlayNetworking.registerGlobalReceiver(dev.minebleach.reiatsutest.net.SwarmHeadS2C.ID,
 				(payload, ctx) -> dev.minebleach.reiatsutest.client.fx.SwarmFx.onHead(payload));
+		ClientPlayNetworking.registerGlobalReceiver(dev.minebleach.reiatsutest.net.UryuArrowsS2C.ID,
+				(payload, ctx) -> dev.minebleach.reiatsutest.client.fx.UryuFx.onArrows(payload));
 		ClientPlayNetworking.registerGlobalReceiver(EntityFxS2C.ID, (payload, ctx) -> {
 			ENTITY_FX.incrementAndGet();
 			if (payload.kind() == EntityFxS2C.HIT_PETAL) {
