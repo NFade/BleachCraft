@@ -533,6 +533,18 @@ public final class StateMachine {
 		return ev;
 	}
 
+	/**
+	 * Glue seam for abilities that end their own cooldown (Gin's Korose recast, design/GIN.md section 4): the cooldown of {@code a} is exactly
+	 * {@code ticks} from now ({@code <= 0} clears it). Optional and generic: nothing in the machine calls it, so no other ability changes.
+	 */
+	public void setCooldown(AbilityId a, int ticks) {
+		if (ticks <= 0) {
+			cooldownEnd.remove(a);
+		} else {
+			cooldownEnd.put(a, clock.nowTick() + ticks);
+		}
+	}
+
 	public void devClearCooldowns() {
 		cooldownEnd.clear();
 		kidoCooldownEnd.clear();

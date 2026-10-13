@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.core.state;
 
+import dev.minebleach.reiatsutest.core.gin.GinParams;
 import dev.minebleach.reiatsutest.core.reiatsu.Rate;
 import java.util.EnumMap;
 import java.util.List;
@@ -167,17 +168,33 @@ public record BalanceConfig(
 		// ---- Gin and Uryu (design/GIN.md, design/URYU.md): registration skeleton, first-guess cost and cooldown only, one phase at tick 0 (stub executors);
 		// area, damage and timing numbers come with the gameplay steps
 		// Gin shikai Z: 10 reiatsu, 4 s
-		a.put(AbilityId.IKOROSE, new AbilitySpec(AbilityId.IKOROSE, 100, 80, 62, true, List.of(0)));
+		a.put(AbilityId.IKOROSE, new AbilitySpec(AbilityId.IKOROSE, 100, 80, 62, true, List.of(0), p(
+				AbilityParams.LENGTH, 14.0, AbilityParams.HALF_WIDTH, 0.3, AbilityParams.DAMAGE, 5.0, AbilityParams.KNOCKBACK, 1.5,
+				GinParams.ROOT_TICKS, 8, GinParams.ROOT_AMP, 3)));
 		// Gin shikai H: 18 reiatsu, 9 s
-		a.put(AbilityId.HYAPPONZASHI, new AbilitySpec(AbilityId.HYAPPONZASHI, 180, 180, 63, true, List.of(0)));
+		// phase 0 = the root starts (1.0 s wind-up), phases 1..8 = the eight 15 degree slices of the sweep, one every 2 ticks (0.8 s), then 0.5 s recovery
+		a.put(AbilityId.HYAPPONZASHI, new AbilitySpec(AbilityId.HYAPPONZASHI, 180, 180, 63, true, List.of(0, 20, 22, 24, 26, 28, 30, 32, 34), p(
+				AbilityParams.RADIUS, 8.0, GinParams.ARC_DEGREES, 120.0, GinParams.ARC_HEIGHT, 2.5, AbilityParams.DAMAGE, 3.0, AbilityParams.MAX_TARGETS, 8,
+				GinParams.ROOT_TICKS, 46, GinParams.ROOT_AMP, 3)));
 		// Gin shikai B: 12 reiatsu, 8 s
-		a.put(AbilityId.SNAKE_HOOK, new AbilitySpec(AbilityId.SNAKE_HOOK, 120, 160, 64, true, List.of(0)));
+		a.put(AbilityId.SNAKE_HOOK, new AbilitySpec(AbilityId.SNAKE_HOOK, 120, 160, 64, true, List.of(0), p(
+				AbilityParams.LENGTH, 16.0, AbilityParams.HALF_WIDTH, 0.3, AbilityParams.DAMAGE, 2.0, GinParams.STOP_SHORT, 1.5,
+				GinParams.PULL_SPEED, 0.9, GinParams.PULL_TICKS, 30)));
 		// Gin bankai Z: 28 reiatsu, 14 s
-		a.put(AbilityId.BUTOU_RENJIN, new AbilitySpec(AbilityId.BUTOU_RENJIN, 280, 280, 65, true, List.of(0)));
+		// 8 thrusts over 1.0 s (phase = thrust), rooted 1.2 s from the first one
+		a.put(AbilityId.BUTOU_RENJIN, new AbilitySpec(AbilityId.BUTOU_RENJIN, 280, 280, 65, true, List.of(0, 3, 5, 8, 10, 13, 15, 18), p(
+				AbilityParams.LENGTH, 24.0, AbilityParams.HALF_WIDTH, 0.3, AbilityParams.DAMAGE, 1.5, GinParams.ROOT_TICKS, 24, GinParams.ROOT_AMP, 3)));
 		// Gin bankai H, press 1 (the recast is free; the 30 s cooldown after the dissolve comes in step 2): 25 reiatsu, 12 s
-		a.put(AbilityId.KOROSE, new AbilitySpec(AbilityId.KOROSE, 250, 240, 66, true, List.of(0)));
+		// press 1 = this row (line 48, 9 HP, sliver 12 s, only if the thrust really deals sliverMinHp). Press 2 = the free recast: 1.5 s channel, 18 HP
+		// dissolve; the cooldown is 12 s after press 1 (cooldown field), 30 s after the dissolve, 15 s after an interrupted channel
+		a.put(AbilityId.KOROSE, new AbilitySpec(AbilityId.KOROSE, 250, 240, 66, true, List.of(0), p(
+				AbilityParams.LENGTH, 48.0, AbilityParams.HALF_WIDTH, 0.3, AbilityParams.DAMAGE, 9.0,
+				GinParams.SLIVER_TICKS, 240, GinParams.SLIVER_MIN_HP, 1.0, GinParams.RECAST_RANGE, 64.0, GinParams.CHANNEL_TICKS, 30,
+				GinParams.DISSOLVE_DAMAGE, 18.0, GinParams.COOLDOWN_DISSOLVE, 600, GinParams.COOLDOWN_INTERRUPT, 300,
+				GinParams.INTERRUPT_HP, 4.0, GinParams.PUSH_LIMIT, 0.9, GinParams.INTERRUPT_KEEPS_MARK, 0, GinParams.ROOT_AMP, 3)));
 		// Gin bankai B: 15 reiatsu, 18 s
-		a.put(AbilityId.HAKUFUKU, new AbilitySpec(AbilityId.HAKUFUKU, 150, 360, 67, true, List.of(0)));
+		a.put(AbilityId.HAKUFUKU, new AbilitySpec(AbilityId.HAKUFUKU, 150, 360, 67, true, List.of(0), p(
+				AbilityParams.DAMAGE, 0.0, GinParams.HIDE_TICKS, 60, GinParams.FLASH_TICKS, 80))); // no damage and no damage bonus (open question 1)
 		// Uryu shikai Z: 12 reiatsu, 3 s
 		a.put(AbilityId.HEILIG_PFEIL, new AbilitySpec(AbilityId.HEILIG_PFEIL, 120, 60, 72, true, List.of(0)));
 		// Uryu shikai H: 25 reiatsu, 14 s
