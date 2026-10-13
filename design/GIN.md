@@ -39,7 +39,7 @@ Merged-pair rule: "mark" and "kill" are ONE ability with a recast, not two slots
 - **Renjin refreshes the sliver:** a marked target hit by Renjin gets the sliver timer reset to 12 s. Keeps the mark alive in a long fight.
 - **Barrier (Byakuya):** the thrust and Renjin are cut by 80 percent; the sliver is placed only if the thrust deals at least 1 HP after the cut; the dissolve ignores the barrier.
 - **Frost field (Rukia bankai):** Gin fights at range, the slow hurts him little; Snake Hook is his escape.
-- **With Uryū:** a target trapped by Sprenger is rooted, ideal for the channel. Federzwinger silences casting, so it also stops a Korose recast (see URYU.md).
+- **With Uryū:** a target trapped by Sprenger is rooted, ideal for the channel.
 
 ## 6. Technical notes
 - Hitscan: reuse `Targeting.segment` and `firstOnRay` (as Shirafune), no projectile entity.

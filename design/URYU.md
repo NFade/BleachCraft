@@ -7,7 +7,7 @@ Branch `gin-uryu`. Status: DRAFT. Numbers are first guesses; tune after the numb
 - **Trajectory control:** he can curve arrows after firing (up to 3 at once). **Projectile negation:** an arrow charged enough cancels an incoming projectile on impact.
 - **Hirenkyaku** (Quincy flash step, also a Reishi platform under the feet). **Blut Vene** (defensive, durability) and **Blut Arterie** (offensive, damage to a bankai-wielder). **Seele Schneider** (Reishi blade/dagger, used as a sword).
 - **Sprenger:** five Seele Schneider make a pentagon seal; the fifth binds the legs of whoever stands inside; after the charging time a massive explosion inside the borders. Impractical in a fight without a partner to stall.
-- **Quincy: Vollständig** (two sharp wings, flight). **Flechettes:** a swarm of flechette-shaped Heilig Pfeil under his control (like Senbonzakura), usable to hit, to bind, to wrap in a cage and detonate. **Composite Heilig Pfeil / Sternenstaub** (a giant arrow made of flechettes, clashed with a Getsuga). **Federzwinger:** five rods fall around the target forming a pentagonal cage that drains Reiatsu; a shinigami inside cannot use shikai or bankai. **Licht Regen:** a near-instant barrage of Heilig Pfeil. **Reishi Trap:** markings that fire arrows when the enemy passes. **Antithesis** (his Schrift) is NOT used (too large and too abstract).
+- **Quincy: Vollständig** (two sharp wings, flight). **Flechettes:** a swarm of flechette-shaped Heilig Pfeil under his control (like Senbonzakura), usable to hit, to bind, to wrap in a cage and detonate. **Composite Heilig Pfeil / Sternenstaub** (a giant arrow made of flechettes, clashed with a Getsuga). **Federzwinger** (a draining cage) exists in canon but is deliberately NOT used. **Licht Regen:** a near-instant barrage of Heilig Pfeil. **Reishi Trap:** markings that fire arrows when the enemy passes. **Antithesis** (his Schrift) is NOT used (too large and too abstract).
 
 ## 2. Identity and balance rule
 Marksman: the highest per-hit damage at range, but only if he stands still. No self-heal. Weak defense (the only defence is distance and a short Blut Vene window). The price of power is exposure: the strongest shots need Focus, which the movement erases.
@@ -33,25 +33,25 @@ Graph SEALED -> BASE -> SHIKAI -> BANKAI as for the others, same keys. Canon-bas
 | H | SHIKAI | **Sprenger** | Aimed ground point within 20: five Seele Schneider land in a pentagon, radius 3. At 0.8 s the legs of everyone inside are bound (Slowness V, no jump) for 2 s. At 2.0 s the pentagon explodes: 9 HP in the whole area. **A fully focused arrow (3 stacks) that hits the pentagon detonates it at once, with +50 percent.** Gin-style counter: leaving before 0.8 s. | 25 | 14 s |
 | B | SHIKAI | **Hirenkyaku** | A fast dash 8 blocks in the look direction (server velocity, not a teleport), stays above any pit for 0.6 s (a Reishi platform: blocks are NOT placed, the fall is cancelled). Sets Focus to 0. | 10 | 6 s |
 | Z | BANKAI | **Licht Regen** | Aimed point within 28: 12 arrows fall over 1.2 s inside radius 4, each 1.2 HP, armor ignored, the caster is safe. Can be cast while moving, so it is the answer to no Focus. | 28 | 16 s |
-| H | BANKAI | **Federzwinger** | A projectile (the rods) at an aimed enemy: on a hit, a 3 s pentagonal cage around the target: **drains 30 Reiatsu and silences the target: no ability cast, no release, no shunpo for 3 s** (they can still swing the sword and move). Does not work through a Byakuya barrier. Cooldown applies at half if it misses. | 40 | 35 s |
+| H | BANKAI | **Homing Volley** (non-canon name, canon idea: trajectory control) | Locks the first living target in a cone of 15 degrees up to 30 blocks at the cast, fires **3 + Focus stacks** arrows (consumes the stacks, max 6). Each arrow curves toward the target (turn rate 12 degrees per tick), 1.5 s of life, 3 HP each, blocked by terrain, i-frames reset per arrow. Dodged by breaking line of sight or by a sword block per arrow. Total 9 to 18 HP. | 30 | 16 s |
 | B | BANKAI | **Sternenstaub** | A giant arrow (needs Focus 3, consumes it). Line, length 40, width 2, pierces all: 20 HP to the first, 12 HP to the following. Clashes with and cancels an enemy beam (Hakuteiken) of lower damage on contact. | 50 | 40 s |
 
-Merged-pair rule: Sprenger is one slot (trap + detonation), not two. Federzwinger already merges "drain" and "silence".
+Merged-pair rule: Sprenger is one slot (trap + detonation), not two.
 
 ## 6. Interactions
 - **Sprenger + focused arrow:** the main skill combo (see above). 3 stacks need 2.1 s of standing still next to your own trap, which is the exposed moment.
-- **Federzwinger + Gin Korose recast:** a silenced Gin cannot recast Korose; a silenced Rukia cannot cast ability or release.
-- **Federzwinger vs Byakuya:** the barrier absorbs the projectile (no cage); Sprenger and Licht Regen are cut 80 percent while it is up.
+- **Homing Volley + Focus:** every Focus stack adds an arrow, so standing still before the volley is rewarded; the volley itself can be cast while moving, but then it is only 3 arrows.
+- **Vs Byakuya:** the barrier cuts Sprenger, Licht Regen and the Homing Volley by 80 percent while it is up; the arrows are consumed by it.
 - **Projectile negation (stretch goal):** a fully focused arrow that hits an enemy projectile entity cancels it. Only meaningful if the mod has projectile entities; Rukia/Byakuya are mostly hitscan or area, so it is not in v1.
 
 ## 7. Technical notes
 - The mod has no ability projectile yet (verify in the survey): add a minimal **server-simulated projectile** (a list of (pos, vel, owner, damage, expire) stepped per tick, no new entity type), drawn by the client from effect packets. Reuse `Targeting` for the hit tests.
-- New mechanisms, added without editing Rukia or Byakuya: Focus counter (per player, server), pentagon area task, silence status (a tick-based map checked at cast time for any character), reiatsu drain on a target player.
+- New mechanisms, added without editing Rukia or Byakuya: Focus counter (per player, server), pentagon area task, a homing arrow stepper (turn-rate limited steering inside the projectile list).
 - Item and models: `uryu_cross` (SEALED), `uryu_bow` (BASE, SHIKAI, BANKAI), Seele Schneider mini-model, wings (existing wing code of Hakuteiken first person may be reused), arrow tip. Blender models later.
-- Voice phrases: "Heilig Bogen" (draw), "Blut Arterie" (release), "Quincy: Vollständig" (bankai), "Licht Regen", "Sprenger", "Federzwinger", "Sternenstaub".
-- Tests: pure-core: Focus rules, the projectile stepping, the silence rules, damage numbers.
+- Voice phrases: "Heilig Bogen" (draw), "Blut Arterie" (release), "Quincy: Vollständig" (bankai), "Licht Regen", "Sprenger", "Homing Volley" (name to be decided), "Sternenstaub".
+- Tests: pure-core: Focus rules, the projectile and homing stepping, damage numbers.
 
 ## 8. Open questions for the user
 1. Is Focus (stand still to build power) the wanted unique mechanic, or charges/ammo?
-2. Silence of 3 s plus 30 Reiatsu drain (Federzwinger): wanted on players, or too strong for the first version?
+2. Homing Volley: is 3 + Focus arrows at 3 HP right, or should the homing be weaker so Sternenstaub stays the burst button?
 3. Short glide in bankai instead of full flight: OK?
