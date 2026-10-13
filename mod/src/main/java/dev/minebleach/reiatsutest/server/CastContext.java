@@ -92,6 +92,8 @@ final class CastContext {
 		double range = switch (ability) {
 			case SHIRAFUNE, HAKUTEIKEN, ICE_SPIKE -> spec.num(AbilityParams.LENGTH);
 			case MODE_ATTACK, SCATTER, CAGE -> spec.num(AbilityParams.AIM_RANGE);
+			case SPRENGER -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RANGE; // Uryu: aimed ground point
+			case LICHT_REGEN -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_RANGE;
 			default -> 0.0;
 		};
 		Vec3d aim = range > 0 ? Targeting.rayPoint(p, eye, dir, range) : p.getPos();
@@ -138,6 +140,19 @@ final class CastContext {
 				size = spec.floatNum(AbilityParams.LENGTH);
 				// S4: the length of the server ray really used (the white line ends exactly at the server burst)
 				size2 = (float) HakuteikenAim.reach(size, eye.distanceTo(aim));
+			}
+			case SPRENGER -> { // Uryu: radius, seconds to the explosion
+				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RADIUS;
+				size2 = dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_EXPLODE_AT / 20f;
+			}
+			case LICHT_REGEN -> { // radius, seconds of the barrage
+				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_RADIUS;
+				size2 = dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_TICKS / 20f;
+			}
+			case HIRENKYAKU -> size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.DASH_BLOCKS;
+			case STERNENSTAUB -> {
+				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.STAR_LENGTH;
+				size2 = (float) (dev.minebleach.reiatsutest.core.uryu.UryuBalance.STAR_HALF_WIDTH * 2.0);
 			}
 			default -> size = 0f;
 		}

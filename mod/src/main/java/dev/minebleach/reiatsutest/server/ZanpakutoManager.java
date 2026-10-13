@@ -279,6 +279,12 @@ public final class ZanpakutoManager {
 			return new TransitionResult(ResultCode.DENIED_STATE, dev.minebleach.reiatsutest.core.state.RejectReason.NOT_IN_STATE, st, st,
 					List.of());
 		}
+		if (!dev.minebleach.reiatsutest.server.uryu.UryuManager.allowsCast(p, ability)) {
+			// Uryu: Sternenstaub needs a full Focus; refused before the machine charges anything
+			ZanpakutoState st = s.sm.state();
+			reply(p, seq, ResultCode.DENIED_STATE);
+			return new TransitionResult(ResultCode.DENIED_STATE, dev.minebleach.reiatsutest.core.state.RejectReason.NOT_IN_STATE, st, st, List.of());
+		}
 		CharacterId held = ModItems.characterOf(p.getMainHandStack());
 		TransitionResult r = s.sm.cast(new AbilityRequest(ability, source, seq, held));
 		ReiatsuTest.LOGGER.info("[reiatsu] {} cast {} (held {}, {}): {} {}", p.getName().getString(), ability, held, source,
@@ -544,6 +550,7 @@ public final class ZanpakutoManager {
 		boolean territory = BankaiField.end(id);
 		int fields = p.getServer() == null ? 0 : FrostField.endOf(p.getServer(), id, fast);
 		int phases = SCHEDULER.cancelIf(id, a -> a.requiredState == ZanpakutoState.BANKAI);
+		dev.minebleach.reiatsutest.server.uryu.UryuManager.onBankaiEnd(id); // Uryu: the barrage and the bankai arrows in the air stop
 		ServerFx.bankaiEnd(p, who, why);
 		ReiatsuTest.LOGGER.info("[bankai-end] {} {} ended ({}): {} anchor(s), {} field anchor(s), territory {}, {} frost field(s) thawing{}, {} scheduled phase(s) dropped",
 				p.getName().getString(), who, why, anchors, fieldAnchors, territory ? "ended" : "-", fields, fast ? " fast" : "", phases);

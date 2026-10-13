@@ -39,6 +39,7 @@ public class ReiatsuTest implements ModInitializer {
 		VoiceControl.init();
 		dev.minebleach.reiatsutest.server.RukiaServerFx.init();
 		dev.minebleach.reiatsutest.server.FrostField.init();
+		dev.minebleach.reiatsutest.server.uryu.UryuManager.init();
 		LOGGER.info("registered items {}, {}, {} (component {}), attachments and payloads",
 				ModItems.SODE_NO_SHIRAYUKI, ModItems.SENBONZAKURA, ModItems.SPIKE_ITEM, ModComponents.RELEASE_STATE);
 	}

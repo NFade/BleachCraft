@@ -18,9 +18,19 @@ public class UryuCrossItem extends ZanpakutoItem {
 		super(settings, character);
 	}
 
+	/**
+	 * Right click = the Heilig Pfeil basic shot (design section 4; first version: an instant shot with a 1 s pause, no draw time).
+	 * Server side only; the shot itself, its Focus and its cooldown are in {@code UryuManager.basicShot}. Does nothing while the cross is
+	 * sealed (the manager refuses) and never blocks.
+	 */
 	@Override
 	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-		return TypedActionResult.pass(user.getStackInHand(hand));
+		ItemStack stack = user.getStackInHand(hand);
+		if (!world.isClient && hand == Hand.MAIN_HAND && user instanceof net.minecraft.server.network.ServerPlayerEntity sp
+				&& dev.minebleach.reiatsutest.server.uryu.UryuManager.basicShot(sp)) {
+			return TypedActionResult.success(stack);
+		}
+		return TypedActionResult.pass(stack);
 	}
 
 	@Override
