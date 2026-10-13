@@ -37,13 +37,18 @@ class AnchorPlanTest {
 	}
 
 	@Test
-	void sealAndBankaiEndRemoveEverything() {
-		for (int id : new int[] {10, 11}) {
-			List<Command> c = AnchorPlan.forEffect(id);
-			assertTrue(c.stream().anyMatch(x -> x.op() == Op.END_SWARM));
-			assertTrue(c.stream().anyMatch(x -> x.op() == Op.END_ROWS));
-		}
+	void sealRemovesEverything() {
+		List<Command> c = AnchorPlan.forEffect(10);
+		assertTrue(c.stream().anyMatch(x -> x.op() == Op.END_SWARM));
+		assertTrue(c.stream().anyMatch(x -> x.op() == Op.END_ROWS));
 		assertEquals(2, AnchorPlan.forReset().size());
+	}
+
+	@Test
+	void bankaiEndBroadcastKeepsTheSwarm() {
+		// effect 11 (BANKAI_END) is sent when the bankai falls back to SHIKAI: the petals around the owner must survive it (user report, r8)
+		List<Command> c = AnchorPlan.forEffect(11);
+		assertEquals(List.of(new Command(Op.END_ROWS, (byte) 0)), c);
 	}
 
 	@Test

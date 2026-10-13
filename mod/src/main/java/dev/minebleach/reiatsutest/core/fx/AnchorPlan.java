@@ -37,7 +37,9 @@ public final class AnchorPlan {
 			case 3 -> List.of(Command.of(Op.END_SWARM), Command.of(Op.END_ROWS), Command.of(Op.SPAWN_SWARM));
 			// r7: the petal swarm of the shikai and the big bankai blades are two different effects: the swarm stays through the bankai, only the rows are (re)spawned
 			case 4 -> List.of(Command.of(Op.END_ROWS), Command.of(Op.SPAWN_ROWS));
-			case 10, 11 -> List.of(Command.of(Op.END_SWARM), Command.of(Op.END_ROWS));
+			case 10 -> List.of(Command.of(Op.END_SWARM), Command.of(Op.END_ROWS));
+			// r8 fix: id 11 is the BANKAI END broadcast (the bankai falls back to SHIKAI): only the big blades end, the petal swarm around the owner goes on
+			case 11 -> List.of(Command.of(Op.END_ROWS));
 			case 32 -> List.of(new Command(Op.ROWS_PHASE, PHASE_SCATTERED));
 			case 33 -> List.of(new Command(Op.ROWS_PHASE, PHASE_CONSUMED));
 			default -> List.of();

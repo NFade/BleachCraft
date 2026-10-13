@@ -18,7 +18,10 @@ public final class SealFx {
 	public static void play(EffectEventS2C e) {
 		int id = e.effectId();
 		boolean end = id == 11;
-		SwarmFx.end(e.casterId());
+		// r8 fix: id 11 is the bankai end (back to SHIKAI): the petal swarm around the owner and the shikai aura go on, only the big blades end
+		if (!end) {
+			SwarmFx.end(e.casterId());
+		}
 		RowsFx.end(e.casterId());
 		CharacterId ch = AuraFx.lastCharacter(e.casterId());
 		boolean rukia = ch != CharacterId.BYAKUYA;
@@ -27,7 +30,9 @@ public final class SealFx {
 		String tint = rukia ? "#CFEFFF" : "#F9C8F6";
 		String ringTint = FxTune.s("seal.ringTint", rukia ? "#8CCBF2" : "#E8A0F0");
 		t.at(0.0, x -> {
-			AuraFx.dissolve(e.casterId());
+			if (!end) {
+				AuraFx.dissolve(e.casterId());
+			}
 			collapse(x, rukia, tint, ringTint, end);
 			if (end) {
 				x.sound("block.beacon.deactivate", 0.6, 0.7);

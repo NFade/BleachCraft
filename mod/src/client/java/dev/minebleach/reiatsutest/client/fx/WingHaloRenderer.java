@@ -2,11 +2,13 @@ package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.HakuteikenCurves;
+import dev.minebleach.reiatsutest.core.fx.HakuteikenFirstPerson;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BuiltBuffer;
+import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderPhase;
@@ -42,6 +44,98 @@ public final class WingHaloRenderer {
 	private static final float[] M = new float[9];
 	private static final double[] TMP = new double[3];
 	private static final double[] W = new double[3];
+	/** First-person guard of the local camera (see {@link FpView}). */
+	private static final FpView FP = new FpView();
+
+	/**
+	 * First-person guard (core: {@link HakuteikenFirstPerson}). Only for the owner seen from his own first-person camera: the wings, halo and
+	 * their glows hang off the body yaw limited to a few degrees around the camera yaw, a little further back, and fade out by their depth
+	 * along the view. Third person and the views of other players use the pose as it is. Tunables: {@code hak.fpGuard} (0 = off),
+	 * {@code hak.fpYawMax} degrees, {@code hak.fpBack} metres, {@code hak.fpClear} / {@code hak.fpFull} metres of view depth; reduce motion and
+	 * photosensitive safe halve the yaw limit and widen the fade.
+	 */
+	private static final class FpView {
+		boolean enabled;
+		boolean on;
+		double cx;
+		double cy;
+		double cz;
+		double camYaw;
+		double yawMax;
+		double back;
+		double clear;
+		double full;
+		final double[] fwd = new double[3];
+		final HakuteikenFx.Pose rig = new HakuteikenFx.Pose();
+
+		void begin(Camera cam) {
+			on = false;
+			enabled = cam != null && cam.isReady() && !cam.isThirdPerson() && FxTune.d("hak.fpGuard", 1.0) > 0.5;
+			if (!enabled) {
+				return;
+			}
+			Vec3d p = cam.getPos();
+			cx = p.x;
+			cy = p.y;
+			cz = p.z;
+			camYaw = Math.toRadians(cam.getYaw());
+			HakuteikenFirstPerson.forward(camYaw, Math.toRadians(cam.getPitch()), fwd);
+			boolean gentle = FxConfig.reduceMotion || FxConfig.photosensitiveSafe;
+			yawMax = HakuteikenFirstPerson.yawLimit(FxTune.d("hak.fpYawMax", HakuteikenFirstPerson.YAW_MAX_DEG), gentle);
+			back = Math.max(0.0, FxTune.d("hak.fpBack", HakuteikenFirstPerson.BACK));
+			clear = FxTune.d("hak.fpClear", HakuteikenFirstPerson.CLEAR);
+			full = FxTune.d("hak.fpFull", HakuteikenFirstPerson.FULL) * (gentle ? 1.3 : 1.0);
+		}
+
+		/** The pose the rig of this state is drawn with: the limited one for the first-person view of its owner, else the pose itself. */
+		HakuteikenFx.Pose rigFor(HakuteikenFx.State st, Camera cam, HakuteikenFx.Pose pose) {
+			on = enabled && cam.getFocusedEntity() != null && cam.getFocusedEntity().getId() == st.ownerId;
+			if (!on) {
+				return pose;
+			}
+			double yaw = HakuteikenFirstPerson.limitYaw(pose.yaw, camYaw, yawMax);
+			rig.yaw = yaw;
+			rig.sin = Math.sin(yaw);
+			rig.cos = Math.cos(yaw);
+			// pushed back along the rig's own backwards axis (forward is (-sin, cos))
+			rig.fx = pose.fx + rig.sin * back;
+			rig.fy = pose.fy;
+			rig.fz = pose.fz - rig.cos * back;
+			rig.lx = pose.lx;
+			rig.ly = pose.ly;
+			rig.lz = pose.lz;
+			rig.hx = pose.hx;
+			rig.hy = pose.hy;
+			rig.hz = pose.hz;
+			rig.eyeHeight = pose.eyeHeight;
+			return rig;
+		}
+
+		/** Opacity factor of a world point: 1 away from the guard, else by its depth along the view. */
+		double fade(double x, double y, double z) {
+			return on ? HakuteikenFirstPerson.fade(HakuteikenFirstPerson.depth(x, y, z, cx, cy, cz, fwd), clear, full) : 1.0;
+		}
+	}
+
+	/**
+	 * For the shed and falling feathers ({@link HakuteikenFx#frame}): the pose the wings are drawn with right now, so the feathers come off the
+	 * wings that are seen; in the first-person view of the owner that is the guarded rig.
+	 */
+	public static HakuteikenFx.Pose guardedPose(HakuteikenFx.State st, HakuteikenFx.Pose pose) {
+		Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+		FP.begin(camera);
+		return FP.rigFor(st, camera, pose);
+	}
+
+	/** True when a point lies so near the first-person eye that the guard hides it (valid after {@link #guardedPose}); a feather born there is not spawned. */
+	public static boolean guardHides(double x, double y, double z) {
+		return FP.on && FP.fade(x, y, z) < 0.05;
+	}
+
+	private static int scaleAlpha(int argb, double k) {
+		int a = (int) (((argb >>> 24) & 0xFF) * Math.max(0.0, Math.min(1.0, k)) + 0.5);
+		return (a << 24) | (argb & 0xFFFFFF);
+	}
 
 	/** Stats for the harness. */
 	public static double lastMs;
@@ -120,6 +214,8 @@ public final class WingHaloRenderer {
 		ClientWorld world = ctx.world();
 		Vec3d cp = ctx.camera().getPos();
 		float td = ctx.tickCounter().getTickDelta(true);
+		Camera camera = ctx.camera();
+		FP.begin(camera);
 		BufferBuilder solidBuf = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 		if (addTess == null) {
 			addTess = new Tessellator(1 << 17);
@@ -136,6 +232,7 @@ public final class WingHaloRenderer {
 				continue;
 			}
 			HakuteikenFx.pose(st, world, td, pose);
+			HakuteikenFx.Pose rp = FP.rigFor(st, camera, pose);
 			double dist = cp.distanceTo(new Vec3d(pose.fx, pose.fy, pose.fz));
 			if (dist > 160) {
 				continue;
@@ -149,9 +246,9 @@ public final class WingHaloRenderer {
 				double ripple = FxTune.d("hak.ripple", 1.0);
 				for (int side = 1; side >= -1; side -= 2) {
 					FxMesh wm = side == 1 ? wingL : wingR;
-					quads += writeWing(solidBuf, wm, side, pose, tm, t, tv, fan, wingScale, 1.0, tint, FxTune.d("hak.wingAlpha", 1.0), ripple, cp);
+					quads += writeWing(solidBuf, wm, side, rp, tm, t, tv, fan, wingScale, 1.0, tint, FxTune.d("hak.wingAlpha", 1.0), ripple, cp);
 					if (FxConfig.fxTier != FxConfig.TierSetting.LOW) {
-						quads += writeWing(addBuf, wm, side, pose, tm, t, tv, fan, wingScale, FxTune.d("hak.overglowScale", 1.06), tintGlow, FxTune.d("hak.overglowAlpha", 0.35), ripple,
+						quads += writeWing(addBuf, wm, side, rp, tm, t, tv, fan, wingScale, FxTune.d("hak.overglowScale", 1.06), tintGlow, FxTune.d("hak.overglowAlpha", 0.35), ripple,
 								cp);
 					}
 				}
@@ -162,11 +259,11 @@ public final class WingHaloRenderer {
 				double hs = HakuteikenCurves.haloScale(tm, t) * FxTune.d("hak.haloScale", 1.0);
 				double[] hc = new double[3];
 				double top = pose.eyeHeight + FxTune.d("hak.headTop", 0.18) + FxTune.d("hak.haloUp", 0.35);
-				pose.local(0, top, -FxTune.d("hak.haloBack", 0.45), hc);
+				rp.local(0, top, -FxTune.d("hak.haloBack", 0.45), hc);
 				double spin = FxTune.d("hak.haloSpin", 0.25) * tv;
-				quads += writeHalo(solidBuf, pose, hc, hs, spin, argb(ha * FxTune.d("hak.haloAlpha", 1.0), tint), cp);
+				quads += writeHalo(solidBuf, rp, hc, hs, spin, argb(ha * FxTune.d("hak.haloAlpha", 1.0), tint), cp);
 				if (FxConfig.fxTier != FxConfig.TierSetting.LOW) {
-					quads += writeHalo(addBuf, pose, hc, hs * 1.06, spin, argb(ha * FxTune.d("hak.haloGlow", 0.45), tintGlow), cp);
+					quads += writeHalo(addBuf, rp, hc, hs * 1.06, spin, argb(ha * FxTune.d("hak.haloGlow", 0.45), tintGlow), cp);
 				}
 				lastHaloDrawn = true;
 			}
@@ -210,7 +307,7 @@ public final class WingHaloRenderer {
 			double ly = TMP[1] * glowScale;
 			double lz = (TMP[2] + rip) * glowScale;
 			pose.local(rootX + lx * scale, rootY + ly * scale, rootZ + lz * scale, W);
-			double alpha = HakuteikenCurves.wingAlpha(tm, t, rho) * alphaMul;
+			double alpha = HakuteikenCurves.wingAlpha(tm, t, rho) * alphaMul * FP.fade(W[0], W[1], W[2]);
 			int color = argb(alpha, rgb);
 			float nx0 = m.nrm[c * 3];
 			float ny0 = m.nrm[c * 3 + 1];
@@ -241,7 +338,7 @@ public final class WingHaloRenderer {
 			float nz0 = halo.nrm[c * 3 + 2];
 			float nx = (float) (nx0 * pose.cos - nz0 * pose.sin);
 			float nz = (float) (nx0 * pose.sin + nz0 * pose.cos);
-			b.vertex((float) (wx - cp.x), (float) (wy - cp.y), (float) (wz - cp.z), color, halo.uv[c * 2], halo.uv[c * 2 + 1], o, 0xF000F0, nx, halo.nrm[c * 3 + 1], nz);
+			b.vertex((float) (wx - cp.x), (float) (wy - cp.y), (float) (wz - cp.z), FP.on ? scaleAlpha(color, FP.fade(wx, wy, wz)) : color, halo.uv[c * 2], halo.uv[c * 2 + 1], o, 0xF000F0, nx, halo.nrm[c * 3 + 1], nz);
 		}
 		return halo.quads;
 	}
@@ -317,6 +414,8 @@ public final class WingHaloRenderer {
 			return;
 		}
 		float td = mc.getRenderTickCounter().getTickDelta(false);
+		Camera camera = mc.gameRenderer.getCamera();
+		FP.begin(camera);
 		HakuteikenFx.Pose pose = new HakuteikenFx.Pose();
 		double[] hc = new double[3];
 		double[] a = new double[3];
@@ -329,6 +428,7 @@ public final class WingHaloRenderer {
 				continue;
 			}
 			HakuteikenFx.pose(st, world, td, pose);
+			HakuteikenFx.Pose rp = FP.rigFor(st, camera, pose);
 			double tv = HakuteikenCurves.rippleTime(tm, t);
 			double fade = 1.0 - FxMath.smoothstep(tm.lineFade, tm.lineFade + 0.5, t);
 			// 0.45 ignition: white core at the hand, glow_core 0.3 to 1.2, a flare of size 3
@@ -344,9 +444,10 @@ public final class WingHaloRenderer {
 			if (ha > 0.01) {
 				double hs = HakuteikenCurves.haloScale(tm, t);
 				double top = pose.eyeHeight + FxTune.d("hak.headTop", 0.18) + FxTune.d("hak.haloUp", 0.35);
-				pose.local(0, top, -FxTune.d("hak.haloBack", 0.45), hc);
-				double fwx = -pose.sin;
-				double fwz = pose.cos;
+				rp.local(0, top, -FxTune.d("hak.haloBack", 0.45), hc);
+				ha *= FP.fade(hc[0], hc[1], hc[2]);
+				double fwx = -rp.sin;
+				double fwz = rp.cos;
 				double pop = 1.0 + 0.8 * (1.0 - FxMath.smoothstep(tm.wingStart, tm.wingStart + 0.5, t));
 				double ringR = FxTune.d("hak.ringBloomR", 1.3) * hs;
 				e.plane(GlowSprite.RING_THIN, hc[0], hc[1], hc[2], ringR / 0.4375 * 1.0, fwx, 0, fwz, tv * 0.3, 1f, 1f, 1f, FxTune.d("hak.ringBloom", 0.45) * ha * pop * glowMul);
@@ -362,17 +463,19 @@ public final class WingHaloRenderer {
 					double rootX = side * FxTune.d("hak.rootX", 0.12);
 					double rootY = FxTune.d("hak.rootY", 1.35);
 					double rootZ = -FxTune.d("hak.rootBack", 0.15);
-					pose.local(rootX, rootY, rootZ, a);
+					rp.local(rootX, rootY, rootZ, a);
+					double fa = FP.fade(a[0], a[1], a[2]);
 					for (int i = 0; i < 9; i++) {
 						double len = HakuteikenCurves.featherLength(i);
 						double ang = Math.toRadians(HakuteikenCurves.featherAngleDeg(i));
 						HakuteikenCurves.fanVertex(tm, side, side * len * Math.cos(ang), len * Math.sin(ang), 0.8 * (len / 6.0) * (len / 6.0), fan, TMP);
-						pose.local(rootX + TMP[0] * wingScale, rootY + TMP[1] * wingScale, rootZ + TMP[2] * wingScale, bb);
+						rp.local(rootX + TMP[0] * wingScale, rootY + TMP[1] * wingScale, rootZ + TMP[2] * wingScale, bb);
+						double fb = FP.fade(bb[0], bb[1], bb[2]);
 						double alpha = HakuteikenCurves.wingAlpha(tm, t, len / HakuteikenCurves.WING_MAX_R);
-						e.streak(GlowSprite.LINE, bb[0], bb[1], bb[2], a[0], a[1], a[2], FxTune.d("hak.featherBloomWidth", 0.55) * wingScale, 0.96f, 0.97f, 1f, bloom * alpha * Math.min(1.0, fan * 2.0) * glowMul);
-						e.sprite(GlowSprite.GLOW_SOFT, bb[0], bb[1], bb[2], 0.9 * wingScale, 0, 0.96f, 0.97f, 1f, 0.22 * alpha * Math.min(1.0, fan * 2.0) * glowMul);
+						e.streak(GlowSprite.LINE, bb[0], bb[1], bb[2], a[0], a[1], a[2], FxTune.d("hak.featherBloomWidth", 0.55) * wingScale, 0.96f, 0.97f, 1f, bloom * alpha * Math.min(1.0, fan * 2.0) * Math.max(fa, fb) * glowMul);
+						e.sprite(GlowSprite.GLOW_SOFT, bb[0], bb[1], bb[2], 0.9 * wingScale, 0, 0.96f, 0.97f, 1f, 0.22 * alpha * Math.min(1.0, fan * 2.0) * fb * glowMul);
 					}
-					e.sprite(GlowSprite.GLOW_SOFT, a[0], a[1], a[2], 1.6, 0, 1f, 1f, 1f, 0.35 * Math.min(1.0, fan * 2.0) * (1.0 - FxMath.smoothstep(tm.dissolveStart, tm.dissolveEnd, t)) * glowMul);
+					e.sprite(GlowSprite.GLOW_SOFT, a[0], a[1], a[2], 1.6, 0, 1f, 1f, 1f, 0.35 * Math.min(1.0, fan * 2.0) * (1.0 - FxMath.smoothstep(tm.dissolveStart, tm.dissolveEnd, t)) * fa * glowMul);
 				}
 			}
 			// blade: the strip of light along it (width 0.35, 0.4) and sparks sliding toward the tip

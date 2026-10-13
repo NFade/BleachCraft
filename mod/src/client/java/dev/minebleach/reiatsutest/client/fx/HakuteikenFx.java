@@ -3,6 +3,7 @@ package dev.minebleach.reiatsutest.client.fx;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.CondenseMath;
 import dev.minebleach.reiatsutest.core.fx.FxHash;
+import dev.minebleach.reiatsutest.core.fx.HakuteikenAim;
 import dev.minebleach.reiatsutest.core.fx.HakuteikenCurves;
 import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import dev.minebleach.reiatsutest.core.fx.StormMath;
@@ -16,8 +17,11 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
 
 /**
  * Shukei: Hakuteiken (VFX_STORYBOARD 6.3, effect id 33): everything condenses into white. State, event and timeline here; the wings, halo and
@@ -73,7 +77,13 @@ public final class HakuteikenFx {
 		public final double[] bz;
 		/** Line end (the server burst point) and its length from the eye. */
 		public final double[] end = new double[3];
-		public final double lineLength;
+		public double lineLength;
+		/** Server ray range (event size); the live aim clips the look ray with it exactly like {@code CastContext.capture}. */
+		public double range = 28.0;
+		/** The owner's look is followed until the strike (the server reads the aim at the strike tick, not at the key press). */
+		public boolean aimLive;
+		/** True from the strike on: the end point is frozen. */
+		public boolean aimLocked;
 		public final Vec3d feet0;
 		public final double yaw0;
 		public final float[] tx;
@@ -261,13 +271,20 @@ public final class HakuteikenFx {
 		out.lx = lx;
 		out.ly = ly;
 		out.lz = lz;
-		// hand = right shoulder + look x 0.6 (the right hand side is -x of the player frame)
-		double sh = FxTune.d("hak.handSide", 0.30);
-		double up = FxTune.d("hak.handHeight", 1.40);
-		double fw = FxTune.d("hak.handForward", 0.6);
-		out.hx = out.fx - sh * out.cos + lx * fw;
-		out.hy = out.fy + up + ly * fw;
-		out.hz = out.fz - sh * out.sin + lz * fw;
+		// hand = eye + right x side - up x down + look x forward, built in the LOOK frame (HakuteikenAim): the body yaw lags the head and used to swing
+		// the shoulder offset round the eye. The owner's own first person view drops the lateral offset so the beam has no sideways bias to the crosshair.
+		MinecraftClient mc = MinecraftClient.getInstance();
+		double sh = FxTune.d("hak.handSide", HakuteikenAim.HAND_SIDE);
+		if (ow != null && ow == mc.player && !FxClient.forceRemote() && mc.options.getPerspective().isFirstPerson()) {
+			sh = FxTune.d("hak.handSideFp", 0.0);
+		}
+		double down = FxTune.d("hak.handDown", HakuteikenAim.HAND_DOWN);
+		double fw = FxTune.d("hak.handForward", HakuteikenAim.HAND_FORWARD);
+		double[] h = new double[3];
+		HakuteikenAim.origin(out.fx, out.fy + out.eyeHeight, out.fz, lx, ly, lz, sh, down, fw, h);
+		out.hx = h[0];
+		out.hy = h[1];
+		out.hz = h[2];
 	}
 
 	// ------------------------------------------------------------------------------------------ event (id 33)
@@ -324,6 +341,8 @@ public final class HakuteikenFx {
 		HakuteikenCurves.Timing tm = timing();
 		EffectTimeline t = FxTimelines.create(33, e.seed(), pos, dir, e.params(), e.casterId(), FxClient.forceRemote());
 		State st = new State(e.casterId(), seed, t.slot, tm, cloud, !haveRows, bx, by, bz, len, pos, Math.atan2(-dir.x, dir.z));
+		st.range = pr.length >= 4 && pr[3] > 0 ? pr[3] : 28.0;
+		st.aimLive = FxTune.d("hak.liveAim", 1.0) > 0.5;
 		Vec3d unit = toAim < 1e-3 ? (dir.lengthSquared() < 1e-6 ? new Vec3d(0, 0, 1) : dir.normalize()) : aim.subtract(eye).multiply(1.0 / toAim);
 		Vec3d end = eye.add(unit.multiply(len));
 		st.end[0] = end.x;
@@ -343,7 +362,7 @@ public final class HakuteikenFx {
 		}
 		ReiatsuTest.LOGGER.info("[fx] hakuteiken: {} condensing petals ({} blades x {}), rows {}, line {} m to ({}, {}, {})", cloud.m, blades, per, haveRows ? "standing" : "stub ring", f(len),
 				f(end.x), f(end.y), f(end.z));
-		schedule(t, st, end);
+		schedule(t, st);
 		FxTimelines.start(t);
 	}
 
@@ -351,7 +370,7 @@ public final class HakuteikenFx {
 		return String.format(Locale.ROOT, "%.2f", v);
 	}
 
-	private static void schedule(EffectTimeline t, State st, Vec3d end) {
+	private static void schedule(EffectTimeline t, State st) {
 		HakuteikenCurves.Timing tm = st.tm;
 		t.duck(1.0, 1.5, 0.5);
 		// 0.00 condense: dark world, petals spiral into the hand
@@ -378,9 +397,9 @@ public final class HakuteikenFx {
 			x.sound("block.beacon.power_select", 1.5, 0.6);
 		});
 		// 1.50 strike (server line)
-		t.at(tm.strike, x -> strike(x, st, end));
+		t.at(tm.strike, x -> strike(x, st));
 		// 1.80 burst (server)
-		t.at(tm.burst, x -> burst(x, st, end));
+		t.at(tm.burst, x -> burst(x, st));
 		// 2.50 dissolve
 		t.at(tm.dissolveStart, x -> {
 			x.sound("entity.phantom.flap", 1.2, 0.3);
@@ -393,9 +412,35 @@ public final class HakuteikenFx {
 		t.lifetime(tm.life);
 	}
 
-	private static void strike(EffectTimeline x, State st, Vec3d end) {
+	/**
+	 * Re-reads the owner's look and ends the beam on the crosshair ray (block clip like the server): the end point, the line length and so the
+	 * blade direction follow the aim until the strike. Skipped when the owner entity is not loaded (the cast-time aim stays).
+	 */
+	static void refreshAim(State st, ClientWorld w, float td) {
+		if (!st.aimLive || st.aimLocked || w == null) {
+			return;
+		}
+		Entity ow = w.getEntityById(st.ownerId);
+		if (ow == null) {
+			return;
+		}
+		Vec3d look = ow.getRotationVec(td);
+		Vec3d f = ow.getLerpedPos(td);
+		Vec3d eye = new Vec3d(f.x, f.y + ow.getEyeHeight(ow.getPose()), f.z);
+		Vec3d far = eye.add(look.multiply(st.range));
+		BlockHitResult hit = w.raycast(new RaycastContext(eye, far, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, ow));
+		double toAim = hit.getType() == HitResult.Type.MISS ? st.range : eye.distanceTo(hit.getPos());
+		double len = HakuteikenAim.reach(st.range, toAim);
+		HakuteikenAim.target(eye.x, eye.y, eye.z, look.x, look.y, look.z, len, st.end);
+		st.lineLength = len;
+	}
+
+	private static void strike(EffectTimeline x, State st) {
 		HakuteikenCurves.Timing tm = st.tm;
 		MinecraftClient mc = MinecraftClient.getInstance();
+		refreshAim(st, mc.world, 1.0f); // the last read of the look: the server reads its own at the same tick (AbilityExecutor.hakuteiken)
+		st.aimLocked = true;
+		Vec3d end = new Vec3d(st.end[0], st.end[1], st.end[2]);
 		Pose pose = new Pose();
 		pose(st, mc.world, 1.0f, pose);
 		Vec3d hand = new Vec3d(pose.hx, pose.hy, pose.hz);
@@ -450,8 +495,9 @@ public final class HakuteikenFx {
 		}
 	}
 
-	private static void burst(EffectTimeline x, State st, Vec3d end) {
+	private static void burst(EffectTimeline x, State st) {
 		bursts++;
+		Vec3d end = new Vec3d(st.end[0], st.end[1], st.end[2]);
 		x.hitstop(FxTune.d("hak.hitstop", 50));
 		Random r = x.rng(1800);
 		double q = FxConfig.effectQuality * x.lod;
@@ -535,6 +581,9 @@ public final class HakuteikenFx {
 					}
 				}
 			}
+			if (!st.aimLocked && t < tm.strike) {
+				refreshAim(st, mc.world, td);
+			}
 			if (FxClock.dt <= 0 || mc.world == null) {
 				continue;
 			}
@@ -548,21 +597,25 @@ public final class HakuteikenFx {
 			}
 			if (shed && FxClock.now >= st.nextShed && mc.gameRenderer.getCamera().getPos().distanceTo(new Vec3d(pose.fx, pose.fy, pose.fz)) < 64) {
 				st.nextShed = FxClock.now + 1.5 / 80.0 / Math.max(0.25, FxConfig.effectQuality);
-				featherPoint(st, r, pose, HakuteikenCurves.fan(tm, t), w);
+				featherPoint(st, r, WingHaloRenderer.guardedPose(st, pose), HakuteikenCurves.fan(tm, t), w);
+				if (!WingHaloRenderer.guardHides(w[0], w[1], w[2])) {
 				double sway = (r.nextDouble() - 0.5) * 0.8;
 				FxGlowBatch.sprite(r.nextBoolean() ? GlowSprite.FEATHER : GlowSprite.FEATHER_B).at(w[0], w[1], w[2]).vel(sway, -0.6, -sway * 0.5).drag(0.97).lifeTicks(40 + r.nextInt(21))
 						.size(FxTune.d("hak.featherSize", 0.6) * (0.7 + 0.6 * r.nextDouble())).color("#F4F8FF").peak(0.7).rot(r.nextDouble() * 6.28, (r.nextDouble() - 0.5) * 2).spawn();
+				}
 				st.shed++;
 			}
 			if (dissolving && FxClock.now >= st.nextDebris && mc.gameRenderer.getCamera().getPos().distanceTo(new Vec3d(pose.fx, pose.fy, pose.fz)) < 64) {
 				st.nextDebris = FxClock.now + 0.5 / 160.0;
-				featherPoint(st, r, pose, 1.0, w);
+				featherPoint(st, r, WingHaloRenderer.guardedPose(st, pose), 1.0, w);
+				if (!WingHaloRenderer.guardHides(w[0], w[1], w[2])) {
 				FxGlowBatch.sprite(r.nextBoolean() ? GlowSprite.FEATHER : GlowSprite.FEATHER_B).at(w[0], w[1], w[2]).vel((r.nextDouble() - 0.5) * 1.2, -0.5 - r.nextDouble() * 0.6,
 						(r.nextDouble() - 0.5) * 1.2).drag(0.97).lifeTicks(34 + r.nextInt(20)).size(0.6 * (0.7 + 0.6 * r.nextDouble())).color("#FFFFFF").peak(0.75)
 						.rot(r.nextDouble() * 6.28, (r.nextDouble() - 0.5) * 2).spawn();
 				if (r.nextInt(3) == 0) {
 					FxParticles.spec(FxParticles.Kind.PETAL).at(w[0], w[1], w[2]).vel((r.nextDouble() - 0.5) * 1.5, -0.3, (r.nextDouble() - 0.5) * 1.5).drag(0.96).gravity(0.4).life(30)
 							.size(0.26).color("#F4F8FF").spin((r.nextDouble() - 0.5) * 0.4).seed(r.nextInt(4)).spawn();
+				}
 				}
 			}
 		}

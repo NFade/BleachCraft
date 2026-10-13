@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.core.fx.HakuteikenAim;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.AbilityParams;
 import dev.minebleach.reiatsutest.core.state.AbilitySpec;
@@ -226,10 +227,13 @@ final class AbilityExecutor {
 	}
 
 	private static void hakuteiken(ServerPlayerEntity p, int phase, CastContext ctx) {
+		// the effect event left at the key press (the condensing is the cast time); the line and the burst are aimed at the strike tick, along the
+		// look of that moment, like the client white line (HakuteikenFx.refreshAim), so both end on the crosshair, not on where it was 1.5 s ago
+		ctx = ctx.releaseAim(p);
 		AbilitySpec sp = ctx.spec;
 		int max = sp.intNum(AbilityParams.MAX_TARGETS);
 		if (phase == 0) {
-			double length = ctx.eye.distanceTo(ctx.aim);
+			double length = HakuteikenAim.reach(sp.num(AbilityParams.LENGTH), ctx.eye.distanceTo(ctx.aim));
 			List<LivingEntity> hit = Targeting.segment(p, ctx.eye, ctx.dir, 0.0, length, sp.num(AbilityParams.HALF_WIDTH), max, null);
 			for (LivingEntity e : hit) {
 				ctx.hit.add(e.getId());

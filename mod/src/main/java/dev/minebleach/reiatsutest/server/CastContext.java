@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.server;
 
 import dev.minebleach.reiatsutest.core.combat.AbilityHitGate;
+import dev.minebleach.reiatsutest.core.fx.HakuteikenAim;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.AbilityParams;
 import dev.minebleach.reiatsutest.core.state.AbilitySpec;
@@ -41,6 +42,8 @@ final class CastContext {
 	 * burst and the flight of the Byakuya attack mode cannot stack ticks inside the window. Unused (a 1 tick window) by other abilities.
 	 */
 	final AbilityHitGate hitGate;
+	/** The same cast read again at the strike tick (Hakuteiken), made once on first use and shared by its phases. */
+	private CastContext atRelease;
 
 	private CastContext(AbilityId ability, AbilitySpec spec, int seed, Vec3d origin, Vec3d eye, Vec3d dir, Vec3d flatDir, Vec3d aim, Vec3d center,
 			AbilityHitGate hitGate) {
@@ -67,6 +70,18 @@ final class CastContext {
 	 */
 	CastContext resampled(ServerPlayerEntity p) {
 		return capture(p, ability, spec, seed, hitGate);
+	}
+
+	/**
+	 * The look at the strike of an ability whose effect event is already out (Hakuteiken: the condensing starts at the key press, the line hits
+	 * 1.5 s later). Read ONCE, at the first phase that asks, then every later phase (the burst) gets the same object, so the line and the burst
+	 * agree with the crosshair of the strike moment and with each other.
+	 */
+	CastContext releaseAim(ServerPlayerEntity p) {
+		if (atRelease == null) {
+			atRelease = resampled(p);
+		}
+		return atRelease;
 	}
 
 	private static CastContext capture(ServerPlayerEntity p, AbilityId ability, AbilitySpec spec, int seed, AbilityHitGate gate) {
@@ -122,7 +137,7 @@ final class CastContext {
 			case HAKUTEIKEN -> {
 				size = spec.floatNum(AbilityParams.LENGTH);
 				// S4: the length of the server ray really used (the white line ends exactly at the server burst)
-				size2 = (float) Math.min(size, eye.distanceTo(aim));
+				size2 = (float) HakuteikenAim.reach(size, eye.distanceTo(aim));
 			}
 			default -> size = 0f;
 		}
