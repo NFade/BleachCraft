@@ -57,6 +57,8 @@ Note: Hirenkyaku is gone as an ability; the normal shunpo (any state) is Uryu's 
 3. Left-handed bow hold and a real animated draw pose of the player (stage U7).
 
 ## 6. U-FX pending (effects, later, when the usage limits refresh)
+The visual direction, frame-by-frame timelines, poses, model and texture lists, the U-FX 0..12 implementation order and the test plan for everything in this section are now in `design/URYU_VFX_STORYBOARD.md` (canon reference sheets: `refs/sheets/uryu_*.png`, private, git-ignored).
+
 Everything visual below is a PLACEHOLDER today. The user wants LARGE, spectacular effects that are faithful to the canon, built the way the Rukia and Byakuya effects were (FxShapes / FxGlowBatch layers, own meshes, own sounds, a storyboard with acceptance checks per effect, screenshots from the game). Method: reference images found through `tools/fandom.py` (images / get) and stored only as private references under the project rules of MASTER_PROMPT.md section 2 (rule 4: into `refs/` only, at most 12 images per state, file names `<char>_<state>_<n>.<ext>`, source URL in `refs/INDEX.md`, `refs/` in .gitignore, nothing ripped into the mod, texts of the wiki are not copied); all models, textures and effects are made by us. To be done in this order of value:
 | Effect | Canon look to aim at | Placeholder today (to replace) |
 |---|---|---|
