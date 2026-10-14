@@ -70,3 +70,5 @@
 
 
 Ключи `tp.*` (T10) готовы: `tp.swordScale` множит размер меча в руке, блоке и держании и ножен (на бедре и в запечатанном блоке), только вид от третьего лица; клиентский файл перечитывается раз в секунду, перезапуск не нужен. Остальные ключи раунда (rukia.iceWall, terrain.*, звуки) добавляются вместе с задачами T5, T9, T12.
+
+Ключи `uryu.*` клиентского файла (эффекты Урю, по уровням качества, U-FX 0): см. `design/results/uryu_ufx0.md`, раздел Config keys (`uryu.maxFlechettes`, `maxStardust`, `starFlakes`, `wingOverglow`, `bands`, `veinOverlay`, `rainSplashShare`, `afterimages`, `wingScale`, `fpGuard`, `shunpoOld`, `glow`).
