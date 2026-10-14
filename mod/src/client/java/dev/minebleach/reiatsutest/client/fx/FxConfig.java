@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.fx.UryuFxTiers;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -88,6 +89,23 @@ public final class FxConfig {
 	public static volatile boolean decals = true;
 	public static volatile boolean photosensitiveSafe = false;
 	public static volatile int maxConcurrentFx = 8;
+	// Uryu (URYU_VFX_STORYBOARD 5.1): the per tier values come from core/fx/UryuFxTiers (HIGH / MEDIUM / LOW; CUSTOM keeps the file's keys)
+	public static volatile int uryuMaxFlechettes = 160;
+	public static volatile int uryuMaxStardust = 600;
+	public static volatile int uryuStarFlakes = 120;
+	public static volatile boolean uryuWingOverglow = true;
+	public static volatile boolean uryuBands = true;
+	public static volatile dev.minebleach.reiatsutest.core.fx.UryuFxTiers.VeinOverlay uryuVeinOverlay = dev.minebleach.reiatsutest.core.fx.UryuFxTiers.VeinOverlay.FULL;
+	public static volatile double uryuRainSplashShare = 1.0;
+	public static volatile int uryuAfterimages = 3;
+	/** Scale of the Quincy wings, 0.5 to 1.5 (not tier dependent). */
+	public static volatile double uryuWingScale = 1.0;
+	/** The first person guard of the wings (hidden within the yaw cone of the camera, like the Hakuteiken wings). */
+	public static volatile boolean uryuFpGuard = true;
+	/** True: the old Uryu shunpo trail (UryuAuraFx.shunpoReishi) instead of the Hirenkyaku discs (kept as a fallback). */
+	public static volatile boolean uryuShunpoOld = false;
+	/** Global multiplier of the intensity of the Quincy glow sprites (atlas 1). */
+	public static volatile double uryuGlow = 1.0;
 	// R11 T7: the reiatsu pressure on the screen of a player near somebody's bankai release; the "pressure" object of the file, tuned in
 	// fx_override.json by the flat keys pressure.shake / blur / stripes / scale (those win while the file exists)
 	public static volatile double pressureShake = 0.9;
@@ -202,6 +220,18 @@ public final class FxConfig {
 					case "hudCompact" -> hudCompact = o.get(key).getAsBoolean();
 					case "titleCards" -> titleCards = o.get(key).getAsBoolean();
 					case "crosshairPips" -> crosshairPips = o.get(key).getAsBoolean();
+					case "uryu.maxFlechettes" -> uryuMaxFlechettes = o.get(key).getAsInt();
+					case "uryu.maxStardust" -> uryuMaxStardust = o.get(key).getAsInt();
+					case "uryu.starFlakes" -> uryuStarFlakes = o.get(key).getAsInt();
+					case "uryu.wingOverglow" -> uryuWingOverglow = flag(o.get(key));
+					case "uryu.bands" -> uryuBands = flag(o.get(key));
+					case "uryu.veinOverlay" -> uryuVeinOverlay = UryuFxTiers.parseVein(o.get(key).getAsString());
+					case "uryu.rainSplashShare" -> uryuRainSplashShare = o.get(key).getAsDouble();
+					case "uryu.afterimages" -> uryuAfterimages = o.get(key).getAsInt();
+					case "uryu.wingScale" -> uryuWingScale = UryuFxTiers.clampWingScale(o.get(key).getAsDouble());
+					case "uryu.fpGuard" -> uryuFpGuard = flag(o.get(key));
+					case "uryu.shunpoOld" -> uryuShunpoOld = flag(o.get(key));
+					case "uryu.glow" -> uryuGlow = o.get(key).getAsDouble();
 					default -> { }
 				}
 			} catch (RuntimeException e) {
@@ -242,6 +272,19 @@ public final class FxConfig {
 		m.put("voiceHud", true);
 		m.put("voiceToastSound", true);
 		m.put("cooldownReadySound", true);
+		// Uryu (5.1): the values of the HIGH tier; the active fxTier overrides them unless it is CUSTOM
+		m.put("uryu.maxFlechettes", UryuFxTiers.HIGH.maxFlechettes());
+		m.put("uryu.maxStardust", UryuFxTiers.HIGH.maxStardust());
+		m.put("uryu.starFlakes", UryuFxTiers.HIGH.starFlakes());
+		m.put("uryu.wingOverglow", UryuFxTiers.HIGH.wingOverglow());
+		m.put("uryu.bands", UryuFxTiers.HIGH.bands());
+		m.put("uryu.veinOverlay", "full");
+		m.put("uryu.rainSplashShare", UryuFxTiers.HIGH.rainSplashShare());
+		m.put("uryu.afterimages", UryuFxTiers.HIGH.afterimages());
+		m.put("uryu.wingScale", 1.0);
+		m.put("uryu.fpGuard", true);
+		m.put("uryu.shunpoOld", false);
+		m.put("uryu.glow", 1.0);
 		return m;
 	}
 
@@ -294,6 +337,29 @@ public final class FxConfig {
 		voiceToastSound = bool(root, "voiceToastSound", true);
 		cooldownReadySound = bool(root, "cooldownReadySound", true);
 		applyPressure(root);
+		uryuMaxFlechettes = (int) num(root, "uryu.maxFlechettes", UryuFxTiers.HIGH.maxFlechettes());
+		uryuMaxStardust = (int) num(root, "uryu.maxStardust", UryuFxTiers.HIGH.maxStardust());
+		uryuStarFlakes = (int) num(root, "uryu.starFlakes", UryuFxTiers.HIGH.starFlakes());
+		uryuWingOverglow = bool(root, "uryu.wingOverglow", UryuFxTiers.HIGH.wingOverglow());
+		uryuBands = bool(root, "uryu.bands", UryuFxTiers.HIGH.bands());
+		uryuVeinOverlay = UryuFxTiers.parseVein(str(root, "uryu.veinOverlay", "full"));
+		uryuRainSplashShare = num(root, "uryu.rainSplashShare", UryuFxTiers.HIGH.rainSplashShare());
+		uryuAfterimages = (int) num(root, "uryu.afterimages", UryuFxTiers.HIGH.afterimages());
+		uryuWingScale = UryuFxTiers.clampWingScale(num(root, "uryu.wingScale", 1.0));
+		uryuFpGuard = bool(root, "uryu.fpGuard", true);
+		uryuShunpoOld = bool(root, "uryu.shunpoOld", false);
+		uryuGlow = num(root, "uryu.glow", 1.0);
+		if (fxTier != TierSetting.CUSTOM) {
+			UryuFxTiers.Values u = UryuFxTiers.of(fxTier.name());
+			uryuMaxFlechettes = u.maxFlechettes();
+			uryuMaxStardust = u.maxStardust();
+			uryuStarFlakes = u.starFlakes();
+			uryuWingOverglow = u.wingOverglow();
+			uryuBands = u.bands();
+			uryuVeinOverlay = u.veinOverlay();
+			uryuRainSplashShare = u.rainSplashShare();
+			uryuAfterimages = u.afterimages();
+		}
 		if (fxTier != TierSetting.CUSTOM) {
 			Tier t = tier();
 			effectQuality = t.quality;
@@ -334,9 +400,18 @@ public final class FxConfig {
 
 	private static boolean bool(JsonObject o, String k, boolean d) {
 		try {
-			return o.has(k) ? o.get(k).getAsBoolean() : d;
+			return o.has(k) ? flag(o.get(k)) : d;
 		} catch (RuntimeException e) {
 			return d;
 		}
+	}
+
+	/** A switch written as true / false, 1 / 0 or "on" / "off" (the storyboard writes the Uryu switches as on / off). */
+	private static boolean flag(JsonElement e) {
+		if (e.isJsonPrimitive() && e.getAsJsonPrimitive().isNumber()) {
+			return e.getAsDouble() != 0.0;
+		}
+		String s = e.getAsString().trim().toLowerCase(Locale.ROOT);
+		return s.equals("true") || s.equals("on") || s.equals("1") || s.equals("yes");
 	}
 }

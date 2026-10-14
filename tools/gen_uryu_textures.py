@@ -300,7 +300,12 @@ def sp_platform_disc():
         ee = rng.uniform(1.05, 1.11)
         px, py = 60 * ee * math.cos(ang), 28 * ee * math.sin(ang)
         i = np.maximum(i, rng.uniform(0.5, 1.0) * gauss(np.hypot(x - px, y - py), 0.9))
-    return clamp(i) * edge_window(w, h, 3, 3)
+    i = clamp(i) * edge_window(w, h, 3, 3)
+    i[0, :] = 0
+    i[-1, :] = 0
+    i[:, 0] = 0
+    i[:, -1] = 0
+    return i
 
 
 def star_glint(x, y, px, py, length, sigma=0.6):

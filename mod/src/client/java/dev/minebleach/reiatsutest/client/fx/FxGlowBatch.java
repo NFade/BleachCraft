@@ -7,6 +7,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderLayer;
@@ -14,6 +15,7 @@ import net.minecraft.client.render.RenderPhase;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.util.BufferAllocator;
 import net.minecraft.util.Identifier;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -23,6 +25,9 @@ import org.joml.Vector3f;
  * from the spawn state and the FX clock (no per-frame integration error), drawn once per frame at
  * {@code WorldRenderEvents.LAST} after the GRADE quad through the linear-filtered additive layer {@code reiatsu_glow}.
  * Intensity = tint x peak x rise/hold/fade curve x {@code glowIntensity}; cap {@code maxGlowSprites} (oldest replaced).
+ * Two atlases (U-FX 0): the sprites of {@code fx_glow} (atlas 0) go through {@code reiatsu_glow}, the Quincy sprites of {@code uryu_glow}
+ * (atlas 1, {@link GlowSprite#atlas}) through a second layer {@code reiatsu_glow_u} with its own buffer in the same frame (one extra draw
+ * call, only when a sprite of atlas 1 was written). Both are additive, so the order of the two does not change the picture.
  */
 public final class FxGlowBatch {
 	public static final int CAMERA = 0;
@@ -33,9 +38,15 @@ public final class FxGlowBatch {
 
 	private static final int CAP = 8192;
 	public static final Identifier ATLAS = ReiatsuTest.id("textures/fx/fx_glow.png");
+	/** The Quincy atlas (512 x 256, atlas 1 of {@link GlowSprite}). */
+	public static final Identifier ATLAS_U = ReiatsuTest.id("textures/fx/uryu_glow.png");
 
 	/** Our own linear-filtered additive layer (1.2): colour mask only, no depth write, no culling. */
 	private static RenderLayer layer;
+	private static RenderLayer layerU;
+	/** Buffer of atlas 1 for the frame being drawn (created on the first Quincy sprite), own allocator because the Tessellator's is in use. */
+	private static final BufferAllocator ALLOC_U = new BufferAllocator(1 << 16);
+	private static BufferBuilder frameU;
 
 	private static final double[] X = new double[CAP];
 	private static final double[] Y = new double[CAP];
@@ -512,10 +523,17 @@ public final class FxGlowBatch {
 		}
 
 		private void quad(float cx0, float cy0, float cz0, float ax, float ay, float az, float bx, float by, float bz, GlowSprite sp, float cr, float cg, float cb) {
-			buf.vertex(cx0 - ax - bx, cy0 - ay - by, cz0 - az - bz).texture(sp.u0, sp.v1).color(cr, cg, cb, 1f);
-			buf.vertex(cx0 + ax - bx, cy0 + ay - by, cz0 + az - bz).texture(sp.u1, sp.v1).color(cr, cg, cb, 1f);
-			buf.vertex(cx0 + ax + bx, cy0 + ay + by, cz0 + az + bz).texture(sp.u1, sp.v0).color(cr, cg, cb, 1f);
-			buf.vertex(cx0 - ax + bx, cy0 - ay + by, cz0 - az + bz).texture(sp.u0, sp.v0).color(cr, cg, cb, 1f);
+			BufferBuilder out = sp.atlas == 0 ? buf : bufU();
+			if (sp.atlas == 1 && FxConfig.uryuGlow != 1.0) {
+				float m = (float) FxConfig.uryuGlow;
+				cr = Math.min(1f, cr * m);
+				cg = Math.min(1f, cg * m);
+				cb = Math.min(1f, cb * m);
+			}
+			out.vertex(cx0 - ax - bx, cy0 - ay - by, cz0 - az - bz).texture(sp.u0, sp.v1).color(cr, cg, cb, 1f);
+			out.vertex(cx0 + ax - bx, cy0 + ay - by, cz0 + az - bz).texture(sp.u1, sp.v1).color(cr, cg, cb, 1f);
+			out.vertex(cx0 + ax + bx, cy0 + ay + by, cz0 + az + bz).texture(sp.u1, sp.v0).color(cr, cg, cb, 1f);
+			out.vertex(cx0 - ax + bx, cy0 - ay + by, cz0 - az + bz).texture(sp.u0, sp.v0).color(cr, cg, cb, 1f);
 			count++;
 		}
 	}
@@ -584,6 +602,28 @@ public final class FxGlowBatch {
 		return layer;
 	}
 
+	static RenderLayer layerU() {
+		if (layerU == null) {
+			layerU = RenderLayer.of("reiatsu_glow_u", VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS, 1536, false, true,
+					RenderLayer.MultiPhaseParameters.builder()
+							.program(new RenderPhase.ShaderProgram(GameRenderer::getPositionTexColorProgram))
+							.texture(new RenderPhase.Texture(ATLAS_U, true, false))
+							.transparency(RenderPhase.ADDITIVE_TRANSPARENCY)
+							.writeMaskState(RenderPhase.COLOR_MASK)
+							.cull(RenderPhase.DISABLE_CULLING)
+							.build(false));
+		}
+		return layerU;
+	}
+
+	/** The buffer of atlas 1 for the current frame, created on first use. */
+	private static BufferBuilder bufU() {
+		if (frameU == null) {
+			frameU = new BufferBuilder(ALLOC_U, VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+		}
+		return frameU;
+	}
+
 	/** WorldRenderEvents.LAST (after the GRADE quad). */
 	public static void draw(WorldRenderContext ctx) {
 		if (liveCount <= 0 && SOURCES.isEmpty()) {
@@ -592,6 +632,13 @@ public final class FxGlowBatch {
 			return;
 		}
 		long t0 = System.nanoTime();
+		if (frameU != null) { // a frame that failed half way left its buffer open: close it before this one starts
+			BuiltBuffer stale = frameU.endNullable();
+			if (stale != null) {
+				stale.close();
+			}
+			frameU = null;
+		}
 		MinecraftClient mc = MinecraftClient.getInstance();
 		Camera cam = ctx.camera();
 		var cp = cam.getPos();
@@ -663,6 +710,12 @@ public final class FxGlowBatch {
 			float cg = (float) Math.min(1.0, G[i] * inten);
 			float cb = (float) Math.min(1.0, B[i] * inten);
 			GlowSprite sp = GlowSprite.of(SPRITE[i]);
+			if (sp.atlas == 1 && FxConfig.uryuGlow != 1.0) { // uryu.glow: global multiplier of the Quincy sprites
+				float m = (float) FxConfig.uryuGlow;
+				cr = Math.min(1f, cr * m);
+				cg = Math.min(1f, cg * m);
+				cb = Math.min(1f, cb * m);
+			}
 			double hw = sz * 0.5;
 			double hh = sz * sp.aspect * 0.5;
 			double rot = ROT[i] + SPIN[i] * age;
@@ -778,10 +831,11 @@ public final class FxGlowBatch {
 					bz = (float) (right.z * vr + up.z * vu);
 				}
 			}
-			buf.vertex(cx - ax - bx, cy - ay - by, cz - az - bz).texture(sp.u0, sp.v1).color(cr, cg, cb, 1f);
-			buf.vertex(cx + ax - bx, cy + ay - by, cz + az - bz).texture(sp.u1, sp.v1).color(cr, cg, cb, 1f);
-			buf.vertex(cx + ax + bx, cy + ay + by, cz + az + bz).texture(sp.u1, sp.v0).color(cr, cg, cb, 1f);
-			buf.vertex(cx - ax + bx, cy - ay + by, cz - az + bz).texture(sp.u0, sp.v0).color(cr, cg, cb, 1f);
+			BufferBuilder qb = sp.atlas == 0 ? buf : bufU();
+			qb.vertex(cx - ax - bx, cy - ay - by, cz - az - bz).texture(sp.u0, sp.v1).color(cr, cg, cb, 1f);
+			qb.vertex(cx + ax - bx, cy + ay - by, cz + az - bz).texture(sp.u1, sp.v1).color(cr, cg, cb, 1f);
+			qb.vertex(cx + ax + bx, cy + ay + by, cz + az + bz).texture(sp.u1, sp.v0).color(cr, cg, cb, 1f);
+			qb.vertex(cx - ax + bx, cy - ay + by, cz - az + bz).texture(sp.u0, sp.v0).color(cr, cg, cb, 1f);
 			drawn++;
 		}
 		if (!SOURCES.isEmpty()) {
@@ -796,9 +850,16 @@ public final class FxGlowBatch {
 			drawn += em.count;
 		}
 		lastDrawn = drawn;
-		net.minecraft.client.render.BuiltBuffer built = buf.endNullable();
+		BuiltBuffer built = buf.endNullable();
 		if (built != null) {
 			layer().draw(built);
+		}
+		if (frameU != null) {
+			BuiltBuffer builtU = frameU.endNullable();
+			frameU = null;
+			if (builtU != null) {
+				layerU().draw(builtU);
+			}
 		}
 		drawnTotal += drawn;
 		lastMs = (System.nanoTime() - t0) / 1.0e6;

@@ -27,7 +27,11 @@ import net.minecraft.util.math.Vec3d;
  */
 public final class FxParticles {
 	public enum Kind {
-		FROST_MOTE(true, 0), SNOWFLAKE(true, 0), ICE_SHARD(false, 10), PETAL(false, 8), WISP(true, 0), DUST_PUFF(false, 0);
+		FROST_MOTE(true, 0), SNOWFLAKE(true, 0), ICE_SHARD(false, 10), PETAL(false, 8), WISP(true, 0), DUST_PUFF(false, 0),
+		/** Uryu: P:RM teardrop mote, 4 twinkle frames (frame = age / 3 + seed). */
+		REISHI_MOTE(true, 0),
+		/** Uryu: P:FL flake flechette, 3 variants by seed, tumbles. */
+		FLECHETTE(true, 0);
 
 		final boolean fullBright;
 		final int minBlockLight;
@@ -62,6 +66,8 @@ public final class FxParticles {
 		reg(ModParticles.PETAL, Kind.PETAL);
 		reg(ModParticles.REIATSU_WISP, Kind.WISP);
 		reg(ModParticles.DUST_PUFF, Kind.DUST_PUFF);
+		reg(ModParticles.REISHI_MOTE, Kind.REISHI_MOTE);
+		reg(ModParticles.FLECHETTE, Kind.FLECHETTE);
 	}
 
 	private static void reg(SimpleParticleType type, Kind kind) {
@@ -309,7 +315,7 @@ public final class FxParticles {
 			this.blue = c0[2];
 			this.alpha = a0;
 			this.angle = (float) (this.random.nextFloat() * Math.PI * 2);
-			if (kind == Kind.SNOWFLAKE || kind == Kind.ICE_SHARD || kind == Kind.PETAL) {
+			if (kind == Kind.SNOWFLAKE || kind == Kind.ICE_SHARD || kind == Kind.PETAL || kind == Kind.FLECHETTE) {
 				this.prevAngle = this.angle;
 			} else {
 				this.angle = 0;
@@ -322,8 +328,8 @@ public final class FxParticles {
 		private void pickSprite() {
 			int f;
 			switch (kind) {
-				case FROST_MOTE -> f = (age / 3 + variant) & 3;
-				case SNOWFLAKE -> f = Math.floorMod(variant, 3);
+				case FROST_MOTE, REISHI_MOTE -> f = (age / 3 + variant) & 3;
+				case SNOWFLAKE, FLECHETTE -> f = Math.floorMod(variant, 3);
 				case ICE_SHARD -> f = variant & 3;
 				case PETAL -> f = (age / 2 + variant) & 3;
 				case WISP -> f = (age / 2 + variant) & 3;
@@ -331,7 +337,7 @@ public final class FxParticles {
 			}
 			if (f != frame) {
 				frame = f;
-				int count = kind == Kind.SNOWFLAKE ? 3 : 4;
+				int count = kind == Kind.SNOWFLAKE || kind == Kind.FLECHETTE ? 3 : 4;
 				setSprite(sprites.getSprite(Math.min(f, count - 1), count - 1));
 			}
 		}

@@ -20,6 +20,7 @@ import net.minecraft.util.math.Vec3d;
  */
 public final class FxShapes {
 	private static final DoubleUnaryOperator ONE = a -> 1.0;
+	private static final net.minecraft.client.util.BufferAllocator ALLOC_U = new net.minecraft.client.util.BufferAllocator(1 << 15);
 
 	public abstract static class Shape {
 		double birth;
@@ -372,18 +373,32 @@ public final class FxShapes {
 		Vec3d cam = ctx.camera().getPos();
 		double boost = FxConfig.glowIntensity * (ScreenFx.gradeStrong() ? 1.3 : 1.0);
 		BufferBuilder buf = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+		BufferBuilder bufU = null; // shapes whose cell is a Quincy sprite (atlas 1, U-FX 0) go into their own buffer and layer
 		int n = 0;
 		for (Shape s : SHAPES) {
 			double age = s.age(now);
 			if (age < 0) {
 				continue;
 			}
-			n += s.emit(buf, cam, age, boost);
+			BufferBuilder target = buf;
+			if (s.cell.atlas != 0) {
+				if (bufU == null) {
+					bufU = new BufferBuilder(ALLOC_U, VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+				}
+				target = bufU;
+			}
+			n += s.emit(target, cam, age, boost);
 		}
 		lastDrawn = n / 4;
 		BuiltBuffer built = buf.endNullable();
 		if (built != null) {
 			FxGlowBatch.layer().draw(built);
+		}
+		if (bufU != null) {
+			BuiltBuffer builtU = bufU.endNullable();
+			if (builtU != null) {
+				FxGlowBatch.layerU().draw(builtU);
+			}
 		}
 	}
 

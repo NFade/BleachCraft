@@ -48,7 +48,7 @@ final class Phase6Fx {
 
 	private static void atlasSet(int variant) {
 		clearFx();
-		GlowSprite[] all = GlowSprite.values();
+		GlowSprite[] all = GlowSprite.ofAtlas(0);
 		switch (variant) {
 			case 0 -> grid(all, 9, 15, 2.0, 3.2, -54.0, true); // 17 sprites in 9 columns x 2 rows, size 2 blocks, no wall
 			case 1 -> grid(all, 6, 5, 0.5, 0.75, -57.4, true); // size 0.5

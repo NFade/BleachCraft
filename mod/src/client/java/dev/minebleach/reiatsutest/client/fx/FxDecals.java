@@ -31,6 +31,9 @@ import net.minecraft.util.math.Vec3d;
 public final class FxDecals {
 	public static final Identifier FROST = ReiatsuTest.id("textures/fx/frost_ground.png");
 	public static final Identifier CRACK = ReiatsuTest.id("textures/fx/crack_ground.png");
+	/** Uryu: the pentagon of the Sprenger (radius 3.4 for the 3.0 pentagon) and the small star burst scar (URYU_VFX_STORYBOARD 4.2). */
+	public static final Identifier PENT_SCAR = ReiatsuTest.id("textures/fx/pentagon_scar.png");
+	public static final Identifier BURST_SCAR = ReiatsuTest.id("textures/fx/burst_scar.png");
 
 	public static final class Decal {
 		final Identifier tex;
