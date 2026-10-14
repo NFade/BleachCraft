@@ -54,7 +54,8 @@ class R8MechTest {
 		BalanceConfig c = BalanceConfig.defaults();
 		for (AbilityId a : AbilityId.values()) {
 			AbilitySpec spec = c.spec(a);
-			assertEquals(a == AbilityId.SHIRAFUNE || a == AbilityId.LICHT_REGEN /* Uryu round 2: the rain falls where he aims at the end of the raised bow */, spec.aimsAtRelease(), a.name());
+			assertEquals(a == AbilityId.SHIRAFUNE || a == AbilityId.LICHT_REGEN /* Uryu round 2: the rain falls where he aims at the end of the raised bow */
+					|| a == AbilityId.STERNENSTAUB /* Uryu S-U1: the 0.8 s charge, aim and Focus are read at the release */, spec.aimsAtRelease(), a.name());
 		}
 		AbilitySpec s = c.spec(AbilityId.SHIRAFUNE);
 		assertEquals(List.of(12), s.phaseOffsets(), "the cast time is unchanged: 0.6 s");

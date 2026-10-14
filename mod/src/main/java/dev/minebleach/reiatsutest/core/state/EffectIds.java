@@ -38,6 +38,12 @@ public final class EffectIds {
 	// ---- Uryu (70 to 79): release events, then one id per ability (design/URYU.md)
 	public static final int URYU_SHIKAI_RELEASE = 70;
 	public static final int URYU_BANKAI_RELEASE = 71;
+	/**
+	 * Uryu, S-U4: the KEY PRESS of an ability that is aimed at its release (Licht Regen 76, Sternenstaub 77). The effect event of the ability
+	 * itself comes 0.6 s / 0.8 s later, at the release. x y z = the caster's feet, d = his look, params = {pre-aim x, y, z (the point he looks
+	 * at now), the effect id of the ability that will follow, seconds until the release}. Visual only; the client may gather flechettes.
+	 */
+	public static final int URYU_CAST_START = 78;
 
 	private EffectIds() {
 	}

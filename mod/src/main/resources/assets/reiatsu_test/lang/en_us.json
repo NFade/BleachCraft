@@ -41,6 +41,7 @@
   "message.reiatsu_test.denied.not_drawn": "Draw the sword first",
   "message.reiatsu_test.denied.cooldown": "Not ready yet",
   "message.reiatsu_test.denied.shunpo_bound": "Bound by the Sprenger: no shunpo",
+  "message.reiatsu_test.uryu.star_fizzled": "Sternenstaub fizzled: the Focus was lost (stand still for the whole charge)",
   "message.reiatsu_test.sealed.hand": "The zanpakuto returned to its sealed form",
   "message.reiatsu_test.voice.ready": "Voice bridge ready: %s (open it in Chrome or Edge and press Start)",
   "message.reiatsu_test.voice.failed": "Voice bridge could not start: %s",

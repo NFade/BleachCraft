@@ -2,11 +2,13 @@ package dev.minebleach.reiatsutest.server.uryu;
 
 import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
+import dev.minebleach.reiatsutest.core.uryu.BindEnd;
 import dev.minebleach.reiatsutest.net.UryuArrowsS2C;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -84,10 +86,36 @@ final class UryuNet {
 				java.util.Arrays.copyOf(data, n * UryuArrowsS2C.PER_ARROW)));
 	}
 
-	/** The Focus stacks to the owner only (HUD pips). */
+	/**
+	 * The Focus stacks of {@code pl} to the owner (HUD pips) and to the players who track him (S-U2: the Focus feedback on his body). The
+	 * caller sends only when the count changed. The packet carries the caster id ({@link UryuArrowsS2C#focus}).
+	 */
 	static void sendFocus(ServerPlayerEntity pl, int stacks, int tick) {
-		if (ServerPlayNetworking.canSend(pl, UryuArrowsS2C.ID)) {
-			ServerPlayNetworking.send(pl, new UryuArrowsS2C(UryuArrowsS2C.FOCUS, tick, new int[] {stacks}, new float[0]));
+		UryuArrowsS2C payload = UryuArrowsS2C.focus(pl.getId(), stacks, tick);
+		Set<ServerPlayerEntity> viewers = new HashSet<>(PlayerLookup.tracking(pl));
+		viewers.add(pl);
+		for (ServerPlayerEntity v : viewers) {
+			if (ServerPlayNetworking.canSend(v, UryuArrowsS2C.ID)) {
+				ServerPlayNetworking.send(v, payload);
+			}
+		}
+	}
+
+	/** S-U3: the pentagon at {@code c} rooted {@code ids}; the root runs out {@code ticksLeft} ticks after {@code tick}. */
+	static void sendBind(ServerWorld world, int tick, int[] ids, V3 c, int ticksLeft) {
+		sendTo(world, c.x(), c.y(), c.z(), UryuArrowsS2C.bind(tick, ids, c.x(), c.y(), c.z(), ticksLeft));
+	}
+
+	/** S-U3: the root of {@code ids} ended for {@code reason}. */
+	static void sendEnd(ServerWorld world, int tick, int[] ids, V3 c, BindEnd reason) {
+		sendTo(world, c.x(), c.y(), c.z(), UryuArrowsS2C.end(tick, ids, c.x(), c.y(), c.z(), reason));
+	}
+
+	private static void sendTo(ServerWorld world, double x, double y, double z, UryuArrowsS2C payload) {
+		for (ServerPlayerEntity pl : world.getPlayers()) {
+			if (pl.squaredDistanceTo(x, y, z) <= RANGE * RANGE && ServerPlayNetworking.canSend(pl, UryuArrowsS2C.ID)) {
+				ServerPlayNetworking.send(pl, payload);
+			}
 		}
 	}
 

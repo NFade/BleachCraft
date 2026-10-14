@@ -17,10 +17,20 @@ public record UryuArrowsS2C(byte kind, int tick, int[] ids, float[] data) implem
 	public static final byte TRAP = 3;
 	/** data = {x, y, z, type (IMPACT_ENTITY / IMPACT_BLOCK), arrow kind ordinal}: a hit spark. */
 	public static final byte IMPACT = 4;
-	/** ids = {stacks of Focus}, sent only to the owner when the count changes (HUD pips). */
+	/**
+	 * ids = {stacks of Focus, casterId}, sent when the count changes to the owner (HUD pips) AND to the players who track him (S-U2: the
+	 * Focus feedback on the body of Uryu). A packet with one id only (older server) is the receiver's own count; {@link #focus}.
+	 */
 	public static final byte FOCUS = 5;
 	/** data = {x, y, z (eye), dx, dy, dz (look), index 0..2, reach, cone degrees, hits}: one slash of the Seele Schneider combo. */
 	public static final byte SLASH = 6;
+	/**
+	 * S-U3: a Sprenger pentagon rooted these entities. ids = the entity ids, data = {centre x, y, z of the pentagon, ticks until the root runs
+	 * out counted from {@link #tick}} (the absolute until tick is {@code tick + data[3]}; a float cannot hold a long running server's tick).
+	 */
+	public static final byte BIND = 7;
+	/** S-U3: the root of these entities ended. ids = the entity ids, data = {centre x, y, z, reason code of {@code BindEnd}}. */
+	public static final byte END = 8;
 	/** The arrow kind value of an impact that comes from a slash and not from an arrow. */
 	public static final int KIND_SLASH = 99;
 	public static final int IMPACT_ENTITY = 0;
@@ -59,6 +69,31 @@ public record UryuArrowsS2C(byte kind, int tick, int[] ids, float[] data) implem
 				}
 				return new UryuArrowsS2C(kind, tick, ids, data);
 			});
+
+	/** S-U2: the Focus of {@code casterId} is {@code stacks} now (0 to 3). */
+	public static UryuArrowsS2C focus(int casterId, int stacks, int tick) {
+		return new UryuArrowsS2C(FOCUS, tick, new int[] {stacks, casterId}, new float[0]);
+	}
+
+	/** The stacks of a FOCUS packet (0 when it has none). */
+	public int focusStacks() {
+		return ids.length > 0 ? Math.max(0, Math.min(3, ids[0])) : 0;
+	}
+
+	/** The caster of a FOCUS packet, or {@code fallback} for a packet without one (the receiver's own count). */
+	public int focusCaster(int fallback) {
+		return ids.length > 1 ? ids[1] : fallback;
+	}
+
+	/** S-U3: the root of {@code entityIds} starts, {@code ticksLeft} ticks from {@code tick}. */
+	public static UryuArrowsS2C bind(int tick, int[] entityIds, double cx, double cy, double cz, int ticksLeft) {
+		return new UryuArrowsS2C(BIND, tick, entityIds, new float[] {(float) cx, (float) cy, (float) cz, ticksLeft});
+	}
+
+	/** S-U3: the root of {@code entityIds} ended for {@code reason}. */
+	public static UryuArrowsS2C end(int tick, int[] entityIds, double cx, double cy, double cz, dev.minebleach.reiatsutest.core.uryu.BindEnd reason) {
+		return new UryuArrowsS2C(END, tick, entityIds, new float[] {(float) cx, (float) cy, (float) cz, reason.code});
+	}
 
 	@Override
 	public CustomPayload.Id<? extends CustomPayload> getId() {

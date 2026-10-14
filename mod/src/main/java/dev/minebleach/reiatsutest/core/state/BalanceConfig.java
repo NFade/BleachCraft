@@ -231,8 +231,11 @@ public record BalanceConfig(
 		// falls on the point aimed AT THAT MOMENT (aimAtRelease, like Shirafune); range 28; the square, the rate and the cap are in core/uryu/UryuBalance
 		a.put(AbilityId.LICHT_REGEN, new AbilitySpec(AbilityId.LICHT_REGEN, 350, 480, 76, true, List.of(12), p(
 				AbilityParams.AIM_AT_RELEASE, 1.0, AbilityParams.DAMAGE, dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_DAMAGE)));
-		// Uryu bankai B: 50 reiatsu, 40 s
-		a.put(AbilityId.STERNENSTAUB, new AbilitySpec(AbilityId.STERNENSTAUB, 500, 800, 77, true, List.of(0)));
+		// Uryu bankai B: 50 reiatsu, 40 s. S-U1: a 0.8 s charge (16 ticks); the aim and the Focus are read at the RELEASE (aimAtRelease, like Licht
+		// Regen); cost, cooldown and damage are unchanged
+		a.put(AbilityId.STERNENSTAUB, new AbilitySpec(AbilityId.STERNENSTAUB, 500, 800, 77, true,
+				List.of(dev.minebleach.reiatsutest.core.uryu.UryuBalance.STAR_CHARGE_TICKS),
+				p(AbilityParams.AIM_AT_RELEASE, 1.0, AbilityParams.DAMAGE, dev.minebleach.reiatsutest.core.uryu.UryuBalance.STAR_FIRST))); // damage = the first target; the rest is Sternenstaub.damage
 
 		return new BalanceConfig(
 				1000, 5, rates,

@@ -151,7 +151,7 @@ class NewCharactersTest {
 			assertNull(seen.put(CFG.spec(a).effectId(), a.commandId), "duplicate effect id of " + a);
 		}
 		for (int id : new int[] {EffectIds.GIN_SHIKAI_RELEASE, EffectIds.GIN_BANKAI_RELEASE, EffectIds.URYU_SHIKAI_RELEASE,
-				EffectIds.URYU_BANKAI_RELEASE}) {
+				EffectIds.URYU_BANKAI_RELEASE, EffectIds.URYU_CAST_START}) {
 			assertNull(seen.put(id, "release"), "release effect id " + id + " is taken");
 		}
 		for (Row r : ROWS) {

@@ -410,6 +410,8 @@ public final class ZanpakutoManager {
 						// (AbilityExecutor.run), with the position and look of that moment; sending it now would show the press-time aim
 						if (ctx == null || !ctx.spec.aimsAtRelease()) {
 							ServerFx.effect(p, b.effectId(), b.seed(), ctx);
+						} else {
+							UryuAbilities.castStart(p, ctx); // Uryu S-U4: the key press of Licht Regen / Sternenstaub (nothing for the other aimed abilities)
 						}
 						AnchorManager.onEffect(p, b.effectId(), b.seed());
 					}

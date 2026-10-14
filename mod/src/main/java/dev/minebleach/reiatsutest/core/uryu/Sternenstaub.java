@@ -13,6 +13,16 @@ public final class Sternenstaub {
 		return focusStacks >= UryuBalance.STAR_FOCUS;
 	}
 
+	/** S-U1: does the cast go off at the release? Only with a full Focus still standing (it was needed at the key press, and must survive the 0.8 s charge). */
+	public static boolean releases(int focusStacksAtRelease) {
+		return canCast(focusStacksAtRelease);
+	}
+
+	/** S-U1: the cooldown (ticks, from the fizzle) of a charge that lost its Focus: half of the full one. */
+	public static int fizzleCooldown(int fullCooldownTicks) {
+		return (int) Math.round(Math.max(0, fullCooldownTicks) * UryuBalance.STAR_FIZZLE_COOLDOWN_SHARE);
+	}
+
 	/** HP for the target at {@code index} along the line, nearest first (0 = the first). */
 	public static float damage(int index) {
 		return index <= 0 ? UryuBalance.STAR_FIRST : UryuBalance.STAR_FOLLOW;

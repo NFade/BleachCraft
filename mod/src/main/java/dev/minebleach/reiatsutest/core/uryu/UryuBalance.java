@@ -162,6 +162,13 @@ public final class UryuBalance {
 	public static final float STAR_FIRST = 20.0F;
 	public static final float STAR_FOLLOW = 12.0F;
 	public static final int STAR_MAX_TARGETS = 16;
+	/**
+	 * S-U1: the 0.8 s charge. The cast resolves at the RELEASE, this many ticks after the key press (aim and Focus are read then, like Licht
+	 * Regen); the key press only starts the visuals. No damage, cost or cooldown changed.
+	 */
+	public static final int STAR_CHARGE_TICKS = 16;
+	/** S-U1: a charge whose Focus dropped below {@link #STAR_FOCUS} before the release fizzles and keeps only this share of the cooldown. */
+	public static final double STAR_FIZZLE_COOLDOWN_SHARE = 0.5;
 
 	/** Damage and speed factor of an arrow shot with {@code stacks} of Focus (clamped to 0..3). */
 	public static double focusFactor(int stacks) {

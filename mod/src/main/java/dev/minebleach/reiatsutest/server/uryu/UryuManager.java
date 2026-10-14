@@ -7,6 +7,7 @@ import dev.minebleach.reiatsutest.core.state.StateMachine;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
+import dev.minebleach.reiatsutest.core.uryu.BindEnd;
 import dev.minebleach.reiatsutest.core.uryu.BowDraw;
 import dev.minebleach.reiatsutest.core.uryu.Focus;
 import dev.minebleach.reiatsutest.core.uryu.LichtRegen;
@@ -208,14 +209,14 @@ public final class UryuManager {
 		}
 		for (Trap t : TRAPS) {
 			if (t.trap().owner().equals(owner)) {
-				freeBound(srv, t, "pentagon cancelled");
+				freeBound(srv, t, BindEnd.CANCEL, "pentagon cancelled");
 			}
 		}
 	}
 
-	private static void freeBound(MinecraftServer srv, Trap t, String why) {
+	private static void freeBound(MinecraftServer srv, Trap t, BindEnd reason, String why) {
 		for (UUID u : t.bound()) {
-			SprengerBinds.release(srv, u, why);
+			SprengerBinds.release(srv, u, reason, why);
 		}
 		t.bound().clear();
 	}
@@ -488,7 +489,7 @@ public final class UryuManager {
 			for (Iterator<Trap> it = TRAPS.iterator(); it.hasNext();) {
 				Trap old = it.next();
 				if (old.trap().owner().equals(id)) {
-					freeBound(p.getServer(), old, "pentagon replaced");
+					freeBound(p.getServer(), old, BindEnd.CANCEL, "pentagon replaced");
 					it.remove(); // the oldest goes
 					break;
 				}
@@ -515,7 +516,7 @@ public final class UryuManager {
 			ServerWorld w = srv.getWorld(t.world());
 			ServerPlayerEntity owner = srv.getPlayerManager().getPlayer(t.trap().owner());
 			if (w == null || owner == null || owner.isDead() || owner.getServerWorld() != w) {
-				freeBound(srv, t, "pentagon fizzled");
+				freeBound(srv, t, BindEnd.CANCEL, "pentagon fizzled");
 				it.remove(); // the caster died, left or went to another dimension: the pentagon fizzles
 				continue;
 			}
@@ -548,10 +549,16 @@ public final class UryuManager {
 	 */
 	private static void bind(ServerPlayerEntity owner, Trap t, int now) {
 		int n = 0;
+		List<Integer> ids = new ArrayList<>();
 		for (LivingEntity e : inside(owner, t.trap())) {
-			SprengerBinds.bind(e, now, UryuBalance.SPRENGER_BIND_TICKS);
-			t.bound().add(e.getUuid());
+			if (SprengerBinds.bind(e, now, UryuBalance.SPRENGER_BIND_TICKS, t.trap().center())) {
+				t.bound().add(e.getUuid());
+				ids.add(e.getId());
+			}
 			n++;
+		}
+		if (!ids.isEmpty()) { // S-U3: who is rooted, so the client can draw the chains and sigils on exactly them
+			UryuNet.sendBind(owner.getServerWorld(), now, ids.stream().mapToInt(Integer::intValue).toArray(), t.trap().center(), UryuBalance.SPRENGER_BIND_TICKS);
 		}
 		ReiatsuTest.LOGGER.info("[uryu] sprenger bind: {} rooted for {} ticks", n, UryuBalance.SPRENGER_BIND_TICKS);
 	}
@@ -563,7 +570,7 @@ public final class UryuManager {
 		}
 		SprengerTrap t = trap.trap();
 		// the root ends WITH the explosion: free the bound ones first, so the explosion damage is not counted as an early break
-		freeBound(w.getServer(), trap, "explosion");
+		freeBound(w.getServer(), trap, BindEnd.EXPLOSION, "explosion");
 		float hp = t.damage();
 		int n = 0;
 		List<LivingEntity> hit = inside(owner, t);
@@ -596,7 +603,7 @@ public final class UryuManager {
 			if (owner != null && t.trap().detonateEarly()) {
 				explode(owner, w, t, srv.getTicks());
 			} else {
-				freeBound(srv, t, "pentagon gone");
+				freeBound(srv, t, BindEnd.CANCEL, "pentagon gone");
 			}
 		}
 	}
@@ -802,12 +809,15 @@ public final class UryuManager {
 
 	// ------------------------------------------------------------------ Sternenstaub
 
-	/** Sternenstaub (B, BANKAI): a line 40 long and 2 wide, 20 HP to the first target and 12 to each following one; uses the 3 stacks. */
+	/**
+	 * Sternenstaub (B, BANKAI): a line 40 long and 2 wide, 20 HP to the first target and 12 to each following one; uses the 3 stacks. S-U1: runs at the
+	 * RELEASE, {@link UryuBalance#STAR_CHARGE_TICKS} ticks after the key press, so the aim (eye and look) and the Focus are those of that moment.
+	 */
 	public static void sternenstaub(ServerPlayerEntity p) {
 		Data d = data(p);
 		if (!Sternenstaub.canCast(d.focus.stacks())) {
 			ReiatsuTest.LOGGER.info("[uryu] {} sternenstaub fizzled: focus {}", p.getName().getString(), d.focus.stacks());
-			return; // the cast was let through before the Focus ran out (moved in the same tick); the gate in allowsCast normally stops it
+			return; // S-U1: UryuAbilities.releaseGate already fizzled a charge that lost its Focus (and set the half cooldown); this is only the last guard
 		}
 		d.focus.consume();
 		show(p, d);

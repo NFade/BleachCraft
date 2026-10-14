@@ -36,6 +36,18 @@ final class ServerFx {
 	}
 
 	/**
+	 * Uryu, S-U4: the key press of Licht Regen or Sternenstaub (effect 78): x y z = the caster's feet, d = his look, params = {pre-aim x, y, z,
+	 * effect id of the ability that follows at the release, seconds until the release}.
+	 */
+	static void uryuCastStart(ServerPlayerEntity caster, int seed, Vec3d pre, int abilityEffectId, float seconds) {
+		Vec3d look = caster.getRotationVec(1.0F);
+		EffectEventS2C payload = new EffectEventS2C(EffectIds.URYU_CAST_START, caster.getId(), seed, caster.getX(), caster.getY(), caster.getZ(),
+				(float) look.x, (float) look.y, (float) look.z, -1, caster.getServer().getTicks(),
+				new float[] {(float) pre.x, (float) pre.y, (float) pre.z, abilityEffectId, seconds});
+		sendToViewers(caster, payload);
+	}
+
+	/**
 	 * The bankai cleanup message (id 44): everybody who sees the caster drops every bankai effect of him. params = {trigger ordinal,
 	 * character code}. Sent from the one server cleanup, whatever ended the bankai.
 	 */

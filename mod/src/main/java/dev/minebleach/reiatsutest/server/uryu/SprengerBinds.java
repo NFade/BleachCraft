@@ -1,7 +1,9 @@
 package dev.minebleach.reiatsutest.server.uryu;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.BindBook;
+import dev.minebleach.reiatsutest.core.uryu.BindEnd;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,7 +28,8 @@ import net.minecraft.world.World;
  * movement-speed and a jump-strength modifier of -100 percent (two unique ids, temporary: never saved to disk, so a crash cannot leave
  * anybody stuck) and a player may not shunpo ({@link #shunpoBanned}). It is lifted when the time is up, when the bound one takes any
  * damage (this class listens to {@code AFTER_DAMAGE}; the killing blow is {@code AFTER_DEATH}), on death, logout, a change of dimension
- * and the server stopping; {@code UryuManager} releases the bound ones of a pentagon before its explosion and when the pentagon is
+ * and the server stopping; every end is announced to the players near ({@link UryuNet#sendEnd}, S-U3) with its {@link BindEnd} reason.
+ * {@code UryuManager} releases the bound ones of a pentagon before its explosion and when the pentagon is
  * cancelled (caster dead, logged out, state changed). Touched from the server thread only.
  */
 public final class SprengerBinds {
@@ -37,6 +40,8 @@ public final class SprengerBinds {
 	private static final BindBook BOOK = new BindBook();
 	/** World of every bound entity, to find it again (and to notice a change of dimension). */
 	private static final Map<UUID, RegistryKey<World>> WORLDS = new HashMap<>();
+	/** Centre of the pentagon that holds every bound entity (for the END packet of S-U3). */
+	private static final Map<UUID, V3> CENTERS = new HashMap<>();
 
 	private SprengerBinds() {
 	}
@@ -47,19 +52,21 @@ public final class SprengerBinds {
 				onDamaged(entity);
 			}
 		});
-		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> release(entity, "death"));
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) -> release(handler.player, "logout"));
+		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> release(entity, BindEnd.DAMAGE, "death"));
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) -> release(handler.player, BindEnd.CANCEL, "logout"));
 	}
 
-	/** Roots {@code e} from tick {@code now} for {@code ticks}. */
-	public static void bind(LivingEntity e, int now, int ticks) {
+	/** Roots {@code e} from tick {@code now} for {@code ticks}, held by the pentagon at {@code center}. True when it was rooted (alive, in a server world). */
+	public static boolean bind(LivingEntity e, int now, int ticks, V3 center) {
 		if (e.isDead() || !(e.getWorld() instanceof ServerWorld w)) {
-			return;
+			return false;
 		}
 		BOOK.bind(e.getUuid(), now, ticks);
 		WORLDS.put(e.getUuid(), w.getRegistryKey());
+		CENTERS.put(e.getUuid(), center);
 		modify(e, EntityAttributes.GENERIC_MOVEMENT_SPEED, SPEED_ID, true);
 		modify(e, EntityAttributes.GENERIC_JUMP_STRENGTH, JUMP_ID, true);
+		return true;
 	}
 
 	/** True while the player may not use the shunpo (rooted by a Sprenger and not yet freed). */
@@ -72,19 +79,29 @@ public final class SprengerBinds {
 		return BOOK.active(id, now);
 	}
 
-	/** Ends the bind of this entity (if any) and takes the modifiers off. True when there was one. */
-	public static boolean release(LivingEntity e, String why) {
+	/** Ends the bind of this entity (if any), takes the modifiers off and tells the players near. True when there was one. */
+	public static boolean release(LivingEntity e, BindEnd reason, String why) {
 		boolean was = BOOK.release(e.getUuid());
 		WORLDS.remove(e.getUuid());
+		V3 c = CENTERS.remove(e.getUuid());
 		off(e);
 		if (was) {
 			ReiatsuTest.LOGGER.info("[uryu] sprenger bind of {} ends ({})", e.getName().getString(), why);
+			announce(e, c, reason);
 		}
 		return was;
 	}
 
+	/** S-U3: the END packet to everybody near the pentagon. */
+	private static void announce(LivingEntity e, V3 center, BindEnd reason) {
+		if (e.getWorld() instanceof ServerWorld w && w.getServer() != null) {
+			V3 c = center != null ? center : new V3(e.getX(), e.getY(), e.getZ());
+			UryuNet.sendEnd(w, w.getServer().getTicks(), new int[] {e.getId()}, c, reason);
+		}
+	}
+
 	/** By uuid, for the pentagon cleanup: finds the entity in its world (or among the players) and releases it. */
-	public static void release(MinecraftServer srv, UUID id, String why) {
+	public static void release(MinecraftServer srv, UUID id, BindEnd reason, String why) {
 		RegistryKey<World> key = WORLDS.get(id);
 		Entity e = null;
 		if (key != null && srv.getWorld(key) != null) {
@@ -94,10 +111,11 @@ public final class SprengerBinds {
 			e = srv.getPlayerManager().getPlayer(id);
 		}
 		if (e instanceof LivingEntity le) {
-			release(le, why);
+			release(le, reason, why);
 		} else {
 			BOOK.release(id);
 			WORLDS.remove(id);
+			CENTERS.remove(id);
 		}
 	}
 
@@ -107,8 +125,10 @@ public final class SprengerBinds {
 		}
 		if (BOOK.onDamage(e.getUuid())) {
 			WORLDS.remove(e.getUuid());
+			V3 c = CENTERS.remove(e.getUuid());
 			off(e);
 			ReiatsuTest.LOGGER.info("[uryu] sprenger bind of {} broken by damage", e.getName().getString());
+			announce(e, c, BindEnd.DAMAGE);
 		}
 	}
 
@@ -124,17 +144,18 @@ public final class SprengerBinds {
 			boolean over = now >= BOOK.endOf(id);
 			if (e instanceof LivingEntity le && !le.isDead() && !le.isRemoved()) {
 				if (over) {
-					release(le, "time is up");
+					release(le, BindEnd.EXPIRE, "time is up");
 				}
 				continue;
 			}
 			// gone from its world: dead, unloaded, or a player in another dimension / disconnected
 			ServerPlayerEntity p = srv.getPlayerManager().getPlayer(id);
 			if (p != null) {
-				release(p, "dimension change");
+				release(p, BindEnd.CANCEL, "dimension change");
 			} else {
 				BOOK.release(id);
 				WORLDS.remove(id);
+				CENTERS.remove(id);
 			}
 		}
 	}
@@ -143,11 +164,12 @@ public final class SprengerBinds {
 	public static void clearAll(MinecraftServer srv) {
 		if (srv != null) {
 			for (UUID id : BOOK.all()) {
-				release(srv, id, "server stop");
+				release(srv, id, BindEnd.CANCEL, "server stop");
 			}
 		}
 		BOOK.clear();
 		WORLDS.clear();
+		CENTERS.clear();
 	}
 
 	private static void off(LivingEntity e) {

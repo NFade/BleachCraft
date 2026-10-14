@@ -32,6 +32,9 @@ final class AbilityExecutor {
 		DmgLog.begin(ability.commandId + "#" + phase);
 		try {
 			if (ctx.spec.aimsAtRelease() && phase == ctx.spec.releasePhase()) {
+				if (!UryuAbilities.releaseGate(p, ability)) {
+					return; // Uryu S-U1: the Sternenstaub lost its Focus during the charge and fizzled: no effect event, no damage
+				}
 				// r8 item 3: the cast time is over and the thrust leaves NOW, along the look of this moment (position, eye, direction, aimed
 				// point and ray length are read again); the client effect event is sent here too, so it carries the same new aim
 				ctx = ctx.resampled(p);
