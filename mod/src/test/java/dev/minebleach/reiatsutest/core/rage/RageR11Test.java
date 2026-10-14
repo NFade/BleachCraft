@@ -11,7 +11,9 @@ import org.junit.jupiter.api.Test;
 
 /** R11 T3: the reworked Rage economy (new defaults, anti-farm rules, the config section). Times to shikai and bankai are in {@link RageSimulatorTest}. */
 class RageR11Test {
-	private final RageConfig cfg = RageConfig.defaults();
+	/** The R11 T3 numbers as they were before the gin-uryu rage override: these tests pin that rule set, the live defaults live in RageDefaultsTest. */
+	static final RageConfig R11 = new RageConfig(1000, 0, 250, 40, 2, 25, 160, 20, 5, 0, 10, 120, 400, 800, 20, 20, 25, 80, 400);
+	private final RageConfig cfg = R11;
 
 	private RageMeter meter() {
 		return new RageMeter(cfg);
@@ -321,7 +323,7 @@ class RageR11Test {
 		assertEquals(50, c.mobMultiplierPercent());
 		assertEquals(100, c.bankaiMinShikaiTicks());
 		assertEquals(0, c.abilityHitTenths());
-		assertEquals(40, c.parryGainTenths(), "untouched keys keep the default");
+		assertEquals(RageConfig.defaults().parryGainTenths(), c.parryGainTenths(), "untouched keys keep the default");
 	}
 
 	@Test
@@ -329,14 +331,14 @@ class RageR11Test {
 		JsonObject root = JsonParser.parseString("{\"rage\":{\"dealtTenthsPerHp\":\"many\",\"parryGainTenths\":-50,\"shikaiCostTenths\":99999,"
 				+ "\"bankaiCostTenths\":null,\"decayIntervalTicks\":0,\"passiveIntervalTicks\":-4,\"bankaiMinShikaiTicks\":1e12,\"mobMultiplierPercent\":[1]}}").getAsJsonObject();
 		RageConfig c = RageConfig.fromRoot(root);
-		assertEquals(2, c.dealtTenthsPerHp(), "a string gives the default");
+		assertEquals(RageConfig.defaults().dealtTenthsPerHp(), c.dealtTenthsPerHp(), "a string gives the default");
 		assertEquals(0, c.parryGainTenths(), "negative is clamped to 0");
 		assertEquals(1000, c.shikaiCostTenths(), "above the bar is clamped to the bar");
 		assertEquals(800, c.bankaiCostTenths(), "null gives the default");
 		assertEquals(1, c.decayIntervalTicks());
 		assertEquals(1, c.passiveIntervalTicks());
 		assertEquals(72_000, c.bankaiMinShikaiTicks());
-		assertEquals(25, c.mobMultiplierPercent(), "an array gives the default");
+		assertEquals(RageConfig.defaults().mobMultiplierPercent(), c.mobMultiplierPercent(), "an array gives the default");
 	}
 
 	@Test

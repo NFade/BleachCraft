@@ -79,9 +79,12 @@ public record RageConfig(int maxTenths, int damageTenthsPerHp, int maxGainPerHit
 	 * hit (mobs count 25 percent, at most 8.0 per target per 10 s); a parry gives 4.0, at most once per second; the first landed hit of
 	 * an ability or kido cast gives 2.0 (per cast, not per target); no passive inflow; drain of 0.5 per second after 8 s out of combat.
 	 * Shikai costs 40, bankai 80 (the bar is paid, not only checked), and bankai needs 20 s spent in shikai.
+	 * gin-uryu override (user request 2026-10-14): a sword or projectile hit gives a flat 3.0 (rate 1000 per hp capped at 30 per hit, so any
+	 * real hit pays the cap), mobs count fully and there is no per-target cap (10000 = never reached); a parry gives 5.0; the bar drains
+	 * only after 30 s (600 ticks) out of combat.
 	 */
 	public static RageConfig defaults() {
-		return new RageConfig(MAX_TENTHS, 0, 250, 40, 2, 25, 160, 20, 5, 0, 10, 120, 400, 800, 20, 20, 25, 80, 400);
+		return new RageConfig(MAX_TENTHS, 0, 250, 50, 1000, 30, 600, 20, 5, 0, 10, 120, 400, 800, 20, 20, 100, 10_000, 400);
 	}
 
 	/** The cost of entering a state in tenths: shikai and bankai are priced, everything else is free. */

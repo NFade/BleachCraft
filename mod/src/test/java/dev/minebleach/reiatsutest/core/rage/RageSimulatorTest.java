@@ -113,7 +113,7 @@ class RageSimulatorTest {
 
 	@Test
 	void printsTheTableOfTimesToShikaiAndBankai() throws IOException {
-		String t = table(RageConfig.defaults(), oldConfig());
+		String t = table(RageR11Test.R11, oldConfig());
 		Path out = Path.of("build", "reports", "rage_sim_table.txt");
 		Files.createDirectories(out.getParent());
 		Files.writeString(out, t, StandardCharsets.UTF_8);
@@ -123,7 +123,7 @@ class RageSimulatorTest {
 
 	@Test
 	void theReferenceDuelMeetsTheGoalsOfThePlan() {
-		Result r = simulate(RageConfig.defaults(), REFERENCE);
+		Result r = simulate(RageR11Test.R11, REFERENCE);
 		assertTrue(r.shikaiSec() >= 35.0 && r.shikaiSec() <= 60.0, "shikai at " + r.shikaiSec() + " s, goal 35..60 s");
 		assertTrue(r.shikaiToBankaiSec() >= 80.0 && r.shikaiToBankaiSec() <= 140.0, "shikai to bankai " + r.shikaiToBankaiSec() + " s, goal 80..140 s");
 	}
@@ -138,14 +138,14 @@ class RageSimulatorTest {
 	@Test
 	void takingDamageNeverHelps() {
 		Profile onlyTaken = new Profile("only taken", 0, 0, 0.0F, 0, 10, 100, 8.0F, 0, false, 0);
-		assertEquals(-1.0, simulate(RageConfig.defaults(), onlyTaken).shikaiSec(), "no rage from damage taken: shikai never opens");
+		assertEquals(-1.0, simulate(RageR11Test.R11, onlyTaken).shikaiSec(), "no rage from damage taken: shikai never opens");
 	}
 
 	@Test
 	void parrySpamAndOneDummyAreSlowedByTheirCaps() {
-		Result parry = simulate(RageConfig.defaults(), PROFILES.get(5));
-		Result dummy = simulate(RageConfig.defaults(), PROFILES.get(6));
-		Result ref = simulate(RageConfig.defaults(), REFERENCE);
+		Result parry = simulate(RageR11Test.R11, PROFILES.get(5));
+		Result dummy = simulate(RageR11Test.R11, PROFILES.get(6));
+		Result ref = simulate(RageR11Test.R11, REFERENCE);
 		// a parry pays at most once per 20 ticks (4 points): 40 points need ten paying parries, at least 9 s, however often the parries come
 		assertTrue(parry.shikaiSec() >= 9.0, "parry spam: shikai in " + parry.shikaiSec() + " s");
 		// one target pays at most 8 points per 10 s: 40 points need five windows, i.e. about 40 s however fast it is hit (the first window starts full)
@@ -155,8 +155,8 @@ class RageSimulatorTest {
 
 	@Test
 	void mobFarmingIsFarSlowerThanFightingPlayers() {
-		Result mob = simulate(RageConfig.defaults(), PROFILES.get(7));
-		Result duel = simulate(RageConfig.defaults(), PROFILES.get(2));
+		Result mob = simulate(RageR11Test.R11, PROFILES.get(7));
+		Result duel = simulate(RageR11Test.R11, PROFILES.get(2));
 		assertTrue(mob.shikaiSec() > 2.5 * duel.shikaiSec(), "mobs " + mob.shikaiSec() + " s vs players " + duel.shikaiSec() + " s");
 	}
 
@@ -164,9 +164,9 @@ class RageSimulatorTest {
 	void everyProfileIsMonotonic() {
 		List<Double> shikai = new ArrayList<>();
 		for (Profile p : PROFILES) {
-			Result r = simulate(RageConfig.defaults(), p);
+			Result r = simulate(RageR11Test.R11, p);
 			if (r.shikaiSec() >= 0 && r.bankaiSec() >= 0) {
-				assertTrue(r.bankaiSec() - r.shikaiSec() >= RageConfig.defaults().bankaiMinShikaiTicks() / 20.0, p.name());
+				assertTrue(r.bankaiSec() - r.shikaiSec() >= RageR11Test.R11.bankaiMinShikaiTicks() / 20.0, p.name());
 			}
 			shikai.add(r.shikaiSec());
 		}
