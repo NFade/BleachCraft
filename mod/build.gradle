@@ -113,6 +113,32 @@ loom {
 				vmArg "-Dreiatsu.fx.remote=${project.property('remote')}"
 			}
 		}
+		// Dev-only automated visual verification of the Uryu effects (URYU_VFX_STORYBOARD 6): gradlew runPhase7 [-Phold=<scenario>] [-PfreezeAt=<ms>]
+		// [-Pfx=key=value,...]. The phase 6 engine with the Uryu scenarios added (screenshots p7_*.png); the default scenario is uryu_atlas
+		phase7 {
+			client()
+			name = "Phase 7 Harness (Uryu)"
+			ideConfigGenerated(false)
+			vmArg "-Dreiatsu.phase6=true"
+			vmArg "-Dreiatsu.phase7=true"
+			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
+			programArgs "--width", "1280", "--height", "720"
+			vmArg "-Dreiatsu.fx.hold=${project.findProperty('hold') ?: 'uryu_atlas'}"
+			if (project.hasProperty("freezeAt")) {
+				vmArg "-Dreiatsu.fx.freezeAt=${project.property('freezeAt')}"
+			}
+			if (project.hasProperty("fx")) {
+				project.property("fx").toString().split(",").each { kv ->
+					def parts = kv.split("=", 2)
+					if (parts.length == 2) {
+						vmArg "-Dreiatsu.fx.${parts[0]}=${parts[1]}"
+					}
+				}
+			}
+			if (project.hasProperty("remote")) {
+				vmArg "-Dreiatsu.fx.remote=${project.property('remote')}"
+			}
+		}
 	}
 }
 
@@ -198,7 +224,7 @@ afterEvaluate {
 
 // Dev harnesses: make sure the first run does not stop at the accessibility onboarding screen and is silent.
 afterEvaluate {
-	["runSpike", "runPhase4", "runPhase5", "runPhase6"].each { taskName ->
+	["runSpike", "runPhase4", "runPhase5", "runPhase6", "runPhase7"].each { taskName ->
 		tasks.named(taskName) {
 			doFirst {
 				def opts = file("run/options.txt")

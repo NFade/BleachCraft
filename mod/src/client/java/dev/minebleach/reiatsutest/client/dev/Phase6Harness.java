@@ -393,6 +393,9 @@ public final class Phase6Harness {
 		if (wants("rk6") || wants("rk7") || wants("rkperf") || explicit("rk")) {
 			Phase6Rukia.steps();
 		}
+		if (Phase7Uryu.enabled()) {
+			Phase7Uryu.steps(); // gradlew runPhase7: the Uryu scenarios ride on this engine (own p7_ screenshots)
+		}
 		step("finish", 10, () -> {
 			finish();
 			mc.scheduleStop();
