@@ -12,6 +12,15 @@ public final class ObjMeta {
 	public final Map<String, float[]> objects = new LinkedHashMap<>();
 	/** Draw-from-scabbard data of the sealed models (null for every other model). */
 	public BladeAxis bladeAxis;
+	/** Size block {@code "blade"} of the Byakuya bankai blade (R11 T13); null for every other model. */
+	public Blade blade;
+
+	/**
+	 * {@code blade} of {@code byakuya_bankai_meta.json}: {@code length} / {@code width} / {@code thickness} in metres, {@code tip} = the apex in Blender world coordinates
+	 * (Z-up; the OBJ frame is (x, z, -y)).
+	 */
+	public record Blade(double length, double width, double thickness, double[] tip) {
+	}
 
 	/**
 	 * {@code blade_axis} of the sealed models (Blender coordinates): {@code origin} = centre of the saya mouth,
@@ -36,7 +45,20 @@ public final class ObjMeta {
 					b.get("blade_length").getAsFloat(), b.get("clear_travel").getAsFloat(), vec(arc, "center"),
 					arc.get("radius").getAsFloat(), vec(arc, "rotation_axis"));
 		}
+		if (root.has("blade") && root.get("blade").isJsonObject()) {
+			JsonObject b = root.getAsJsonObject("blade");
+			double[] tip = null;
+			if (b.has("tip") && b.get("tip").isJsonArray() && b.getAsJsonArray("tip").size() >= 3) {
+				var a = b.getAsJsonArray("tip");
+				tip = new double[] {a.get(0).getAsDouble(), a.get(1).getAsDouble(), a.get(2).getAsDouble()};
+			}
+			m.blade = new Blade(num(b, "length"), num(b, "width"), num(b, "thickness"), tip);
+		}
 		return m;
+	}
+
+	private static double num(JsonObject o, String key) {
+		return o.has(key) && o.get(key).isJsonPrimitive() ? o.get(key).getAsDouble() : Double.NaN;
 	}
 
 	private static float[] vec(JsonObject o, String key) {

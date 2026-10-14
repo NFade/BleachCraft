@@ -5,14 +5,13 @@ package dev.minebleach.reiatsutest.core.fx;
  * (the "burning dissolve", its petals are born at the cut), stays gone, and regrows from the ground up. Everything is a pure function of
  * the time since the phase start and the blade's distance from the release point, so a late joiner (S3: {@code phaseKind}, {@code phaseTime})
  * reconstructs the exact state. The result is the remaining blade FRACTION (1 = standing, 0 = gone); the cut height is
- * {@code fraction * 8 m}. Petal birth (cut passes height y while dissolving) and petal consumption (regrowth passes y) are derived here
+ * {@code fraction * BladeSpec.length()} (5.5 m for the shipped mesh). Petal birth (cut passes height y while dissolving) and petal consumption (regrowth passes y) are derived here
  * so the petals of {@link StormMath} and {@link CondenseMath} meet the blade edge exactly.
  */
 public final class RowsPhase {
 	public static final byte STANDING = 0;
 	public static final byte SCATTERED = 32;
 	public static final byte CONSUMED = 33;
-	public static final double BLADE_LENGTH = 8.0;
 
 	/** What a blade is doing at one moment. */
 	public enum Stage { STANDING, DISSOLVING, GONE, REGROWING }
@@ -37,7 +36,7 @@ public final class RowsPhase {
 			this.reformSpan = Math.max(1e-3, reformSpan);
 		}
 
-		/** 6.2 scatter: cut 8 to 0 over 0.4 s from 0.3 + 0.008 d, regrow 0 to 8 over 0.6 s from 4.5 + 0.004 d. */
+		/** 6.2 scatter: cut length to 0 over 0.4 s from 0.3 + 0.008 d, regrow 0 to length over 0.6 s from 4.5 + 0.004 d. */
 		public static Timing scatter() {
 			return new Timing(0.30, 0.008, 0.40, 4.5, 0.004, 0.6);
 		}
@@ -59,14 +58,14 @@ public final class RowsPhase {
 			return reformStart + reformPerBlock * dist;
 		}
 
-		/** Time at which the dissolving cut of a blade passes the height {@code y} (0..8 m). */
+		/** Time at which the dissolving cut of a blade passes the height {@code y} (0..blade length). */
 		public double cutPassesAt(double dist, double y) {
-			return cutBegin(dist) + cutSpan * (1.0 - y / BLADE_LENGTH);
+			return cutBegin(dist) + cutSpan * (1.0 - y / BladeSpec.length());
 		}
 
 		/** Time at which the regrowing blade reaches the height {@code y}. */
 		public double regrowReaches(double dist, double y) {
-			return reformBegin(dist) + reformSpan * (y / BLADE_LENGTH);
+			return reformBegin(dist) + reformSpan * (y / BladeSpec.length());
 		}
 
 		/** Time at which the last blade (distance {@code maxDist}) is whole again: the phase is over. */

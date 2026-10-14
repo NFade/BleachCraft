@@ -75,13 +75,13 @@ class StormMathTest {
 			double ts = s.birthTime(j);
 			assertEquals(0.0, scaleAt(s, j, ts - 0.01, out), 1e-9, "not born before the cut");
 			assertTrue(scaleAt(s, j, ts + 0.2, out) > 0.5);
-			// birth time matches the rows cut: blade fraction x 8 = slot height
+			// birth time matches the rows cut: blade fraction x blade length = slot height
 			double d = 1.1 * (s.blade(j) % 50);
-			assertEquals(s.slotHeight(j), RowsPhase.fraction(RowsPhase.Timing.scatter(), ts, d) * 8.0, 1e-6);
+			assertEquals(s.slotHeight(j), RowsPhase.fraction(RowsPhase.Timing.scatter(), ts, d) * BladeSpec.length(), 1e-6);
 		}
 		// the first slot of a blade (k = 0) is at the tip, the last one near the ground
-		assertEquals(8.0, s.slotHeight(0), 1e-9);
-		assertEquals(8.0 - 8.0 * 14 / 15, s.slotHeight(14), 1e-9);
+		assertEquals(BladeSpec.length(), s.slotHeight(0), 1e-9);
+		assertEquals(BladeSpec.length() - BladeSpec.length() * 14 / 15, s.slotHeight(14), 1e-9);
 	}
 
 	@Test

@@ -4,6 +4,7 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.AnchorPlan;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
 import dev.minebleach.reiatsutest.core.fx.BladeRowLayout;
+import dev.minebleach.reiatsutest.core.fx.BladeSpec;
 import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.HashMap;
@@ -69,8 +70,8 @@ public final class RowsFx {
 		public final double maxDist;
 		/** World scale of every blade (bankai.bladeScale, read when the rows are created and kept for their life; the static buffer depends on it). */
 		public final double bladeScale = bladeScaleSetting();
-		/** Blade width across the lane in blocks (bankai.bladeWidth) and the anisotropic scales of the mesh (local z = width, local x = thickness), relative to {@link #bladeScale}. */
-		public final double bladeWidth = bladeWidthSetting();
+		/** Blade width across the lane in blocks (bankai.bladeWidth, default the mesh width times {@link #bladeScale}, so kz = 1) and the anisotropic scales of the mesh (local z = width, local x = thickness), relative to {@link #bladeScale}. */
+		public final double bladeWidth = bladeWidthSetting(bladeScale);
 		public final double kz = BladeRowLayout.widthScale(bladeWidth, bladeScale);
 		public final double kx = bladeThickSetting();
 		/** Time (seconds from the release) from which the rows are drawn from the static buffer. */
@@ -92,8 +93,6 @@ public final class RowsFx {
 		int vboLightHash;
 		long lastLightCheck;
 		boolean vboValid;
-		/** bankai.bladeCurve the static buffer was built for (a change rebuilds it). */
-		double vboCurve = Double.NaN;
 
 		State(int ownerId, long seed, BladeRowLayout layout, double epoch, double yawDeg, double fx, double fy, double fz, ClientWorld w) {
 			this.ownerId = ownerId;
@@ -206,21 +205,30 @@ public final class RowsFx {
 	}
 
 	/**
-	 * World scale of the bankai blades (fx_override.json {@code bankai.bladeScale}). The mesh is 8 m long (ART_BIBLE B13); r7: default 1.0 = 8 blocks, the
-	 * slab blades of the anime references (3 to 4 person heights plus the curve). Width and thickness have their own keys.
+	 * World scale of the bankai blades: {@code bankai.bladeScale} (default 1.0) times {@code bankai.bladeLength / mesh length}. The mesh is the user's straight blade, 5.5 m
+	 * long (read from the meta by {@link BladeSpecLoader}); default 1.0 = 5.5 blocks, 3 heights of Byakuya as measured on the anime. {@code bankai.bladeLength} (blocks, default
+	 * the mesh length) resizes the whole blade in one number, all three axes alike. Width and thickness have their own optional keys.
 	 */
 	public static double bladeScaleSetting() {
-		return FxMath.clamp(FxTune.d("bankai.bladeScale", BladeRowLayout.DEFAULT_BLADE_SCALE), 0.2, 2.0);
+		BladeSpecLoader.ensure();
+		double byLength = FxTune.d("bankai.bladeLength", BladeSpec.length()) / BladeSpec.length();
+		double s = FxMath.clamp(FxTune.d("bankai.bladeScale", BladeRowLayout.DEFAULT_BLADE_SCALE), 0.2, 2.0) * FxMath.clamp(byLength, 0.2, 3.0);
+		return FxMath.clamp(s, 0.2, 4.0);
 	}
 
-	/** Width of a blade across the lane in blocks (bankai.bladeWidth, default 1.5; the mesh is 0.55 m wide, so it is stretched anisotropically). */
-	public static double bladeWidthSetting() {
-		return FxMath.clamp(FxTune.d("bankai.bladeWidth", BladeRowLayout.DEFAULT_BLADE_WIDTH), 0.1, 6.0);
+	/** Width of a blade across the lane in blocks (bankai.bladeWidth, optional; default the mesh width 0.4026 times {@code bladeScale}: no stretch). */
+	public static double bladeWidthSetting(double bladeScale) {
+		return FxMath.clamp(FxTune.d("bankai.bladeWidth", BladeRowLayout.defaultBladeWidth(bladeScale)), 0.05, 6.0);
 	}
 
-	/** Thickness multiplier of the blade (bankai.bladeThick, default 2.0 = 0.28 blocks at bladeScale 1). */
+	/** Thickness multiplier of the blade (bankai.bladeThick, optional; default 1.0 = the mesh thickness 0.1477 blocks at bladeScale 1). */
 	public static double bladeThickSetting() {
 		return FxMath.clamp(FxTune.d("bankai.bladeThick", BladeRowLayout.DEFAULT_BLADE_THICK), 0.2, 8.0);
+	}
+
+	/** True when {@code bankai.layout} is {@code r9}: the R9 measured layout (start 1 behind the feet, pitch 2.0, 12 per side, half width 3.7) instead of the current one. */
+	public static boolean layoutR9() {
+		return BladeRowLayout.LAYOUT_R9.equalsIgnoreCase(FxTune.s("bankai.layout", ""));
 	}
 
 	/** Spacing and corridor width of the rows (fx_override.json {@code rows.scale}, default 0.65; 1.0 = the original 6 block half width, spacing 1.1). */
@@ -230,18 +238,21 @@ public final class RowsFx {
 
 	/**
 	 * The wall of slab blades of the Byakuya bankai (r7): ONE rank per side, {@code rows.perSide} 10 blades each at {@code rows.halfWidth} 7 blocks from the axis,
-	 * {@code rows.spacing} 1.0 between neighbours (they almost touch: the slab is 0.28 thick, 1.5 wide), from {@code rows.startAhead} -2 (2 blocks BEHIND the feet, r7 user request) further back. The count follows
+	 * {@code rows.spacing} 1.0 between neighbours, from {@code rows.startAhead} -2 (2 blocks BEHIND the feet, r7 user request) further back. {@code bankai.layout = r9} swaps these defaults for the
+	 * R9 measurement (start -1, pitch 2.0, 12 per side, half width 3.7). The count follows
 	 * the quality tier ({@code bankaiBladeCount} 200 / 100 / 50 = 10 / 5 / 3 per side, the pitch widens for the lower tiers). {@code rows.legacy} 1 brings back the old two rank corridor.
 	 */
 	public static BladeRowLayout makeLayout(long seed) {
 		if (FxTune.d("rows.legacy", 0.0) > 0.5) {
 			return BladeRowLayout.of(FxConfig.bankaiBladeCount, seed, rowsScaleSetting());
 		}
-		int high = (int) Math.round(FxTune.d("rows.perSide", BladeRowLayout.DEFAULT_PER_SIDE));
+		boolean r9 = layoutR9(); // (explicit rows.* keys still win over either set of defaults)
+		int high = (int) Math.round(FxTune.d("rows.perSide", r9 ? BladeRowLayout.R9_PER_SIDE : BladeRowLayout.DEFAULT_PER_SIDE));
 		int per = (int) Math.round(high * FxConfig.bankaiBladeCount / 200.0);
 		per = Math.max(3, Math.min(250, per));
-		double pitch = BladeRowLayout.tierPitch(per, high, FxTune.d("rows.spacing", BladeRowLayout.DEFAULT_PITCH));
-		return BladeRowLayout.lane(per, seed, FxTune.d("rows.halfWidth", BladeRowLayout.DEFAULT_HALF_WIDTH), pitch, FxTune.d("rows.startAhead", BladeRowLayout.DEFAULT_START_AHEAD));
+		double pitch = BladeRowLayout.tierPitch(per, high, FxTune.d("rows.spacing", r9 ? BladeRowLayout.R9_PITCH : BladeRowLayout.DEFAULT_PITCH));
+		return BladeRowLayout.lane(per, seed, FxTune.d("rows.halfWidth", r9 ? BladeRowLayout.R9_HALF_WIDTH : BladeRowLayout.DEFAULT_HALF_WIDTH), pitch,
+				FxTune.d("rows.startAhead", r9 ? BladeRowLayout.R9_START_AHEAD : BladeRowLayout.DEFAULT_START_AHEAD));
 	}
 
 	/** The rows (fault lines, eruption) start this long after the throw of the sword, which needs about 1.5 s to hang and sink. */
