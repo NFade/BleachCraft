@@ -76,7 +76,7 @@ final class CastContext {
 
 	/**
 	 * The look at the strike of an ability whose effect event is already out (Hakuteiken: the condensing starts at the key press, the line hits
-	 * 1.5 s later). Read ONCE, at the first phase that asks, then every later phase (the burst) gets the same object, so the line and the burst
+	 * 1.5 s later; Hakuren: the wind-up is the cast time, the wave leaves 1 s later). Read ONCE, at the first phase that asks, then every later phase (the burst) gets the same object, so the line and the burst
 	 * agree with the crosshair of the strike moment and with each other.
 	 */
 	CastContext releaseAim(ServerPlayerEntity p) {

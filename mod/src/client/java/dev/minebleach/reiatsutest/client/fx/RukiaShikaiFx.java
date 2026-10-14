@@ -1,11 +1,15 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.fx.RukiaAim;
 import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
 import dev.minebleach.reiatsutest.core.fx.ShirafuneTimeline;
+import dev.minebleach.reiatsutest.core.state.AbilityId;
+import dev.minebleach.reiatsutest.core.state.BalanceConfig;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Vec3d;
 
 /**
@@ -211,6 +215,9 @@ public final class RukiaShikaiFx {
 		double gy = c.y;
 		double[] f = RukiaKit.flat(t.dir);
 		double[] rg = RukiaKit.right(f);
+		// the wave leaves along the look of the moment it starts (the server reads its own at the same phase, AbilityExecutor.hakuren), not
+		// the one of the key press: f, rg and cp (feet x, y, z) are rewritten in place at that moment, before the first step is drawn
+		double[] cp = {c.x, c.y, c.z};
 		List<FxMeshPass.Crystal> punctures = new ArrayList<>();
 		List<List<FxMeshPass.Crystal>> stepCrystals = new ArrayList<>();
 		for (int k = 0; k < steps; k++) {
@@ -261,6 +268,22 @@ public final class RukiaShikaiFx {
 			}
 			x.sound("block.beacon.power_select", 1.3, 0.6);
 		});
+		// the end of the cast: the owner's look and feet now (live entity, so remote viewers see it too); not loaded = the press values stay
+		double aimAt = RukiaAim.aimSeconds(BalanceConfig.defaults().spec(AbilityId.HAKUREN));
+		t.at(aimAt < 0 ? 1.0 : aimAt, x -> {
+			Entity ow = x.caster();
+			if (ow == null) {
+				return;
+			}
+			Vec3d look = ow.getRotationVec(1.0f);
+			Vec3d feet = ow.getLerpedPos(1.0f);
+			RukiaAim.flat(look.x, look.z, f[0], f[1], f);
+			rg[0] = -f[1];
+			rg[1] = f[0];
+			cp[0] = feet.x;
+			cp[1] = feet.y;
+			cp[2] = feet.z;
+		});
 		// 1.0 and on: the wave, one step every 0.1 s (about 24 blocks per second for the standard step); each step lifts a stagger of crystals across the fan
 		double speed = step * 10.0;
 		for (int k = 0; k < steps; k++) {
@@ -274,9 +297,9 @@ public final class RukiaShikaiFx {
 					double u = (j + 0.5 * (kk % 2) + r.nextDouble() * 0.5) / perStep;
 					double lat = -half + 2.0 * half * Math.min(0.98, u);
 					double along = d0 + step * (0.25 + 0.75 * r.nextDouble());
-					double px = c.x + f[0] * along + rg[0] * lat;
-					double pz = c.z + f[1] * along + rg[1] * lat;
-					double py = FxGround.sample(px, pz, gy);
+					double px = cp[0] + f[0] * along + rg[0] * lat;
+					double pz = cp[2] + f[1] * along + rg[1] * lat;
+					double py = FxGround.sample(px, pz, cp[1]);
 					double lean = Math.tan(Math.toRadians(25 + r.nextDouble() * 10));
 					boolean big = j % 3 == 2;
 					FxMeshPass.Crystal cr = FxMeshPass.crystal(big ? FxMeshes.CRYSTAL_D : FxMeshes.CRYSTAL_C, px, py - 0.04, pz, f[0] * lean + rg[0] * (r.nextDouble() - 0.5) * 0.3, 1,
@@ -286,13 +309,13 @@ public final class RukiaShikaiFx {
 					stepCrystals.get(kk).add(cr);
 				}
 				// a ripple of light on the ground where the step lands, and the mist along the path
-				FxGlowBatch.sprite(GlowSprite.RING_THIN).at(c.x + f[0] * (d0 + step * 0.5), gy + 0.07, c.z + f[1] * (d0 + step * 0.5)).ground().size(0.5 / 0.4375, (half + 0.8) / 0.4375)
+				FxGlowBatch.sprite(GlowSprite.RING_THIN).at(cp[0] + f[0] * (d0 + step * 0.5), cp[1] + 0.07, cp[2] + f[1] * (d0 + step * 0.5)).ground().size(0.5 / 0.4375, (half + 0.8) / 0.4375)
 						.sizeEase(FxMath.OC).life(0.35).curve(0.02, 0.7).color("#DFF3FF").peak(g(d("hak.ripple", 0.55))).owner(x).spawn();
 				int nm = Math.max(3, (int) Math.round(8 * wS));
 				for (int j = 0; j < nm; j++) {
 					double along = d0 + step * r.nextDouble();
 					double lat = (r.nextDouble() - 0.5) * 2.0 * half;
-					FxGlowBatch.sprite(GlowSprite.MIST).at(c.x + f[0] * along + rg[0] * lat, gy + 0.2 + r.nextDouble() * 0.5, c.z + f[1] * along + rg[1] * lat).ground()
+					FxGlowBatch.sprite(GlowSprite.MIST).at(cp[0] + f[0] * along + rg[0] * lat, cp[1] + 0.2 + r.nextDouble() * 0.5, cp[2] + f[1] * along + rg[1] * lat).ground()
 							.rot(r.nextDouble() * 6.28, 0.1).size(RukiaKit.size(3.0 + r.nextDouble())).vel(f[0] * 0.8, 0.1, f[1] * 0.8).life(2.0).curve(0.15, 0.7).color("#EAF8FF").peak(g(d("hak.mist", 0.22)))
 							.owner(x).spawn();
 				}
@@ -300,24 +323,24 @@ public final class RukiaShikaiFx {
 				for (int j = 0; j < nf; j++) {
 					double along = d0 + step * r.nextDouble();
 					double lat = (r.nextDouble() - 0.5) * 2.0 * half;
-					FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(c.x + f[0] * along + rg[0] * lat, gy + 0.1 + r.nextDouble() * 2.2, c.z + f[1] * along + rg[1] * lat)
+					FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(cp[0] + f[0] * along + rg[0] * lat, cp[1] + 0.1 + r.nextDouble() * 2.2, cp[2] + f[1] * along + rg[1] * lat)
 							.vel(f[0] * 3, 1.5 + r.nextDouble(), f[1] * 3).drag(0.95).life(16 + r.nextInt(8)).size(RukiaKit.size(0.38)).seed(j).color("#FFFFFF").colorTo("#BFE4FF").fade(0.4).owner(x).spawn();
 				}
 				int ni = RukiaKit.count((int) Math.round(40.0 / steps * wS));
 				for (int j = 0; j < ni; j++) {
 					double along = d0 + step * r.nextDouble();
 					double lat = (r.nextDouble() - 0.5) * 2.0 * half;
-					FxParticles.spec(FxParticles.Kind.ICE_SHARD).at(c.x + f[0] * along + rg[0] * lat, gy + 0.2 + r.nextDouble() * 1.5, c.z + f[1] * along + rg[1] * lat)
+					FxParticles.spec(FxParticles.Kind.ICE_SHARD).at(cp[0] + f[0] * along + rg[0] * lat, cp[1] + 0.2 + r.nextDouble() * 1.5, cp[2] + f[1] * along + rg[1] * lat)
 							.vel(f[0] * 2, 2 + r.nextDouble() * 2, f[1] * 2).drag(0.95).gravity(0.6).life(26).size(RukiaKit.size(0.36)).seed(j).spin((r.nextDouble() - 0.5) * 0.4).fade(0.3).owner(x).spawn();
 				}
-				x.soundAt("block.amethyst_cluster.place", new Vec3d(c.x + f[0] * dc, gy + 0.5, c.z + f[1] * dc), 0.8 + 0.1 * Math.min(kk, 7), 0.6);
+				x.soundAt("block.amethyst_cluster.place", new Vec3d(cp[0] + f[0] * dc, cp[1] + 0.5, cp[2] + f[1] * dc), 0.8 + 0.1 * Math.min(kk, 7), 0.6);
 			});
 		}
 		// the leading edge: three flares standing across the path, running at the step speed
 		t.at(1.0, x -> {
 			double life = Math.max(0.3, L / speed);
 			for (int i = 0; i < 3; i++) {
-				FxGlowBatch.sprite(GlowSprite.FLARE).at(c.x + f[0] * 0.3, gy + 1.2, c.z + f[1] * 0.3).plane(f[0], 0, f[1]).size(RukiaKit.size(d("hak.flare", 1.25) * 2.0 * half * Math.max(0.8, cs * 0.8)))
+				FxGlowBatch.sprite(GlowSprite.FLARE).at(cp[0] + f[0] * 0.3, cp[1] + 1.2, cp[2] + f[1] * 0.3).plane(f[0], 0, f[1]).size(RukiaKit.size(d("hak.flare", 1.25) * 2.0 * half * Math.max(0.8, cs * 0.8)))
 						.vel(f[0] * speed, 0, f[1] * speed).delay(0.03 * i).life(life).curve(0.04, 0.35).color(i == 0 ? "#EAF8FF" : "#C0D3E7").peak(g(0.55 - 0.12 * i)).owner(x).spawn();
 			}
 			x.shake(d("hak.shake", 0.5), 0.4);
@@ -331,12 +354,12 @@ public final class RukiaShikaiFx {
 			for (int i = 0; i < n; i++) {
 				double along = L * r.nextDouble();
 				double lat = (r.nextDouble() - 0.5) * 2.0 * half;
-				double px = c.x + f[0] * along + rg[0] * lat;
-				double pz = c.z + f[1] * along + rg[1] * lat;
-				FxParticles.spec(FxParticles.Kind.ICE_SHARD).at(px, gy + 0.2, pz).vel(0, 1.0 + r.nextDouble(), 0).drag(0.94).gravity(0.2).life(26).size(RukiaKit.size(0.34)).seed(i).spin(0.1).fade(0.3)
+				double px = cp[0] + f[0] * along + rg[0] * lat;
+				double pz = cp[2] + f[1] * along + rg[1] * lat;
+				FxParticles.spec(FxParticles.Kind.ICE_SHARD).at(px, cp[1] + 0.2, pz).vel(0, 1.0 + r.nextDouble(), 0).drag(0.94).gravity(0.2).life(26).size(RukiaKit.size(0.34)).seed(i).spin(0.1).fade(0.3)
 						.owner(x).spawn();
 				if (i % 3 == 0) {
-					FxGlowBatch.sprite(GlowSprite.STAR6).at(px, gy + 0.4 + r.nextDouble(), pz).size(RukiaKit.size(0.5)).lifeTicks(12).color("#FFFFFF").peak(g(0.85)).twinkle().rot(r.nextDouble() * 6, 1).owner(x).spawn();
+					FxGlowBatch.sprite(GlowSprite.STAR6).at(px, cp[1] + 0.4 + r.nextDouble(), pz).size(RukiaKit.size(0.5)).lifeTicks(12).color("#FFFFFF").peak(g(0.85)).twinkle().rot(r.nextDouble() * 6, 1).owner(x).spawn();
 				}
 			}
 			x.sound("entity.player.hurt_freeze", 1.0, 0.6);
@@ -357,9 +380,9 @@ public final class RukiaShikaiFx {
 					FxMeshPass.shatter(cr, shards, 4.5, r.nextLong());
 				}
 				double along = step * (kk + 0.5);
-				RukiaKit.frostMotes(x, r, Math.max(4, (int) Math.round(40.0 / steps * wS)), c.x + f[0] * along, gy + 0.5, c.z + f[1] * along, half, 1.5, 1.0, 2.0, 20, 0.4, "#FFFFFF", "#BFE4FF", 0.9);
+				RukiaKit.frostMotes(x, r, Math.max(4, (int) Math.round(40.0 / steps * wS)), cp[0] + f[0] * along, cp[1] + 0.5, cp[2] + f[1] * along, half, 1.5, 1.0, 2.0, 20, 0.4, "#FFFFFF", "#BFE4FF", 0.9);
 				if (kk % 2 == 0) {
-					x.soundAt("block.glass.break", new Vec3d(c.x + f[0] * along, gy + 0.5, c.z + f[1] * along), 1.0 + 0.05 * kk, 0.4);
+					x.soundAt("block.glass.break", new Vec3d(cp[0] + f[0] * along, cp[1] + 0.5, cp[2] + f[1] * along), 1.0 + 0.05 * kk, 0.4);
 				}
 			});
 		}

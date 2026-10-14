@@ -17,7 +17,7 @@ import java.util.List;
 public final class ConfigMigrations {
 	public static final String VERSION_KEY = "configVersion";
 	/** {@code config/reiatsu_test.json}. */
-	public static final int SERVER_VERSION = 2;
+	public static final int SERVER_VERSION = 3;
 	/** {@code config/reiatsu_test_client.json}. */
 	public static final int CLIENT_VERSION = 2;
 
@@ -45,6 +45,9 @@ public final class ConfigMigrations {
 		// R11 T4: Shakkaho is half a heart with a short burn. 5.0 / 60 ticks were the dev-config values of the duel test, 2.0 / 60 the code default.
 		SERVER.add(new Rule(2, "kido.shakkaho.damage", new double[] {2.0, 4.0, 5.0}, 1.0, "R11 T4: Shakkaho centre damage is half a heart"));
 		SERVER.add(new Rule(2, "kido.shakkaho.fireTicks", new double[] {60.0}, 15.0, "R11 T4: Shakkaho burn is short (15 ticks)"));
+		// Rukia shikai skills aim at the end of the cast: the passive gives 20 percent less per stack
+		SERVER.add(new Rule(3, "rukia.passive.shikai.bonusPerStack", new double[] {0.05}, 0.04, "Rukia passive: 20 percent less bonus per stack (shikai)"));
+		SERVER.add(new Rule(3, "rukia.passive.bankai.bonusPerStack", new double[] {0.08}, 0.064, "Rukia passive: 20 percent less bonus per stack (bankai)"));
 	}
 
 	private ConfigMigrations() {

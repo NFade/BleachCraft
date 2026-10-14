@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.minebleach.reiatsutest.core.combat.FrostMomentum;
 import dev.minebleach.reiatsutest.core.kido.KidoConfig;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
 import org.junit.jupiter.api.Test;
@@ -87,6 +88,24 @@ class ConfigMigrationsTest {
 		}
 		assertEquals(1.0, KidoConfig.defaults().spec(KidoId.SHAKKAHO).damage());
 		assertEquals(15, KidoConfig.defaults().spec(KidoId.SHAKKAHO).fireTicks());
+	}
+
+	@Test
+	void theRukiaPassiveOldDefaultsMoveToThe20PercentLowerOnesAndUserValuesStay() {
+		JsonObject root = json("{\"configVersion\":2,\"rukia\":{\"passive\":{\"shikai\":{\"bonusPerStack\":0.05,\"maxStacks\":4},"
+				+ "\"bankai\":{\"bonusPerStack\":0.08,\"maxStacks\":5}}}}");
+		ConfigMigrations.Result r = ConfigMigrations.migrateServer(root);
+		JsonObject p = root.getAsJsonObject("rukia").getAsJsonObject("passive");
+		assertEquals(0.04, p.getAsJsonObject("shikai").get("bonusPerStack").getAsDouble(), 1e-12);
+		assertEquals(0.064, p.getAsJsonObject("bankai").get("bonusPerStack").getAsDouble(), 1e-12);
+		assertEquals(4, p.getAsJsonObject("shikai").get("maxStacks").getAsInt(), "the stack count is untouched");
+		assertEquals(2, r.changed().size());
+		FrostMomentum.Config d = FrostMomentum.Config.defaults();
+		assertEquals(0.04, d.shikai().bonusPerStack(), 1e-12, "the rule value is the code default");
+		assertEquals(0.064, d.bankai().bonusPerStack(), 1e-12);
+		JsonObject mine = json("{\"configVersion\":2,\"rukia\":{\"passive\":{\"shikai\":{\"bonusPerStack\":0.07}}}}");
+		ConfigMigrations.migrateServer(mine);
+		assertEquals(0.07, mine.getAsJsonObject("rukia").getAsJsonObject("passive").getAsJsonObject("shikai").get("bonusPerStack").getAsDouble(), 1e-12);
 	}
 
 	@Test

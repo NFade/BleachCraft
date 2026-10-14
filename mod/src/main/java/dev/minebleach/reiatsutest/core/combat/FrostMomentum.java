@@ -5,8 +5,8 @@ import dev.minebleach.reiatsutest.core.config.Cfg;
 
 /**
  * R11 T6, variant P1 "the cold gathers": the passive of Rukia. Every landed hit of Rukia (sword or ability, on a living target) adds a
- * stack; each stack raises her damage by a percentage (shikai 5 percent up to 4 stacks = +20 percent, bankai 8 percent up to 5 stacks = +40
- * percent). All stacks burn out when no hit landed for a while (shikai 80 ticks, bankai 100); a hit that lands on Rukia removes ONE stack;
+ * stack; each stack raises her damage by a percentage (shikai 4 percent up to 4 stacks = +16 percent, bankai 6.4 percent up to 5 stacks = +32
+ * percent; they were 5 and 8 percent, +20 and +40, before the end-of-cast aim round). All stacks burn out when no hit landed for a while (shikai 80 ticks, bankai 100); a hit that lands on Rukia removes ONE stack;
  * sealing and dying reset it (the glue calls {@link #reset}).
  *
  * <p>One instance per player, server thread, clock-free (every call gets the server tick). No Minecraft types. Two rules keep an area
@@ -39,7 +39,8 @@ public final class FrostMomentum {
 		public static final String SUB = "passive";
 
 		public static Config defaults() {
-			return new Config(true, new Tier(0.05, 4, 80), new Tier(0.08, 5, 100));
+			// bonus per stack lowered by 20 percent (0.05 -> 0.04, 0.08 -> 0.064) when the Rukia shikai skills began to aim at the end of the cast
+			return new Config(true, new Tier(0.04, 4, 80), new Tier(0.064, 5, 100));
 		}
 
 		public Tier tier(Form f) {

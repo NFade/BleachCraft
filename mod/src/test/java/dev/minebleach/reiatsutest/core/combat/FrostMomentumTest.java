@@ -17,20 +17,20 @@ class FrostMomentumTest {
 	void defaultsAreTheAgreedNumbers() {
 		Config c = Config.defaults();
 		assertTrue(c.enabled());
-		assertEquals(0.05, c.shikai().bonusPerStack(), 1e-9);
+		assertEquals(0.04, c.shikai().bonusPerStack(), 1e-9);
 		assertEquals(4, c.shikai().maxStacks());
 		assertEquals(80, c.shikai().expireTicks());
-		assertEquals(0.08, c.bankai().bonusPerStack(), 1e-9);
+		assertEquals(0.064, c.bankai().bonusPerStack(), 1e-9);
 		assertEquals(5, c.bankai().maxStacks());
 		assertEquals(100, c.bankai().expireTicks());
-		assertEquals(1.20, c.shikai().maxMultiplier(), 1e-9);
-		assertEquals(1.40, c.bankai().maxMultiplier(), 1e-9);
+		assertEquals(1.16, c.shikai().maxMultiplier(), 1e-9);
+		assertEquals(1.32, c.bankai().maxMultiplier(), 1e-9);
 	}
 
 	@Test
 	void theMultiplierTableOfShikaiAndBankai() {
-		double[] shikai = {1.00, 1.05, 1.10, 1.15, 1.20, 1.20};
-		double[] bankai = {1.00, 1.08, 1.16, 1.24, 1.32, 1.40, 1.40};
+		double[] shikai = {1.00, 1.04, 1.08, 1.12, 1.16, 1.16};
+		double[] bankai = {1.00, 1.064, 1.128, 1.192, 1.256, 1.32, 1.32};
 		FrostMomentum s = new FrostMomentum(Config.defaults());
 		for (int i = 0; i < shikai.length; i++) {
 			assertEquals(shikai[i], s.multiplier(Form.SHIKAI, 100 + i * 2 + 1), 1e-9, "shikai after " + i + " hits");
@@ -41,6 +41,21 @@ class FrostMomentumTest {
 			assertEquals(bankai[i], b.multiplier(Form.BANKAI, 100 + i * 2 + 1), 1e-9, "bankai after " + i + " hits");
 			b.onHit(Form.BANKAI, 100 + i * 2 + 1);
 		}
+	}
+
+	@Test
+	void theBonusPerStackIsAFifthLowerThanBeforeTheEndOfCastAimRound() {
+		// Rukia shikai skills now aim at the end of the cast (stronger), so the passive lost 20 percent per stack: 0.05 -> 0.04, 0.08 -> 0.064
+		// (stack count and burn-out time unchanged)
+		Config c = Config.defaults();
+		assertEquals(0.05 * 0.8, c.shikai().bonusPerStack(), 1e-12);
+		assertEquals(0.08 * 0.8, c.bankai().bonusPerStack(), 1e-12);
+		assertEquals(1.0 + 4 * 0.04, c.shikai().maxMultiplier(), 1e-12);
+		assertEquals(1.0 + 5 * 0.064, c.bankai().maxMultiplier(), 1e-12);
+		FrostMomentum s = new FrostMomentum(c);
+		s.onHit(Form.SHIKAI, 10);
+		s.onHit(Form.SHIKAI, 20);
+		assertEquals(1.08, s.multiplier(Form.SHIKAI, 30), 1e-9, "two stacks in shikai were x1.10");
 	}
 
 	@Test
@@ -58,13 +73,13 @@ class FrostMomentumTest {
 	void aTickWithSeveralVictimsIsOneHitAndAllVictimsSeeTheSameBonus() {
 		m.onHit(Form.SHIKAI, 100);
 		double first = m.multiplier(Form.SHIKAI, 110);
-		assertEquals(1.05, first, 1e-9);
+		assertEquals(1.04, first, 1e-9);
 		m.onHit(Form.SHIKAI, 110);
 		m.onHit(Form.SHIKAI, 110);
 		m.onHit(Form.SHIKAI, 110);
 		assertEquals(2, m.stacks(Form.SHIKAI, 110), "four victims in one tick: one stack");
 		assertEquals(first, m.multiplier(Form.SHIKAI, 110), 1e-9, "the second victim of that tick is not hurt more than the first");
-		assertEquals(1.10, m.multiplier(Form.SHIKAI, 111), 1e-9, "the next tick sees the new stack");
+		assertEquals(1.08, m.multiplier(Form.SHIKAI, 111), 1e-9, "the next tick sees the new stack");
 	}
 
 	@Test
@@ -129,7 +144,7 @@ class FrostMomentumTest {
 		}
 		assertEquals(5, b.stacks(Form.BANKAI, 30));
 		assertEquals(4, b.stacks(Form.SHIKAI, 30));
-		assertEquals(1.20, b.multiplier(Form.SHIKAI, 30), 1e-9);
+		assertEquals(1.16, b.multiplier(Form.SHIKAI, 30), 1e-9);
 	}
 
 	@Test
@@ -193,7 +208,7 @@ class FrostMomentumTest {
 				+ "\"expireTicks\":0},\"bankai\":{\"bonusPerStack\":50,\"maxStacks\":9999,\"expireTicks\":1e12}}}}").getAsJsonObject();
 		Config c = Config.fromRoot(root);
 		assertTrue(c.enabled(), "a string gives the default");
-		assertEquals(0.05, c.shikai().bonusPerStack(), 1e-9);
+		assertEquals(0.04, c.shikai().bonusPerStack(), 1e-9);
 		assertEquals(0, c.shikai().maxStacks());
 		assertEquals(1, c.shikai().expireTicks());
 		assertEquals(1.0, c.bankai().bonusPerStack(), 1e-9);

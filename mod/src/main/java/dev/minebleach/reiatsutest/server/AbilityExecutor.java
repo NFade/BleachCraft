@@ -86,6 +86,9 @@ final class AbilityExecutor {
 	}
 
 	private static void hakuren(ServerPlayerEntity p, int phase, CastContext ctx) {
+		// the wave runs along the look of the moment it LEAVES (phase 0, the end of the cast time), not of the key press; read once at phase 0
+		// and shared by the 8 steps (position, direction, hit set and block budget), like the client wave (RukiaShikaiFx.hakuren, RukiaAim)
+		ctx = ctx.releaseAim(p);
 		AbilitySpec sp = ctx.spec;
 		ServerWorld world = p.getServerWorld();
 		int phases = sp.phaseOffsets().size();
