@@ -71,10 +71,8 @@ public final class RowsFx {
 		public final double maxDist;
 		/** World scale of every blade (bankai.bladeScale, read when the rows are created and kept for their life; the static buffer depends on it). */
 		public final double bladeScale = bladeScaleSetting();
-		/** Blade width across the lane in blocks (bankai.bladeWidth, default the mesh width times {@link #bladeScale}, so kz = 1) and the anisotropic scales of the mesh (local z = width, local x = thickness), relative to {@link #bladeScale}. */
-		public final double bladeWidth = bladeWidthSetting(bladeScale);
-		public final double kz = BladeRowLayout.widthScale(bladeWidth, bladeScale);
-		public final double kx = bladeThickSetting();
+		/** Blade width across the lane in blocks: the mesh width (meta) times {@link #bladeScale}; the mesh is not stretched. */
+		public final double bladeWidth = BladeSpec.width() * bladeScale;
 		/** Time (seconds from the release) from which the rows are drawn from the static buffer. */
 		public final double settleAt;
 		ScreenFx.Layer grade;
@@ -208,23 +206,13 @@ public final class RowsFx {
 	/**
 	 * World scale of the bankai blades: {@code bankai.bladeScale} (default 1.0) times {@code bankai.bladeLength / mesh length}. The mesh is the user's straight blade, 5.5 m
 	 * long (read from the meta by {@link BladeSpecLoader}); default 1.0 = 5.5 blocks, 3 heights of Byakuya as measured on the anime. {@code bankai.bladeLength} (blocks, default
-	 * the mesh length) resizes the whole blade in one number, all three axes alike. Width and thickness have their own optional keys.
+	 * the mesh length) resizes the whole blade in one number, all three axes alike.
 	 */
 	public static double bladeScaleSetting() {
 		BladeSpecLoader.ensure();
 		double byLength = FxTune.d("bankai.bladeLength", BladeSpec.length()) / BladeSpec.length();
 		double s = FxMath.clamp(FxTune.d("bankai.bladeScale", BladeRowLayout.DEFAULT_BLADE_SCALE), 0.2, 2.0) * FxMath.clamp(byLength, 0.2, 3.0);
 		return FxMath.clamp(s, 0.2, 4.0);
-	}
-
-	/** Width of a blade across the lane in blocks (bankai.bladeWidth, optional; default the mesh width 0.4026 times {@code bladeScale}: no stretch). */
-	public static double bladeWidthSetting(double bladeScale) {
-		return FxMath.clamp(FxTune.d("bankai.bladeWidth", BladeRowLayout.defaultBladeWidth(bladeScale)), 0.05, 6.0);
-	}
-
-	/** Thickness multiplier of the blade (bankai.bladeThick, optional; default 1.0 = the mesh thickness 0.1477 blocks at bladeScale 1). */
-	public static double bladeThickSetting() {
-		return FxMath.clamp(FxTune.d("bankai.bladeThick", BladeRowLayout.DEFAULT_BLADE_THICK), 0.2, 8.0);
 	}
 
 	/** True when {@code bankai.layout} is {@code r9}: the R9 measured layout (start 1 behind the feet, pitch 2.0, 12 per side, half width 3.7) instead of the current one. */

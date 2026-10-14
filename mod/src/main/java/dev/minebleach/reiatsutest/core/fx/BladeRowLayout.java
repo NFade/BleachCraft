@@ -30,8 +30,6 @@ public final class BladeRowLayout {
 	public static final int DEFAULT_PER_SIDE = 10;
 	/** Uniform scale of the blades (bankai.bladeScale): 1.0 = the mesh as it is, 5.5 blocks tall (3 heights of Byakuya, measured on the anime). */
 	public static final double DEFAULT_BLADE_SCALE = 1.0;
-	/** Multiplier of the blade thickness (bankai.bladeThick): 1.0 = the mesh thickness 0.1477 blocks (the old 8 m mesh needed 2.0 to read from the side). */
-	public static final double DEFAULT_BLADE_THICK = 1.0;
 	/** Distance from the axis to the blade bases (rows.halfWidth): lane wide open around the caster. */
 	public static final double DEFAULT_HALF_WIDTH = 7.0;
 	/** Distance between neighbours along the row (rows.spacing): with the 0.1477 thick slab the gap is 0.85 blocks. */
@@ -152,19 +150,9 @@ public final class BladeRowLayout {
 		return BladeSpec.length() * bladeScale;
 	}
 
-	/** Default width of a blade across the lane in blocks (bankai.bladeWidth): the mesh width times the uniform scale, so the width scale is 1.0. */
-	public static double defaultBladeWidth(double bladeScale) {
-		return BladeSpec.width() * bladeScale;
-	}
-
-	/** Width scale (local z of the mesh) that makes the blade {@code widthBlocks} wide at the uniform scale {@code bladeScale} (1.0 for {@link #defaultBladeWidth}). */
-	public static double widthScale(double widthBlocks, double bladeScale) {
-		return widthBlocks / (BladeSpec.width() * bladeScale);
-	}
-
 	/** Gap between two neighbouring blades along the row, blocks: pitch minus the thickness of a slab. */
-	public static double gap(double pitch, double bladeScale, double thickMul) {
-		return pitch - BladeSpec.thickness() * bladeScale * thickMul;
+	public static double gap(double pitch, double bladeScale) {
+		return pitch - BladeSpec.thickness() * bladeScale;
 	}
 
 	/** How deep a blade sinks under its rest height (mesh metres): the blade length plus a margin, so that a risen blade starts completely buried. */

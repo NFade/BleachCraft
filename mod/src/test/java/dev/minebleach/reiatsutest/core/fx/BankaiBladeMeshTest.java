@@ -117,6 +117,21 @@ class BankaiBladeMeshTest {
 	}
 
 	@Test
+	void rowLayoutFollowsTheMetaLengthAndTip() throws IOException {
+		ObjMeta meta = ObjMeta.parse(text("byakuya_bankai_meta.json"));
+		BladeSpec.apply(meta.blade);
+		assertEquals(5.5, BladeRowLayout.height(1.0), 1e-9, "height at bladeScale 1 is the meta length");
+		assertEquals(meta.blade.length() + BladeRowLayout.SINK_MARGIN, BladeRowLayout.sinkDepth(), 1e-9);
+		assertEquals(5.5, meta.blade.tip()[2], 1e-9, "the tip hangs at the length");
+		assertEquals(-meta.blade.tip()[1], BladeSpec.tipZ(), 1e-12);
+		// the tip of the OBJ (x, y, z) = (x, blender z, -blender y) equals the meta tip (0, 0.201, 5.5) in Blender z-up: (0, 5.5, -0.201)
+		assertEquals(-0.201, BladeSpec.tipZ(), 1e-3);
+		BladeSpec.apply(new ObjMeta.Blade(4.0, 0.3, 0.1, new double[] {0, 0.1, 4.0}));
+		assertEquals(4.0, BladeRowLayout.height(1.0), 1e-9, "a different meta length moves the layout maths with it");
+		assertEquals(4.5, BladeRowLayout.sinkDepth(), 1e-9);
+	}
+
+	@Test
 	void meshIsStraight() throws IOException {
 		// no bend: the middle of the width at every height stays within a few cm of the axis (the old mesh bent 0.83 m)
 		ObjMesh m = mesh("byakuya_bankai_blade");

@@ -137,13 +137,11 @@ class BladeRowLayoutTest {
 		assertEquals(1, l.ranks);
 		double scale = BladeRowLayout.DEFAULT_BLADE_SCALE;
 		double height = BladeRowLayout.height(scale);
-		double width = BladeRowLayout.defaultBladeWidth(scale);
+		double width = BladeSpec.width() * scale;
 		// R11 T13: the straight blade of the user at its true size (anime measurement: 5.5 tall, 0.37 wide); the old pins were 7 to 9 tall and 1.2 to 1.8 wide
 		assertEquals(5.5, height, 0.01, "5.5 blocks tall");
 		assertEquals(0.4026, width, 0.01, "about 0.40 blocks wide");
-		assertEquals(1.0, BladeRowLayout.widthScale(width, scale), 1e-9, "no stretch: the width scale is 1");
-		assertEquals(1.0, BladeRowLayout.DEFAULT_BLADE_THICK, 0);
-		double gap = BladeRowLayout.gap(BladeRowLayout.DEFAULT_PITCH, scale, BladeRowLayout.DEFAULT_BLADE_THICK);
+		double gap = BladeRowLayout.gap(BladeRowLayout.DEFAULT_PITCH, scale);
 		assertEquals(1.0 - 0.1477, gap, 1e-9, "pitch 1.0 minus the 0.1477 thick slab");
 		for (int j = 0; j + 1 < BladeRowLayout.DEFAULT_PER_SIDE; j++) {
 			assertEquals(BladeRowLayout.DEFAULT_PITCH, l.along[j] - l.along[j + 1], 1e-5, "even pitch along the row");
@@ -154,23 +152,15 @@ class BladeRowLayoutTest {
 	}
 
 	@Test
-	void laneStaysOpenAroundTheCasterEvenAtTheCurvedTips() {
+	void laneStaysOpenAroundTheCasterEvenAtTheTips() {
 		double scale = BladeRowLayout.DEFAULT_BLADE_SCALE;
-		double width = BladeRowLayout.defaultBladeWidth(scale);
-		double kz = BladeRowLayout.widthScale(width, scale);
+		double width = BladeSpec.width() * scale;
 		double innerFoot = BladeRowLayout.DEFAULT_HALF_WIDTH - width / 2;
 		assertTrue(innerFoot >= 6.0, "the inner face of a blade foot is at least 6 blocks from the axis: " + innerFoot);
 		// the mesh is straight now (R11 T13): only the apex bevel (0.201 m off the axis of the blade) and the 3 degree lean move the tip toward the axis
-		double tipAcross = BladeRowLayout.DEFAULT_HALF_WIDTH - Math.abs(BladeSpec.tipZ()) * scale * kz - BladeRowLayout.height(scale) * Math.sin(Math.toRadians(BladeRowLayout.LEAN_DEG + 0.5));
+		double tipAcross = BladeRowLayout.DEFAULT_HALF_WIDTH - Math.abs(BladeSpec.tipZ()) * scale - BladeRowLayout.height(scale) * Math.sin(Math.toRadians(BladeRowLayout.LEAN_DEG + 0.5));
 		assertTrue(tipAcross >= 6.0, "the lane at the tips is at least 12 blocks wide: " + 2 * tipAcross);
 		assertTrue(tipAcross < BladeRowLayout.DEFAULT_HALF_WIDTH, "the tips lean inward");
-	}
-
-	@Test
-	void widthScaleGivesTheAskedWidth() {
-		assertEquals(1.5, BladeSpec.width() * 1.0 * BladeRowLayout.widthScale(1.5, 1.0), 1e-9);
-		assertEquals(1.5, BladeSpec.width() * 0.5 * BladeRowLayout.widthScale(1.5, 0.5), 1e-9, "independent of the uniform scale");
-		assertEquals(0.1477, BladeSpec.thickness() * BladeRowLayout.DEFAULT_BLADE_SCALE * BladeRowLayout.DEFAULT_BLADE_THICK, 1e-9);
 	}
 
 	@Test

@@ -128,8 +128,8 @@ public final class BankaiBladeRenderer {
 
 	/**
 	 * Basis of blade i with the lean (radians toward the axis) and the scale, row major 3x3 into {@code m}. Mesh axes: local x = thickness (runs ALONG the row, so the
-	 * broad faces look along the lane like the pages of a book, as in the anime references), local y = length, local z = width (ACROSS the lane, the curve bends it
-	 * toward the axis). Local x is scaled by {@code bladeScale * kx}, y by {@code bladeScale}, z by {@code bladeScale * kz} (bankai.bladeThick / bankai.bladeWidth).
+	 * broad faces look along the lane like the pages of a book, as in the anime references), local y = length, local z = width (ACROSS the lane, the lean tilts it
+	 * toward the axis). All three axes are scaled alike by {@code bladeScale} (the mesh is not stretched).
 	 * The normal matrix goes to {@link #NM}.
 	 */
 	static void basis(RowsFx.State st, int i, double leanRad, float[] m) {
@@ -146,29 +146,25 @@ public final class BankaiBladeRenderer {
 		double c = Math.cos(leanRad);
 		double sn = Math.sin(leanRad);
 		float sc = (float) (st.layout.scale[i] * st.bladeScale);
-		float sx = (float) (sc * st.kx);
-		float sz = (float) (sc * st.kz);
-		m[0] = (float) (xX * sx);
+		m[0] = (float) (xX * sc);
 		m[1] = (float) (-zX * sn * sc);
-		m[2] = (float) (zX * c * sz);
+		m[2] = (float) (zX * c * sc);
 		m[3] = 0f;
 		m[4] = (float) (c * sc);
-		m[5] = (float) (sn * sz);
-		m[6] = (float) (xZ * sx);
+		m[5] = (float) (sn * sc);
+		m[6] = (float) (xZ * sc);
 		m[7] = (float) (-zZ * sn * sc);
-		m[8] = (float) (zZ * c * sz);
-		// normal matrix: unit rotation columns, column x divided by kx and column z by kz (inverse transpose of a rotation times a diagonal scale)
-		float ix = (float) (1.0 / st.kx);
-		float iz = (float) (1.0 / st.kz);
-		NM[0] = (float) (xX * ix);
+		m[8] = (float) (zZ * c * sc);
+		// normal matrix: the scale is uniform, so it is the unit rotation (inverse transpose of a rotation)
+		NM[0] = (float) xX;
 		NM[1] = (float) (-zX * sn);
-		NM[2] = (float) (zX * c * iz);
+		NM[2] = (float) (zX * c);
 		NM[3] = 0f;
 		NM[4] = (float) c;
-		NM[5] = (float) (sn * iz);
-		NM[6] = (float) (xZ * ix);
+		NM[5] = (float) sn;
+		NM[6] = (float) xZ;
 		NM[7] = (float) (-zZ * sn);
-		NM[8] = (float) (zZ * c * iz);
+		NM[8] = (float) (zZ * c);
 	}
 
 	/** World position of the glowing tip of blade i at row time t. */
@@ -265,7 +261,7 @@ public final class BankaiBladeRenderer {
 					double tz = st.bz[i] + M[7] * len;
 					double ty = by + M[4] * len;
 					if (frustum != null) {
-						double r = 0.6 * l.scale[i] * st.bladeScale * Math.max(1.0, Math.max(st.kz, st.kx)); // (the slab: half width 0.2, the apex 0.2 off the axis)
+						double r = 0.6 * l.scale[i] * st.bladeScale; // (the slab: half width 0.2, the apex 0.2 off the axis)
 						Box box = new Box(Math.min(st.bx[i], tx) - r, Math.min(by, ty) - 0.2, Math.min(st.bz[i], tz) - r, Math.max(st.bx[i], tx) + r, Math.max(by, ty) + 0.2,
 								Math.max(st.bz[i], tz) + r);
 						if (!frustum.isVisible(box)) {
