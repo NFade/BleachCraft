@@ -105,6 +105,14 @@ class GlowAtlasTableTest {
 	}
 
 	@Test
+	void theQuincyGeneratorNeverWritesTheBlenderAtlasOrTheOldGlowAtlas() throws IOException {
+		String src = tool("gen_uryu_textures.py");
+		for (String forbidden : new String[] {"\"uryu_fx_diffuse.png\"", "\"uryu_fx_emissive.png\"", "\"fx_glow.png\""}) {
+			assertFalse(src.contains(forbidden), "gen_uryu_textures.py must not write " + forbidden + " (owned by uq_paint.py / gen_fx_textures.py)");
+		}
+	}
+
+	@Test
 	void theRukiaByakuyaTableMatchesItsGeneratorScript() throws IOException {
 		Map<String, GlowAtlasTable.Rect> py = parsePython(block(tool("gen_fx_textures.py"), "GLOW_RECTS"));
 		assertEquals(GlowAtlasTable.FX, py, "core/fx/GlowAtlasTable.FX and GLOW_RECTS of tools/gen_fx_textures.py differ");
