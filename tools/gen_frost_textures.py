@@ -3,6 +3,7 @@
 Pillow + numpy only, original pixel art (nothing is copied from another mod or from vanilla).
 
 Run:  python -I tools/gen_frost_textures.py            (writes 16 x 16 PNGs into assets/reiatsu_test/textures/block)
+      python -I tools/gen_frost_textures.py --only ice_wall   (writes just the named textures, comma separated)
       python -I tools/gen_frost_textures.py --sheet X  (also writes an enlarged contact sheet PNG to X, review only)
 
 Palette (blue and white, VFX_STORYBOARD section 0): mist #EAF8FF, ice light #CFEFFF, sky ice #9ED3F0, mid #8EC9EE, core #7FB8DF, deep #2E6FA8,
@@ -12,6 +13,8 @@ shadow #1E4C86. Blocks:
   frost_leaves                       leaves: cut out (alpha 0 or 255) frosted clusters
   frost_film                         thin ice over water: translucent, cracked
   frost_sprig                        plants (grass, ferns, flowers): a cross of thin ice blades
+  ice_wall                           R11 T5: the Rukia ice wall, denser and brighter than frost_film (clear blue ice, white cracks, a pale rim so
+                                     the cells of a wall can be told apart); translucent, not vanilla ice
 """
 import os
 import sys
@@ -190,6 +193,26 @@ def sprig():
     return Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), "RGBA")
 
 
+def wall():
+    rng = np.random.default_rng(6120)
+    n = value_noise(rng, 4) * 0.6 + value_noise(rng, 2) * 0.4
+    rgb = lerp(MID, ICE_LIGHT, n[..., None])
+    deep = voronoi_edges(np.random.default_rng(6121), 5)
+    rgb = lerp(rgb, CORE, (deep * 0.6)[..., None])
+    cracks = voronoi_edges(rng, 3)
+    rgb = lerp(rgb, WHITE, (cracks * 0.85)[..., None])
+    alpha = 190.0 + n * 40.0 + cracks * 50.0
+    # a pale rim of one pixel on every side: the blocks of a wall read as separate slabs, the texture still tiles
+    rim = np.zeros((SIZE, SIZE), dtype=np.float32)
+    rim[0, :] = rim[-1, :] = rim[:, 0] = rim[:, -1] = 1.0
+    rgb = lerp(rgb, MIST, (rim * 0.7)[..., None])
+    alpha = np.where(rim > 0, 235.0, alpha)
+    spark = sparkles(rng, 7)
+    rgb = lerp(rgb, WHITE, spark[..., None])
+    alpha = np.where(spark > 0, 255.0, alpha)
+    return to_image(rgb, alpha)
+
+
 TEXTURES = {
     "frost_crust_top": crust_top,
     "frost_crust_side": crust_side,
@@ -198,13 +221,17 @@ TEXTURES = {
     "frost_leaves": leaves,
     "frost_film": film,
     "frost_sprig": sprig,
+    "ice_wall": wall,
 }
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     made = {}
+    only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None  # --only ice_wall: leave the other PNGs alone
     for name, fn in TEXTURES.items():
+        if only is not None and name not in only:
+            continue
         img = fn()
         img.save(os.path.join(OUT, name + ".png"))
         made[name] = img

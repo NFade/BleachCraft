@@ -33,9 +33,11 @@ final class CastContext {
 	final Set<Integer> hit = new HashSet<>();
 	final Set<Integer> frozen = new LinkedHashSet<>();
 	int tempBlocksPlaced;
+	/** Blocks this cast has already queued for destruction (R11 T9): the cap of the profile counts them across the phases. */
+	int terrainReserved;
 	/** Centre of the petal cage (the aimed target's centre, else the aimed point lifted a little), the aim point for other abilities. */
 	final Vec3d center;
-	/** Length of the free ray of the ice spike (the look ray up to the first block, at most LENGTH). */
+	/** Length of the free ray of the ice wall (the look ray up to the first block, at most LENGTH). */
 	final double rayLength;
 	/**
 	 * Per victim immunity window between two damage ticks of this cast (r8 item 2). Shared by every phase of the cast, so the landing
@@ -57,7 +59,7 @@ final class CastContext {
 		this.aim = aim;
 		this.center = center;
 		this.hitGate = hitGate;
-		this.rayLength = ability == AbilityId.ICE_SPIKE ? Math.min(spec.num(AbilityParams.LENGTH), eye.distanceTo(aim)) : 0.0;
+		this.rayLength = ability == AbilityId.ICE_WALL ? Math.min(spec.num(AbilityParams.LENGTH), eye.distanceTo(aim)) : 0.0;
 	}
 
 	static CastContext capture(ServerPlayerEntity p, AbilityId ability, AbilitySpec spec, int seed, int attackTickInterval) {
@@ -90,7 +92,7 @@ final class CastContext {
 		Vec3d flat = new Vec3d(dir.x, 0, dir.z);
 		flat = flat.lengthSquared() < 1.0E-6 ? new Vec3d(0, 0, 1) : flat.normalize();
 		double range = switch (ability) {
-			case SHIRAFUNE, HAKUTEIKEN, ICE_SPIKE -> spec.num(AbilityParams.LENGTH);
+			case SHIRAFUNE, HAKUTEIKEN, ICE_WALL -> spec.num(AbilityParams.LENGTH);
 			case MODE_ATTACK, SCATTER, CAGE -> spec.num(AbilityParams.AIM_RANGE);
 			case IKOROSE, SNAKE_HOOK, BUTOU_RENJIN, KOROSE -> spec.num(AbilityParams.LENGTH); // Gin hitscan lines, like Shirafune
 			case SPRENGER -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RANGE; // Uryu: aimed ground point
@@ -134,7 +136,7 @@ final class CastContext {
 			case SHIRAFUNE -> size = spec.floatNum(AbilityParams.LENGTH);
 			case IKOROSE, SNAKE_HOOK, BUTOU_RENJIN, KOROSE -> size = spec.floatNum(AbilityParams.LENGTH); // Gin: the strike has its own event
 			case HYAPPONZASHI -> size = spec.floatNum(AbilityParams.RADIUS);
-			case ICE_SPIKE -> size = spec.floatNum(AbilityParams.LENGTH);
+			case ICE_WALL -> size = spec.floatNum(AbilityParams.LENGTH);
 			case SCATTER -> {
 				size = spec.floatNum(AbilityParams.RADIUS);
 				size2 = spec.floatNum(AbilityParams.TORNADO_RADIUS);

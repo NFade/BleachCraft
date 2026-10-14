@@ -162,6 +162,13 @@ class FpMotionTest {
 		assertTrue(Math.abs(d[2]) < 0.1f, "in the frontal plane, tip not at the face: " + d[2]);
 		assertEquals(-0.508f, d[0], 0.07f);
 		assertEquals(0.860f, d[1], 0.05f);
+		// R11 T1: the cutting edge (model +Z) faces forward, camera (0, 0, -1), 2.1 degrees off because it is square to the slanted blade
+		FpRig r = FpRig.DEFAULT;
+		float[] a = r.hand(0.5f, 0.5f, 0.5f);
+		float[] b = r.hand(0.5f, 0.5f, 0.6f);
+		float l = (float) Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+		float[] edge = GuardMotion.GUARD.applyDir(new float[] {(b[0] - a[0]) / l, (b[1] - a[1]) / l, (b[2] - a[2]) / l});
+		assertTrue(edge[2] < -0.998f, "the cutting edge faces forward in the one handed block: " + edge[2]);
 	}
 
 	@Test

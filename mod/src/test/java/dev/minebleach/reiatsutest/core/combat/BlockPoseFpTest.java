@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * First person block, the user's own pose (2026-10-13, replaces Pose B): the cross-body diagonal guard. Rules (design/results/block_pose_user_fp.md):
- * (1) blade direction in camera space within 4 degrees of (-0.508, 0.860, -0.037), cutting edge up and right in the frontal plane; (2) the closest
+ * (1) blade direction in camera space within 4 degrees of (-0.508, 0.860, -0.037), R11 T1: the cutting edge FORWARD (camera (0, 0, -1), made square to the
+ * blade: (0.019, -0.032, -0.999), 2.1 degrees off straight ahead; was up and right in the frontal plane, (0.861, 0.509, 0)); (2) the closest
  * approach of the blade to the crosshair at least 8 degrees; (3) the arms (fists included) stay out of the central keep-out rectangle of {@link FpCentre}
  * and 0.15 blocks in front of the camera, the right fist is visible near the bottom edge; (4) the blend from the stance is smooth and does not sweep the
  * blade over the crosshair more than the old pose did; (5) the left fist stays on the hilt. All with the exact projection of {@link FpGeometry}
@@ -18,7 +19,10 @@ class BlockPoseFpTest {
 	private static final float[] ASPECTS = {4f / 3f, 16f / 9f, 21f / 9f};
 	private static final int SAMPLES = 400;
 	private static final float[] TARGET_BLADE = {-0.508f, 0.860f, -0.037f};
-	private static final float[] TARGET_EDGE = {0.861f, 0.509f, 0f};
+	/** R11 T1: the cutting edge looks forward; square to the blade it is (0, 0, -1) minus its part along the blade, normalised. */
+	private static final float[] TARGET_EDGE = squareToBlade(new float[] {0f, 0f, -1f}, TARGET_BLADE);
+	/** The old edge of the user's pose (R10): in the frontal plane, up and right. The roll between the two is 90 degrees about the blade. */
+	private static final float[] OLD_EDGE = {0.861f, 0.509f, 0f};
 	/** The r8 two handed guard and the one handed guard before the user's pose, the blends of which the new ones are measured against. */
 	private static final FpPose R8_GUARD = FpPose.of(-0.32f, 0.10f, -0.06f, -14f, -16f, 54f);
 	private static final FpPose OLD_ONE_HANDED = FpPose.of(-0.22f, 0.14f, -0.04f, -12f, -22f, 62f);
@@ -71,6 +75,15 @@ class BlockPoseFpTest {
 			}
 		}
 		return best;
+	}
+
+	private static float[] squareToBlade(float[] v, float[] blade) {
+		float lb = (float) Math.sqrt(blade[0] * blade[0] + blade[1] * blade[1] + blade[2] * blade[2]);
+		float[] b = {blade[0] / lb, blade[1] / lb, blade[2] / lb};
+		float d = v[0] * b[0] + v[1] * b[1] + v[2] * b[2];
+		float[] e = {v[0] - d * b[0], v[1] - d * b[1], v[2] - d * b[2]};
+		float le = (float) Math.sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]);
+		return new float[] {e[0] / le, e[1] / le, e[2] / le};
 	}
 
 	private static float angleDeg(float[] a, float[] b) {
@@ -128,8 +141,13 @@ class BlockPoseFpTest {
 			assertEquals(-85.9, Math.toDegrees(Math.atan2(d[0], -d[2])), 1.5);
 			assertEquals(59.4, Math.toDegrees(Math.asin(d[1])), 1.0);
 			float[] edge = g.applyDir(modelDir(0f, 0f, 1f));
-			assertTrue(angleDeg(edge, TARGET_EDGE) < 1f, "cutting edge up and right in the frontal plane: " + angleDeg(edge, TARGET_EDGE));
-			assertTrue(Math.abs(g.applyDir(modelDir(1f, 0f, 0f))[2]) > 0.99f, "the flats of the blade face forward and back");
+			assertTrue(angleDeg(edge, TARGET_EDGE) < 1f, "cutting edge forward: " + angleDeg(edge, TARGET_EDGE));
+			assertTrue(edge[2] < -0.998f, "the edge is within 3.6 degrees of straight ahead (0, 0, -1): " + edge[2]);
+			assertEquals(90.0, angleDeg(edge, OLD_EDGE), 3.0, "rolled 90 degrees about the blade against the pose of R10");
+			// the flats now face up-right / down-left, in the frontal plane
+			float[] flat = g.applyDir(modelDir(1f, 0f, 0f));
+			assertTrue(Math.abs(flat[2]) < 0.05f, "the flats of the blade lie in the frontal plane: " + flat[2]);
+			assertTrue(flat[0] * flat[1] > 0f, "the flat faces up and right (or down and left)");
 		}
 	}
 
@@ -209,7 +227,7 @@ class BlockPoseFpTest {
 		FpGeometry.Hold h = FpGeometry.Hold.twoHanded(FpParams.DEFAULTS, RIG);
 		FpPose st = TwoHandMotion.stance(FpParams.DEFAULTS, 1f);
 		FpPose g = TwoHandMotion.guard(FpParams.DEFAULTS);
-		// the Euler triple of the pose is one of several equivalent ones: the shipped one turns the sword about as little as possible (the direct turn is 103 degrees)
+		// the Euler triple of the pose is one of several equivalent ones: the shipped one turns the sword about as little as possible (R11 T1: 52 degrees in all, the others 150 and more)
 		double total = 0;
 		double maxStep = 0;
 		FpPose prev = GuardMotion.pose(FpParams.DEFAULTS, st, g, 0f, 0f, FpPose.ZERO, FpPose.ZERO);
@@ -220,7 +238,7 @@ class BlockPoseFpTest {
 			maxStep = Math.max(maxStep, s);
 			prev = p;
 		}
-		assertTrue(total < 140, "the sword turns about 123 degrees on the way in, not around the world: " + total);
+		assertTrue(total < 70, "the sword turns about 52 degrees on the way in (R10: 123), not around the world: " + total);
 		assertTrue(maxStep < 4, "no jump of the blade between two steps of 1 percent of the weight: " + maxStep);
 		float worstDepth = Float.MAX_VALUE;
 		float worstArm = Float.MAX_VALUE;

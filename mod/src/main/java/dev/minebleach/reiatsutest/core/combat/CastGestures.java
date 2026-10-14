@@ -76,7 +76,7 @@ public final class CastGestures {
 			case TSUKISHIRO -> 20;
 			case HAKUREN -> 21;
 			case SHIRAFUNE -> 22;
-			case ICE_SPIKE -> 24;
+			case ICE_WALL -> 24;
 			case MODE_ATTACK -> 30;
 			case MODE_BARRIER -> 31;
 			case SCATTER -> 32;
@@ -423,7 +423,7 @@ public final class CastGestures {
 				.tr(0.75, SM, 0, 0, 0)
 				.tl(0.25, OUT, -35, 0, 10)
 				.tl(0.75, SM, 0, 0, 0));
-		ExtraGestures.addTo(m); // round 6: ice spike, petal cage
+		ExtraGestures.addTo(m); // round 6: ice wall (ice spike until R11 T5), petal cage
 		NewCharacterGestures.addTo(m); // gin-uryu: placeholder gestures of Gin and Uryu
 		return java.util.Collections.unmodifiableMap(m);
 	}

@@ -55,6 +55,7 @@ public record VoiceHudState(Mic mic, long lastContactMs, String interim, String 
 			case OK -> Result.ACCEPTED;
 			case DENIED_REIATSU -> Result.DENIED_REIATSU;
 			case DENIED_RAGE -> Result.DENIED_RAGE;
+			case DENIED_SHIKAI_TIME -> Result.DENIED_STATE; // R11 T3: the generic denied line
 			case DENIED_ITEM -> Result.DENIED_ITEM;
 			case DENIED_NOT_DRAWN -> Result.DENIED_NOT_DRAWN;
 			case COOLDOWN -> Result.COOLDOWN;

@@ -135,13 +135,16 @@ public final class BcItemPose {
 					new Quaternionf((float) grip.q()[0], (float) grip.q()[1], (float) grip.q()[2], (float) grip.q()[3]), gw);
 			matrices.translate((float) grip.t()[0] * gw, (float) grip.t()[1] * gw, (float) grip.t()[2] * gw);
 			matrices.multiply(gq);
+			// R11 T10: tp.swordScale, the sword of the pose is larger than the display transform makes it
+			float gs = 1f + (grip.s() - 1f) * gw;
+			matrices.scale(gs, gs, gs);
 		}
 		if (useBc) {
 			float s = leftHanded ? -1f : 1f;
 			float[] rot = vec("rot", ROT);
 			float[] pos = vec("pos", POS);
 			float[] pv = vec("pivot", PIVOT);
-			float sc = 1f + (num("scale", SCALE) - 1f) * w;
+			float sc = (1f + (num("scale", SCALE) - 1f) * w) * (1f + (TpPoseDriver.strikeScale(e, leftHanded) - 1f) * w);
 			Quaternionf q = new Quaternionf().rotationXYZ((float) Math.toRadians(rot[0] * w), (float) Math.toRadians(s * rot[1] * w),
 					(float) Math.toRadians(s * rot[2] * w));
 			matrices.translate(s * (pv[0] + pos[0] * w) / 16f, (pv[1] + pos[1] * w) / 16f, (pv[2] + pos[2] * w) / 16f);

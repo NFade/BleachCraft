@@ -18,8 +18,13 @@ class R8MechTest {
 	void everyNewKnobHasADocumentedDefault() {
 		BalanceConfig c = BalanceConfig.defaults();
 		assertEquals(0.30, c.abilityBlockReduction(), 1e-9);
-		assertEquals(1.0, c.meleeHitReiatsu(), 1e-9);
-		assertEquals(10, c.meleeHitTenths());
+		assertEquals(5.0, c.meleeHitReiatsu(), 1e-9, "R11 T2: was 1.0");
+		assertEquals(50, c.meleeHitTenths());
+		assertEquals(10.0, c.parryReiatsu(), 1e-9, "R11 T2: a parry restores reiatsu");
+		assertEquals(100, c.parryTenths());
+		assertEquals(150, c.meleeHitMaxPerSecondTenths());
+		assertEquals(5, c.meleeHitTargetGapTicks());
+		assertEquals(10, c.parryGapTicks());
 		assertEquals(4, c.byakuyaAttackTickInterval());
 		assertEquals(3.5, c.barrierPushRadius(), 1e-9);
 		assertTrue(c.barrierPushStrength() > 0.0);
@@ -82,7 +87,7 @@ class R8MechTest {
 	void kidoDamageIsHalved() {
 		KidoConfig k = KidoConfig.defaults();
 		assertEquals(1.25, k.spec(KidoId.BYAKURAI).damage(), 1e-9, "was 2.5");
-		assertEquals(2.0, k.spec(KidoId.SHAKKAHO).damage(), 1e-9, "was 4.0");
+		assertEquals(1.0, k.spec(KidoId.SHAKKAHO).damage(), 1e-9, "R11 T4: was 2.0 after r8, 4.0 before");
 		assertEquals(0.0, k.spec(KidoId.SAI).damage(), 1e-9, "Sai never had damage");
 		// everything else of the spells is untouched
 		assertEquals(30.0, k.spec(KidoId.BYAKURAI).range());

@@ -44,7 +44,7 @@ public final class SpellbookCatalog {
 				ability(AbilityId.HAKUREN, SHIKAI, K_ABILITY[1]),
 				ability(AbilityId.SHIRAFUNE, SHIKAI, K_ABILITY[2]),
 				bankaiRelease(CommandIds.RUKIA_BANKAI_RELEASE),
-				ability(AbilityId.ICE_SPIKE, BANKAI, K_BANKAI_ABILITY[0]),
+				ability(AbilityId.ICE_WALL, BANKAI, K_BANKAI_ABILITY[0]),
 				// the frost territory of the bankai is a passive: an information page without a command (mech2 task 4)
 				new BookPage(List.of(), BANKAI, List.of()),
 				seal()));

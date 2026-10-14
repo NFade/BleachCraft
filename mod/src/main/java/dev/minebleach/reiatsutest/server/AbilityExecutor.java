@@ -48,7 +48,7 @@ final class AbilityExecutor {
 			case TSUKISHIRO -> tsukishiro(p, phase, ctx);
 			case HAKUREN -> hakuren(p, phase, ctx);
 			case SHIRAFUNE -> shirafune(p, ctx);
-			case ICE_SPIKE -> iceSpike(p, phase, ctx);
+			case ICE_WALL -> iceWall(p, phase, ctx);
 			case CAGE -> cage(p, ctx);
 			case MODE_ATTACK -> modeAttack(p, ctx);
 			case SCATTER -> scatter(p, phase, ctx);
@@ -94,6 +94,15 @@ final class AbilityExecutor {
 		double d0 = phase * seg;
 		double d1 = (phase + 1) * seg;
 		Vec3d start = ctx.origin.add(0, 0.9, 0);
+		// R11 T5: the wave stops at an ice wall (the first wall block on the ground line); the wall takes the hit of the phase that reaches it
+		double wallAt = IceWall.clipDistance(world, start, ctx.flatDir, sp.num(AbilityParams.LENGTH));
+		if (d0 >= wallAt) {
+			return;
+		}
+		if (d1 > wallAt) {
+			d1 = wallAt;
+			IceWall.absorbNear(world, start.add(ctx.flatDir.multiply(wallAt + 0.05)), 0.9, sp.num(AbilityParams.DAMAGE), "hakuren");
+		}
 		int room = sp.intNum(AbilityParams.MAX_TARGETS) - ctx.hit.size();
 		if (room > 0) {
 			List<LivingEntity> targets = Targeting.segment(p, start, ctx.flatDir, d0, d1, half, room, ctx.hit);
@@ -125,6 +134,10 @@ final class AbilityExecutor {
 	private static void shirafune(ServerPlayerEntity p, CastContext ctx) {
 		AbilitySpec sp = ctx.spec;
 		LivingEntity target = Targeting.firstOnRay(p, ctx.eye, ctx.dir, sp.num(AbilityParams.LENGTH));
+		if (target == null) {
+			// R11 T5: the thrust ends on an ice wall: the wall takes the hit (the ray is cut by the wall block itself, Targeting.rayPoint)
+			IceWall.absorbNear(p.getServerWorld(), Targeting.rayPoint(p, ctx.eye, ctx.dir, sp.num(AbilityParams.LENGTH)), 0.6, sp.num(AbilityParams.DAMAGE), "shirafune");
+		}
 		if (target != null) {
 			Targeting.hurt(p, target, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
 			Targeting.chill(p, target, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
@@ -134,30 +147,13 @@ final class AbilityExecutor {
 	}
 
 	/**
-	 * Ice spike (Rukia bankai, round 6): a thrust of ice spikes along the look ray, one segment per phase (the wave front), up to the
-	 * first block. Each target is hit once: damage, Slowness and the frozen look. Block free: the spikes are only visual.
+	 * Ice wall (Rukia bankai, R11 T5, it was the ice spike): one phase at the end of the cast time. A wall of real ice blocks grows where the caster
+	 * looks at that moment ({@link IceWall#cast}); no damage, no block of the world is lost (the journal puts everything back).
 	 */
-	private static void iceSpike(ServerPlayerEntity p, int phase, CastContext ctx) {
-		AbilitySpec sp = ctx.spec;
-		int phases = Math.max(1, sp.phaseOffsets().size());
-		double seg = sp.num(AbilityParams.LENGTH) / phases;
-		double d0 = phase * seg;
-		double d1 = Math.min((phase + 1) * seg, ctx.rayLength);
-		if (d1 <= d0) {
-			return;
+	private static void iceWall(ServerPlayerEntity p, int phase, CastContext ctx) {
+		if (phase == 0) {
+			IceWall.cast(p, ctx);
 		}
-		int room = sp.intNum(AbilityParams.MAX_TARGETS) - ctx.hit.size();
-		if (room <= 0) {
-			return;
-		}
-		List<LivingEntity> targets = Targeting.segment(p, ctx.eye, ctx.dir, d0, d1, sp.num(AbilityParams.HALF_WIDTH), room, ctx.hit);
-		for (LivingEntity e : targets) {
-			ctx.hit.add(e.getId());
-			Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.FREEZE, false);
-			Targeting.chill(p, e, sp.intNum(AbilityParams.SLOW_AMP), sp.intNum(AbilityParams.STATUS_TICKS));
-		}
-		ServerFx.entities(p, EntityFxS2C.SLOWED, now(p) + sp.intNum(AbilityParams.STATUS_TICKS), targets);
-		ServerFx.entities(p, EntityFxS2C.HIT, now(p), targets);
 	}
 
 	/** Entities frozen in phase 0 that are still alive, valid and near the cast. */
@@ -179,7 +175,9 @@ final class AbilityExecutor {
 	private static void modeAttack(ServerPlayerEntity p, CastContext ctx) {
 		AbilitySpec sp = ctx.spec;
 		// the landing burst sits at the cast's aimed point, or at the swarm head when the caster steered it (BladeFlights)
-		List<LivingEntity> inReach = Targeting.sphere(p, BladeFlights.landingCenter(p, ctx), sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
+		Vec3d landing = BladeFlights.landingCenter(p, ctx);
+		IceWall.absorbNear(p.getServerWorld(), landing, 1.3, sp.num(AbilityParams.DAMAGE), "mode_attack"); // R11 T5: a landing on an ice wall spends its strength
+		List<LivingEntity> inReach = Targeting.sphere(p, landing, sp.num(AbilityParams.RADIUS), sp.intNum(AbilityParams.MAX_TARGETS));
 		// r8 item 2: a victim that took a damage tick of this cast less than byakuyaAttackTickInterval ticks ago (landing or flight) is skipped
 		List<LivingEntity> hit = new ArrayList<>();
 		for (LivingEntity e : inReach) {
@@ -191,6 +189,7 @@ final class AbilityExecutor {
 		}
 		BladeFlights.markLanding(p, ctx, hit);
 		ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks of the swarm envelope
+		ctx.terrainReserved += AbilityTerrain.modeAttack(p, ctx, landing); // R11 T9: profile S, cap 60 per cast
 	}
 
 	/**
@@ -219,12 +218,14 @@ final class AbilityExecutor {
 			}
 			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks on the tornado ticks
 		} else {
+			IceWall.absorbNear(p.getServerWorld(), ctx.aim, 1.3, sp.num(AbilityParams.DAMAGE), "scatter"); // R11 T5
 			List<LivingEntity> hit = Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max);
 			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 				Targeting.knockback(e, ctx.aim, sp.num(AbilityParams.KNOCKBACK));
 			}
 			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks at the impact
+			ctx.terrainReserved += AbilityTerrain.scatter(p, ctx); // R11 T9: profile M, a crater at the impact, cap 400
 		}
 	}
 
@@ -236,19 +237,25 @@ final class AbilityExecutor {
 		int max = sp.intNum(AbilityParams.MAX_TARGETS);
 		if (phase == 0) {
 			double length = HakuteikenAim.reach(sp.num(AbilityParams.LENGTH), ctx.eye.distanceTo(ctx.aim));
+			if (length < sp.num(AbilityParams.LENGTH) - 0.05) {
+				IceWall.absorbNear(p.getServerWorld(), ctx.aim, 1.3, sp.num(AbilityParams.DAMAGE2), "hakuteiken line"); // R11 T5: the line ends on a block: an ice wall takes it
+			}
 			List<LivingEntity> hit = Targeting.segment(p, ctx.eye, ctx.dir, 0.0, length, sp.num(AbilityParams.HALF_WIDTH), max, null);
 			for (LivingEntity e : hit) {
 				ctx.hit.add(e.getId());
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE2), DamageTypes.INDIRECT_MAGIC, true);
 			}
 			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks along the line (t 1.5)
+			ctx.terrainReserved += AbilityTerrain.hakuteikenLine(p, ctx, length); // R11 T9: profile L, the tunnel along the line
 		} else {
+			IceWall.absorbNear(p.getServerWorld(), ctx.aim, 1.3, sp.num(AbilityParams.DAMAGE), "hakuteiken burst"); // R11 T5
 			List<LivingEntity> hit = Targeting.sphere(p, ctx.aim, sp.num(AbilityParams.RADIUS), max);
 			for (LivingEntity e : hit) {
 				Targeting.hurt(p, e, sp.floatNum(AbilityParams.DAMAGE), DamageTypes.INDIRECT_MAGIC, true);
 				Targeting.knockback(e, ctx.aim, sp.num(AbilityParams.KNOCKBACK));
 			}
 			ServerFx.entities(p, EntityFxS2C.HIT_PETAL, now(p), hit); // S5: hit sparks at the burst (t 1.8)
+			ctx.terrainReserved += AbilityTerrain.hakuteikenBurst(p, ctx); // R11 T9: profile L, the crater at the end, cap 700 for line and crater together
 		}
 	}
 }

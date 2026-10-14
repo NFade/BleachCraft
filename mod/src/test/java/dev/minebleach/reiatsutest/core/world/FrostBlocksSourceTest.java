@@ -52,12 +52,29 @@ class FrostBlocksSourceTest {
 	}
 
 	@Test
-	void theBankaiTerritoryAndTheIceSpikePlaceNoTemporaryIce() throws IOException {
+	void theBankaiTerritoryAndTheIceWallPlaceNoTemporaryIce() throws IOException {
 		// Absolute Zero (removed in mech2 task 4) used to place random slippery ice; the passive territory only slows and hurts
 		String exec = code(read("server/AbilityExecutor.java"));
 		assertFalse(exec.contains("absoluteZero("), "the old ability code is gone");
-		int b = exec.indexOf("private static void iceSpike(");
+		int b = exec.indexOf("private static void iceWall(");
 		assertTrue(b > 0);
 		assertFalse(code(read("server/BankaiField.java")).contains("TempBlocks.place"));
+		// the ice wall goes through the journal's own placeWall (the wall block, never vanilla ice)
+		assertFalse(java.util.regex.Pattern.compile("(?<![A-Za-z])Blocks[.]ICE(?![A-Za-z_])").matcher(code(read("server/IceWall.java"))).find(), "vanilla ice melts and slides");
+	}
+
+	@Test
+	void theIceWallBlockIsUnbreakableFrictionlessAndPistonProof() throws IOException {
+		String blocks = code(read("registry/ModBlocks.java"));
+		int i = blocks.indexOf("ICE_WALL = register(");
+		assertTrue(i > 0, "the ice_wall block is registered");
+		assertTrue(blocks.contains("\"ice_wall\""));
+		// it is built by the same ground(...) settings as the frost blocks: strength -1, no drops, pistons do not move it
+		assertTrue(blocks.contains("strength(-1.0F, 3600000.0F)") && blocks.contains("pistonBehavior(PistonBehavior.BLOCK)") && blocks.contains("dropsNothing()"));
+		String wall = blocks.substring(i, blocks.indexOf(");\n\n", i) > 0 ? blocks.indexOf(");\n\n", i) : blocks.length());
+		assertTrue(wall.contains("ground(") && wall.contains("nonOpaque()"), "translucent");
+		assertFalse(wall.contains("slipperiness("));
+		assertTrue(blocks.contains("isModTerrain"), "abilities never break it (AbilityTerrain)");
+		assertTrue(code(read("server/AbilityTerrain.java")).contains("ModBlocks.isModTerrain"));
 	}
 }

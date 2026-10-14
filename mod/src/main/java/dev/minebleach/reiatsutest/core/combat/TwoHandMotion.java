@@ -32,17 +32,20 @@ public final class TwoHandMotion {
 	public static final FpPose STANCE = FpPose.of(-0.47f, 0.005f, 0.06f, -36f, 0f, -8f);
 	/**
 	 * Two handed block pose: the user's own pose from Blockbench (2026-10-13; replaces Pose B (-0.36, -0.25, -0.12, -41.5, 0.5, -5.3) and the r8 pose
-	 * (-0.32, 0.10, -0.06, -14, -16, 54); see design/results/block_pose_user_fp.md). Target in camera space (+x right, +y up, -z ahead): blade direction
-	 * (-0.508, 0.860, -0.037) (86 degrees left of straight ahead, 59 degrees up: a diagonal in the frontal plane, tip up left), the cutting edge (model +Z) in the
-	 * frontal plane pointing up and right (0.861, 0.509, 0), the flats of the blade facing forward and back. The ROTATION is that target exactly (the
-	 * Euler triple {@code Rx Ry Rz} is the one of three equivalent triples with the smoothest and safest blend from the stance, 123 degrees of total
-	 * turn); the SHIFT was searched with the projection of {@link FpGeometry} (vertical FOV 70) so that the blade line on the screen is the one of the
-	 * user's pose: it enters at the bottom edge 2 degrees right of the middle, crosses the horizon 20 degrees left, leaves through the upper left; closest
-	 * approach to the crosshair 17.7 degrees; the right fist is at the bottom edge (ndc -0.05, -0.91), the left fist rides on the hilt below the picture;
-	 * the arms stay clear of the central keep-out rectangle (margin 0.29) and 0.21 blocks in front of the camera. The user's own sword is 1.5 times smaller
-	 * than the first person one (display scale 2.4 against 1.6), so the hilt is farther from the eye than in the rig. UNVERIFIED in game.
+	 * (-0.32, 0.10, -0.06, -14, -16, 54); see design/results/block_pose_user_fp.md), R11 T1: rolled 90 degrees about the blade so that the CUTTING EDGE
+	 * FACES FORWARD (was (-0.574, 0.158, 0.445, -89.3, -112.5, -80.3); see design/results/r11_T1.md). Target in camera space (+x right, +y up, -z ahead): blade
+	 * direction (-0.508, 0.861, -0.037) as before (86 degrees left of straight ahead, 59 degrees up: a diagonal in the frontal plane, tip up left), the
+	 * cutting edge (model +Z) (0.019, -0.032, -0.999) (the forward direction made square to the blade: 2.1 degrees off straight ahead, the blade is not
+	 * exactly in the frontal plane), the flats of the blade facing up-right and down-left. The ROTATION is that target exactly (the Euler triple
+	 * {@code Rx Ry Rz} is the only one of the 54 equivalent triples whose blend from the stance turns the sword by 52 degrees in all, the others 150 and
+	 * more); the SHIFT was searched with the projection of {@link FpGeometry} (vertical FOV 70, Nelder-Mead, same method as R10) so that the blade line on
+	 * the screen is the old one: it enters at the bottom edge 1.7 degrees right of the middle (ndc +0.024), crosses the horizon 20.4 degrees left, leaves
+	 * through the upper left; closest approach to the crosshair 17.9 degrees; the right fist is at the bottom edge (ndc +0.00, -0.89), the left fist rides on
+	 * the hilt below the picture; the arms stay clear of the central keep-out rectangle (margin 0.37) and 0.26 blocks in front of the camera. The user's own
+	 * sword is 1.5 times smaller than the first person one (display scale 2.4 against 1.6), so the hilt is farther from the eye than in the rig. UNVERIFIED
+	 * in game.
 	 */
-	public static final FpPose GUARD = FpPose.of(-0.574f, 0.158f, 0.445f, -89.3f, -112.5f, -80.3f);
+	public static final FpPose GUARD = FpPose.of(-0.573f, -0.031f, 0.164f, -8.8f, -5.1f, 37.1f);
 	/** Pivot of the rotations, model units along the blade from the grip (negative: towards the pommel). */
 	public static final float PIVOT_S = -0.10f;
 	/**

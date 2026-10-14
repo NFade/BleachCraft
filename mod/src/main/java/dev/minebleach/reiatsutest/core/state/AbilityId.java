@@ -14,10 +14,11 @@ public enum AbilityId {
 	HAKUTEIKEN(8, "byakuya.bankai.hakuteiken", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
 	SENKEI(9, "byakuya.bankai.senkei", CharacterId.BYAKUYA, ZanpakutoState.BANKAI),
 	/**
-	 * Rukia bankai, first slot: a long thrust of ice spikes along the look ray. Her second bankai slot is empty since mech2 task 4: Absolute Zero was
-	 * the same effect as Tsukishiro and is replaced by the passive frost territory (not an ability: {@code server/BankaiField}). Code 4 stays unused.
+	 * Rukia bankai, first slot: a wall of ice where she looks (R11 T5, variant W; it was a thrust of ice spikes, the byte code 10 is unchanged).
+	 * Her second bankai slot is empty since mech2 task 4: Absolute Zero was the same effect as Tsukishiro and is replaced by the passive frost
+	 * territory (not an ability: {@code server/BankaiField}). Code 4 stays unused.
 	 */
-	ICE_SPIKE(10, "rukia.bankai.ice_spike", CharacterId.RUKIA, ZanpakutoState.BANKAI),
+	ICE_WALL(10, "rukia.bankai.ice_wall", CharacterId.RUKIA, ZanpakutoState.BANKAI),
 	/** Byakuya shikai, third slot: the petal cage around the aimed target or point (round 6). */
 	CAGE(11, "byakuya.shikai.cage", CharacterId.BYAKUYA, ZanpakutoState.SHIKAI),
 	// ---- Gin Ichimaru (design/GIN.md), codes 12 to 17
@@ -70,7 +71,7 @@ public enum AbilityId {
 	/** Ability slot (0..2) of this ability for its character and state: Z / H / B. */
 	public int slot() {
 		return switch (this) {
-			case TSUKISHIRO, ICE_SPIKE, MODE_ATTACK, SCATTER, IKOROSE, BUTOU_RENJIN, HEILIG_PFEIL, LICHT_REGEN -> 0;
+			case TSUKISHIRO, ICE_WALL, MODE_ATTACK, SCATTER, IKOROSE, BUTOU_RENJIN, HEILIG_PFEIL, LICHT_REGEN -> 0;
 			case HAKUREN, MODE_BARRIER, HAKUTEIKEN, HYAPPONZASHI, KOROSE, SPRENGER, HOMING_VOLLEY -> 1;
 			case SHIRAFUNE, SENKEI, CAGE, SNAKE_HOOK, HAKUFUKU, HIRENKYAKU, STERNENSTAUB -> 2;
 		};

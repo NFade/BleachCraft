@@ -3,6 +3,7 @@ package dev.minebleach.reiatsutest.client.fx;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.fx.PressureMath;
 import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -112,10 +113,15 @@ public final class ScreenFx {
 	private record Shake(double start, double amp, double dur) {
 	}
 
+	/** R11 T7: a quiet continuous tremor of the view (the reiatsu pressure): flat amplitude under the {@link PressureMath#envelope} of its age. */
+	private record Tremor(double start, double amp, double seedPhase) {
+	}
+
 	private static final List<Flash> FLASHES = new ArrayList<>();
 	private static final List<Layer> VIGNETTES = new ArrayList<>();
 	private static final List<Layer> GRADES = new ArrayList<>();
 	private static final List<Shake> SHAKES = new ArrayList<>();
+	private static final List<Tremor> TREMORS = new ArrayList<>();
 	private static final List<Double> BIG_FLASH_TIMES = new ArrayList<>();
 	private static double lastImpactFrame = -10;
 	private static double impactStart = -10;
@@ -145,6 +151,7 @@ public final class ScreenFx {
 		VIGNETTES.clear();
 		GRADES.clear();
 		SHAKES.clear();
+		TREMORS.clear();
 		BIG_FLASH_TIMES.clear();
 		impactActive = false;
 		speedLevel = 0;
@@ -270,6 +277,20 @@ public final class ScreenFx {
 		}
 	}
 
+	/**
+	 * R11 T7 TREMOR(A): a continuous low tremor of the view of {@code amplitudeDeg} degrees that follows the pressure envelope (ramp, hold, fade) and
+	 * ends by itself after {@link PressureMath#totalTime()}. Scaled by {@code shakeScale}; zero with reduce motion and photosensitive safe.
+	 */
+	public static void tremor(double amplitudeDeg, double strength, double seedPhase) {
+		if (FxConfig.reduceMotion || FxConfig.photosensitiveSafe) {
+			return;
+		}
+		double a = amplitudeDeg * strength * FxConfig.shakeScale;
+		if (a > 0.0005) {
+			TREMORS.add(new Tremor(FxClock.now, a, seedPhase));
+		}
+	}
+
 	/** IMPACT_FRAME: white 0.85 for 17 ms then ink 0.6 for 33 ms; replaced by FLASH(0.40) short with reduce motion; at most once per second. */
 	public static void impactFrame(double strength) {
 		if (FxConfig.reduceMotion || FxConfig.photosensitiveSafe || FxClock.now - lastImpactFrame < 1.0) {
@@ -356,12 +377,23 @@ public final class ScreenFx {
 			yaw += s.amp * Math.sin(2 * Math.PI * 14 * t) * decay;
 			pitch += 0.7 * s.amp * Math.sin(2 * Math.PI * 14 * t + Math.PI / 2) * decay;
 		}
+		for (int i = TREMORS.size() - 1; i >= 0; i--) {
+			Tremor tr = TREMORS.get(i);
+			double t = FxClock.now - tr.start;
+			if (t >= PressureMath.totalTime()) {
+				TREMORS.remove(i);
+				continue;
+			}
+			double a = tr.amp * PressureMath.envelope(t);
+			yaw += a * (0.65 * Math.sin(2 * Math.PI * 7.3 * t + tr.seedPhase) + 0.35 * Math.sin(2 * Math.PI * 12.1 * t + 1.3 + tr.seedPhase));
+			pitch += a * (0.65 * Math.sin(2 * Math.PI * 8.9 * t + 0.7 + tr.seedPhase) + 0.35 * Math.sin(2 * Math.PI * 13.7 * t + 2.1 + tr.seedPhase));
+		}
 		out[0] = FxMath.clamp(yaw, -1.5, 1.5);
 		out[1] = FxMath.clamp(pitch, -1.5, 1.5);
 	}
 
 	public static boolean shaking() {
-		return !SHAKES.isEmpty();
+		return !SHAKES.isEmpty() || !TREMORS.isEmpty();
 	}
 
 	// ------------------------------------------------------------------------------------------------ drawing

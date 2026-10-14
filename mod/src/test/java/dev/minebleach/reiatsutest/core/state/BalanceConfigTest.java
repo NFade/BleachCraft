@@ -46,7 +46,7 @@ class BalanceConfigTest {
 			assertEquals(a, spec.id());
 			assertTrue(spec.costTenths() < c.maxTenths(), a.name());
 			assertTrue(spec.cooldownTicks() > 0, a.name());
-			// Byakuya's bankai abilities are free; Rukia's one (the ice spike) costs reiatsu, shikai ones always cost
+			// Byakuya's bankai abilities are free; Rukia's one (the ice wall) costs reiatsu, shikai ones always cost
 			boolean free = a.requiredState == ZanpakutoState.BANKAI && a.character == CharacterId.BYAKUYA;
 			assertEquals(free, spec.costTenths() == 0, a.name() + ": Byakuya bankai abilities are free, every other one costs");
 			assertTrue(codes.add(a.code), "duplicate code " + a);

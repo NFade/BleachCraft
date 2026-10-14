@@ -430,7 +430,7 @@ public final class WingHaloRenderer {
 			HakuteikenFx.pose(st, world, td, pose);
 			HakuteikenFx.Pose rp = FP.rigFor(st, camera, pose);
 			double tv = HakuteikenCurves.rippleTime(tm, t);
-			double fade = 1.0 - FxMath.smoothstep(tm.lineFade, tm.lineFade + 0.5, t);
+			double fade = 1.0 - FxMath.smoothstep(tm.haloFade, tm.haloFade + 0.5, t);
 			// 0.45 ignition: white core at the hand, glow_core 0.3 to 1.2, a flare of size 3
 			double ig = FxMath.smoothstep(tm.ignite, tm.ignite + 0.2, t) * fade;
 			if (ig > 0.01) {

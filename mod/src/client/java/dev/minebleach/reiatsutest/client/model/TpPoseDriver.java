@@ -29,7 +29,8 @@ import net.minecraft.util.Hand;
  *
  * <p>Hot tuning (dev only, {@link HeldPose}): {@code pose_override.json} section {@code "tp"} with dotted keys, any subset, for
  * example {@code {"tp": {"hold.pos": [0, 6.5, -5.4], "hold.tilt": 12, "grip.c_r": -0.8}}}; see {@link TpPose} for the key names
- * (right handed layout, px and degrees; a left hander is mirrored by the solver).
+ * (right handed layout, px and degrees; a left hander is mirrored by the solver). R11 T10: the section {@code "tp"} of the player's own
+ * client config ({@link TpConfig}: {@code swordScale}, {@code swordScale.<item>}, {@code guard.shift}) is read in production too; the dev file wins.
  */
 public final class TpPoseDriver {
 	private static final class St {
@@ -39,6 +40,8 @@ public final class TpPoseDriver {
 		TpPose.Result res;
 		long resNanos;
 		boolean holding;
+		/** R11 T10: {@code tp.swordScale} of the item in the hand at the last solve (1 before the first one). */
+		double swordScale = 1.0;
 	}
 
 	private static final Map<Integer, St> STATES = new HashMap<>();
@@ -59,7 +62,7 @@ public final class TpPoseDriver {
 		@Override
 		public double num(String key, double def) {
 			JsonElement e = raw(key);
-			return e != null && e.isJsonPrimitive() ? e.getAsDouble() : def;
+			return e != null && e.isJsonPrimitive() ? e.getAsDouble() : TpConfig.num(key, def);
 		}
 
 		@Override
@@ -69,7 +72,7 @@ public final class TpPoseDriver {
 				JsonArray a = e.getAsJsonArray();
 				return new double[] {a.get(0).getAsDouble(), a.get(1).getAsDouble(), a.get(2).getAsDouble()};
 			}
-			return def;
+			return TpConfig.vec(key, def);
 		}
 	};
 
@@ -158,7 +161,9 @@ public final class TpPoseDriver {
 					new double[] {tr.translation.x(), tr.translation.y(), tr.translation.z()}, tr.scale.x());
 			boolean thin = player.getSkinTextures().model() == SkinTextures.Model.SLIM;
 			boolean left = e.getMainArm() == Arm.LEFT;
-			st.res = TpPose.solve(new TpPose.Input(p, st.b, left, thin, hip, disp, om.rig(false)), PARAMS);
+			TpConfig.poll();
+			st.swordScale = TpConfig.swordScale(net.minecraft.registry.Registries.ITEM.getId(main.getItem()).getPath());
+			st.res = TpPose.solve(new TpPose.Input(p, st.b, left, thin, hip, disp, om.rig(false), st.swordScale), PARAMS);
 			st.resNanos = now;
 		}
 		debugLog(e, st, elig, holding, now);
@@ -316,9 +321,22 @@ public final class TpPoseDriver {
 		if (st == null || !st.holding || st.res == null || leftHanded != (e.getMainArm() == Arm.LEFT)) {
 			return null;
 		}
-		return new Grip(st.res.gT(), st.res.gQ(), (float) st.hold);
+		return new Grip(st.res.gT(), st.res.gQ(), (float) st.res.gS(), (float) st.hold);
 	}
 
-	record Grip(double[] t, double[] q, float weight) {
+	/**
+	 * R11 T10: factor by which a Better Combat strike has to grow the held sword about its grip so that it keeps the size of the pose
+	 * ({@code tp.swordScale}, eased with the hold weight); 1 when the entity has no pose or the item is not on the pose hand.
+	 */
+	static float strikeScale(LivingEntity e, boolean leftHanded) {
+		St st = update(e);
+		if (st == null || !st.holding || leftHanded != (e.getMainArm() == Arm.LEFT)) {
+			return 1f;
+		}
+		return (float) (1.0 + (st.swordScale - 1.0) * st.hold);
+	}
+
+	/** The rigid correction {@code t, q} (translation in blocks, quaternion x y z w), its uniform scale {@code s} (R11 T10) and its weight. */
+	record Grip(double[] t, double[] q, float s, float weight) {
 	}
 }

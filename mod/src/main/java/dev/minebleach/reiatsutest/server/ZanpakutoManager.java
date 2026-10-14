@@ -1,7 +1,13 @@
 package dev.minebleach.reiatsutest.server;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.ModConfig;
 import dev.minebleach.reiatsutest.core.combat.BlockOutcome;
+import dev.minebleach.reiatsutest.core.combat.MeleeRewardLimiter;
+import dev.minebleach.reiatsutest.core.combat.ParryBus;
+import dev.minebleach.reiatsutest.core.combat.ParryEvent;
+import dev.minebleach.reiatsutest.core.combat.ParryRules;
+import dev.minebleach.reiatsutest.core.state.MechSpec;
 import dev.minebleach.reiatsutest.core.combat.BlockRules;
 import dev.minebleach.reiatsutest.core.reiatsu.ReiatsuState;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
@@ -130,6 +136,22 @@ public final class ZanpakutoManager {
 		BladeFlights.init(); // after the tick registration above: the flight ticks after the scheduled landing phases
 		MeleeReiatsu.init();
 		GinManager.init(); // Gin: sliver registry, recast, cover (design/GIN.md)
+		AbilityTerrain.init(); // R11 T9: block destruction of Byakuya's abilities (config section terrain)
+		IceWall.init(); // R11 T5: the Rukia ice wall (config section rukia.iceWall)
+		MECH = ModConfig.loadMech();
+		ConfigReload.register(() -> {
+			MECH = ModConfig.loadMech();
+			MELEE_LIMITERS.clear();
+		});
+		ParryBus.register(ZanpakutoManager::onParryReiatsu);
+	}
+
+	/** R11 T3: live reload of the rage numbers into the state machines that read the release costs and the minimum shikai time. */
+	static void refreshRage(dev.minebleach.reiatsutest.core.rage.RageConfig cfg) {
+		for (java.util.Map.Entry<java.util.UUID, Session> e : SESSIONS.entrySet()) {
+			java.util.UUID id = e.getKey();
+			e.getValue().sm.setRage(cfg, () -> RageManager.valueOf(id));
+		}
 	}
 
 	// ------------------------------------------------------------------ sessions
@@ -150,12 +172,12 @@ public final class ZanpakutoManager {
 
 	private static Session createSession(ServerPlayerEntity p) {
 		MinecraftServer srv = p.getServer();
-		BalanceConfig cfg = BalanceConfig.defaults();
+		BalanceConfig cfg = BalanceConfig.defaults().withMech(MECH);
 		ReiatsuData stored = p.getAttached(ModAttachments.REIATSU);
 		ReiatsuState initial = stored != null ? stored.toState() : ReiatsuState.full(cfg.maxTenths());
 		Session s = new Session(new StateMachine(srv::getTicks, cfg, initial));
 		java.util.UUID id = p.getUuid();
-		s.sm.setRage(RageManager.CONFIG, () -> RageManager.valueOf(id)); // shikai / bankai entry needs and pays Rage (round 5)
+		s.sm.setRage(RageManager.config(), () -> RageManager.valueOf(id)); // shikai / bankai entry needs and pays Rage (round 5)
 		s.sm.setKidoConfig(KidoManager.config());
 		SESSIONS.put(p.getUuid(), s);
 		return s;
@@ -173,6 +195,8 @@ public final class ZanpakutoManager {
 	}
 
 	private static void onLeave(ServerPlayerEntity p) {
+		MELEE_LIMITERS.remove(p.getUuid());
+		LAST_PARRY_REWARD.remove(p.getUuid());
 		Session s = SESSIONS.remove(p.getUuid());
 		if (s != null) {
 			// the machine's own events are not applied (the player is leaving), but the bankai cleanup must run: frost, anchors, clients
@@ -350,13 +374,14 @@ public final class ZanpakutoManager {
 			switch (e) {
 				case StateEvent.StateChanged c -> {
 						ReiatsuTest.LOGGER.info("[reiatsu] {} state {} -> {} ({})", p.getName().getString(), c.from(), c.to(), c.trigger());
+						RukiaMomentum.onStateChanged(p, c.to()); // R11 T6: sealing or drawing back drops the frost stacks
 						if (c.to() == ZanpakutoState.SEALED || c.to() == ZanpakutoState.BASE) {
 							AnchorManager.reset(p); // swarm and rows end with every return to the sheathed or base form (the seal event repeats it)
 						}
 					}
 				case StateEvent.ReiatsuSpent r -> { }
 					case StateEvent.RageSpent r -> RageManager.spend(p, r.tenths());
-				case StateEvent.CooldownStarted c -> { }
+				case StateEvent.CooldownStarted c -> RageManager.onCast(p); // R11 T3: the first landed hit of this cast pays its Rage reward
 				case StateEvent.BroadcastEffect b -> {
 						// r8 item 3: an ability that is aimed at its release (Shirafune) sends its effect event from the release phase
 						// (AbilityExecutor.run), with the position and look of that moment; sending it now would show the press-time aim
@@ -375,7 +400,10 @@ public final class ZanpakutoManager {
 				}
 				case StateEvent.ShikaiModeChanged m -> { }
 				case StateEvent.BankaiEnded b -> endBankaiEffects(p, b.who(), b.trigger());
-				case StateEvent.KidoCast k -> KidoManager.cast(p, k);
+				case StateEvent.KidoCast k -> {
+					RageManager.onCast(p);
+					KidoManager.cast(p, k);
+				}
 				case StateEvent.ShunpoMove m -> {
 					p.networkHandler.requestTeleport(m.toX(), m.toY(), m.toZ(), p.getYaw(), p.getPitch());
 					// shunpo works in any state: tint by the released character, else by the sword in hand, else the default
@@ -609,10 +637,55 @@ public final class ZanpakutoManager {
 	/** The balance numbers of a player's machine (the glue classes of r8 read their knobs here), or the defaults without a session. */
 	static BalanceConfig configOf(ServerPlayerEntity p) {
 		Session s = SESSIONS.get(p.getUuid());
-		return s == null ? FALLBACK_CONFIG : s.sm.config();
+		BalanceConfig c = s == null ? BalanceConfig.defaults() : s.sm.config();
+		return c.mech().equals(MECH) ? c : c.withMech(MECH); // the mech numbers are live: /reiatsu reload changes them for running sessions
 	}
 
-	private static final BalanceConfig FALLBACK_CONFIG = BalanceConfig.defaults();
+	/** The {@code mech} numbers in force (defaults until the config is read at mod init, then the file; R11 T2). */
+	private static volatile MechSpec MECH = MechSpec.defaults();
+
+	static MechSpec mech() {
+		return MECH;
+	}
+
+	/** Melee reward limiters and parry stamps per player (R11 T2). */
+	private static final java.util.Map<java.util.UUID, MeleeRewardLimiter> MELEE_LIMITERS = new java.util.HashMap<>();
+	private static final java.util.Map<java.util.UUID, Integer> LAST_PARRY_REWARD = new java.util.HashMap<>();
+
+	/**
+	 * A landed melee hit pays {@code tenths} through the per-player {@link MeleeRewardLimiter} (one reward per target per few ticks, a cap per second).
+	 * Returns the tenths really added.
+	 */
+	static int rewardMeleeHit(ServerPlayerEntity a, int targetId, int tenths) {
+		BalanceConfig c = configOf(a);
+		MeleeRewardLimiter lim = MELEE_LIMITERS.computeIfAbsent(a.getUuid(), k -> new MeleeRewardLimiter(c.meleeHitTargetGapTicks(), c.meleeHitMaxPerSecondTenths()));
+		int give = lim.grant(targetId, a.getServer().getTicks(), tenths);
+		return give > 0 ? grantMeleeReiatsu(a, give) : 0;
+	}
+
+	/** {@link ParryBus} listener (R11 T2): a successful parry restores reiatsu to the defender, not twice inside the gap. */
+	private static void onParryReiatsu(ParryEvent e) {
+		MinecraftServer srv = server;
+		ServerPlayerEntity defender = srv == null ? null : srv.getPlayerManager().getPlayer(e.defender());
+		if (defender == null || defender.isDead()) {
+			return;
+		}
+		BalanceConfig c = configOf(defender);
+		int tenths = ParryRules.reiatsuTenths(c.parryTenths(), e.tick(), LAST_PARRY_REWARD.getOrDefault(e.defender(), ParryRules.NEVER), c.parryGapTicks());
+		if (tenths <= 0) {
+			return;
+		}
+		LAST_PARRY_REWARD.put(e.defender(), e.tick());
+		Session s = SESSIONS.get(e.defender());
+		if (s == null) {
+			return;
+		}
+		int added = s.sm.grantReiatsu(tenths);
+		if (added > 0) {
+			flush(defender, s);
+		}
+		ReiatsuTest.LOGGER.info("[reiatsu] {} parry: +{} (reiatsu {}/{} tenths)", defender.getName().getString(), added, s.sm.reiatsu().value(), s.sm.reiatsu().max());
+	}
 
 	// ------------------------------------------------------------------ barrier: control immunity (mech2 task 1)
 

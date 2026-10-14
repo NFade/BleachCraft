@@ -273,7 +273,8 @@ public final class HudModel {
 
 		// bankai ready gem (SHIKAI with enough Rage; the reiatsu bar does not matter any more, mech2 task 3)
 		boolean ready = st == ZanpakutoState.SHIKAI
-				&& ClientState.rage().value() >= dev.minebleach.reiatsutest.core.rage.RageConfig.defaults().bankaiCostTenths() && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0);
+				&& ClientState.rage().value() >= dev.minebleach.reiatsutest.core.rage.RageConfig.defaults().bankaiCostTenths() && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0)
+				&& shikaiHoldLeft() <= 0.0; // R11 T3: bankai also needs the minimum time in shikai
 		if (ready && !gemReady) {
 			gemSparkAt = now;
 			if (FxConfig.cooldownReadySound && plateWanted) {
@@ -569,7 +570,7 @@ public final class HudModel {
 		} else if (effectId >= 20 && effectId <= 35) {
 			Technique t = new Technique();
 			t.text = Text.translatable("hud.reiatsu_test.technique." + effectId);
-			t.character = effectId <= 24 ? CharacterId.RUKIA : CharacterId.BYAKUYA; // 20 to 24 Rukia (24 = ice spike), 30 to 35 Byakuya (35 = petal cage)
+			t.character = effectId <= 24 ? CharacterId.RUKIA : CharacterId.BYAKUYA; // 20 to 24 Rukia (24 = ice wall), 30 to 35 Byakuya (35 = petal cage)
 			t.start = now;
 			technique = t;
 			lastActivity = now;
@@ -684,6 +685,14 @@ public final class HudModel {
 					FxSound.ui("block.note_block.bass", 0.6, 0.6);
 				}
 			}
+			case DENIED_SHIKAI_TIME -> {
+				// R11 T3: bankai needs the minimum time in shikai; the number is the client's copy of the default (the server config may differ)
+				double left = Math.max(1.0, Math.ceil(shikaiHoldLeft()));
+				pushToast(Text.translatable("hud.reiatsu_test.shikai_time", String.format(java.util.Locale.ROOT, "%d", (long) left)), HudAssets.ERROR, ToastKind.DENIED, 1.6);
+				if (FxConfig.hud) {
+					FxSound.ui("block.note_block.bass", 0.6, 0.6);
+				}
+			}
 			case COOLDOWN -> {
 				if (slot != null) {
 					slot.shake = now + 0.3;
@@ -733,6 +742,17 @@ public final class HudModel {
 	}
 
 	/** "Not enough Rage 23/40" with whole points (the bar shows tenths of a point). */
+	/**
+	 * R11 T3: seconds of shikai still needed before bankai (0 when not in shikai or long enough). Counted from the client-side moment the
+	 * shikai state appeared, with the default {@code bankaiMinShikaiTicks} (the server config may differ).
+	 */
+	public static double shikaiHoldLeft() {
+		if (state != ZanpakutoState.SHIKAI || stateChangeAt < 0) {
+			return 0.0;
+		}
+		return Math.max(0.0, dev.minebleach.reiatsutest.core.rage.RageConfig.defaults().bankaiMinShikaiTicks() / 20.0 - (now - stateChangeAt));
+	}
+
 	public static Text rageNeedText(int haveTenths, int needTenths) {
 		return Text.translatable("hud.reiatsu_test.rage_need", Math.round(haveTenths / 10.0f), Math.round(needTenths / 10.0f));
 	}

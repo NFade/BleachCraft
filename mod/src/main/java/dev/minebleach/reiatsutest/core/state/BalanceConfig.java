@@ -60,6 +60,29 @@ public record BalanceConfig(
 		return (int) Math.max(0L, Math.round(mech.meleeHitReiatsu() * 10.0));
 	}
 
+	/** Reiatsu a successful parry restores (R11 T2), in points. */
+	public double parryReiatsu() {
+		return mech.parryReiatsu();
+	}
+
+	/** {@link #parryReiatsu} in tenths of a point, never negative. */
+	public int parryTenths() {
+		return (int) Math.max(0L, Math.round(mech.parryReiatsu() * 10.0));
+	}
+
+	/** Most tenths of a point the melee hits of one player may restore per second (R11 T2). */
+	public int meleeHitMaxPerSecondTenths() {
+		return (int) Math.max(0L, Math.round(mech.meleeHitMaxPerSecond() * 10.0));
+	}
+
+	public int meleeHitTargetGapTicks() {
+		return mech.meleeHitTargetGapTicks();
+	}
+
+	public int parryGapTicks() {
+		return mech.parryGapTicks();
+	}
+
 	/** Ticks a victim is immune to the Byakuya attack mode after one of its damage ticks, per victim and caster (r8 item 2). */
 	public int byakuyaAttackTickInterval() {
 		return mech.byakuyaAttackTickInterval();
@@ -145,11 +168,12 @@ public record BalanceConfig(
 		// not where he looked when he pressed the key; the effect event is sent at the release too
 		a.put(AbilityId.SHIRAFUNE, new AbilitySpec(AbilityId.SHIRAFUNE, 150, 100, 22, true, List.of(12), p(
 				AbilityParams.LENGTH, 14.0, AbilityParams.DAMAGE, 3.5, AbilityParams.SLOW_AMP, 2, AbilityParams.STATUS_TICKS, 80, AbilityParams.AIM_AT_RELEASE, 1.0)));
-		// ---- Rukia bankai: the ice spike is the one ability; the second slot became the passive frost territory (BankaiFieldSpec, mech2 task 4)
-		// Ice spike (U): a 36 block thrust of ice spikes along the look ray (the wave runs 6 blocks per 2 ticks), one hit per target,
-		// 9 HP and Slowness III for 4 s, 15 reiatsu, 8 s cooldown. About 1.1 HP per second when spammed.
-		a.put(AbilityId.ICE_SPIKE, new AbilitySpec(AbilityId.ICE_SPIKE, 150, 160, 24, true, List.of(14, 16, 18, 20, 22, 24), p(
-				AbilityParams.LENGTH, 36.0, AbilityParams.HALF_WIDTH, 1.5, AbilityParams.MAX_TARGETS, 12, AbilityParams.DAMAGE, 4.0, AbilityParams.SLOW_AMP, 2, AbilityParams.STATUS_TICKS, 80)));
+		// ---- Rukia bankai: the ice wall is the one ability; the second slot became the passive frost territory (BankaiFieldSpec, mech2 task 4)
+		// Ice wall (U, R11 T5 variant W): 14 ticks of cast time, then a wall of real ice blocks grows where she looks (ray up to 10 blocks,
+		// the wall stands one block in front of an obstacle). 18 reiatsu, 14 s cooldown, no damage. The geometry (9 x 5 x 2, 10 s life,
+		// growth 0.5 s, strength 60) lives in the config section rukia.iceWall (core/world/IceWallConfig), not here.
+		a.put(AbilityId.ICE_WALL, new AbilitySpec(AbilityId.ICE_WALL, 180, 280, 24, true, List.of(14), p(
+				AbilityParams.LENGTH, 10.0)));
 		// ---- Byakuya shikai
 		a.put(AbilityId.MODE_ATTACK, new AbilitySpec(AbilityId.MODE_ATTACK, 120, 60, 30, true, List.of(10, 12, 14, 20), p(
 				AbilityParams.RADIUS, 3.0, AbilityParams.MAX_TARGETS, 16, AbilityParams.DAMAGE, 1.0, AbilityParams.AIM_RANGE, 19.0)));

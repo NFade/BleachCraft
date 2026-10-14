@@ -87,7 +87,7 @@ class RukiaFxParamsTest {
 		float[] shortArr = {1f, 2f};
 		assertSame(shortArr, RukiaFxParams.extend(AbilityId.TSUKISHIRO, shortArr, 0));
 		assertFalse(RukiaFxParams.handles(AbilityId.SCATTER));
-		assertTrue(RukiaFxParams.handles(AbilityId.ICE_SPIKE));
+		assertTrue(RukiaFxParams.handles(AbilityId.ICE_WALL));
 	}
 
 	@Test

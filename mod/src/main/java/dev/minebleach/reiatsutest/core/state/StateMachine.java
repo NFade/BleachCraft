@@ -65,6 +65,8 @@ public final class StateMachine {
 	private RageConfig rageCfg;
 	private IntSupplier rageSource;
 	private boolean rageFree;
+	/** Dev god mode ({@code /reiatsu dev god on}): the reiatsu bar never drops and Rage is not required for the release. Default off. */
+	private boolean infiniteReiatsu;
 
 	private boolean dead;
 	private boolean spectator;
@@ -102,6 +104,22 @@ public final class StateMachine {
 		return rageFree;
 	}
 
+	/**
+	 * Dev god mode ({@code /reiatsu dev god on|off}): infinite reiatsu (costs are checked against a full bar and never paid, the bar is
+	 * refilled every tick) plus {@link #setRageFree}. Off puts both back to normal, the bar keeps whatever it holds at that moment.
+	 */
+	public void setGodMode(boolean on) {
+		this.infiniteReiatsu = on;
+		this.rageFree = on;
+		if (on) {
+			reiatsu = new ReiatsuState(cfg.maxTenths(), cfg.maxTenths());
+		}
+	}
+
+	public boolean godMode() {
+		return infiniteReiatsu;
+	}
+
 	/** Rage a request to {@code target} needs and pays in tenths (0 = none: not shikai/bankai, requirement off or ragefree). */
 	public int rageNeed(ZanpakutoState target) {
 		if (rageCfg == null || rageSource == null || rageFree) {
@@ -112,6 +130,17 @@ public final class StateMachine {
 			case BANKAI -> rageCfg.bankaiCostTenths();
 			default -> 0;
 		};
+	}
+
+	/**
+	 * R11 T3: ticks of shikai still to wait before bankai may be requested (0 = none: not in shikai, requirement off or ragefree). The
+	 * client counts its own copy of the same number for the HUD gem.
+	 */
+	public int bankaiWaitTicks() {
+		if (rageCfg == null || rageSource == null || rageFree || state != ZanpakutoState.SHIKAI) {
+			return 0;
+		}
+		return (int) Math.max(0L, rageCfg.bankaiMinShikaiTicks() - (clock.nowTick() - stateSince));
 	}
 
 	// ------------------------------------------------------------------ requests
@@ -147,6 +176,9 @@ public final class StateMachine {
 		int rageNeed = rageNeed(target);
 		if (rageNeed > 0 && rageSource.getAsInt() < rageNeed) {
 			return reject(RejectReason.NOT_ENOUGH_RAGE);
+		}
+		if (target == ZanpakutoState.BANKAI && bankaiWaitTicks() > 0) {
+			return reject(RejectReason.SHIKAI_TOO_SHORT); // R11 T3: bankai is not available the moment the bar is full
 		}
 		if (target == ZanpakutoState.SHIKAI && !reiatsu.canSpend(cfg.shikaiReleaseCost())) {
 			return reject(RejectReason.NOT_ENOUGH_REIATSU);
@@ -400,6 +432,9 @@ public final class StateMachine {
 		}
 		if (t % cfg.regenBatchTicks() == 0) {
 			reiatsu = ReiatsuMath.applyBatch(reiatsu, cfg.rate(state));
+		}
+		if (infiniteReiatsu && !dead) {
+			reiatsu = new ReiatsuState(cfg.maxTenths(), cfg.maxTenths());
 		}
 		if (reiatsu.value() == 0) {
 			// bankai no longer ends at zero: it has no drain and spending cannot reach zero, the timer alone ends it (B4 step 4)
@@ -675,7 +710,9 @@ public final class StateMachine {
 	}
 
 	private void spend(int cost, List<StateEvent> ev) {
-		reiatsu = reiatsu.plus(-cost);
+		if (!infiniteReiatsu) {
+			reiatsu = reiatsu.plus(-cost);
+		}
 		ev.add(new StateEvent.ReiatsuSpent(cost));
 	}
 

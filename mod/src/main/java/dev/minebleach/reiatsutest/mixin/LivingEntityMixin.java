@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.mixin;
 
 import dev.minebleach.reiatsutest.core.combat.BarrierRules;
 import dev.minebleach.reiatsutest.registry.ZanpakutoItem;
+import dev.minebleach.reiatsutest.server.RukiaMomentum;
 import dev.minebleach.reiatsutest.server.ZanpakutoManager;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -9,6 +10,7 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -30,6 +32,21 @@ public abstract class LivingEntityMixin {
 		if (ZanpakutoItem.isBlocking((LivingEntity) (Object) this)) {
 			cir.setReturnValue(false);
 		}
+	}
+
+	/**
+	 * R11 T6: the Rukia passive multiplies her sword damage before anything else reads the amount (block, barrier, armor, Rage all see the
+	 * boosted hit, except Rage which divides the bonus out again). The multiplier is 1.0 for everybody who is not a released Rukia with
+	 * stacks; the whole decision lives in {@link RukiaMomentum#meleeMultiplier}. Server only.
+	 */
+	@ModifyVariable(method = "damage", at = @At("HEAD"), argsOnly = true)
+	private float reiatsu$rukiaMomentum(float amount, DamageSource source) {
+		LivingEntity self = (LivingEntity) (Object) this;
+		if (self.getWorld().isClient) {
+			return amount;
+		}
+		float mult = RukiaMomentum.meleeMultiplier(self, source);
+		return mult == 1.0F ? amount : amount * mult;
 	}
 
 	@Inject(method = "canHaveStatusEffect", at = @At("HEAD"), cancellable = true)

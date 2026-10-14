@@ -44,6 +44,12 @@ public final class ReiatsuCommand {
 				.requires(src -> src.hasPermissionLevel(2))
 				.then(CommandManager.literal("info").executes(c -> info(c.getSource())))
 				.then(CommandManager.literal("voice").executes(c -> voice(c.getSource())))
+				// /reiatsu reload: migrate config/reiatsu_test.json and re-read the sections that can change on a running server (R11 T0)
+				.then(CommandManager.literal("reload").executes(c -> {
+					int n = ConfigReload.run();
+					c.getSource().sendFeedback(() -> Text.literal("config reloaded: " + n + " sections (voice and frost need a restart)"), true);
+					return n;
+				}))
 				.then(CommandManager.literal("full").executes(c -> setPoints(c.getSource(), 100.0)))
 				.then(CommandManager.literal("set")
 						.then(CommandManager.argument("points", DoubleArgumentType.doubleArg(0.0, 100.0))
@@ -131,6 +137,19 @@ public final class ReiatsuCommand {
 											c.getSource().sendFeedback(() -> Text.literal("rage set to " + pts), true);
 											return 1;
 										})))
+						// /reiatsu dev god on|off: infinite reiatsu and Rage for the caster (shikai/bankai need no Rage, nothing is spent)
+						.then(CommandManager.literal("god")
+								.then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(c -> {
+									ServerPlayerEntity p = c.getSource().getPlayerOrThrow();
+									StateMachine sm = machine(c.getSource());
+									boolean on = BoolArgumentType.getBool(c, "enabled");
+									sm.setGodMode(on);
+									RageManager.setInfinite(p, on);
+									ZanpakutoManager.applyExternal(p, List.of());
+									dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[dev] god mode {} for {}", on ? "ON" : "off", p.getName().getString());
+									c.getSource().sendFeedback(() -> Text.literal(on ? "god mode ON: infinite reiatsu and Rage" : "god mode off"), true);
+									return 1;
+								})))
 						// /reiatsu dev ragefree on|off: shikai and bankai need and spend no Rage (debug only, default off, creative does not bypass)
 						.then(CommandManager.literal("ragefree")
 								.then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(c -> {

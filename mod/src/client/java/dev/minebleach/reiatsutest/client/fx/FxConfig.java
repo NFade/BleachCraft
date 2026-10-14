@@ -88,6 +88,12 @@ public final class FxConfig {
 	public static volatile boolean decals = true;
 	public static volatile boolean photosensitiveSafe = false;
 	public static volatile int maxConcurrentFx = 8;
+	// R11 T7: the reiatsu pressure on the screen of a player near somebody's bankai release; the "pressure" object of the file, tuned in
+	// fx_override.json by the flat keys pressure.shake / blur / stripes / scale (those win while the file exists)
+	public static volatile double pressureShake = 0.9;
+	public static volatile double pressureBlur = 1.0;
+	public static volatile double pressureStripes = 1.0;
+	public static volatile double pressureScale = 1.0;
 	// HUD (7.11)
 	public static volatile boolean hud = true;
 	public static volatile boolean hudCompact = false;
@@ -131,6 +137,11 @@ public final class FxConfig {
 			writable = false;
 		}
 		boolean added = false;
+		if (!root.has("pressure")) {
+			// a missing section is added with the defaults, like the voice section; nothing else in the file is touched
+			root.add("pressure", pressureDefaults());
+			added = true;
+		}
 		Map<String, Object> defaults = defaults();
 		for (Map.Entry<String, Object> d : defaults.entrySet()) {
 			if (!root.has(d.getKey())) {
@@ -150,6 +161,25 @@ public final class FxConfig {
 		}
 		ReiatsuTest.LOGGER.info("[fxconfig] tier {} quality {} particles {} glow {} reduceMotion {} hud {}", fxTier, effectQuality,
 				maxFxParticles, maxGlowSprites, reduceMotion, hud);
+	}
+
+	/** The default {@code pressure} section: shake in degrees on a pulse, and the multipliers of the blur, the stripes and the whole effect. */
+	static JsonObject pressureDefaults() {
+		JsonObject o = new JsonObject();
+		o.addProperty("shake", 0.9);
+		o.addProperty("blur", 1.0);
+		o.addProperty("stripes", 1.0);
+		o.addProperty("scale", 1.0);
+		return o;
+	}
+
+	/** Reads the {@code pressure} section tolerantly (a bad value keeps the default, numbers are clamped). */
+	static void applyPressure(JsonObject root) {
+		JsonObject o = dev.minebleach.reiatsutest.core.config.Cfg.obj(root, "pressure");
+		pressureShake = dev.minebleach.reiatsutest.core.config.Cfg.num(o, "shake", 0.9, 0.0, 3.0);
+		pressureBlur = dev.minebleach.reiatsutest.core.config.Cfg.num(o, "blur", 1.0, 0.0, 3.0);
+		pressureStripes = dev.minebleach.reiatsutest.core.config.Cfg.num(o, "stripes", 1.0, 0.0, 3.0);
+		pressureScale = dev.minebleach.reiatsutest.core.config.Cfg.num(o, "scale", 1.0, 0.0, 3.0);
 	}
 
 	/** Dev hot reload ({@link FxTune}): applies the known numeric / boolean keys of an override file. */
@@ -263,6 +293,7 @@ public final class FxConfig {
 		voiceHud = bool(root, "voiceHud", true);
 		voiceToastSound = bool(root, "voiceToastSound", true);
 		cooldownReadySound = bool(root, "cooldownReadySound", true);
+		applyPressure(root);
 		if (fxTier != TierSetting.CUSTOM) {
 			Tier t = tier();
 			effectQuality = t.quality;

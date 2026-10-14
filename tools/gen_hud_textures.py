@@ -766,19 +766,23 @@ def icon_senkei():
     return p.finish()
 
 
-def icon_ice_spike():
-    """Rukia bankai ice spike (round 6): a long needle of ice thrust to the upper right with two side spikes."""
+def icon_ice_wall():
+    """Rukia bankai ice wall (R11 T5; the cell was the ice spike of round 6): three slabs of ice of different height on a ground line,
+    a bright rim on the top and left edges, a shaded right edge and one crack."""
     w, c, m, d = RUKIA
     p = Pix()
-    p.line((1.6, 14.4), (13.0, 3.0), 1.6, c)
-    p.line((2.0, 14.0), (12.8, 3.2), 0.8, w)
-    p.poly([(15.2, 0.8), (10.8, 2.0), (13.8, 5.2)], w)
-    p.poly([(15.2, 0.8), (12.0, 1.8), (13.6, 3.6)], c)
-    p.poly([(5.0, 9.8), (2.6, 5.6), (7.4, 7.4)], m)
-    p.poly([(8.6, 12.6), (7.4, 8.0), (11.6, 10.2)], m)
-    p.dot(1, 9, c)
-    p.dot(12, 13, c)
-    p.dot(5, 3, w)
+    slabs = [(1, 6, 7), (6, 11, 2), (11, 15, 5)]  # x0, x1 (exclusive), y of the top
+    for x0, x1, top in slabs:
+        p.rect(x0, top, x1, 14, m)
+        p.rect(x0, top, x1, top + 1, w)
+        p.rect(x0, top, x0 + 1, 14, w)
+        p.rect(x1 - 1, top + 1, x1, 14, d)
+    p.rect(0, 14, 16, 15, c)
+    p.line((8.0, 4.0), (7.0, 8.0), 0.6, w)
+    p.line((7.0, 8.0), (8.4, 11.0), 0.6, w)
+    p.dot(3, 9, c)
+    p.dot(13, 8, c)
+    p.dot(9, 3, w)
     return p.finish()
 
 
@@ -838,7 +842,7 @@ def icon_seal():
 def gen_ability_icons():
     icons = [icon_tsukishiro(), icon_hakuren(), icon_shirafune(), icon_absolute_zero(), icon_attack(), icon_barrier(),
              icon_scatter(), icon_hakuteiken(), icon_senkei(), icon_release(), icon_bankai(), icon_seal(),
-             icon_ice_spike(), icon_cage(), Pix().finish(), Pix().finish()]  # cells 12 and 13 are the round 6 abilities, 14 and 15 are free
+             icon_ice_wall(), icon_cage(), Pix().finish(), Pix().finish()]  # cells 12 and 13 are the round 6 abilities, 14 and 15 are free
     rows = [hstack(icons[i * 4:(i + 1) * 4]) for i in range(4)]
     return vstack(rows)
 

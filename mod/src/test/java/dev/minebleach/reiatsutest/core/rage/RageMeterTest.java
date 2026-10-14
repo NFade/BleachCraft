@@ -10,14 +10,15 @@ import org.junit.jupiter.api.Test;
 class RageMeterTest {
 	// round 5 numbers: max 1000; taken 15/hp cap 250; dealt 10/hp cap 150; parry 300; passive +5 every 10 ticks (1.0/s) for 120 ticks
 	// after the last hit; drain after 160 ticks, every 20 ticks lose 5 (0.5/s); shikai costs 400, bankai 800
-	private final RageConfig cfg = RageConfig.defaults();
+	// R11 T3: the defaults changed (see RageR11Test); this class pins the mechanics with the round 5 numbers, written out explicitly
+	private final RageConfig cfg = new RageConfig(1000, 15, 250, 300, 10, 150, 160, 20, 5, 5, 10, 120, 400, 800);
 
 	private RageMeter meter() {
 		return new RageMeter(cfg);
 	}
 
 	@Test
-	void defaultsAreTheRound5Numbers() {
+	void theRound5NumbersAreStillExpressible() {
 		assertEquals(1000, cfg.maxTenths());
 		assertEquals(15, cfg.damageTenthsPerHp());
 		assertEquals(250, cfg.maxGainPerHitTenths());

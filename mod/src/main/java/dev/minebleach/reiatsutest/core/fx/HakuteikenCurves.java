@@ -30,9 +30,11 @@ public final class HakuteikenCurves {
 		public double extend = 0.08;
 		/** Burst at the line end (server). */
 		public double burst = 1.80;
-		/** The line fades and the blade shrinks back to 1 m. */
-		public double lineFade = 2.20;
-		public double lineFadeSpan = 0.30;
+		/** The line vanishes right after the strike (R11 T8: strike + 0.10, gone in 0.08 s; was 2.20 / 0.30) and the blade shrinks back to 1 m. */
+		public double lineFade = 1.60;
+		public double lineFadeSpan = 0.08;
+		/** The glow at the hand (WingHaloRenderer) keeps its old fade: it is not part of the line. */
+		public double haloFade = 2.20;
 		/** The wings and halo dissolve from the feather tips inward. */
 		public double dissolveStart = 2.50;
 		public double dissolveEnd = 3.00;

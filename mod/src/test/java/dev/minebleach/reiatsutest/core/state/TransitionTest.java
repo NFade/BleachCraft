@@ -453,7 +453,7 @@ class TransitionTest {
 		assertEquals(CharacterId.NONE, CharacterId.fromCode((byte) 9));
 		assertEquals(ShikaiMode.IDLE, ShikaiMode.fromCode((byte) -1));
 		assertEquals(AbilityId.HAKUREN, AbilityId.fromCommandId("rukia.shikai.hakuren"));
-		assertEquals(AbilityId.ICE_SPIKE, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
+		assertEquals(AbilityId.ICE_WALL, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
 		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 1), "Absolute Zero was removed (mech2 task 4)");
 		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 2));
 		assertEquals(AbilityId.CAGE, AbilityId.forSlot(B, ZanpakutoState.SHIKAI, 2));

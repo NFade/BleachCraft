@@ -610,15 +610,15 @@ public final class Phase4Harness {
 					? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.TSUKISHIRO));
 			shot("10b_bankai_strip_both_rows");
 		});
-		// the only bankai ability of Rukia is the ice spike (U); key I is empty for her now
-		step("A11c press U (ice spike)", 12, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
-		step("A11c checks: ice spike OK, cooldown running, key I is empty", 3, () -> {
-			cCheck("A11c ice spike action_result OK", () -> lastResultIs("OK") ? null : "last result " + lastResult());
-			cCheck("A11c ice spike cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.ICE_SPIKE) > 100 ? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.ICE_SPIKE));
+		// the only bankai ability of Rukia is the ice wall (U); key I is empty for her now
+		step("A11c press U (ice wall)", 12, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
+		step("A11c checks: ice wall OK, cooldown running, key I is empty", 3, () -> {
+			cCheck("A11c ice wall action_result OK", () -> lastResultIs("OK") ? null : "last result " + lastResult());
+			cCheck("A11c ice wall cooldown running on the client", () -> ClientState.cooldownRemaining(AbilityId.ICE_WALL) > 100 ? null : "cooldown " + ClientState.cooldownRemaining(AbilityId.ICE_WALL));
 		});
 		step("A11c press U again (cooldown, no spam)", 12, () -> press(ReiatsuKeys.BANKAI_SLOTS[0]));
-		step("A11c checks: second ice spike", 3, () -> {
-			cCheck("A11c second ice spike is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
+		step("A11c checks: second ice wall", 3, () -> {
+			cCheck("A11c second ice wall is COOLDOWN", () -> lastResultIs("COOLDOWN") ? null : "last result " + lastResult());
 		});
 		step("A11d checks: the second bankai slot of Rukia (key I) is empty", 3, () -> {
 			cCheck("A11d no ability in the Rukia bankai slot 2", () -> AbilityId.forSlot(CharacterId.RUKIA, ZanpakutoState.BANKAI, 1) == null ? null : "ability " + AbilityId.forSlot(CharacterId.RUKIA, ZanpakutoState.BANKAI, 1));

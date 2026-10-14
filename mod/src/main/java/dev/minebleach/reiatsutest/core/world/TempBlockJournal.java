@@ -72,6 +72,16 @@ public final class TempBlockJournal {
 		return out;
 	}
 
+	/** Removes and returns the entry of one cell, or null when the cell is not journaled (a wall cell released one by one). */
+	public Entry take(String dimension, int x, int y, int z) {
+		return entries.remove(new Entry(null, dimension, x, y, z, "", "", 0).key());
+	}
+
+	/** The entry of one cell, or null. */
+	public Entry get(String dimension, int x, int y, int z) {
+		return entries.get(new Entry(null, dimension, x, y, z, "", "", 0).key());
+	}
+
 	/** Removes and returns every entry of one owner. */
 	public List<Entry> takeAll(UUID owner) {
 		List<Entry> out = new ArrayList<>();

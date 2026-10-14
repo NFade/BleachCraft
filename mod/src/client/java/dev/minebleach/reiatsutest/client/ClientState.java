@@ -91,6 +91,13 @@ public final class ClientState {
 		return r == null ? RageData.EMPTY : r;
 	}
 
+	/** Synced frost stacks of Rukia (R11 T6); empty until the first sync arrives. */
+	public static dev.minebleach.reiatsutest.registry.data.MomentumData momentum() {
+		ClientPlayerEntity p = MinecraftClient.getInstance().player;
+		var d = p == null ? null : p.getAttached(ModAttachments.MOMENTUM);
+		return d == null ? dev.minebleach.reiatsutest.registry.data.MomentumData.EMPTY : d;
+	}
+
 	public static CharacterId heldCharacter() {
 		ClientPlayerEntity p = MinecraftClient.getInstance().player;
 		return p == null ? CharacterId.NONE : ModItems.characterOf(p.getMainHandStack());

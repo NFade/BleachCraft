@@ -8,7 +8,9 @@ public enum ResultCode {
 	/** Shunpo refused because the path ahead is blocked or has no safe landing (no cost, no cooldown). */
 	BLOCKED,
 	/** Round 5: shikai / bankai entry refused for lack of Rage (appended, so the wire codes of the older ones do not move). */
-	DENIED_RAGE;
+	DENIED_RAGE,
+	/** R11 T3: bankai refused because shikai has not been held long enough yet (appended, wire codes of the older ones do not move). */
+	DENIED_SHIKAI_TIME;
 
 	public byte code() {
 		return (byte) ordinal();

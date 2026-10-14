@@ -100,7 +100,7 @@ class CastGestureTest {
 		// mech2 task 4: the ability, its gesture and effect id 23 were removed (the second Rukia bankai slot is the passive frost territory)
 		assertNull(CastGestures.defaults().get("rukia.bankai.absolute_zero"));
 		assertNull(CastGestures.idForEffect(23));
-		assertNotNull(CastGestures.defaults().get("rukia.bankai.ice_spike"));
+		assertNotNull(CastGestures.defaults().get("rukia.bankai.ice_wall"));
 	}
 
 	@Test

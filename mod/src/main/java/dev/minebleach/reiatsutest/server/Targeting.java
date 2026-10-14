@@ -74,7 +74,7 @@ final class Targeting {
 			double dx = Math.max(Math.max(b.minX - center.x, 0), center.x - b.maxX);
 			double dy = Math.max(Math.max(b.minY - center.y, 0), center.y - b.maxY);
 			double dz = Math.max(Math.max(b.minZ - center.z, 0), center.z - b.maxZ);
-			if (dx * dx + dy * dy + dz * dz <= radius * radius) {
+			if (dx * dx + dy * dy + dz * dz <= radius * radius && !IceWall.blocked(caster.getServerWorld(), center, b.getCenter())) { // R11 T5: not through the ice wall
 				in.add(e);
 				if (in.size() >= max) {
 					break;
@@ -93,7 +93,7 @@ final class Targeting {
 			double dx = e.getX() - center.x;
 			double dz = e.getZ() - center.z;
 			double r = radius + e.getWidth() * 0.5;
-			if (dx * dx + dz * dz <= r * r) {
+			if (dx * dx + dz * dz <= r * r && !IceWall.blocked(caster.getServerWorld(), center.add(0, 1.0, 0), e.getBoundingBox().getCenter())) { // R11 T5
 				in.add(e);
 				if (in.size() >= max) {
 					break;
@@ -120,7 +120,8 @@ final class Targeting {
 			double along = c.dotProduct(dir);
 			double lateral = c.subtract(dir.multiply(along)).length();
 			double slack = e.getWidth() * 0.5;
-			if (along >= from - slack && along <= to + slack && lateral <= halfWidth + slack) {
+			if (along >= from - slack && along <= to + slack && lateral <= halfWidth + slack
+					&& !IceWall.blocked(caster.getServerWorld(), origin, e.getBoundingBox().getCenter())) { // R11 T5: a wall between the origin and the target
 				in.add(e);
 				if (in.size() >= max) {
 					break;
@@ -170,6 +171,22 @@ final class Targeting {
 	 * percent of the hit) and the total can never pass 100 percent.
 	 */
 	static HitRules.Outcome hurt(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
+		return hurt(caster, target, hp, type, resetInvulnerability, true);
+	}
+
+	/**
+	 * Same as {@link #hurt} without the Rukia passive (R11 T6): kido and the damage-over-time pulses of the frost field neither get the
+	 * bonus of the stacks nor add a stack, so a field with an enemy inside cannot keep the passive full on its own.
+	 */
+	static HitRules.Outcome hurtPlain(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
+		return hurt(caster, target, hp, type, resetInvulnerability, false);
+	}
+
+	private static HitRules.Outcome hurt(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability,
+			boolean momentum) {
+		if (momentum) {
+			hp *= RukiaMomentum.abilityMultiplier(caster); // R11 T6: Rukia's stacks raise the ability before the block and barrier cuts
+		}
 		float asked = hp;
 		if (ZanpakutoItem.isBlocking(target)) {
 			hp = BlockRules.abilityDamage(true, hp, ZanpakutoManager.configOf(caster).abilityBlockReduction());
@@ -196,6 +213,9 @@ final class Targeting {
 		HitRules.Outcome out = HitRules.outcome(hp, returned, lost, DmgLog.vetoFor(target), creative, invulnerable, team, iframes);
 		DmgLog.clearVeto();
 		DmgLog.hit(caster, target, asked, Math.max(0.0F, lost), out);
+		if (momentum && out == HitRules.Outcome.DAMAGED) {
+			RukiaMomentum.onAbilityHit(caster, target);
+		}
 		return out;
 	}
 

@@ -72,6 +72,7 @@ public final class FxClient {
 			long t0 = System.nanoTime();
 			FxProbe.run("LAST-before");
 			FreezeDesat.render(ctx);
+			PressureBlur.render(ctx);
 			ScreenFx.renderGrade(ctx);
 			FxDepth.restore();
 			FxProbe.run("LAST-after-restore");
@@ -92,5 +93,6 @@ public final class FxClient {
 			BankaiEnd.watch(client);
 		});
 		DrawFx.init();
+		PressureFx.registerCommand();
 	}
 }

@@ -74,7 +74,7 @@ class BankaiTest {
 	@Test
 	void timerRunsIndependentlyOfCastsAndEndsInShikai() {
 		Fx f = inBankai(R);
-		assertTrue(f.cast(AbilityId.ICE_SPIKE, R).ok());
+		assertTrue(f.cast(AbilityId.ICE_WALL, R).ok());
 		f.adv(840); // 44 + 840 = 884 since entry
 		assertEquals(ZanpakutoState.BANKAI, f.sm.state());
 		long endTick = f.sm.snapshot().bankaiEndTick();
@@ -89,7 +89,7 @@ class BankaiTest {
 		f.adv(10);
 		assertTrue(f.cast(AbilityId.SHIRAFUNE, R).ok());
 		f.adv(12);
-		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.ICE_SPIKE, R).reason());
+		assertEquals(RejectReason.NOT_IN_STATE, f.cast(AbilityId.ICE_WALL, R).reason());
 	}
 
 	@Test
@@ -170,7 +170,7 @@ class BankaiTest {
 		f.sm.devSetReiatsu(200); // Tsukishiro costs 25.0
 		assertEquals(RejectReason.NOT_ENOUGH_REIATSU, f.cast(AbilityId.TSUKISHIRO, R).reason());
 		assertEquals(0, f.sm.cooldownRemaining(AbilityId.TSUKISHIRO), "a refused cast starts no cooldown");
-		assertTrue(f.cast(AbilityId.ICE_SPIKE, R).ok(), "the ice spike (15.0) works with the same low bar");
+		assertTrue(f.cast(AbilityId.ICE_WALL, R).ok(), "the ice wall (18.0) works with the same low bar");
 		f.sm.devSetReiatsu(900);
 		assertEquals(RejectReason.GCD, f.cast(AbilityId.HAKUREN, R).reason());
 		f.adv(12);
@@ -266,8 +266,8 @@ class BankaiTest {
 		assertEquals(20.0, h.num(AbilityParams.LENGTH));
 		for (AbilityId a : AbilityId.values()) {
 			AbilitySpec s = CFG.spec(a);
-			if (!s.enabled() || a == AbilityId.MODE_BARRIER || s.params().isEmpty()) {
-				continue; // empty params: the stub abilities of Gin and Uryu (registration skeleton), their numbers come with the gameplay steps
+			if (!s.enabled() || a == AbilityId.MODE_BARRIER || a == AbilityId.ICE_WALL || s.params().isEmpty()) {
+				continue; // the barrier and (R11 T5) the ice wall deal no damage on purpose; empty params: the Uryu abilities, their numbers live in core/uryu/UryuBalance
 			}
 			assertTrue(s.params().containsKey(AbilityParams.DAMAGE) || s.params().containsKey(AbilityParams.DAMAGE2), a + " has damage");
 			if (s.params().containsKey(AbilityParams.MAX_TARGETS)) {

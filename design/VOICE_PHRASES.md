@@ -27,7 +27,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ## 1. Command list
 
-**19 commands** (18 required, 1 optional: `byakuya.bankai.senkei`) plus 16 more: branch gin-uryu added the 16 commands of Gin Ichimaru and Uryu Ishida (sections 1.20 to 1.35). Round 6 added `rukia.bankai.ice_spike` and `byakuya.shikai.cage`. The last three (`kido.*`, B5) are valid in every state with any sword or none.
+**19 commands** (18 required, 1 optional: `byakuya.bankai.senkei`). Round 6 added `rukia.bankai.ice_wall` (as `ice_spike`; R11 T5 turned it into the ice wall, same byte code 10) and `byakuya.shikai.cage`. The last three (`kido.*`, B5) are valid in every state with any sword or none. Branch gin-uryu added 16 more commands, those of Gin Ichimaru and Uryu Ishida (sections 1.20 to 1.35).
 
 | id | state | item in hand | canonical phrase | weak | notes |
 |---|---|---|---|---|---|
@@ -36,7 +36,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `rukia.shikai.hakuren` | SHIKAI | Rukia's zanpakuto | Tsugi no mai, Hakuren | no | Dance 2 (ice wave). Same prefix rules. |
 | `rukia.shikai.shirafune` | SHIKAI | Rukia's zanpakuto | San no mai, Shirafune | no | Dance 3 (ice blade). Same prefix rules. |
 | `rukia.bankai.release` | SHIKAI | Rukia's zanpakuto | Bankai, Hakka no Togame | no | SHIKAI to BANKAI. Server requires 80 Rage (no full reiatsu bar since mech2 task 3). Phrase is game-sourced (Gate A 9). |
-| `rukia.bankai.ice_spike` | BANKAI | Rukia's zanpakuto | (mod-defined) Ice spike | no | Round 6: thrust of ice spikes along the look. No canon phrase exists: mod-defined. |
+| `rukia.bankai.ice_wall` | BANKAI | Rukia's zanpakuto | (mod-defined) Ice wall | no | R11 T5: a wall of ice where you look (was the ice spike thrust of round 6). No canon phrase exists: mod-defined. |
 | `byakuya.shikai.release` | BASE | Byakuya's zanpakuto | Chire, Senbonzakura | no | BASE to SHIKAI (the sword must be drawn first, B4 step 3). Canon. Lone "Chire" and "Scatter" are weak (see 3). |
 | `byakuya.shikai.mode_attack` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Attack mode | no | Swarm follows the aim. Mod-defined phrase. |
 | `byakuya.shikai.mode_barrier` | SHIKAI | Byakuya's zanpakuto | (mod-defined) Barrier mode | no | Dome mode. Mod-defined phrase. |
@@ -442,24 +442,23 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 |  | Бакудо (weak: whole utterance) | `X` | `bakudo` |
 
 
-### 1.18 `rukia.bankai.ice_spike`
+### 1.18 `rukia.bankai.ice_wall`
 
 - **Required state:** BANKAI. **Item:** Rukia's zanpakuto in the main hand.
-- **Canonical phrase:** (mod-defined) Ice spike
-- **Notes:** Round 6 (design/results/rukia_bankai_round6.md): the first bankai ability, a long thrust of ice spikes. No canon phrase exists, so the mod uses the plain English name and its Japanese and Russian equivalents. Two-word phrases only; "ice" alone never fires. Not interim-safe. Kana only in the table on purpose: the normaliser keeps just the kanji it knows, so 氷の棘 would reduce to the bare particle の and fire on half of Japanese speech (the book text may still show the kanji).
+- **Canonical phrase:** (mod-defined) Ice wall
+- **Notes:** Round 6 (design/results/rukia_bankai_round6.md) made it the first bankai ability, a thrust of ice spikes (`ice_spike`); R11 T5 (design/results/r11_T5.md) replaced the effect by a wall of ice and renamed it, the byte code 10 and the key stay. No canon phrase exists, so the mod uses the plain English name and its Japanese and Russian equivalents. Two-word phrases only; "ice" alone never fires. Not interim-safe. Kana only in the table on purpose: the normaliser keeps just the kanji it knows, so 氷の壁 reduces to the bare particle の (key `no`) and would fire on half of Japanese speech (the book text and the ability name may still show the kanji).
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
-| Japanese script (ja-JP ASR form) | こおりのとげ | `M` | `korinotoge` |
-|  | アイススパイク | `M` | `aisusupaiku` |
-| Romaji | Koori no toge | `M` | `kori no toge` |
-| English sub | Ice spike | `M` | `ice spike` |
-|  | Ice spikes | `M` | `ice spikes` |
-|  | Ice thorn | `M` | `ice thorn` |
+| Japanese script (ja-JP ASR form) | こおりのかべ | `M` | `korinokabe` |
+|  | アイスウォール | `M` | `aisuoru` |
+| Romaji | Koori no kabe | `M` | `kori no kabe` |
+| English sub | Ice wall | `M` | `ice war` |
+|  | Ice walls | `M` | `ice wars` |
 | English dub | n/a (mod-defined, no dub exists) | - | - |
-| Russian (Cyrillic) | Ледяной шип | `M` | `redyanoi sip` |
-|  | Ледяные шипы | `M` | `redyanie sipi` |
-|  | Шип льда | `M` | `sip rda` |
+| Russian (Cyrillic) | Ледяная стена | `M` | `redyanaya stena` |
+|  | Ледяные стены | `M` | `redyanie steni` |
+|  | Стена льда | `M` | `stena rda` |
 
 ### 1.19 `byakuya.shikai.cage`
 

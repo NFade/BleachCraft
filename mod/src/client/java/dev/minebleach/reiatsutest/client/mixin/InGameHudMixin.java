@@ -15,5 +15,6 @@ public abstract class InGameHudMixin {
 	@Inject(method = "render(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/client/render/RenderTickCounter;)V", at = @At("HEAD"))
 	private void reiatsu$screenFx(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
 		ScreenFx.renderUnderHud(context);
+		dev.minebleach.reiatsutest.client.fx.PressureFx.renderStripes(context);
 	}
 }
