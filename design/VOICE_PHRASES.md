@@ -63,7 +63,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `uryu.shikai.seele_schneider` | SHIKAI | Uryu's Quincy cross | Seele Schneider | no | B: the Reishi blade combo (lunge and three slashes). Canon name. Replaces Hirenkyaku. |
 | `uryu.bankai.release` | SHIKAI | Uryu's Quincy cross | Quincy: Vollstandig | no | SHIKAI to BANKAI. Server requires 80 Rage. Canon name of the full form (the umlaut is left out on purpose). |
 | `uryu.bankai.wing_barrage` | BANKAI | Uryu's Quincy cross | Heiligen Fliegen | no | Z: the wings fire homing arrows at the nearest enemies for 6 s. Mod-defined. Replaces Licht Regen. |
-| `uryu.bankai.homing_volley` | BANKAI | Uryu's Quincy cross | (mod-defined) Homing volley | no | H: three or more curving arrows. Mod-defined name (the canon idea is trajectory control). |
+| `uryu.bankai.licht_regen` | BANKAI | Uryu's Quincy cross | Licht Regen | no | H: the rain of arrows on a 9 x 9 square at the aimed point for 3 s. Canon name (replaces the Homing Volley, round 2 of the Uryu branch). |
 | `uryu.bankai.sternenstaub` | BANKAI | Uryu's Quincy cross | Sternenstaub | no | B: the giant arrow of flechettes. Canon name. |
 
 "weak" = the command is made of short or very common words and is accepted only when the **whole utterance** is the phrase (section 3.1). A few strong commands also carry weak lone-word variants ("Chire", "Scatter"); these are marked in their tables.
@@ -656,7 +656,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 - **Required state:** BANKAI. **Item:** Uryu's Quincy cross in the main hand.
 - **Canonical phrase:** Heiligen Fliegen
-- **Notes:** Z: the wing barrage (the wings fire homing arrows at the nearest enemies for 6 s). Mod-defined from the canon words for a Quincy arrow (Heilig) and flying (fliegen); the short form is "Wing barrage". Replaces Licht Regen (design/URYU_PLAN.md revision 3).
+- **Notes:** Z: the wing barrage (the wings fire homing arrows at the nearest enemies for 6 s). Mod-defined from the canon words for a Quincy arrow (Heilig) and flying (fliegen); the short form is "Wing barrage". Replaced the first Licht Regen idea (design/URYU_PLAN.md revision 3); Licht Regen is now the H ability.
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
@@ -666,18 +666,19 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | Russian (Cyrillic) | Хайлиген Флиген | `X` | `hairigen hrigen` |
 |  | Залп крыльев | `M` | `sarp krirev` |
 
-### 1.34 `uryu.bankai.homing_volley`
+### 1.34 `uryu.bankai.licht_regen`
 
 - **Required state:** BANKAI. **Item:** Uryu's Quincy cross in the main hand.
-- **Canonical phrase:** (mod-defined) Homing volley
-- **Notes:** H: three or more curving arrows. Mod-defined name (the canon idea is trajectory control). Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+- **Canonical phrase:** Licht Regen
+- **Notes:** H: the rain of arrows (a 9 x 9 square at the aimed point, 3 s). Canon name of the Quincy technique (German "light rain"). Replaces the mod-defined Homing Volley; the phrases are first drafts, to be tuned with the gameplay steps.
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
-| English sub | Homing volley | `M` | `homing vore` |
-|  | Homing arrows | `M` | `homing arows` |
-| Russian (Cyrillic) | Самонаводящийся залп | `M` | `samonavodyasisa sarp` |
-|  | Самонаводящиеся стрелы | `M` | `samonavodyasiesa streri` |
+| Romaji | Licht Regen | `C` | `rict regen` |
+|  | Lichtregen | `C` | `rictregen` |
+| English sub | Light rain | `M` | `right rain` |
+| Russian (Cyrillic) | Лихт Реген | `X` | `riht regen` |
+|  | Дождь света | `M` | `dosd sveta` |
 
 ### 1.35 `uryu.bankai.sternenstaub`
 

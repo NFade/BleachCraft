@@ -19,7 +19,7 @@ import java.util.UUID;
 public final class ArrowSim {
 	/** Where an arrow comes from: tells the glue which damage type and invulnerability rule to use. */
 	public enum Kind {
-		BASIC, FOCUS, VOLLEY, WING
+		BASIC, FOCUS, RAIN, WING
 	}
 
 	public enum EventType {

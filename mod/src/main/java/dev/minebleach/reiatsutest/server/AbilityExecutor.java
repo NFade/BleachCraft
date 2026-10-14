@@ -55,7 +55,7 @@ final class AbilityExecutor {
 			case HAKUTEIKEN -> hakuteiken(p, phase, ctx);
 			case MODE_BARRIER, SENKEI -> { } // barrier lives in the damage hook; senkei is disabled
 			case IKOROSE, HYAPPONZASHI, SNAKE_HOOK, BUTOU_RENJIN, KOROSE, HAKUFUKU -> GinAbilities.run(p, ability, phase, ctx);
-			case HEILIG_PFEIL, SPRENGER, SEELE_SCHNEIDER, WING_BARRAGE, HOMING_VOLLEY, STERNENSTAUB -> UryuAbilities.run(p, ability, phase, ctx);
+			case HEILIG_PFEIL, SPRENGER, SEELE_SCHNEIDER, WING_BARRAGE, LICHT_REGEN, STERNENSTAUB -> UryuAbilities.run(p, ability, phase, ctx);
 		}
 	}
 

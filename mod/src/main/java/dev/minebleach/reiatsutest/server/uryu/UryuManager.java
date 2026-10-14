@@ -9,13 +9,13 @@ import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
 import dev.minebleach.reiatsutest.core.uryu.BowDraw;
 import dev.minebleach.reiatsutest.core.uryu.Focus;
+import dev.minebleach.reiatsutest.core.uryu.LichtRegen;
 import dev.minebleach.reiatsutest.core.uryu.SeeleCombo;
 import dev.minebleach.reiatsutest.core.uryu.WingBarrage;
 import dev.minebleach.reiatsutest.core.uryu.Shots;
 import dev.minebleach.reiatsutest.core.uryu.SprengerTrap;
 import dev.minebleach.reiatsutest.core.uryu.Sternenstaub;
 import dev.minebleach.reiatsutest.core.uryu.UryuBalance;
-import dev.minebleach.reiatsutest.core.uryu.Volley;
 import dev.minebleach.reiatsutest.net.UryuArrowsS2C;
 import dev.minebleach.reiatsutest.server.UryuTargets;
 import dev.minebleach.reiatsutest.server.ZanpakutoManager;
@@ -34,8 +34,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageType;
 import net.minecraft.entity.damage.DamageTypes;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
@@ -68,7 +66,24 @@ public final class UryuManager {
 		ZanpakutoState lastState = ZanpakutoState.SEALED;
 	}
 
-	private record Trap(SprengerTrap trap, RegistryKey<World> world) {
+	/** A pentagon, its world, and the entities it bound at the bind moment (freed before the explosion and when the pentagon is cancelled). */
+	private record Trap(SprengerTrap trap, RegistryKey<World> world, List<UUID> bound) {
+	}
+
+	/** The arrow rain of one player: the pure rules, the world, the tick it was released at and the next tick still to spawn. */
+	private static final class Rain {
+		final UUID owner;
+		final RegistryKey<World> world;
+		final int start;
+		final LichtRegen rules;
+		int nextTick;
+
+		Rain(UUID owner, RegistryKey<World> world, int start, LichtRegen rules) {
+			this.owner = owner;
+			this.world = world;
+			this.start = start;
+			this.rules = rules;
+		}
 	}
 
 	/** The barrage of one player: pending shots of the current cycle. */
@@ -94,12 +109,14 @@ public final class UryuManager {
 	private static final List<Trap> TRAPS = new ArrayList<>();
 	private static final List<Wing> WINGS = new ArrayList<>();
 	private static final Map<UUID, Seele> SEELES = new HashMap<>();
+	private static final Map<UUID, Rain> RAINS = new HashMap<>();
 
 	private UryuManager() {
 	}
 
 	public static void init() {
 		ServerTickEvents.END_SERVER_TICK.register(UryuManager::tick);
+		SprengerBinds.init();
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) -> forget(handler.player.getUuid()));
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayerEntity p) {
@@ -113,8 +130,8 @@ public final class UryuManager {
 			}
 		});
 		// being pushed takes the Focus: the knockback hook ({@link #onPushed}, called from LivingEntityMixin) replaces the old damage hook
-		ServerLifecycleEvents.SERVER_STARTED.register(srv -> clearAll());
-		ServerLifecycleEvents.SERVER_STOPPING.register(srv -> clearAll());
+		ServerLifecycleEvents.SERVER_STARTED.register(srv -> clearAll(srv));
+		ServerLifecycleEvents.SERVER_STOPPING.register(srv -> clearAll(srv));
 	}
 
 	// ------------------------------------------------------------------ gates
@@ -163,9 +180,11 @@ public final class UryuManager {
 
 	/** Everything of one Uryu goes: pentagons, barrage, dash, arrows in flight. */
 	static void cancelAll(UUID id) {
+		freeBound(id);
 		TRAPS.removeIf(t -> t.trap().owner().equals(id));
 		WINGS.removeIf(w -> w.owner.equals(id));
 		SEELES.remove(id);
+		RAINS.remove(id);
 		for (ArrowSim sim : SIMS.values()) {
 			sim.removeOwned(id);
 		}
@@ -174,24 +193,52 @@ public final class UryuManager {
 	/** The bankai of this player is over (any reason): the barrage and the bankai arrows in the air stop. */
 	public static void onBankaiEnd(UUID id) {
 		WINGS.removeIf(w -> w.owner.equals(id));
+		RAINS.remove(id);
 		for (ArrowSim sim : SIMS.values()) {
 			sim.removeOwned(id, ArrowSim.Kind.WING);
-			sim.removeOwned(id, ArrowSim.Kind.VOLLEY);
+			sim.removeOwned(id, ArrowSim.Kind.RAIN);
 		}
 	}
 
-	private static void clearAll() {
+	/** Frees everybody the pentagons of this owner have bound (the pentagons are cancelled or replaced). */
+	private static void freeBound(UUID owner) {
+		MinecraftServer srv = server;
+		if (srv == null) {
+			return;
+		}
+		for (Trap t : TRAPS) {
+			if (t.trap().owner().equals(owner)) {
+				freeBound(srv, t, "pentagon cancelled");
+			}
+		}
+	}
+
+	private static void freeBound(MinecraftServer srv, Trap t, String why) {
+		for (UUID u : t.bound()) {
+			SprengerBinds.release(srv, u, why);
+		}
+		t.bound().clear();
+	}
+
+	private static void clearAll(MinecraftServer srv) {
+		SprengerBinds.clearAll(srv);
+		RAINS.clear();
 		PLAYERS.clear();
 		SIMS.clear();
 		TRAPS.clear();
 		WINGS.clear();
 		SEELES.clear();
 		UryuNet.clear();
+		server = null;
 	}
 
 	// ------------------------------------------------------------------ tick
 
+	/** The running server (set on the first tick), for the cleanup paths that have no player at hand. */
+	private static MinecraftServer server;
+
 	private static void tick(MinecraftServer srv) {
+		server = srv;
 		int now = srv.getTicks();
 		for (ServerPlayerEntity p : srv.getPlayerManager().getPlayerList()) {
 			tickPlayer(p, now);
@@ -202,8 +249,12 @@ public final class UryuManager {
 		if (!SEELES.isEmpty()) {
 			tickSeele(srv, now);
 		}
+		SprengerBinds.tick(srv, now);
 		if (!TRAPS.isEmpty()) {
 			tickTraps(srv, now);
+		}
+		if (!RAINS.isEmpty()) {
+			tickRains(srv, now);
 		}
 		stepArrows(srv, now);
 	}
@@ -319,18 +370,32 @@ public final class UryuManager {
 				if (caster == null || !(target instanceof LivingEntity le)) {
 					return;
 				}
+				float hp = e.damage();
+				if (e.kind() == ArrowSim.Kind.RAIN) {
+					// Licht Regen: one target takes at most 14 HP from one cast; the caster takes none
+					Rain rain = RAINS.get(e.owner());
+					hp = rain == null ? 0f : rain.rules.allow(le.getId(), hp);
+					if (hp <= 0f) {
+						return;
+					}
+				}
 				UryuNet.sendImpact(w, e.to(), UryuArrowsS2C.IMPACT_ENTITY, e.kind().ordinal(), now);
-				boolean reset = e.kind() == ArrowSim.Kind.WING || e.kind() == ArrowSim.Kind.VOLLEY; // many small arrows: each lands through the i-frames
+				boolean reset = e.kind() == ArrowSim.Kind.WING || e.kind() == ArrowSim.Kind.RAIN; // many small arrows: each lands through the i-frames
 				RegistryKey<DamageType> type = DamageTypes.ARROW;
+				final float dmg = hp;
 				UryuTargets.logged("uryu.arrow." + e.kind().name().toLowerCase(java.util.Locale.ROOT),
-						() -> UryuTargets.hurt(caster, le, e.damage(), type, reset));
+						() -> UryuTargets.hurt(caster, le, dmg, type, reset));
 			}
 			case MOVED -> {
 				if (!TRAPS.isEmpty() && SprengerTrap.detonates(e.focus())) {
 					detonateTouched(srv, w, e);
 				}
 			}
-			case BLOCKED -> UryuNet.sendImpact(w, e.to(), UryuArrowsS2C.IMPACT_BLOCK, e.kind().ordinal(), now);
+			case BLOCKED -> {
+				if (e.kind() != ArrowSim.Kind.RAIN) { // 6 rain arrows land every tick: no spark and chime packet for each
+					UryuNet.sendImpact(w, e.to(), UryuArrowsS2C.IMPACT_BLOCK, e.kind().ordinal(), now);
+				}
+			}
 			default -> { }
 		}
 	}
@@ -421,13 +486,15 @@ public final class UryuManager {
 		}
 		if (mine >= UryuBalance.SPRENGER_MAX_PER_PLAYER) {
 			for (Iterator<Trap> it = TRAPS.iterator(); it.hasNext();) {
-				if (it.next().trap().owner().equals(id)) {
+				Trap old = it.next();
+				if (old.trap().owner().equals(id)) {
+					freeBound(p.getServer(), old, "pentagon replaced");
 					it.remove(); // the oldest goes
 					break;
 				}
 			}
 		}
-		TRAPS.add(new Trap(new SprengerTrap(id, v3(ground), now), w.getRegistryKey()));
+		TRAPS.add(new Trap(new SprengerTrap(id, v3(ground), now), w.getRegistryKey(), new ArrayList<>()));
 		UryuNet.sendEffect(w, ground.x, ground.y, ground.z, UryuArrowsS2C.TRAP, now,
 				new float[] {(float) ground.x, (float) ground.y, (float) ground.z, (float) UryuBalance.SPRENGER_RADIUS, UryuBalance.SPRENGER_EXPLODE_AT});
 		ReiatsuTest.LOGGER.info("[uryu] {} sprenger at ({}, {}, {})", p.getName().getString(), String.format(java.util.Locale.ROOT, "%.1f", ground.x),
@@ -448,12 +515,13 @@ public final class UryuManager {
 			ServerWorld w = srv.getWorld(t.world());
 			ServerPlayerEntity owner = srv.getPlayerManager().getPlayer(t.trap().owner());
 			if (w == null || owner == null || owner.isDead() || owner.getServerWorld() != w) {
+				freeBound(srv, t, "pentagon fizzled");
 				it.remove(); // the caster died, left or went to another dimension: the pentagon fizzles
 				continue;
 			}
 			SprengerTrap.Step st = t.trap().advance(now);
 			if (st == SprengerTrap.Step.BIND) {
-				bind(owner, t.trap());
+				bind(owner, t, now);
 			} else if (st == SprengerTrap.Step.EXPLODE) {
 				due.add(t);
 				it.remove();
@@ -462,7 +530,7 @@ public final class UryuManager {
 		for (Trap t : due) {
 			ServerPlayerEntity owner = srv.getPlayerManager().getPlayer(t.trap().owner());
 			if (owner != null) {
-				explode(owner, srv.getWorld(t.world()), t.trap(), now);
+				explode(owner, srv.getWorld(t.world()), t, now);
 			}
 		}
 	}
@@ -474,24 +542,28 @@ public final class UryuManager {
 		return UryuTargets.cylinder(owner, c.add(0, mid, 0), UryuBalance.SPRENGER_RADIUS, (UryuBalance.SPRENGER_HEIGHT + UryuBalance.SPRENGER_BELOW) / 2.0, 24);
 	}
 
-	/** 0.8 s: the legs of whoever is still inside are bound (Slowness V and no jump). */
-	private static void bind(ServerPlayerEntity owner, SprengerTrap t) {
+	/**
+	 * 0.8 s: everybody still inside is ROOTED (no walking, no jump; a player also loses the shunpo) until the explosion at 2.0 s, or until
+	 * the rooted one takes damage ({@link SprengerBinds}).
+	 */
+	private static void bind(ServerPlayerEntity owner, Trap t, int now) {
 		int n = 0;
-		for (LivingEntity e : inside(owner, t)) {
-			e.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, UryuBalance.SPRENGER_BIND_TICKS, UryuBalance.SPRENGER_SLOW_AMP, false, true,
-					true), owner);
-			// a negative Jump Boost level takes the jump away (vanilla ignores a jump with no upward speed)
-			e.addStatusEffect(new StatusEffectInstance(StatusEffects.JUMP_BOOST, UryuBalance.SPRENGER_BIND_TICKS, -10, false, false, false), owner);
+		for (LivingEntity e : inside(owner, t.trap())) {
+			SprengerBinds.bind(e, now, UryuBalance.SPRENGER_BIND_TICKS);
+			t.bound().add(e.getUuid());
 			n++;
 		}
-		ReiatsuTest.LOGGER.info("[uryu] sprenger bind: {} bound", n);
+		ReiatsuTest.LOGGER.info("[uryu] sprenger bind: {} rooted for {} ticks", n, UryuBalance.SPRENGER_BIND_TICKS);
 	}
 
 	/** 2.0 s (or at once for a focused arrow): the pentagon explodes for 9 HP (13.5 after an early detonation) in its whole area. */
-	private static void explode(ServerPlayerEntity owner, ServerWorld w, SprengerTrap t, int now) {
+	private static void explode(ServerPlayerEntity owner, ServerWorld w, Trap trap, int now) {
 		if (w == null) {
 			return;
 		}
+		SprengerTrap t = trap.trap();
+		// the root ends WITH the explosion: free the bound ones first, so the explosion damage is not counted as an early break
+		freeBound(w.getServer(), trap, "explosion");
 		float hp = t.damage();
 		int n = 0;
 		List<LivingEntity> hit = inside(owner, t);
@@ -522,7 +594,9 @@ public final class UryuManager {
 		for (Trap t : hit) {
 			TRAPS.remove(t);
 			if (owner != null && t.trap().detonateEarly()) {
-				explode(owner, w, t.trap(), srv.getTicks());
+				explode(owner, w, t, srv.getTicks());
+			} else {
+				freeBound(srv, t, "pentagon gone");
 			}
 		}
 	}
@@ -672,32 +746,58 @@ public final class UryuManager {
 		spawn(world, new ArrowSim.Spec(p.getUuid(), ArrowSim.Kind.WING, tip, dir.scale(UryuBalance.WING_SPEED), 0.0, UryuBalance.WING_DAMAGE, UryuBalance.WING_LIFE, 0,
 				UryuBalance.ARROW_RADIUS, s.target().id(), Math.toRadians(UryuBalance.WING_TURN_DEG), 0));
 	}
-	// ------------------------------------------------------------------ Homing Volley
+	// ------------------------------------------------------------------ Licht Regen
 
-	/** Homing Volley (H, BANKAI): locks the nearest living target in a 15 degree cone, fires 3 + Focus arrows that curve to it. */
-	public static void homingVolley(ServerPlayerEntity p) {
-		Data d = data(p);
-		int stacks = d.focus.consume();
-		show(p, d);
-		int n = Volley.arrowCount(stacks);
-		Vec3d eye = p.getEyePos();
-		Vec3d look = p.getRotationVec(1.0F).normalize();
-		List<Volley.Candidate> cands = new ArrayList<>();
-		for (LivingEntity e : UryuTargets.sphere(p, eye, UryuBalance.VOLLEY_LOCK_RANGE, 48)) {
-			Vec3d c = e.getBoundingBox().getCenter();
-			Vec3d seen = UryuTargets.rayPoint(p, eye, c.subtract(eye).normalize(), eye.distanceTo(c));
-			if (eye.distanceTo(seen) >= eye.distanceTo(c) - 0.6) { // no block on the way
-				cands.add(new Volley.Candidate(e.getId(), v3(c)));
+	/**
+	 * Licht Regen (H, BANKAI): called at the END of the 0.6 s cast time with the aim of that moment ({@code aim}, 28 blocks at most).
+	 * For 3.0 s six arrows per tick start 14 blocks above the ground level of the aimed point, inside a 9 x 9 square centred on it
+	 * ({@link LichtRegen}); {@link #tickRains} spawns them, {@link #onEvent} deals the damage with the 14 HP cap per target.
+	 */
+	public static void lichtRegen(ServerPlayerEntity p, Vec3d aim) {
+		ServerWorld w = p.getServerWorld();
+		Vec3d ground = groundPoint(w, aim);
+		int now = p.getServer().getTicks();
+		long seed = ((long) p.getId() << 32) ^ (now * 0x9E3779B97F4A7C15L) ^ w.getRandom().nextLong();
+		RAINS.put(p.getUuid(), new Rain(p.getUuid(), w.getRegistryKey(), now, new LichtRegen(p.getId(), seed, v3(ground))));
+		w.playSound(null, ground.x, ground.y + 2.0, ground.z, SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.PLAYERS, 1.6F, 0.7F);
+		ReiatsuTest.LOGGER.info("[uryu] {} licht regen at ({}, {}, {}) square {}x{} for {} ticks", p.getName().getString(),
+				String.format(java.util.Locale.ROOT, "%.1f", ground.x), String.format(java.util.Locale.ROOT, "%.1f", ground.y),
+				String.format(java.util.Locale.ROOT, "%.1f", ground.z), (int) (UryuBalance.RAIN_HALF_WIDTH * 2), (int) (UryuBalance.RAIN_HALF_WIDTH * 2),
+				UryuBalance.RAIN_TICKS);
+	}
+
+	/** Starts this tick's arrows of every rain (every tick since the last one, so a late tick loses none). */
+	private static void tickRains(MinecraftServer srv, int now) {
+		for (Iterator<Rain> it = RAINS.values().iterator(); it.hasNext();) {
+			Rain r = it.next();
+			ServerWorld w = srv.getWorld(r.world);
+			ServerPlayerEntity p = srv.getPlayerManager().getPlayer(r.owner);
+			if (w == null || p == null || p.isDead() || p.getServerWorld() != w) {
+				it.remove(); // the caster died, left or went to another dimension: the rain stops
+				continue;
+			}
+			if (r.nextTick < UryuBalance.RAIN_TICKS) {
+				ArrowSim sim = sim(w);
+				int upTo = Math.min(now - r.start, UryuBalance.RAIN_TICKS - 1);
+				int dropped = 0;
+				for (int k = r.nextTick; k <= upTo; k++) {
+					for (int i = 0; i < LichtRegen.arrowsAt(k); i++) {
+						LichtRegen.Drop d = r.rules.drop(k, i);
+						ArrowSim.Spec spec = new ArrowSim.Spec(r.owner, ArrowSim.Kind.RAIN, d.start(), d.vel(), 0.0, UryuBalance.RAIN_DAMAGE,
+								UryuBalance.RAIN_LIFE, 0, UryuBalance.RAIN_ARROW_RADIUS, -1, 0.0, 0);
+						if (sim.spawn(spec) == null) {
+							dropped++;
+						}
+					}
+				}
+				r.nextTick = Math.max(r.nextTick, upTo + 1);
+				if (dropped > 0) {
+					ReiatsuTest.LOGGER.warn("[uryu] licht regen: arrow cap reached, {} arrows dropped", dropped);
+				}
+			} else if (now - r.start > UryuBalance.RAIN_TICKS + UryuBalance.RAIN_LIFE + 2) {
+				it.remove(); // the last arrow has landed; the damage budget of the cast is no longer needed
 			}
 		}
-		int target = Volley.pickTarget(v3(eye), v3(look), cands, UryuBalance.VOLLEY_CONE_DEG, UryuBalance.VOLLEY_LOCK_RANGE);
-		V3[] dirs = Volley.directions(v3(look), n, UryuBalance.VOLLEY_SPREAD_DEG);
-		V3 origin = new V3(eye.x + look.x * 0.4, eye.y - 0.1 + look.y * 0.4, eye.z + look.z * 0.4);
-		for (V3 dir : dirs) {
-			spawn(p.getServerWorld(), new ArrowSim.Spec(p.getUuid(), ArrowSim.Kind.VOLLEY, origin, dir.scale(UryuBalance.VOLLEY_SPEED), 0.0,
-					UryuBalance.VOLLEY_DAMAGE, UryuBalance.VOLLEY_LIFE, 0, UryuBalance.ARROW_RADIUS, target, Math.toRadians(UryuBalance.VOLLEY_TURN_DEG), 0));
-		}
-		ReiatsuTest.LOGGER.info("[uryu] {} homing volley focus={} arrows={} target={}", p.getName().getString(), stacks, n, target);
 	}
 
 	// ------------------------------------------------------------------ Sternenstaub

@@ -837,18 +837,21 @@
       ]
     },
     {
-      "id": "uryu.bankai.homing_volley", "states": ["BANKAI"], "item": "uryu",
-      "interimSafe": false, "optional": false, "say": "Homing volley",
+      "id": "uryu.bankai.licht_regen", "states": ["BANKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Licht Regen",
       "variants": [
-        {"text": "Homing volley", "origin": "M"},
-        {"text": "Homing arrows", "origin": "M"},
-        {"text": "Самонаводящийся залп", "origin": "M"},
-        {"text": "Самонаводящиеся стрелы", "origin": "M"},
-        {"text": "homing barrage", "origin": "A"},
-        {"text": "ホーミング ボレー", "origin": "A"},
-        {"text": "homing valley", "origin": "A"},
-        {"text": "homing salvo", "origin": "A"},
-        {"text": "homing arrow", "origin": "A"}
+        {"text": "Licht Regen", "origin": "C"},
+        {"text": "Lichtregen", "origin": "C"},
+        {"text": "Light rain", "origin": "M"},
+        {"text": "Лихт Реген", "origin": "X"},
+        {"text": "Дождь света", "origin": "M"},
+        {"text": "lickt regen", "origin": "A"},
+        {"text": "lik regen", "origin": "A"},
+        {"text": "liquid regen", "origin": "A"},
+        {"text": "リヒト レーゲン", "origin": "A"},
+        {"text": "лихтреген", "origin": "A"},
+        {"text": "лихт регэн", "origin": "A"},
+        {"text": "свет дождь", "origin": "A"}
       ]
     },
     {

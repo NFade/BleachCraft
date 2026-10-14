@@ -34,6 +34,11 @@ Existing: **Focus** (stand still, or sneak slowly, for power) and the **homing p
 5. **Bankai large-scale ability: option A (wing barrage) BUILT**, replaces Licht Regen (code 21, effect id 75, command `uryu.bankai.wing_barrage`, voice "Heiligen Fliegen" / "Wing barrage"): for 6 s the wings fire homing arrows at up to 4 of the nearest valid enemies within 30 blocks of Uryu (a distinct target per wing slot, re-evaluated every 8 ticks, one arrow per target every 0.4 s, 2 HP each, strong homing); Uryu moves, shoots the bow and uses other abilities meanwhile; 28 reiatsu, 22 s; ends with the bankai or his death. Options B (Sklaverei dome) and C (Reishi trap field) are dropped.
 6. **Sternenstaub** stays the bankai finisher (giant Focus-3 arrow).
 
+**Revision 4 (user, 2026-10-14, built in round 2, see design/results/uryu_round2.md):**
+(a) **Bankai H = Licht Regen** replaces the Homing Volley (same ability code 22, effect id 76, command `uryu.bankai.licht_regen`, voice "Licht Regen" / "Light rain"). The wing barrage stays on Z. Uryu raises the bow for 0.6 s, then the rain falls on the point he aims at at the END of that time (28 blocks at most, `aimAtRelease` like Shirafune): a SQUARE of 9 x 9 blocks aligned to the world grid and centred on that point, for 3.0 s; 6 arrows per tick (360 per cast) start at seeded random places 14 blocks above the ground level of the centre and fall with a small slant (the landing points stay inside the square), speed 2.6 blocks per tick, each a real `ArrowSim` arrow without homing that stops at terrain and roofs, 1.0 HP, i-frames reset per hit, the caster and his team safe, at most 14 HP per target and cast; 35 reiatsu, 24 s. Expected damage to a standing player is about 8 to 9 HP (arrow radius 0.4), a moving one takes less. Cap of 400 arrows alive per world (the rain alone keeps about 40).
+(b) **Sprenger roots.** Everybody inside the pentagon at the bind moment (0.8 s) can neither walk nor jump (movement-speed and jump-strength modifiers of -100 percent) and a player cannot SHUNPO, from the bind to the explosion (1.2 s). The root and the shunpo ban end at once when the rooted one takes ANY damage (also from the owner's other abilities), and at death, logout, change of dimension, state change of the caster, server stop. The pentagon's own explosion (and an early detonation by a Focus 3 arrow) ends it too, and is not counted as a break. The explosion keeps 9 HP (13.5 early). A banned shunpo gets the cooldown answer (the HUD shunpo cell shakes), no cost, and the action bar message `message.reiatsu_test.denied.shunpo_bound`.
+(c) **The bow in the hand is bigger:** display scale 1.8 in first person (was 0.7) and 1.4 in third person (was 0.9), see the results file for the reasoning.
+
 ## 4. Revised ability table (current)
 | Slot | State | Ability |
 |---|---|---|
@@ -41,7 +46,7 @@ Existing: **Focus** (stand still, or sneak slowly, for power) and the **homing p
 | H | SHIKAI | Sprenger (unchanged) |
 | B | SHIKAI | **Seele Schneider** (lunge and three slashes), replaces Hirenkyaku |
 | Z | BANKAI | **Wing barrage**, replaces Licht Regen |
-| H | BANKAI | Homing Volley (kept) |
+| H | BANKAI | **Licht Regen** (arrow rain, 9 x 9 square), replaces the Homing Volley (revision 4) |
 | B | BANKAI | Sternenstaub (unchanged) |
 
 Note: Hirenkyaku is gone as an ability; the normal shunpo (any state) is Uryu's flash step, +2 blocks, Quincy fx, and it does not reset Focus. The air steps are dropped.
@@ -50,3 +55,18 @@ Note: Hirenkyaku is gone as an ability; the normal shunpo (any state) is Uryu's 
 1. Homing vs Focus trade and Reishi absorption (section 3, 1 and 2): build or not.
 2. Is the homing too strong or too weak in play (basic 2.5 degrees per tick, radius 14, half cone 60; Z 10 degrees, radius 20, half cone 100)? Tune in `UryuBalance`.
 3. Left-handed bow hold and a real animated draw pose of the player (stage U7).
+
+## 6. U-FX pending (effects, later, when the usage limits refresh)
+Everything visual below is a PLACEHOLDER today. The user wants LARGE, spectacular effects that are faithful to the canon, built the way the Rukia and Byakuya effects were (FxShapes / FxGlowBatch layers, own meshes, own sounds, a storyboard with acceptance checks per effect, screenshots from the game). Method: reference images found through `tools/fandom.py` (images / get) and stored only as private references under the project rules of MASTER_PROMPT.md section 2 (rule 4: into `refs/` only, at most 12 images per state, file names `<char>_<state>_<n>.<ext>`, source URL in `refs/INDEX.md`, `refs/` in .gitignore, nothing ripped into the mod, texts of the wiki are not copied); all models, textures and effects are made by us. To be done in this order of value:
+| Effect | Canon look to aim at | Placeholder today (to replace) |
+|---|---|---|
+| Heilig Pfeil (basic shot and Z) | a blue-white arrow of condensed Reishi that leaves a light trail, a real Quincy arrow shape, a burst on impact | `UryuArrowRenderer` mesh scale 1.6/2.6, END_ROD sparks, glow streak trail, `IMPACT` spark and chime |
+| Reishi gathering | the Reishi in the air streams into the bow, the bow itself forms from light (sealed cross to bow) | none for the gathering; the bow is a normal item mesh with a drawn V string |
+| Sprenger | five Seele Schneider fall into a pentagon, a glowing pentagram, a column of blue light and a big explosion | `UryuFx.trap` / `burst` (daggers, flat pentagram, rings) |
+| Licht Regen | a huge rain of light arrows from the sky over the whole 9 x 9 area, the bow raised, impact flashes on the ground | a faint square outline on the ground (`UryuFx.rainSquare`), the plain arrows with a lean look, no impact effect |
+| Wing barrage / Quincy wings | large angular wings of Reishi (Quincy: Vollstaendig), pulsing with every volley | `UryuFx.wing` glow-streak wings |
+| Sternenstaub | a giant line of star-like flechettes | `UryuFx.line` strip |
+| Seele Schneider | a Reishi blade with a sweeping crescent | `UryuFx.slash` |
+| Shunpo (Hirenkyaku look) | blue Reishi platforms under the feet, a trail | `ShunpoFx` Uryu branch, `UryuFx.shunpoReishi` |
+| Sprenger root | a visible binding on the rooted legs | none (the root has no effect at all) |
+Also still open: the third person gesture of the Licht Regen starts when the rain starts (the effect event now comes at the release), a real raise-the-bow animation belongs to U7.

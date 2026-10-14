@@ -227,8 +227,10 @@ public record BalanceConfig(
 		a.put(AbilityId.SEELE_SCHNEIDER, new AbilitySpec(AbilityId.SEELE_SCHNEIDER, 100, 100, 74, true, List.of(0)));
 		// Uryu bankai Z: Wing barrage, 28 reiatsu, 22 s
 		a.put(AbilityId.WING_BARRAGE, new AbilitySpec(AbilityId.WING_BARRAGE, 280, 440, 75, true, List.of(0)));
-		// Uryu bankai H: 30 reiatsu, 16 s
-		a.put(AbilityId.HOMING_VOLLEY, new AbilitySpec(AbilityId.HOMING_VOLLEY, 300, 320, 76, true, List.of(0)));
+		// Uryu bankai H: Licht Regen (round 2, replaces the Homing Volley): 35 reiatsu, 24 s. 12 ticks (0.6 s) of raised bow, then the rain
+		// falls on the point aimed AT THAT MOMENT (aimAtRelease, like Shirafune); range 28; the square, the rate and the cap are in core/uryu/UryuBalance
+		a.put(AbilityId.LICHT_REGEN, new AbilitySpec(AbilityId.LICHT_REGEN, 350, 480, 76, true, List.of(12), p(
+				AbilityParams.AIM_AT_RELEASE, 1.0, AbilityParams.DAMAGE, dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_DAMAGE)));
 		// Uryu bankai B: 50 reiatsu, 40 s
 		a.put(AbilityId.STERNENSTAUB, new AbilitySpec(AbilityId.STERNENSTAUB, 500, 800, 77, true, List.of(0)));
 

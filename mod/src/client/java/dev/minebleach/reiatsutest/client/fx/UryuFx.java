@@ -55,7 +55,7 @@ public final class UryuFx {
 
 	// ------------------------------------------------------------------ effect events
 
-	/** Effect events: 74 the lunge of the Seele Schneider, 75 the wing barrage; the rest is drawn from the data packets. */
+	/** Effect events: 74 the lunge of the Seele Schneider, 75 the wing barrage, 76 the Licht Regen square; the rest is drawn from the data packets. */
 	public static void play(MinecraftClient client, EffectEventS2C e) {
 		ClientWorld w = client.world;
 		if (w == null) {
@@ -75,7 +75,32 @@ public final class UryuFx {
 			WINGS.add(wing);
 			FxSound.play(null, "entity.phantom.flap", e.x(), e.y() + 1.5, e.z(), 1.7, 0.9);
 			FxSound.play(null, "block.amethyst_block.resonate", e.x(), e.y() + 1.5, e.z(), 1.8, 0.8);
+		} else if (e.effectId() == 76) {
+			rainSquare(e);
 		}
+	}
+
+	/**
+	 * Licht Regen (placeholder): a faint outline of the 9 x 9 square on the ground for the whole rain; the arrows themselves are drawn by
+	 * {@link UryuArrowRenderer}. params = {aim x, y, z, half width, seconds}.
+	 */
+	private static void rainSquare(EffectEventS2C e) {
+		float[] pr = e.params();
+		if (pr.length < 5) {
+			return;
+		}
+		double cx = pr[0];
+		double cy = pr[1] + 0.08;
+		double cz = pr[2];
+		double hw = pr[3];
+		double life = pr[4] + 0.4;
+		double side = hw * 2.0;
+		double[][] edge = {{cx - hw, cz - hw, 1, 0}, {cx + hw, cz - hw, 0, 1}, {cx + hw, cz + hw, -1, 0}, {cx - hw, cz + hw, 0, -1}};
+		for (double[] ed : edge) {
+			FxShapes.Strip s = FxShapes.strip(ed[0], cy, ed[1], ed[2], 0, ed[3], 0).length(a -> side).width(a -> 0.14);
+			s.color("#A9D8F5").life(life).intensity(a -> 0.35 * Math.min(1.0, a / 0.15) * Math.max(0.0, Math.min(1.0, (life - a) / 0.4)));
+		}
+		FxSound.play(null, "block.amethyst_block.resonate", cx, cy, cz, 1.2, 0.7);
 	}
 
 	/** Lunge: three streaks along the 1.5 block run (hip, chest, head) and a dust of Reishi. */

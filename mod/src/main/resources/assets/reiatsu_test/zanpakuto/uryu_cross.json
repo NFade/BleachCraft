@@ -2,7 +2,7 @@
   "model": "uryu",
   "display_model": "reiatsu_test:item/uryu_cross_display",
   "emissive_tint": "FFBFD8FF",
-  "hand_scale": { "sealed": 3.0 },
+  "hand_scale": { "sealed": 1.5 },
   "hand_yaw": { "sealed": 90 },
   "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
   "objects": {

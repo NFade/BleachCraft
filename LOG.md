@@ -1109,3 +1109,6 @@ Notes per part: design/results/r8_mech.md, r8_fx1.md, r8_fx2.md. Build and 850 t
 ## 2026-10-14: dev god mode
 - `/reiatsu dev god on|off` (op, dev): infinite reiatsu (the bar is refilled every tick, costs are not paid) and infinite Rage (bar held at max in `RageManager.tick`, shikai/bankai need no Rage and no 20 s wait, same as `ragefree`). Off puts both back to normal. Per session: rejoining resets it. Cooldowns are NOT touched (`/reiatsu cooldowns clear`).
 - Code: `StateMachine.setGodMode`, `RageManager.setInfinite`, `ReiatsuCommand`; test `GodModeTest`. Not checked in game.
+
+## 2026-10-14: Uryu round 2 (branch gin-uryu)
+- Bankai H = Licht Regen (9 x 9 arrow rain, 3 s, 6 arrows per tick, aimed at the release) replaces the Homing Volley; Sprenger now roots (no walk, no jump, no shunpo) from the bind to the explosion or until damage; the bow in hand is bigger (display scale 1.8 / 1.4). Effects are still placeholders (see design/URYU_PLAN.md section 6). Details, checklist and unverified list: design/results/uryu_round2.md. Not checked in game.

@@ -176,7 +176,7 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 	private static final float[] NO_SHIFT = new float[3];
 
 	/** Half width of the pulled string ribbon (model units = blocks). */
-	private static final float STRING_HALF_WIDTH = 0.0035f;
+	private static final float STRING_HALF_WIDTH = 0.005f;
 
 	/**
 	 * Uryu's bow while it is drawn: the bow without the straight string, a string bent into a V (its middle vertices are at y = 0.5 and

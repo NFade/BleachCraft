@@ -34,7 +34,7 @@ public enum AbilityId {
 	SPRENGER(19, "uryu.shikai.sprenger", CharacterId.URYU, ZanpakutoState.SHIKAI),
 	SEELE_SCHNEIDER(20, "uryu.shikai.seele_schneider", CharacterId.URYU, ZanpakutoState.SHIKAI),
 	WING_BARRAGE(21, "uryu.bankai.wing_barrage", CharacterId.URYU, ZanpakutoState.BANKAI),
-	HOMING_VOLLEY(22, "uryu.bankai.homing_volley", CharacterId.URYU, ZanpakutoState.BANKAI),
+	LICHT_REGEN(22, "uryu.bankai.licht_regen", CharacterId.URYU, ZanpakutoState.BANKAI),
 	STERNENSTAUB(23, "uryu.bankai.sternenstaub", CharacterId.URYU, ZanpakutoState.BANKAI);
 
 	public final byte code;
@@ -72,7 +72,7 @@ public enum AbilityId {
 	public int slot() {
 		return switch (this) {
 			case TSUKISHIRO, ICE_WALL, MODE_ATTACK, SCATTER, IKOROSE, BUTOU_RENJIN, HEILIG_PFEIL, WING_BARRAGE -> 0;
-			case HAKUREN, MODE_BARRIER, HAKUTEIKEN, HYAPPONZASHI, KOROSE, SPRENGER, HOMING_VOLLEY -> 1;
+			case HAKUREN, MODE_BARRIER, HAKUTEIKEN, HYAPPONZASHI, KOROSE, SPRENGER, LICHT_REGEN -> 1;
 			case SHIRAFUNE, SENKEI, CAGE, SNAKE_HOOK, HAKUFUKU, SEELE_SCHNEIDER, STERNENSTAUB -> 2;
 		};
 	}

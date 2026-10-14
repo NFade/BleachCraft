@@ -93,7 +93,7 @@ public final class CastGestures {
 			case SPRENGER -> 73;
 			case SEELE_SCHNEIDER -> 74;
 			case WING_BARRAGE -> 75;
-			case HOMING_VOLLEY -> 76;
+			case LICHT_REGEN -> 76;
 			case STERNENSTAUB -> 77;
 		};
 	}

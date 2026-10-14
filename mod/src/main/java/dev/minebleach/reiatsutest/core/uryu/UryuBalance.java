@@ -35,8 +35,8 @@ public final class UryuBalance {
 	public static final double ARROW_RADIUS = 0.3;
 	/** Life of a shot arrow in ticks (about 110 blocks of range). */
 	public static final int ARROW_LIFE = 50;
-	/** Arrows of one world alive at once (a safety cap). */
-	public static final int MAX_ARROWS = 256;
+	/** Arrows of one world alive at once (a safety cap; the Licht Regen alone keeps about 40 alive). */
+	public static final int MAX_ARROWS = 400;
 
 	/** Basic shot of the BASE state (right click), HP. */
 	public static final float BASIC_DAMAGE = 4.0F;
@@ -80,10 +80,11 @@ public final class UryuBalance {
 	public static final double SPRENGER_RADIUS = 3.0;
 	/** The legs are bound 0.8 s after the cast. */
 	public static final int SPRENGER_BIND_AT = 16;
-	/** Ticks the bind lasts (2 s). */
-	public static final int SPRENGER_BIND_TICKS = 40;
-	/** Slowness amplifier of the bind (4 = Slowness V). */
-	public static final int SPRENGER_SLOW_AMP = 4;
+	/**
+	 * Ticks the ROOT lasts (round 2): from the bind moment to the explosion, 1.2 s. Nobody inside can move horizontally or jump and a
+	 * player cannot shunpo; any damage to the rooted one ends it early (the explosion itself ends it anyway).
+	 */
+	public static final int SPRENGER_BIND_TICKS = 24;
 	/** The pentagon explodes 2.0 s after the cast. */
 	public static final int SPRENGER_EXPLODE_AT = 40;
 	public static final float SPRENGER_DAMAGE = 9.0F;
@@ -130,19 +131,27 @@ public final class UryuBalance {
 	/** Wing tips relative to the feet in the body frame: sideways (right positive), height, backwards, for the slots upper right, upper left, lower right, lower left. */
 	public static final double[][] WING_TIPS = {{1.7, 2.35, 0.45}, {-1.7, 2.35, 0.45}, {1.25, 1.2, 0.6}, {-1.25, 1.2, 0.6}};
 
-	// ---------------------------------------------------------------- Homing Volley (H, BANKAI)
-	public static final int VOLLEY_BASE_ARROWS = 3;
-	public static final int VOLLEY_MAX_ARROWS = 6;
-	public static final float VOLLEY_DAMAGE = 3.0F;
-	/** 1.5 s of life. */
-	public static final int VOLLEY_LIFE = 30;
-	public static final double VOLLEY_CONE_DEG = 15.0;
-	public static final double VOLLEY_LOCK_RANGE = 30.0;
-	/** Turn rate of a homing arrow, degrees per tick. */
-	public static final double VOLLEY_TURN_DEG = 12.0;
-	public static final double VOLLEY_SPEED = 1.8;
-	/** Half opening angle of the fan the arrows leave in, degrees. */
-	public static final double VOLLEY_SPREAD_DEG = 20.0;
+	// ---------------------------------------------------------------- Licht Regen (H, BANKAI; round 2, replaces the Homing Volley)
+	/** Range in blocks of the aimed point (the server aim at the END of the 0.6 s cast time, like Hakuren and the Byakuya impact). */
+	public static final double RAIN_RANGE = 28.0;
+	/** The area is a SQUARE of 9 x 9 blocks, axis aligned to the world grid and centred on the aimed point. */
+	public static final double RAIN_HALF_WIDTH = 4.5;
+	/** The arrows start this many blocks above the ground level of the centre. */
+	public static final double RAIN_HEIGHT = 14.0;
+	/** The rain falls for 3.0 s. */
+	public static final int RAIN_TICKS = 60;
+	/** Arrows that start every tick (360 per cast). */
+	public static final int RAIN_PER_TICK = 6;
+	public static final double RAIN_SPEED = 2.6;
+	/** Horizontal share of the speed (the slant): the arrows fall a little aslant, the same way for the whole cast (direction from the seed). */
+	public static final double RAIN_SLANT = 0.12;
+	/** Life of a rain arrow in ticks (about 31 blocks of fall, enough to pass the ground level of a pit). */
+	public static final int RAIN_LIFE = 12;
+	public static final float RAIN_DAMAGE = 1.0F;
+	/** Hit radius of a rain arrow (a little fatter than the shot, so a stationary player in the square takes about 8 to 9 HP in all). */
+	public static final double RAIN_ARROW_RADIUS = 0.4;
+	/** Most HP one target can take from one cast. */
+	public static final float RAIN_TARGET_CAP = 14.0F;
 
 	// ---------------------------------------------------------------- Sternenstaub (B, BANKAI)
 	/** Stacks of Focus the cast needs (and consumes). */

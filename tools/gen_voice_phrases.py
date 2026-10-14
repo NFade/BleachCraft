@@ -185,8 +185,9 @@ NEW_CHARACTER_ALIASES = {
     "uryu.bankai.wing_barrage": [("heiligen fliegen", False), ("heilige fliegen", False), ("hylighen fleegen", False), ("heiligen flügen", False),
                                  ("wing barrage", False), ("wings barrage", False), ("ハイリゲン フリーゲン", False), ("хайлиген флиген", False),
                                  ("хайлиген флиген", False), ("залп крыльев", False), ("залп крыла", False)],
-    "uryu.bankai.homing_volley": [("homing volley", False), ("homing arrows", False), ("homing barrage", False), ("ホーミング ボレー", False),
-                                  ("самонаводящийся залп", False), ("самонаводящиеся стрелы", False), ("homing valley", False), ("homing salvo", False), ("homing arrow", False)],
+    "uryu.bankai.licht_regen": [("licht regen", False), ("lichtregen", False), ("light rain", False), ("lickt regen", False), ("lik regen", False),
+                                ("liquid regen", False), ("リヒト レーゲン", False), ("лихт реген", False), ("лихтреген", False), ("лихт регэн", False),
+                                ("дождь света", False), ("свет дождь", False)],
     "uryu.bankai.sternenstaub": [("sternenstaub", False), ("sternen staub", False), ("stern enstaub", False), ("シュテルネンシュタウプ", False),
                                  ("штернэнштауб", False), ("sternen stop", False), ("stern en staub", False), ("shternenshtaub", False)],
 }

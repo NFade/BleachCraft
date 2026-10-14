@@ -16,6 +16,8 @@ import org.joml.Quaternionf;
  * design/results/uryu_u4_u5.md with the vanilla frames ({@code HeldItemFeatureRenderer}: X -90, Y 180; {@code ModelPart.rotate}).
  * The display translation of the third person entries is zero, so the rotation about the hand origin is a rotation about the grip.
  * Right handed players only (the left hand mirrors the display; there the plain display is used).
+ * Round 2: the display scales are 1.8 (first person) and 1.4 (third person); the nocked arrow, the string and the pull are baked in the same
+ * model space, so they scale with the bow, and the pre-rotation about the grip does not depend on the scale.
  */
 public final class UryuBowPose {
 	/** Display rotation of the idle pose (the same numbers as {@code thirdperson_righthand} in the display JSON). */

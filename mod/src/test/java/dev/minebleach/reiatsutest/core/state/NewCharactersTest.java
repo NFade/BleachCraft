@@ -32,7 +32,7 @@ class NewCharactersTest {
 			new Row(AbilityId.SPRENGER, "uryu.shikai.sprenger", URYU, ZanpakutoState.SHIKAI, 1, 250, 280, 73),
 			new Row(AbilityId.SEELE_SCHNEIDER, "uryu.shikai.seele_schneider", URYU, ZanpakutoState.SHIKAI, 2, 100, 100, 74),
 			new Row(AbilityId.WING_BARRAGE, "uryu.bankai.wing_barrage", URYU, ZanpakutoState.BANKAI, 0, 280, 440, 75),
-			new Row(AbilityId.HOMING_VOLLEY, "uryu.bankai.homing_volley", URYU, ZanpakutoState.BANKAI, 1, 300, 320, 76),
+			new Row(AbilityId.LICHT_REGEN, "uryu.bankai.licht_regen", URYU, ZanpakutoState.BANKAI, 1, 350, 480, 76),
 			new Row(AbilityId.STERNENSTAUB, "uryu.bankai.sternenstaub", URYU, ZanpakutoState.BANKAI, 2, 500, 800, 77));
 
 	/** A machine of the character in the state of the row (bankai through the real release, then the settle lock is waited out). */
