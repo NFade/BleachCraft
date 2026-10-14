@@ -348,6 +348,13 @@ public final class ZanpakutoManager {
 	 */
 	public static TransitionResult performShunpo(ServerPlayerEntity p, RequestSource source, int seq) {
 		Session s = session(p);
+		if (dev.minebleach.reiatsutest.server.uryu.SprengerBinds.shunpoBanned(p)) {
+			// Uryu's Sprenger roots the one inside the pentagon and forbids the shunpo until the root ends (time, damage, explosion);
+			// answered like a cooldown (the shunpo cell shakes), no cost and no cooldown, with its own action bar message
+			p.sendMessage(net.minecraft.text.Text.translatable("message.reiatsu_test.denied.shunpo_bound"), true);
+			reply(p, seq, ResultCode.COOLDOWN);
+			return new TransitionResult(ResultCode.COOLDOWN, dev.minebleach.reiatsutest.core.state.RejectReason.ON_COOLDOWN, s.sm.state(), s.sm.state(), java.util.List.of());
+		}
 		CharacterId held = ModItems.characterOf(p.getMainHandStack());
 		boolean ground = p.isOnGround();
 		double[] dir = ShunpoPath.direction(p.getYaw(), p.getPitch(), ground);
