@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import dev.minebleach.reiatsutest.core.combat.FrostMomentum;
 import dev.minebleach.reiatsutest.core.config.ConfigMigrations;
 import dev.minebleach.reiatsutest.core.kido.KidoConfig;
+import dev.minebleach.reiatsutest.core.movement.DoubleJumpConfig;
 import dev.minebleach.reiatsutest.core.rage.RageConfig;
 import dev.minebleach.reiatsutest.core.state.MechSpec;
 import dev.minebleach.reiatsutest.core.swarm.FlightConfig;
@@ -137,6 +138,12 @@ public final class ModConfig {
 			root.add(IceWallConfig.SECTION, rukia);
 		}, root -> root.has(IceWallConfig.SECTION) && root.get(IceWallConfig.SECTION).isJsonObject()
 				&& root.getAsJsonObject(IceWallConfig.SECTION).has(IceWallConfig.SUB));
+	}
+
+	/** The {@code "doubleJump"} section (shikai / bankai air jump, read by the client): {@code enabled}, {@code strength}. */
+	public static DoubleJumpConfig loadDoubleJump() {
+		return loadSection(DoubleJumpConfig.SECTION, DoubleJumpConfig::defaults, DoubleJumpConfig::fromRoot,
+				(c, root) -> root.add(DoubleJumpConfig.SECTION, c.toJson()));
 	}
 
 	/** The {@code "terrain"} section (R11 T9: abilities break blocks, profiles S / M / L, batches per tick, mob griefing). */
