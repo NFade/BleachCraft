@@ -73,6 +73,12 @@ class Positions(unittest.TestCase):
         out = c.convert(model("rightItem", [(0, "linear", (0.5, -4.2, 1.0)), (0.5, "linear", (0, 0, 0))], channel="position"), "a")
         self.assertEqual((first(out, "rightItem", "x"), first(out, "rightItem", "y"), first(out, "rightItem", "z")), (0.5, -4.2, 1.0))
 
+    def test_bow_prop_is_ignored_like_the_sword_prop(self):
+        m = model("bow_prop", [(0, "linear", (1, 2, 3))])
+        m["animations"][0]["animators"]["u2"] = model("head", [(0, "linear", (0, 1, 0)), (0.5, "linear", (0, 0, 0))])["animations"][0]["animators"]["u1"]
+        out = c.convert(m, "a")
+        self.assertTrue(all("bow_prop" not in mv for mv in out["emote"]["moves"]))
+
     def test_preview_prop_is_ignored(self):
         m = model("sword_prop", [(0, "linear", (1, 2, 3))])
         m["animations"][0]["animators"]["u2"] = model("head", [(0, "linear", (0, 1, 0)), (0.5, "linear", (0, 0, 0))])["animations"][0]["animators"]["u1"]

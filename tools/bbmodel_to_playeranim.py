@@ -15,7 +15,7 @@ degrees about Z. Rotations keep the ZYX Euler order, so:
 Position keys are offsets from the group origin in Blockbench space, playerAnimator wants the part position:
       x = rest_x - dx    y = rest_y - dy    z = rest_z + dz        (rest = vanilla pivot, game axes)
 Group `rightItem` (no cubes) carries the held item straight in GAME item-frame values, nothing is flipped:
-rotation degrees (x=pitch, y=yaw, z=roll) and position px (the grip-keeping offset). Group `sword_prop` is a preview aid and ignored.
+rotation degrees (x=pitch, y=yaw, z=roll) and position px (the grip-keeping offset). Groups `sword_prop` / `bow_prop` are preview aids and ignored.
 
 HEAD_AXES: only the head pitch is written. The head is not a child of the torso in game, and any keyed head axis
 replaces the vanilla value that follows the camera, so yaw and roll stay unkeyed (others keep seeing where you look).
@@ -31,7 +31,7 @@ import sys
 TICKS_PER_SECOND = 20
 
 ROTATING = ("head", "torso", "rightArm", "leftArm", "rightLeg", "leftLeg")
-IGNORED = {"sword_prop"}
+IGNORED = {"sword_prop", "bow_prop"}   # preview props (the Uryu bow prop of design/anim/uryu_poses.bbmodel)
 # vanilla part pivots in game axes
 REST_GAME = {
     "head": (0.0, 0.0, 0.0),
