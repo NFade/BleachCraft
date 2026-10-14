@@ -615,6 +615,7 @@ public final class FpMotion {
 	public static void renderLeftGuard(MatrixStack m, VertexConsumerProvider vcp, ClientPlayerEntity player, int light, ItemStack shown,
 			float equip) {
 		FpCast.renderFreeHands(m, vcp, player, light, shown, equip); // the empty hands of the Byakuya bankai (nothing for a sword in the hand)
+		UryuBowMotion.renderStringHand(m, vcp, player, light, shown, equip, frameGest); // U-FX 11: the string hand of Uryu's bow
 		if (!frameValid || frameLeftWeight <= 0.01f || !ClientOptions.showFirstPersonHand || player.isInvisible()
 				|| shown != player.getMainHandStack() || !(shown.getItem() instanceof ZanpakutoItem)) {
 			return;

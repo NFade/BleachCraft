@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.client.model;
 
 import dev.minebleach.reiatsutest.registry.UryuCrossItem;
+import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
@@ -15,7 +16,9 @@ import org.joml.Quaternionf;
  * along the arm. Both rotations are the XYZ Euler angles of the numbers below (degrees, as the display JSON), solved in
  * design/results/uryu_u4_u5.md with the vanilla frames ({@code HeldItemFeatureRenderer}: X -90, Y 180; {@code ModelPart.rotate}).
  * The display translation of the third person entries is zero, so the rotation about the hand origin is a rotation about the grip.
- * Right handed players only (the left hand mirrors the display; there the plain display is used).
+ * Right handed players only (the left hand mirrors the display; there the plain display is used). This is the FALLBACK: U-FX 11 ({@link UryuBowMotion}) drives the
+ * arm of every Uryu player holding the bow with its own animations and puts the matching correction instead; the constants below are used when
+ * {@code pose_override.json uryu_pose.enabled} is 0 or an animation file is missing.
  * Round 2: the display scales are 1.8 (first person) and 1.4 (third person); the nocked arrow, the string and the pull are baked in the same
  * model space, so they scale with the bow, and the pre-rotation about the grip does not depend on the scale.
  */
@@ -42,6 +45,15 @@ public final class UryuBowPose {
 
 	/** Pushes the correction (caller pops when true is returned). */
 	public static boolean push(LivingEntity entity, ItemStack stack, boolean leftHanded, MatrixStack matrices) {
+		// U-FX 11: while the pose layer drives the arm (idle, draw, release, the ability poses) the bow is kept upright in the moving hand, mirrored for a left hander
+		if (entity instanceof AbstractClientPlayerEntity player && UryuCrossItem.isBow(stack) && entity.getMainHandStack() == stack) {
+			Quaternionf q = UryuBowMotion.bowCorrection(player, leftHanded);
+			if (q != null) {
+				matrices.push();
+				matrices.multiply(q);
+				return true;
+			}
+		}
 		if (leftHanded || !drawing(entity, stack)) {
 			return false;
 		}
