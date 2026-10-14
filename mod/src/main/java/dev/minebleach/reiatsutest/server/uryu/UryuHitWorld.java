@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.server.uryu;
 
 import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
+import dev.minebleach.reiatsutest.core.uryu.Homing;
 import dev.minebleach.reiatsutest.server.UryuTargets;
 import java.util.List;
 import java.util.UUID;
@@ -52,6 +53,15 @@ final class UryuHitWorld implements ArrowSim.HitWorld {
 			return List.of();
 		}
 		return UryuTargets.arrowHits(world, caster, from, to, radius);
+	}
+
+	@Override
+	public List<Homing.Candidate> candidates(UUID owner, V3 pos, double radius) {
+		ServerPlayerEntity caster = server.getPlayerManager().getPlayer(owner);
+		if (caster == null || caster.isDead()) {
+			return List.of();
+		}
+		return UryuTargets.homingTargets(world, caster, pos, radius);
 	}
 
 	@Override

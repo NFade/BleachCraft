@@ -17,6 +17,10 @@ public final class UryuBalance {
 	public static final int FOCUS_INTERVAL_ARTERIE = 10;
 	/** Blocks per tick the player may move and still count as standing still (design: speed &lt; 0.02). */
 	public static final double FOCUS_MOVE_EPS = 0.02;
+	/** Horizontal blocks per tick below which a SNEAKING walk still keeps Focus (normal sneak speed is about 0.065). */
+	public static final double FOCUS_SNEAK_SPEED = 0.09;
+	/** Ticks after a shunpo in which Focus is neither built nor reset (the teleport is not walking). */
+	public static final int FOCUS_GRACE_TICKS = 3;
 	/** Damage and speed factor by stack count 0..3 (+25, +60, +100 percent). */
 	private static final double[] FOCUS_FACTOR = {1.0, 1.25, 1.6, 2.0};
 	/** From this many stacks the arrow pierces one extra target and ignores gravity. */
@@ -38,10 +42,34 @@ public final class UryuBalance {
 	public static final float BASIC_DAMAGE = 4.0F;
 	/** Factor of the basic shot while Blut Arterie is on (SHIKAI and BANKAI, +20 percent). */
 	public static final double ARTERIE_SHOT_FACTOR = 1.2;
-	/** Ticks between two basic shots (1 s). */
-	public static final int BASIC_COOLDOWN = 20;
-	/** Heilig Pfeil: Focus shot (Z), HP. */
+	/** Ticks between two basic shots (anti spam only; the draw time is the real pause). */
+	public static final int BASIC_COOLDOWN = 4;
+	/** Heilig Pfeil: homing arrow (Z), HP, base damage before Focus. */
 	public static final float FOCUS_SHOT_DAMAGE = 7.0F;
+	/** Speed of the Z arrow in blocks per tick (faster than the basic shot, before Focus). */
+	public static final double Z_ARROW_SPEED = 2.4;
+	/** Life of the Z arrow in ticks (it has to be able to catch a target that runs). */
+	public static final int Z_ARROW_LIFE = 60;
+
+	// ---------------------------------------------------------------- bow (revision 2: vanilla draw, no slowdown)
+	/** Ticks of drawing for full power (vanilla: 20). */
+	public static final int BOW_FULL_DRAW_TICKS = 20;
+	/** A release under this power fires nothing (vanilla: 0.1). */
+	public static final double BOW_MIN_POWER = 0.1;
+	/** Share of the full arrow speed that even a minimal draw keeps (speed factor = this + (1 - this) * power). */
+	public static final double BOW_MIN_SPEED_SHARE = 0.3;
+
+	// ---------------------------------------------------------------- homing (revision 2: every arrow homes)
+	/** Passive homing of the basic shot: degrees per tick, radius in blocks, half opening angle of the cone in degrees. */
+	public static final double BASIC_HOMING_DEG = 2.5;
+	public static final double BASIC_HOMING_RADIUS = 14.0;
+	public static final double BASIC_HOMING_CONE_DEG = 60.0;
+	/** Strong homing of the Z arrow. */
+	public static final double Z_HOMING_DEG = 10.0;
+	public static final double Z_HOMING_RADIUS = 20.0;
+	public static final double Z_HOMING_CONE_DEG = 100.0;
+	/** A locked target is kept until it is farther than radius times this (or hidden behind a block). */
+	public static final double HOMING_KEEP_FACTOR = 1.25;
 
 	// ---------------------------------------------------------------- Sprenger (H, SHIKAI)
 	public static final double SPRENGER_RANGE = 20.0;

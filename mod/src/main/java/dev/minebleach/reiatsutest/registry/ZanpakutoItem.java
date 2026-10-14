@@ -57,7 +57,8 @@ public class ZanpakutoItem extends Item {
 	 * becomes true after 5 ticks (shield delay), which would eat the 4 tick parry window.
 	 */
 	public static boolean isBlocking(LivingEntity entity) {
-		return entity.isUsingItem() && entity.getActiveItem().getItem() instanceof ZanpakutoItem;
+		// Uryu's use hold is the bow draw (UseAction.BOW), never a block: no parry window, no ability lock, no block pose
+		return entity.isUsingItem() && entity.getActiveItem().getItem() instanceof ZanpakutoItem && !(entity.getActiveItem().getItem() instanceof UryuCrossItem);
 	}
 
 	/** Ticks since the block began (0 on the tick the right button went down), or -1 when not blocking. */

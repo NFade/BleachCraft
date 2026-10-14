@@ -54,11 +54,24 @@ public final class ArrowSim {
 
 		/** The point a homing arrow aims at for this entity, or null when it is gone (the arrow then flies straight on). */
 		V3 targetPosition(int entityId);
+
+		/**
+		 * Valid targets (the usual target rules of the owner: never the owner, no creative or spectating player) within {@code radius}
+		 * of {@code pos}, for the passive homing. Default: none.
+		 */
+		default List<Homing.Candidate> candidates(UUID owner, V3 pos, double radius) {
+			return List.of();
+		}
 	}
 
 	/** Everything needed to launch an arrow. */
 	public record Spec(UUID owner, Kind kind, V3 pos, V3 vel, double gravity, float damage, int life, int pierce, double radius,
-			int homingTarget, double turnRadPerTick, int focus) {
+			int homingTarget, double turnRadPerTick, int focus, Homing.Params auto) {
+		/** An arrow without passive homing (a fixed target may still be given). */
+		public Spec(UUID owner, Kind kind, V3 pos, V3 vel, double gravity, float damage, int life, int pierce, double radius,
+				int homingTarget, double turnRadPerTick, int focus) {
+			this(owner, kind, pos, vel, gravity, damage, life, pierce, radius, homingTarget, turnRadPerTick, focus, null);
+		}
 	}
 
 	public static final class Arrow {
@@ -75,6 +88,9 @@ public final class ArrowSim {
 		private int homingTarget;
 		private final double turn;
 		private final int focus;
+		private final Homing.Params auto;
+		private int lockId = -1;
+		private boolean steering;
 		private final Set<Integer> hit = new HashSet<>();
 		private boolean dead;
 
@@ -92,6 +108,7 @@ public final class ArrowSim {
 			this.homingTarget = s.homingTarget();
 			this.turn = s.turnRadPerTick();
 			this.focus = s.focus();
+			this.auto = s.auto();
 		}
 
 		public int id() {
@@ -133,6 +150,16 @@ public final class ArrowSim {
 		/** Stacks of Focus the arrow was shot with. */
 		public int focus() {
 			return focus;
+		}
+
+		/** True when the arrow steered towards a target on its last tick. */
+		public boolean steering() {
+			return steering;
+		}
+
+		/** Entity id of the passive homing target, or -1. */
+		public int lockedTarget() {
+			return lockId;
 		}
 
 		public boolean hasHit(int entityId) {
@@ -210,6 +237,23 @@ public final class ArrowSim {
 
 	private static void stepOne(Arrow a, HitWorld w, List<Event> out) {
 		V3 from = a.pos;
+		a.steering = false;
+		if (a.homingTarget < 0 && a.auto != null && a.auto.active()) {
+			// passive homing: the nearest valid target in front (players first), kept while it stays valid, steering with a turn limit
+			double speed = a.vel.length();
+			V3 dir = a.vel.normalizedOr(new V3(0, 0, 1));
+			List<Homing.Candidate> cs = w.candidates(a.owner, a.pos, a.auto.radius() * UryuBalance.HOMING_KEEP_FACTOR);
+			Homing.Candidate c = Homing.pick(a.pos, dir, cs, a.auto, a.lockId, UryuBalance.HOMING_KEEP_FACTOR,
+					cand -> !a.hit.contains(cand.id()) && w.raycastBlock(a.pos, cand.pos()) < 0.0);
+			if (c == null) {
+				a.lockId = -1;
+			} else {
+				a.lockId = c.id();
+				V3 aim = c.pos().sub(a.pos).normalizedOr(dir);
+				a.vel = turnToward(dir, aim, a.auto.turnRad()).scale(speed);
+				a.steering = true;
+			}
+		}
 		if (a.homingTarget >= 0) {
 			V3 want = w.targetPosition(a.homingTarget);
 			if (want == null) {

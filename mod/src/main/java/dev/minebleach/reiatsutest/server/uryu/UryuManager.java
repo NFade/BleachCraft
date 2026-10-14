@@ -7,6 +7,7 @@ import dev.minebleach.reiatsutest.core.state.StateMachine;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
+import dev.minebleach.reiatsutest.core.uryu.BowDraw;
 import dev.minebleach.reiatsutest.core.uryu.Focus;
 import dev.minebleach.reiatsutest.core.uryu.Hirenkyaku;
 import dev.minebleach.reiatsutest.core.uryu.LichtRegen;
@@ -40,6 +41,8 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -111,15 +114,7 @@ public final class UryuManager {
 				}
 			}
 		});
-		// a hit that really hurts takes the Focus (the knockback of design section 3)
-		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
-			if (!blocked && damageTaken > 0.0F && entity instanceof ServerPlayerEntity p) {
-				Data d = PLAYERS.get(p.getUuid());
-				if (d != null && d.focus.reset()) {
-					show(p, d);
-				}
-			}
-		});
+		// being pushed takes the Focus: the knockback hook ({@link #onPushed}, called from LivingEntityMixin) replaces the old damage hook
 		ServerLifecycleEvents.SERVER_STARTED.register(srv -> clearAll());
 		ServerLifecycleEvents.SERVER_STOPPING.register(srv -> clearAll());
 	}
@@ -241,20 +236,46 @@ public final class UryuManager {
 			d.lastState = st;
 		}
 		Vec3d pos = p.getPos();
-		double speed = d.lastPos == null ? 1.0 : pos.distanceTo(d.lastPos);
+		// horizontal speed only: a step up or a fall is judged by the ground flag, not by the speed
+		double speed = d.lastPos == null ? 1.0 : Math.hypot(pos.x - d.lastPos.x, pos.z - d.lastPos.z);
 		d.lastPos = pos;
-		d.focus.tick(p.isOnGround(), p.isSprinting(), speed, arterie(m));
+		d.focus.tick(p.isOnGround(), p.isSprinting(), p.isSneaking(), speed, arterie(m));
 		show(p, d);
 	}
 
-	/** The pips of Focus on the action bar (placeholder for the HUD), only when the count changed. */
+	/** Syncs the stack count to the owner (HUD pips), only when it changed. */
 	private static void show(ServerPlayerEntity p, Data d) {
 		int s = d.focus.stacks();
 		if (s == d.shown) {
 			return;
 		}
 		d.shown = s;
-		p.sendMessage(Text.literal("Focus " + "*".repeat(s) + ".".repeat(UryuBalance.FOCUS_MAX - s)), true);
+		UryuNet.sendFocus(p, s, p.getServer() == null ? 0 : p.getServer().getTicks());
+	}
+
+	/**
+	 * Called by {@code LivingEntityMixin.takeKnockback} (server): a hit or any ability of another character pushes a player. Takes the
+	 * Focus of an Uryu. Nothing for anybody else.
+	 */
+	public static void onPushed(LivingEntity e) {
+		if (e instanceof ServerPlayerEntity p) {
+			Data d = PLAYERS.get(p.getUuid());
+			if (d != null && d.focus.reset()) {
+				show(p, d);
+			}
+		}
+	}
+
+	/**
+	 * Called by {@code ZanpakutoManager} right after a shunpo teleported the player: the jump in position is not walking, so Focus is
+	 * neither reset nor built for the next ticks ("shunpo does not reset Focus").
+	 */
+	public static void onShunpo(ServerPlayerEntity p, double toX, double toY, double toZ) {
+		Data d = PLAYERS.get(p.getUuid());
+		if (d != null) {
+			d.lastPos = new Vec3d(toX, toY, toZ);
+			d.focus.grace();
+		}
 	}
 
 	// ------------------------------------------------------------------ arrows
@@ -300,6 +321,7 @@ public final class UryuManager {
 				if (caster == null || !(target instanceof LivingEntity le)) {
 					return;
 				}
+				UryuNet.sendImpact(w, e.to(), UryuArrowsS2C.IMPACT_ENTITY, e.kind().ordinal(), now);
 				boolean rain = e.kind() == ArrowSim.Kind.RAIN;
 				boolean reset = rain || e.kind() == ArrowSim.Kind.VOLLEY;
 				RegistryKey<DamageType> type = rain ? DamageTypes.INDIRECT_MAGIC : DamageTypes.ARROW; // the rain ignores armor
@@ -311,6 +333,7 @@ public final class UryuManager {
 					detonateTouched(srv, w, e);
 				}
 			}
+			case BLOCKED -> UryuNet.sendImpact(w, e.to(), UryuArrowsS2C.IMPACT_BLOCK, e.kind().ordinal(), now);
 			default -> { }
 		}
 	}
@@ -329,15 +352,20 @@ public final class UryuManager {
 		return new Vec3d(v.x(), v.y(), v.z());
 	}
 
-	// ------------------------------------------------------------------ basic shot and Z
+	// ------------------------------------------------------------------ bow shot and Z
 
 	/**
-	 * The right click shot of the Quincy cross (BASE, SHIKAI and BANKAI): Heilig Pfeil, no reiatsu, 1 s between two shots, uses and
-	 * clears the Focus. False when the player is not Uryu with the bow drawn or the shot is still on cooldown.
+	 * The release of the drawn Heilig Bogen (BASE, SHIKAI and BANKAI), called on the SERVER by {@code UryuCrossItem.onStoppedUsing}
+	 * (the server sees the release of the use key): the vanilla power curve of the draw time, nothing under 0.1 power, the damage and
+	 * the speed scale with the power, uses and clears the Focus, no reiatsu, no ammo. False when nothing was fired.
 	 */
-	public static boolean basicShot(ServerPlayerEntity p) {
+	public static boolean releaseBow(ServerPlayerEntity p, int drawTicks) {
 		StateMachine m = ZanpakutoManager.machine(p);
-		if (!isUryu(m) || m.state() == ZanpakutoState.SEALED || p.isDead() || p.isSpectator()) {
+		if (!isUryu(m) || p.isDead() || p.isSpectator()) {
+			return false;
+		}
+		double power = BowDraw.power(drawTicks);
+		if (!BowDraw.fires(power)) {
 			return false;
 		}
 		Data d = data(p);
@@ -348,21 +376,27 @@ public final class UryuManager {
 		d.lastShot = now;
 		int stacks = d.focus.consume();
 		show(p, d);
-		Shots.Params sp = Shots.basic(stacks, arterie(m));
+		Shots.Params sp = Shots.basic(stacks, arterie(m), power);
 		shoot(p, sp, ArrowSim.Kind.BASIC);
-		ReiatsuTest.LOGGER.info("[uryu] {} basic shot focus={} damage={} speed={}", p.getName().getString(), stacks, sp.damage(), sp.speed());
+		p.getServerWorld().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.PLAYERS, 1.0F,
+				1.0F / (p.getRandom().nextFloat() * 0.4F + 1.2F) + (float) power * 0.5F);
+		ReiatsuTest.LOGGER.info("[uryu] {} bow release ticks={} power={} focus={} damage={} speed={} homing={}deg", p.getName().getString(), drawTicks,
+				String.format(java.util.Locale.ROOT, "%.2f", power), stacks, sp.damage(), String.format(java.util.Locale.ROOT, "%.2f", sp.speed()),
+				String.format(java.util.Locale.ROOT, "%.1f", Math.toDegrees(sp.homing().turnRad())));
 		return true;
 	}
 
-	/** Heilig Pfeil: Focus shot (Z, SHIKAI): 7 HP base, all stacks used. */
+	/** Heilig Pfeil: the homing arrow (Z, SHIKAI): 7 HP base, strong homing, all Focus stacks used. */
 	public static void focusShot(ServerPlayerEntity p) {
 		Data d = data(p);
 		int stacks = d.focus.consume();
 		show(p, d);
 		Shots.Params sp = Shots.focusShot(stacks);
 		shoot(p, sp, ArrowSim.Kind.FOCUS);
-		ReiatsuTest.LOGGER.info("[uryu] {} focus shot focus={} damage={} speed={} pierce={}", p.getName().getString(), stacks, sp.damage(), sp.speed(),
-				sp.pierce());
+		p.getServerWorld().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.PLAYERS, 1.2F, 1.6F);
+		ReiatsuTest.LOGGER.info("[uryu] {} homing arrow (Z) focus={} damage={} speed={} pierce={} homing={}deg radius={}", p.getName().getString(), stacks, sp.damage(),
+				String.format(java.util.Locale.ROOT, "%.2f", sp.speed()), sp.pierce(), String.format(java.util.Locale.ROOT, "%.1f", Math.toDegrees(sp.homing().turnRad())),
+				sp.homing().radius());
 	}
 
 	private static void shoot(ServerPlayerEntity p, Shots.Params sp, ArrowSim.Kind kind) {
@@ -370,8 +404,8 @@ public final class UryuManager {
 		Vec3d look = p.getRotationVec(1.0F).normalize();
 		V3 pos = new V3(eye.x + look.x * 0.3, eye.y - 0.1 + look.y * 0.3, eye.z + look.z * 0.3);
 		V3 vel = new V3(look.x * sp.speed(), look.y * sp.speed(), look.z * sp.speed());
-		spawn(p.getServerWorld(), new ArrowSim.Spec(p.getUuid(), kind, pos, vel, sp.gravity(), sp.damage(), UryuBalance.ARROW_LIFE, sp.pierce(),
-				UryuBalance.ARROW_RADIUS, -1, 0.0, sp.focus()));
+		spawn(p.getServerWorld(), new ArrowSim.Spec(p.getUuid(), kind, pos, vel, sp.gravity(), sp.damage(), sp.life(), sp.pierce(),
+				UryuBalance.ARROW_RADIUS, -1, 0.0, sp.focus(), sp.homing()));
 	}
 
 	// ------------------------------------------------------------------ Sprenger

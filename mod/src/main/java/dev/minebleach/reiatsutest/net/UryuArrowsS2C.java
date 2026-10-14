@@ -7,7 +7,7 @@ import net.minecraft.network.packet.CustomPayload;
 
 /**
  * S2C of Uryu's placeholder visuals. {@link #ARROWS}: the full list of Heilig Pfeil near the receiver this tick, {@code ids[i]} and
- * {@code data[7 i .. 7 i + 6]} = x y z vx vy vz focus; an empty list clears them. {@link #BURST}: data = {x, y, z, radius, early (0/1)},
+ * {@code data[7 i .. 7 i + 6]} = x y z vx vy vz flags (flags = focus + 4 * kind ordinal + 32 * steering); an empty list clears them. {@link #BURST}: data = {x, y, z, radius, early (0/1)},
  * a Sprenger explosion. {@link #LINE}: data = {x1, y1, z1, x2, y2, z2, half width}, the Sternenstaub. {@link #TRAP}: data = {x, y, z, radius, ticks to the explosion}, a new Sprenger pentagon.
  */
 public record UryuArrowsS2C(byte kind, int tick, int[] ids, float[] data) implements CustomPayload {
@@ -15,6 +15,12 @@ public record UryuArrowsS2C(byte kind, int tick, int[] ids, float[] data) implem
 	public static final byte BURST = 1;
 	public static final byte LINE = 2;
 	public static final byte TRAP = 3;
+	/** data = {x, y, z, type (IMPACT_ENTITY / IMPACT_BLOCK), arrow kind ordinal}: a hit spark. */
+	public static final byte IMPACT = 4;
+	/** ids = {stacks of Focus}, sent only to the owner when the count changes (HUD pips). */
+	public static final byte FOCUS = 5;
+	public static final int IMPACT_ENTITY = 0;
+	public static final int IMPACT_BLOCK = 1;
 	public static final int MAX_ARROWS = 48;
 	public static final int PER_ARROW = 7;
 

@@ -406,6 +406,7 @@ public final class ZanpakutoManager {
 				}
 				case StateEvent.ShunpoMove m -> {
 					p.networkHandler.requestTeleport(m.toX(), m.toY(), m.toZ(), p.getYaw(), p.getPitch());
+					dev.minebleach.reiatsutest.server.uryu.UryuManager.onShunpo(p, m.toX(), m.toY(), m.toZ()); // a shunpo does not reset Uryu's Focus
 					// shunpo works in any state: tint by the released character, else by the sword in hand, else the default
 						CharacterId who = s.sm.character() != CharacterId.NONE ? s.sm.character() : ModItems.characterOf(p.getMainHandStack());
 						ServerFx.shunpo(p, m, who);

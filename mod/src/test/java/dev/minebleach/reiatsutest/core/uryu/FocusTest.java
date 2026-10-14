@@ -118,16 +118,16 @@ class FocusTest {
 	void shotsScaleDamageAndSpeedAndFullFocusPiercesWithoutGravity() {
 		Shots.Params p0 = Shots.focusShot(0);
 		assertEquals(7.0f, p0.damage(), 1e-6);
-		assertEquals(2.2, p0.speed(), 1e-9);
+		assertEquals(UryuBalance.Z_ARROW_SPEED, p0.speed(), 1e-9);
 		assertEquals(UryuBalance.ARROW_GRAVITY, p0.gravity(), 1e-9);
 		assertEquals(0, p0.pierce());
 		assertEquals(7.0f * 1.25f, Shots.focusShot(1).damage(), 1e-5);
 		assertEquals(7.0f * 1.6f, Shots.focusShot(2).damage(), 1e-5);
-		assertEquals(2.2 * 1.6, Shots.focusShot(2).speed(), 1e-9);
+		assertEquals(UryuBalance.Z_ARROW_SPEED * 1.6, Shots.focusShot(2).speed(), 1e-9);
 		assertEquals(0, Shots.focusShot(2).pierce());
 		Shots.Params p3 = Shots.focusShot(3);
 		assertEquals(14.0f, p3.damage(), 1e-5);
-		assertEquals(4.4, p3.speed(), 1e-9);
+		assertEquals(UryuBalance.Z_ARROW_SPEED * 2.0, p3.speed(), 1e-9);
 		assertEquals(0.0, p3.gravity(), 0.0);
 		assertEquals(1, p3.pierce());
 		assertEquals(3, p3.focus());
@@ -139,7 +139,7 @@ class FocusTest {
 		assertEquals(4.8f, Shots.basic(0, true).damage(), 1e-5);
 		assertEquals(8.0f, Shots.basic(3, false).damage(), 1e-5);
 		assertEquals(9.6f, Shots.basic(3, true).damage(), 1e-5);
-		assertEquals(20, UryuBalance.BASIC_COOLDOWN);
+		assertEquals(4, UryuBalance.BASIC_COOLDOWN);
 	}
 
 	@Test

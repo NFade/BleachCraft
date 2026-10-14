@@ -56,7 +56,7 @@ final class UryuNet {
 				data[o + 3] = (float) v.x();
 				data[o + 4] = (float) v.y();
 				data[o + 5] = (float) v.z();
-				data[o + 6] = a.focus();
+				data[o + 6] = a.focus() + 4 * a.kind().ordinal() + (a.steering() ? 32 : 0);
 				n++;
 			}
 			send(pl, n, ids, data, tick);
@@ -82,6 +82,18 @@ final class UryuNet {
 		SEEN.add(pl.getUuid());
 		ServerPlayNetworking.send(pl, new UryuArrowsS2C(UryuArrowsS2C.ARROWS, tick, java.util.Arrays.copyOf(ids, n),
 				java.util.Arrays.copyOf(data, n * UryuArrowsS2C.PER_ARROW)));
+	}
+
+	/** The Focus stacks to the owner only (HUD pips). */
+	static void sendFocus(ServerPlayerEntity pl, int stacks, int tick) {
+		if (ServerPlayNetworking.canSend(pl, UryuArrowsS2C.ID)) {
+			ServerPlayNetworking.send(pl, new UryuArrowsS2C(UryuArrowsS2C.FOCUS, tick, new int[] {stacks}, new float[0]));
+		}
+	}
+
+	/** A hit spark at {@code at} for everybody near. */
+	static void sendImpact(ServerWorld world, V3 at, int type, int kind, int tick) {
+		sendEffect(world, at.x(), at.y(), at.z(), UryuArrowsS2C.IMPACT, tick, new float[] {(float) at.x(), (float) at.y(), (float) at.z(), type, kind});
 	}
 
 	/** An effect packet ({@link UryuArrowsS2C#BURST}, {@link UryuArrowsS2C#LINE}, {@link UryuArrowsS2C#TRAP}) to everybody near {@code at}. */

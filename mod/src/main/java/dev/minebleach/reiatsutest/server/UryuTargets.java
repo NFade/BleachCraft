@@ -4,6 +4,7 @@ import dev.minebleach.reiatsutest.core.combat.HitRules;
 import dev.minebleach.reiatsutest.core.swarm.SweepMath;
 import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
+import dev.minebleach.reiatsutest.core.uryu.Homing;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.entity.LivingEntity;
@@ -57,6 +58,26 @@ public final class UryuTargets {
 		} finally {
 			DmgLog.end();
 		}
+	}
+
+	/**
+	 * Targets of the passive homing: every valid living entity (the usual rules: not the caster, no spectator, no immune type, players
+	 * as {@code affectPlayers} and PvP allow) whose box centre lies within {@code radius} of {@code pos}, without creative players. The
+	 * aim point is the centre of the box. No log lines.
+	 */
+	public static List<Homing.Candidate> homingTargets(ServerWorld world, ServerPlayerEntity caster, V3 pos, double radius) {
+		Box box = new Box(pos.x() - radius, pos.y() - radius, pos.z() - radius, pos.x() + radius, pos.y() + radius, pos.z() + radius);
+		List<LivingEntity> near = world.getEntitiesByClass(LivingEntity.class, box,
+				e -> Targeting.valid(caster, e) && !(e instanceof ServerPlayerEntity sp && sp.isCreative()));
+		List<Homing.Candidate> out = new ArrayList<>(near.size());
+		for (LivingEntity e : near) {
+			Vec3d c = e.getBoundingBox().getCenter();
+			if (c.squaredDistanceTo(pos.x(), pos.y(), pos.z()) <= radius * radius) {
+				out.add(new Homing.Candidate(e.getId(), new V3(c.x, c.y, c.z), e instanceof net.minecraft.entity.player.PlayerEntity));
+			}
+		}
+		out.sort(java.util.Comparator.comparingInt(Homing.Candidate::id)); // a fixed order, so the flight is deterministic
+		return out;
 	}
 
 	/**

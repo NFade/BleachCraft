@@ -68,6 +68,8 @@ public abstract class LivingEntityMixin {
 		if (!self.getWorld().isClient && BarrierRules.blocksKnockback(ZanpakutoManager.barrierControlImmune(self))) {
 			ZanpakutoManager.noteBarrierRefused(self, "knockback");
 			ci.cancel();
+		} else if (!self.getWorld().isClient) {
+			dev.minebleach.reiatsutest.server.uryu.UryuManager.onPushed(self); // a push takes the Focus of an Uryu (no-op for everybody else)
 		}
 	}
 }
