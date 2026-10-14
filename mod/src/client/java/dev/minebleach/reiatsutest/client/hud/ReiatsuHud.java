@@ -75,6 +75,7 @@ public final class ReiatsuHud {
 		}
 		if (!FxConfig.hud) {
 			LegacyHud.render(ctx, tick);
+			SideHud.renderLegacy(ctx, mc);
 			return;
 		}
 		long t0 = System.nanoTime();
@@ -92,6 +93,7 @@ public final class ReiatsuHud {
 		GFX.flush();
 		long a1 = System.nanoTime();
 		StripHud.draw(GFX, mc, font, w, h);
+		SideHud.draw(GFX, mc, font, w, h, o[1] + 72); // kido corner (bottom left) and shunpo cell (left centre)
 		GFX.flush();
 		long a2 = System.nanoTime();
 		OverlayHud.drawToasts(GFX, font, w, h, o[0], o[1]);

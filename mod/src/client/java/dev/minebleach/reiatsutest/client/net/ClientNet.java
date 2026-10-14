@@ -99,6 +99,7 @@ public final class ClientNet {
 	public static int castKido(KidoId kido, RequestSource source) {
 		int seq = SEQ.incrementAndGet();
 		remember(seq, new HudModel.Request(false, null, null));
+		dev.minebleach.reiatsutest.client.hud.SideHud.noteKido(seq, kido);
 		ClientPlayNetworking.send(new CastKidoC2S(kido.code, source.code(), seq));
 		ReiatsuTest.LOGGER.info("[client] cast_kido {} seq={} ({})", kido.commandId, seq, source);
 		return seq;
@@ -108,6 +109,7 @@ public final class ClientNet {
 	public static int requestShunpo(RequestSource source) {
 		int seq = SEQ.incrementAndGet();
 		remember(seq, new HudModel.Request(false, null, null));
+		dev.minebleach.reiatsutest.client.hud.SideHud.noteShunpo(seq);
 		ClientPlayNetworking.send(new ShunpoC2S(source.code(), seq));
 		ReiatsuTest.LOGGER.info("[client] shunpo seq={} ({})", seq, source);
 		return seq;
@@ -127,6 +129,7 @@ public final class ClientNet {
 			RESULTS.add(r.clientSeq() + ":" + code);
 		}
 		HudModel.Request req = REQUESTS.remove(r.clientSeq());
+		dev.minebleach.reiatsutest.client.hud.SideHud.onResult(r.clientSeq(), code);
 		if (code == ResultCode.OK && req != null && req.ability() == AbilityId.MODE_ATTACK) {
 			dev.minebleach.reiatsutest.client.input.BladeSteer.onAccepted(); // the swarm is out: holding the key steers it
 		}
