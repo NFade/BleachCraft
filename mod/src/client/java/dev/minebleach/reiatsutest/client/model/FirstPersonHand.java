@@ -112,7 +112,7 @@ public final class FirstPersonHand {
 
 	public static void render(LivingEntity entity, ItemStack stack, ModelTransformationMode mode, boolean leftHanded,
 			MatrixStack m, VertexConsumerProvider vcp, int light) {
-		if (!ClientOptions.showFirstPersonHand || !mode.isFirstPerson() || !(stack.getItem() instanceof ZanpakutoItem)
+		if (FpBow.active() || !ClientOptions.showFirstPersonHand || !mode.isFirstPerson() || !(stack.getItem() instanceof ZanpakutoItem)
 				|| !(entity instanceof AbstractClientPlayerEntity player) || player.isInvisible()) {
 			return;
 		}

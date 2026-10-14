@@ -209,10 +209,7 @@ public final class ObjItemBakedModel implements BakedModel {
 		}
 	}
 
-	/** How far (model units = blocks) the nock point travels back along the arrow axis at full draw, and where the draw starts. */
-	private static final float PULL_START = 0.04f;
-	private static final float PULL_TRAVEL = 0.26f;
-
+	
 	/**
 	 * The drawn Heilig Bogen: bow, the V string whose middle vertices (model y = 0.5) are pulled back towards the archer (model -Z, the
 	 * string side of the exported bow) by the draw, and the arrow lying on the grip with its tail on the string. The draw follows the same
@@ -223,13 +220,13 @@ public final class ObjItemBakedModel implements BakedModel {
 		QuadEmitter em = context.getEmitter();
 		float td = net.minecraft.client.MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);
 		double pull = dev.minebleach.reiatsutest.core.uryu.BowDraw.powerAt(archer.getItemUseTime() + td);
-		final float back = PULL_START + PULL_TRAVEL * (float) pull;
+		final float back = dev.minebleach.reiatsutest.core.uryu.BowDraw.nockBack(pull);
 		b.bow.outputTo(em);
 		if (b.bowGlow != null) {
 			b.bowGlow.outputTo(em);
 		}
 		// the arrow: the OBJ arrow lies along +Y from its tail; turn it onto +Z ((x, y, z) -> (x, -z, y) after centring) and put the tail on the nock
-		final float nockZ = 0.395f - back;
+		final float nockZ = dev.minebleach.reiatsutest.core.uryu.BowDraw.STRING_Z - back;
 		context.pushTransform(q -> {
 			Vector3f v = new Vector3f();
 			for (int c = 0; c < 4; c++) {

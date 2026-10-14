@@ -140,6 +140,11 @@ public final class FpMotion {
 	private FpMotion() {
 	}
 
+	/** The tunable numbers (dev override file), for the other first person poses (FpBow). */
+	public static FpParams params() {
+		return PARAMS;
+	}
+
 	/** Registers the Better Combat strike start event (client init). */
 	public static void init() {
 		BetterCombatClientEvents.ATTACK_START.register(FpMotion::onAttackStart);
@@ -585,7 +590,7 @@ public final class FpMotion {
 	 * was pushed; the caller pops it after the sword is drawn.
 	 */
 	public static boolean push(ClientPlayerEntity player, ItemStack stack, ModelTransformationMode mode, boolean leftHanded, MatrixStack m) {
-		if (!frameValid || current.isNearZero()) {
+		if (!frameValid || current.isNearZero() || FpBow.active()) {
 			return false;
 		}
 		MinecraftClient mc = MinecraftClient.getInstance();

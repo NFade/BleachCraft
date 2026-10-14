@@ -46,4 +46,21 @@ public final class BowDraw {
 	public static double visualPull(int ticks) {
 		return power(ticks);
 	}
+
+	/** Client animation: where the nock point starts behind the string (model units = blocks of the bow model). */
+	public static final float NOCK_START = 0.04f;
+	/** Client animation: how far the nock point travels back along the arrow axis at full draw. */
+	public static final float NOCK_TRAVEL = 0.26f;
+	/** Model z of the resting string (the string side of the exported bow, centre of the model cube = 0.5). */
+	public static final float STRING_Z = 0.395f;
+
+	/** How far (model units) the nock point is pulled back from the resting string for a draw progress 0..1. */
+	public static float nockBack(double pull) {
+		return NOCK_START + NOCK_TRAVEL * (float) Math.max(0.0, Math.min(1.0, pull));
+	}
+
+	/** Model z of the nock point (string middle and arrow tail) for a draw progress 0..1; the grip is at z = 0.5. */
+	public static float nockZ(double pull) {
+		return STRING_Z - nockBack(pull);
+	}
 }

@@ -22,7 +22,8 @@ public final class BladeRowLayout {
 	public static final double RISE_TIME = 0.45;
 	/** The sunk blade is hidden this far under its rest height, mesh metres, beyond the length of the blade ({@link #sinkDepth()}). */
 	public static final double SINK_MARGIN = 0.5;
-	public static final double LEAN_DEG = 3.0;
+	/** R12 pass 2: 0. The shafts of the blades in the anime frame (ep52) are vertical: the left edge of the nearest blade drifts 4 px over 440 px, 0.5 degrees; only the point of the blade is bent. The lean machinery stays (a seeded jitter of up to 0.5 degrees remains). */
+	public static final double LEAN_DEG = 0.0;
 
 	// ---- r7: the wall of slab blades (references ep52 / ep58 of the anime: pages of a book). R11 T13: the mesh is the user's straight blade, its size
 	// (length 5.5, width 0.4026, thickness 0.1477) comes from the meta through BladeSpec, not from constants of the old 8 m scimitar.
@@ -30,6 +31,8 @@ public final class BladeRowLayout {
 	public static final int DEFAULT_PER_SIDE = 10;
 	/** Uniform scale of the blades (bankai.bladeScale): 1.0 = the mesh as it is, 5.5 blocks tall (3 heights of Byakuya, measured on the anime). */
 	public static final double DEFAULT_BLADE_SCALE = 1.0;
+	/** Width of the blades across the lane relative to the mesh (bankai.bladeWidth): the frame ep52 has a length : width ratio of about 10, the mesh 13.7, and the user asked for broader blades seen along the lane. Thickness and length stay. */
+	public static final double DEFAULT_WIDTH_FACTOR = 1.35;
 	/** Distance from the axis to the blade bases (rows.halfWidth): lane wide open around the caster. */
 	public static final double DEFAULT_HALF_WIDTH = 7.0;
 	/** Distance between neighbours along the row (rows.spacing): with the 0.1477 thick slab the gap is 0.85 blocks. */

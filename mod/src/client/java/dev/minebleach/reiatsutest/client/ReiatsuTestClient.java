@@ -35,6 +35,7 @@ public class ReiatsuTestClient implements ClientModInitializer {
 		dev.minebleach.reiatsutest.client.model.IceWallCrystalPlugin.register();
 		dev.minebleach.reiatsutest.client.model.ScabbardFeature.register();
 		dev.minebleach.reiatsutest.client.model.TpPoseLayer.register();
+		dev.minebleach.reiatsutest.client.model.TpBowLayer.register();
 		dev.minebleach.reiatsutest.client.model.FpMotion.init();
 		ClientNet.register();
 		BcGrassSwing.init();

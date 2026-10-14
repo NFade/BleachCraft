@@ -129,7 +129,7 @@ public final class BankaiBladeRenderer {
 	/**
 	 * Basis of blade i with the lean (radians toward the axis) and the scale, row major 3x3 into {@code m}. Mesh axes: local x = thickness (runs ALONG the row, so the
 	 * broad faces look along the lane like the pages of a book, as in the anime references), local y = length, local z = width (ACROSS the lane, the lean tilts it
-	 * toward the axis). All three axes are scaled alike by {@code bladeScale} (the mesh is not stretched).
+	 * toward the axis). All three axes are scaled alike by {@code bladeScale}; the width (local z) is stretched on top by {@code bankai.bladeWidth} (R12).
 	 * The normal matrix goes to {@link #NM}.
 	 */
 	static void basis(RowsFx.State st, int i, double leanRad, float[] m) {
@@ -146,15 +146,16 @@ public final class BankaiBladeRenderer {
 		double c = Math.cos(leanRad);
 		double sn = Math.sin(leanRad);
 		float sc = (float) (st.layout.scale[i] * st.bladeScale);
+		float wf = (float) st.widthFactor; // local z (width across the lane) only
 		m[0] = (float) (xX * sc);
 		m[1] = (float) (-zX * sn * sc);
-		m[2] = (float) (zX * c * sc);
+		m[2] = (float) (zX * c * sc * wf);
 		m[3] = 0f;
 		m[4] = (float) (c * sc);
-		m[5] = (float) (sn * sc);
+		m[5] = (float) (sn * sc * wf);
 		m[6] = (float) (xZ * sc);
 		m[7] = (float) (-zZ * sn * sc);
-		m[8] = (float) (zZ * c * sc);
+		m[8] = (float) (zZ * c * sc * wf);
 		// normal matrix: the scale is uniform, so it is the unit rotation (inverse transpose of a rotation)
 		NM[0] = (float) xX;
 		NM[1] = (float) (-zX * sn);
