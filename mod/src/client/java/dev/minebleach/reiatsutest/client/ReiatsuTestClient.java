@@ -38,6 +38,7 @@ public class ReiatsuTestClient implements ClientModInitializer {
 		BcGrassSwing.init();
 		dev.minebleach.reiatsutest.client.voice.VoiceBridgeClient.init();
 		ReiatsuKeys.init();
+		dev.minebleach.reiatsutest.client.input.DoubleJumpClient.init();
 		ReiatsuHud.init();
 		dev.minebleach.reiatsutest.client.book.SpellbookScreen.register();
 		ClientTickEvents.END_CLIENT_TICK.register(ClientState::tick);
