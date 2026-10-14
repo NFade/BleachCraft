@@ -114,6 +114,17 @@ public final class StateMachine {
 		};
 	}
 
+	/**
+	 * R11 T3: ticks of shikai still to wait before bankai may be requested (0 = none: not in shikai, requirement off or ragefree). The
+	 * client counts its own copy of the same number for the HUD gem.
+	 */
+	public int bankaiWaitTicks() {
+		if (rageCfg == null || rageSource == null || rageFree || state != ZanpakutoState.SHIKAI) {
+			return 0;
+		}
+		return (int) Math.max(0L, rageCfg.bankaiMinShikaiTicks() - (clock.nowTick() - stateSince));
+	}
+
 	// ------------------------------------------------------------------ requests
 
 	public TransitionResult request(TransitionRequest r) {
@@ -147,6 +158,9 @@ public final class StateMachine {
 		int rageNeed = rageNeed(target);
 		if (rageNeed > 0 && rageSource.getAsInt() < rageNeed) {
 			return reject(RejectReason.NOT_ENOUGH_RAGE);
+		}
+		if (target == ZanpakutoState.BANKAI && bankaiWaitTicks() > 0) {
+			return reject(RejectReason.SHIKAI_TOO_SHORT); // R11 T3: bankai is not available the moment the bar is full
 		}
 		if (target == ZanpakutoState.SHIKAI && !reiatsu.canSpend(cfg.shikaiReleaseCost())) {
 			return reject(RejectReason.NOT_ENOUGH_REIATSU);

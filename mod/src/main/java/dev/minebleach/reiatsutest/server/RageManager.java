@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.server;
 
+import dev.minebleach.reiatsutest.ModConfig;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.combat.ParryBus;
 import dev.minebleach.reiatsutest.core.rage.RageConfig;
@@ -17,6 +18,9 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
+import net.minecraft.entity.decoration.ArmorStandEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.tag.DamageTypeTags;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -33,6 +37,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * the hit is remembered in {@code ALLOW_DAMAGE} (asked amount, victim health) and settled in {@code AFTER_DEATH};</li>
  * <li>successful parries ({@link ParryBus}).</li>
  * </ul>
+ * R11 T3: damage taken gives nothing (default), sword/projectile hits give 0.3 per hp (mobs 25 percent, capped per target per 10 s), a parry
+ * 6.0 at most once a second, an ability or kido cast one fixed 2.0 for its first landed hit ({@link #onCast}); the numbers are the
+ * {@code rage} section of the config ({@link #config()}).
  * Every gain is an INFO line {@code [rage] +X from <reason> ...} in the server log. The bar drains out of combat, resets on death
  * and logout, and is synced to its owner as the {@link ModAttachments#RAGE} attachment (only when the value changed).
  *
@@ -41,14 +48,13 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * {@link #spend}; keys and voice share that one path ({@code ZanpakutoManager.performTransition}).
  */
 public final class RageManager {
-	/** The numbers in use. Constant for now; tuning is a code change (see design/results/rage.md, dmg_rage_round3.md). */
-	public static final RageConfig CONFIG = RageConfig.defaults();
+	/** The numbers in use (R11 T3: the {@code rage} section of config/reiatsu_test.json, re-read by {@code /reiatsu reload}). */
+	private static volatile RageConfig config = RageConfig.defaults();
 
 	private static final Map<UUID, RageMeter> METERS = new HashMap<>();
 	/** Last player-caused hit seen by ALLOW_DAMAGE per victim entity id, for the killing blow. Cleared every tick. */
 	private static final Map<Integer, Pending> PENDING = new HashMap<>();
 	private static MinecraftServer server;
-
 	/** A player-caused hit that may turn out lethal: who, how much was asked, how much health the victim had. */
 	private record Pending(UUID attacker, float amount, float healthBefore) {
 	}
@@ -56,7 +62,29 @@ public final class RageManager {
 	private RageManager() {
 	}
 
+	/** The rage numbers in force. */
+	public static RageConfig config() {
+		return config;
+	}
+
+	/** Loads the {@code rage} section at start-up and registers the reload; call before the first session is created. */
+	public static void initConfig() {
+		config = ModConfig.loadRage();
+		ConfigReload.register(() -> {
+			RageConfig c = ModConfig.loadRage();
+			config = c;
+			for (RageMeter m : METERS.values()) {
+				m.setConfig(c);
+			}
+			ZanpakutoManager.refreshRage(c);
+			ReiatsuTest.LOGGER.info("[rage] config reloaded: dealt {}/hp (cap {}), mob {}%, target cap {}/10s, parry {} (gap {} ticks), ability {}, bankai min shikai {} ticks",
+					c.dealtTenthsPerHp(), c.maxDealtGainPerHitTenths(), c.mobMultiplierPercent(), c.targetCapPer10sTenths(), c.parryGainTenths(),
+					c.parryGapTicks(), c.abilityHitTenths(), c.bankaiMinShikaiTicks());
+		});
+	}
+
 	public static void init() {
+		initConfig();
 		ParryBus.register(e -> {
 			MinecraftServer srv = server;
 			ServerPlayerEntity defender = srv == null ? null : srv.getPlayerManager().getPlayer(e.defender());
@@ -96,7 +124,7 @@ public final class RageManager {
 	}
 
 	private static RageMeter meterOf(UUID id) {
-		return METERS.computeIfAbsent(id, k -> new RageMeter(CONFIG));
+		return METERS.computeIfAbsent(id, k -> new RageMeter(config));
 	}
 
 	/** The meter of an online player (created on first use). Read-only use for HUD/commands; spend through {@link #spend}. */
@@ -147,10 +175,29 @@ public final class RageManager {
 			logGain(p, gained, "taken", " " + fmt1(damageTaken) + " hp from " + sourceName(source));
 		}
 		Entity attacker = source.getAttacker();
-		if (attacker instanceof ServerPlayerEntity a && a != victim) {
-			int gained = meterOf(a.getUuid()).onDamageDealt(damageTaken, now);
-			logGain(a, gained, "dealt", " " + fmt1(damageTaken) + " hp to " + victim.getName().getString());
+		if (attacker instanceof ServerPlayerEntity a && a != victim && !(victim instanceof ArmorStandEntity)) {
+			RageMeter m = meterOf(a.getUuid());
+			boolean mob = !(victim instanceof PlayerEntity);
+			if (isAbilityDamage(source)) {
+				int gained = m.onAbilityHit(mob, now); // R11 T3: one fixed reward per cast, however many targets it hits
+				if (gained > 0) {
+					logGain(a, gained, "ability", " " + fmt1(damageTaken) + " hp to " + victim.getName().getString());
+				}
+			} else {
+				int gained = m.onDamageDealt(RukiaMomentum.unboost(victim, now, damageTaken), victim.getId(), mob, now); // R11 T6: not multiplied by the stacks
+				logGain(a, gained, "dealt", " " + fmt1(damageTaken) + " hp to " + victim.getName().getString() + (mob ? " (mob)" : ""));
+			}
 		}
+	}
+
+	/** Damage of the mod's abilities and kido: {@code Targeting.hurt} uses FREEZE and INDIRECT_MAGIC with the caster as attacker. */
+	static boolean isAbilityDamage(DamageSource source) {
+		return source.isOf(DamageTypes.FREEZE) || source.isOf(DamageTypes.INDIRECT_MAGIC);
+	}
+
+	/** An accepted ability or kido cast arms the one reward of its first landed hit (R11 T3). */
+	public static void onCast(ServerPlayerEntity p) {
+		meterOf(p.getUuid()).armAbility(p.getServer().getTicks());
 	}
 
 	/** The killing blow of a player: AFTER_DAMAGE did not fire for it, so settle the hit remembered by ALLOW_DAMAGE. */
@@ -161,8 +208,21 @@ public final class RageManager {
 			return;
 		}
 		float landed = Math.min(hit.amount(), hit.healthBefore());
-		int gained = meterOf(a.getUuid()).onDamageDealt(landed, a.getServer().getTicks());
-		logGain(a, gained, "dealt-kill", " " + fmt1(landed) + " hp to " + victim.getName().getString());
+		if (victim instanceof ArmorStandEntity) {
+			return;
+		}
+		RageMeter m = meterOf(a.getUuid());
+		boolean mob = !(victim instanceof PlayerEntity);
+		int now = a.getServer().getTicks();
+		if (isAbilityDamage(source)) {
+			int gained = m.onAbilityHit(mob, now);
+			if (gained > 0) {
+				logGain(a, gained, "ability-kill", " " + fmt1(landed) + " hp to " + victim.getName().getString());
+			}
+			return;
+		}
+		int gained = m.onDamageDealt(landed, victim.getId(), mob, now);
+		logGain(a, gained, "dealt-kill", " " + fmt1(landed) + " hp to " + victim.getName().getString() + (mob ? " (mob)" : ""));
 	}
 
 	private static void logGain(ServerPlayerEntity p, int tenths, String reason, String detail) {

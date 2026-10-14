@@ -3,10 +3,10 @@ package dev.minebleach.reiatsutest.core.combat;
 import java.util.Map;
 
 /**
- * First gestures of the abilities added in round 6 (Rukia bankai ice spike, Byakuya shikai petal cage), kept apart from
+ * First gestures of the abilities added in round 6 (Rukia bankai ice wall, Byakuya shikai petal cage), kept apart from
  * {@link CastGestures} so that file stays with the gesture agents. {@link CastGestures#defaults()} calls {@link #addTo}. Both are
- * deliberately plain placeholders (UNVERIFIED in the game): the ice spike is a Shirafune style thrust with a longer hold, the cage is
- * a raised hilt with the left hand closing into a fist. Replace the entries of {@code byakuya.shikai.cage} / {@code rukia.bankai.ice_spike}
+ * deliberately plain placeholders (UNVERIFIED in the game): the ice wall is a Shirafune style thrust with a longer hold (it was the ice spike gesture before R11 T5; the release is at 0.7 s like the 14 tick cast time), the cage is
+ * a raised hilt with the left hand closing into a fist. Replace the entries of {@code byakuya.shikai.cage} / {@code rukia.bankai.ice_wall}
  * in CastGestures when the real hand gestures exist, or override them from {@code pose_override.json} ({@code fp_cast.<ability id>}).
  */
 final class ExtraGestures {
@@ -18,8 +18,8 @@ final class ExtraGestures {
 	}
 
 	static void addTo(Map<String, CastGesture> m) {
-		// ---- Rukia, bankai, ice spike: the blade is drawn back, one long thrust along the look, the left hand points down the line
-		put(m, tp(CastGesture.builder("rukia.bankai.ice_spike").dur(2.6).out(0.4)
+		// ---- Rukia, bankai, ice wall: the blade is drawn back, one long thrust along the look, the left hand points down the line
+		put(m, tp(CastGesture.builder("rukia.bankai.ice_wall").dur(2.6).out(0.4)
 				.r(0.00, OUT, 0.10, -0.12, 0.08, 20, 0, 8)
 				.r(0.30, SM, 0.07, -0.08, 0.04, 28, 0, 6)
 				.r(0.52, IN, 0.04, -0.05, -0.04, 8, 0, 0)

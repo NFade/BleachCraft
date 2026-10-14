@@ -22,8 +22,9 @@ import dev.minebleach.reiatsutest.core.obj.DrawRig;
  * left hand on the lower hilt). Sheathing runs the same path backwards.</li>
  * <li>Block ({@code b > 0}), the user's own pose (2026-10-13, replaces round3 and the short-lived "Pose B"): the sword held diagonally in front
  * of the chest in the frontal plane, hilt low right of centre, tip up and to the LEFT ({@code guard.*}: 59 degrees above the horizontal,
- * 86 degrees to the left of straight ahead), the flat of the blade facing forward and the cutting edge up and to the right. Both fists
- * grip the hilt just behind the tsuba. The arms are not solved here: while blocking they are the arms the user posed in Blockbench
+ * 86 degrees to the left of straight ahead), the CUTTING EDGE FORWARD (R11 T1: rolled 90 degrees about the blade, the flat now faces up and to the
+ * right) and the sword moved a little to the character's left ({@link #GUARD_SHIFT}, R11 T10) so that both fists are on the hilt. The arms are not
+ * solved here: while blocking they are the arms the user posed in Blockbench
  * ({@code guard.arm_r}, {@code guard.arm_l}: pitch, yaw, roll in degrees, dx, dy, dz in px; see {@link #GUARD_ARM_R}), blended in with the
  * eased block weight, and the item correction G still puts the sword exactly on its frame. The rig also turns the torso by -7.6 degrees;
  * that yaw belongs to the whole body, not to the arm solver, and is NOT part of this pose; the weight is eased.</li>
@@ -87,31 +88,74 @@ public final class TpPose {
 	 * {@code sword}.
 	 */
 	public record Result(Arm main, Arm off, double wMain, double wOff, Frame saya, Frame sword, double[] gT, double[] gQ,
-			double[] handTargetMain, double[] handTargetOff) {
+			double[] handTargetMain, double[] handTargetOff, double gS) {
 	}
 
-	/** Facts of the frame. {@code left} = the sword hand is the left one; {@code thin} = slim arms. */
-	public record Input(double p, double b, boolean left, boolean thin, Hip hip, Display display, DrawRig rig) {
+	/**
+	 * Facts of the frame. {@code left} = the sword hand is the left one; {@code thin} = slim arms. {@code swordScale} (R11 T10, config
+	 * {@code tp.swordScale}) multiplies the size of the sword in the hand, the block and the hold AND of the scabbard on the hip (and the one that
+	 * travels with the sword in a sealed block): the effective scale is {@code display.scale() * swordScale}, {@code hip.scale() * swordScale}.
+	 * The hands stay put in px; the hilt places of the fists scale with the sword (see {@link #fistR}).
+	 */
+	public record Input(double p, double b, boolean left, boolean thin, Hip hip, Display display, DrawRig rig, double swordScale) {
+		public Input(double p, double b, boolean left, boolean thin, Hip hip, Display display, DrawRig rig) {
+			this(p, b, left, thin, hip, display, rig, 1.0);
+		}
 	}
 
 	private static final double[] CENTRE = {0.5, 0.5, 0.5};
 
-	/** Default distance (px, along the blade from the grip centre; negative = toward the pommel) of the centre of the right fist. */
+	/** The display scale at which the px numbers below were measured (item display {@code thirdperson_righthand}, scale 1.6). */
+	public static final double REF_SCALE = 1.6;
+	/** Distance (px, along the blade from the grip centre; negative = toward the pommel) of the centre of the right fist at {@link #REF_SCALE}. */
 	public static final double C_R = -0.8;
-	/** Default distance of the centre of the left fist: lower on the hilt than the right one. */
+	/** The same for the left fist: lower on the hilt than the right one. */
 	public static final double C_L = -2.4;
-	/** Where the tsuba is (saya mouth of the models, 0.066 m from the grip centre at the display scale 1.6) and the pommel (0.19 m). */
+	/** Where the tsuba is (saya mouth of the models, 0.066 m from the grip centre) and the pommel (0.19 m), px at {@link #REF_SCALE}. */
 	public static final double TSUBA_PX = 1.7;
 	public static final double POMMEL_PX = -4.9;
+
+	/** R11 T10: ratio of a model scale to the reference scale: every px place along the hilt is multiplied by it. */
+	public static double scaleRatio(double scale) {
+		return scale / REF_SCALE;
+	}
+
+	public static double tsubaPx(double scale) {
+		return TSUBA_PX * scaleRatio(scale);
+	}
+
+	public static double pommelPx(double scale) {
+		return POMMEL_PX * scaleRatio(scale);
+	}
+
+	/** Default place of the centre of the right fist along the blade for a sword drawn at {@code scale} (px from the grip centre). */
+	public static double fistR(double scale) {
+		return C_R * scaleRatio(scale);
+	}
+
+	/** Default place of the centre of the left fist for a sword drawn at {@code scale}. */
+	public static double fistL(double scale) {
+		return C_L * scaleRatio(scale);
+	}
 
 	// ------------------------------------------------------------------ tunable numbers (px, degrees, right handed layout)
 
 	/**
-	 * Default guard, the user's pose (2026-10-13; round3 was pos (0.5, 7.5, -6.0), tilt 40, fwd 5, lat 1.3 / -1.3, c_l -2.4): grip centre (px, body
+	 * The user's guard of 2026-10-13 (round3 was pos (0.5, 7.5, -6.0), tilt 40, fwd 5, lat 1.3 / -1.3, c_l -2.4): grip centre (px, body
 	 * space: x_body = -x_bb, y_body = 24 - y_bb) = the tsuba point of the user's sword prop (3.9, 18.1, -6.1) in Blockbench px minus
-	 * {@link #TSUBA_PX} along the blade. Blade direction (0.50843, -0.86031, -0.03685) in body space.
+	 * {@link #TSUBA_PX} along the blade. Blade direction (0.50843, -0.86031, -0.03685) in body space. R11 T10: kept as the reference (display scale
+	 * 1.6, no shift); the pose now places the grip by {@link #GUARD_TSUBA_POINT} and {@link #GUARD_SHIFT} for the scale in force.
 	 */
 	public static final double[] GUARD_POS = {-4.7643, 7.3625, -6.0374};
+	/** The tsuba point of the user's sword prop in the block (px, body space): the sword grows about this point, the grip centre is placed from it. */
+	public static final double[] GUARD_TSUBA_POINT = {-3.9, 5.9, -6.1};
+	/**
+	 * R11 T10: shift of the sword in the block (px, body space: +x = the character's LEFT, which is the right of the screen seen from the front, +y
+	 * down, +z toward the back). Found for the default sword scale 2.0 (1.6 * tp.swordScale 1.25) so that both authored fists lie on the hilt: between
+	 * pommel and tsuba (0.4 of the scale ratio inside both ends), 1.9 to 5 px apart along the blade and at most 2.2 px off the axis, for wide and slim
+	 * arms. 1.58 px in all, 1.02 px of it along the blade toward the tip. Key {@code guard.shift} replaces it.
+	 */
+	public static final double[] GUARD_SHIFT = {1.45, -0.35, 0.55};
 	/** Tip angle above the horizontal (degrees): 59.35 degrees. */
 	public static final double GUARD_TILT = 59.352;
 	/**
@@ -119,8 +163,13 @@ public final class TpPose {
 	 * 85.9 degrees to the character's LEFT of straight ahead (f = 90 would point straight ahead, f = 0 straight to the right).
 	 */
 	public static final double GUARD_FWD = 175.855;
-	/** Roll of the cutting edge about the blade (degrees, 0 = edge forward): -89.9 turns it into the frontal plane, up and to the right. */
-	public static final double GUARD_EDGE = -89.9;
+	/**
+	 * Roll of the cutting edge about the blade (degrees, 0 = edge forward). R11 T1: 0, the edge faces forward (was -89.9: the edge in the frontal
+	 * plane, up and to the right, the flat facing forward). The edge is the model +Z axis (checked on the grid of both drawn sword meshes: the
+	 * section tapers to a line at +Z). The blade is not exactly in the frontal plane (z -0.037), so the edge, which must stay square to the blade,
+	 * is the projection of the forward direction: 2.1 degrees off straight ahead.
+	 */
+	public static final double GUARD_EDGE = 0.0;
 	/** Default lateral and along-the-hilt places of the fists while the arms are still being blended in (px); the final arms are authored. */
 	public static final double GUARD_LAT_R = 0.0;
 	public static final double GUARD_LAT_L = 0.0;
@@ -142,8 +191,19 @@ public final class TpPose {
 		return pr.num("hold.tilt", 12.0);
 	}
 
-	static double[] guardPos(Params pr) {
-		return pr.vec("guard.pos", new double[] {GUARD_POS[0], GUARD_POS[1], GUARD_POS[2]});
+	/**
+	 * Grip centre of the sword in the block (px) for a sword drawn at {@code scale}, blade direction {@code tipUnit}: the tsuba point of the user's
+	 * prop minus the tsuba distance of this scale along the blade, plus the shift ({@code guard.shift}). A dev override {@code guard.pos} is absolute.
+	 */
+	static double[] guardPos(Params pr, double scale, double[] tipUnit) {
+		double[] abs = pr.vec("guard.pos", null);
+		if (abs != null) {
+			return abs;
+		}
+		double[] sh = pr.vec("guard.shift", GUARD_SHIFT);
+		double ts = tsubaPx(scale);
+		return new double[] {GUARD_TSUBA_POINT[0] - ts * tipUnit[0] + sh[0], GUARD_TSUBA_POINT[1] - ts * tipUnit[1] + sh[1],
+				GUARD_TSUBA_POINT[2] - ts * tipUnit[2] + sh[2]};
 	}
 
 	static double guardTilt(Params pr) {
@@ -196,8 +256,19 @@ public final class TpPose {
 
 	/** The scabbard at the hip, the way {@code ScabbardRenderer} always placed it. */
 	static TpMat4 hipFrame(Hip h) {
+		return hipFrame(h, 1.0);
+	}
+
+	/**
+	 * The scabbard at the hip grown by {@code ks} (R11 T10) about the centre of its mouth: the mouth (the tsuba of the sword in it, {@link #tsubaPx} from
+	 * the grip centre) stays where it was, so the scabbard does not sink into the hip.
+	 */
+	static TpMat4 hipFrame(Hip h, double ks) {
 		TpMat4 q = orient(h.dir(), new double[] {0, -1, 0});
-		return frame(h.posPx(), q, h.scale());
+		double[] d = normalize(h.dir());
+		double back = (ks - 1) * tsubaPx(h.scale());
+		double[] pos = {h.posPx()[0] - d[0] * back, h.posPx()[1] - d[1] * back, h.posPx()[2] - d[2] * back};
+		return frame(pos, q, h.scale() * ks);
 	}
 
 	/** Upright sword in front of the body, edge forward. */
@@ -219,7 +290,7 @@ public final class TpPose {
 		double f = Math.toRadians(pr.num("guard.fwd", GUARD_FWD));
 		double[] tip = {-Math.cos(t) * Math.cos(f), -Math.sin(t), -Math.cos(t) * Math.sin(f)};
 		double[] edge = rotAbout(new double[] {0, 0, -1}, normalize(tip), Math.toRadians(pr.num("guard.edge", GUARD_EDGE)));
-		return frame(guardPos(pr), orient(tip, edge), scale);
+		return frame(guardPos(pr, scale, normalize(tip)), orient(tip, edge), scale);
 	}
 
 	private static TpMat4 arcMat(DrawRig rig, double angle) {
@@ -344,9 +415,12 @@ public final class TpPose {
 		double ts = Math.min(1, p / slide);
 		double u = p <= slide ? 0 : smooth((p - slide) / (1 - slide));
 
-		TpMat4 hip = hipFrame(in.hip());
-		TpMat4 hold = holdFrame(pr, in.display().scale());
-		TpMat4 guard = guardFrame(pr, in.display().scale());
+		double ks = Math.max(0.1, in.swordScale());
+		double ds = in.display().scale() * ks; // effective scale of the sword in the hand, the hold and the block
+		double hs = in.hip().scale() * ks; // effective scale of the scabbard (and of the sword in it)
+		TpMat4 hip = hipFrame(in.hip(), ks);
+		TpMat4 hold = holdFrame(pr, ds);
+		TpMat4 guard = guardFrame(pr, ds);
 		double bs = smooth(b); // eased block weight: soft start and stop of the guard
 
 		// scabbard: pulled back along the sori arc by the left hand while the blade slides, then back to the hip
@@ -363,12 +437,12 @@ public final class TpPose {
 		double gripLatR = pr.num("grip.lat_r", -1.8) * (1 - bs) + pr.num("guard.lat_r", GUARD_LAT_R) * bs;
 		double latR = pr.num("sealed.lat_r", 0.0) * (1 - sl) + gripLatR * sl;
 		double latL = pr.num("grip.lat_l", 1.8) * (1 - bs) + pr.num("guard.lat_l", GUARD_LAT_L) * bs;
-		double cR = pr.num("sealed.c_r", C_R) * (1 - sl) + pr.num("grip.c_r", C_R) * sl;
-		double cL = pr.num("grip.c_l", C_L) * (1 - bs) + pr.num("guard.c_l", GUARD_C_L) * bs;
+		double cR = pr.num("sealed.c_r", fistR(hs)) * (1 - sl) + pr.num("grip.c_r", fistR(ds)) * sl;
+		double cL = pr.num("grip.c_l", fistL(ds)) * (1 - bs) + pr.num("guard.c_l", GUARD_C_L * scaleRatio(ds)) * bs;
 		double maxShift = pr.num("arm.max_shift", 6.0);
 		double[] tR = handPoint(sword, latR, cR);
 		double[] tSwordL = handPoint(sword, latL, cL);
-		double[] tSaya = handPoint(saya, pr.num("saya.lat", 0.0), pr.num("saya.c", 4.5));
+		double[] tSaya = handPoint(saya, pr.num("saya.lat", 0.0), pr.num("saya.c", 4.5 * scaleRatio(hs)));
 		double[] tL = lerp(tSaya, tSwordL, sl);
 		ArmSol main = solveArm(true, in.thin(), tR, pr.num("arm.yaw_r", 0), maxShift);
 		ArmSol off = solveArm(false, in.thin(), tL, pr.num("arm.yaw_l", 0), maxShift);
@@ -395,6 +469,7 @@ public final class TpPose {
 		Frame fSword = Frame.of(sword);
 		double[] gT = g.translationPart();
 		double[] gQ = g.quat();
+		double gS = g.scaleFactor();
 		if (in.left()) {
 			fSaya = Frame.of(mirrorFrame(saya));
 			fSword = Frame.of(mirrorFrame(sword));
@@ -402,8 +477,8 @@ public final class TpPose {
 			gT = gm.translationPart();
 			gQ = gm.quat();
 			return new Result(mirror(main.arm()), mirror(off.arm()), wMain, 1.0, fSaya, fSword, gT, gQ,
-					new double[] {-tR[0], tR[1], tR[2]}, new double[] {-tL[0], tL[1], tL[2]});
+					new double[] {-tR[0], tR[1], tR[2]}, new double[] {-tL[0], tL[1], tL[2]}, gS);
 		}
-		return new Result(main.arm(), off.arm(), wMain, 1.0, fSaya, fSword, gT, gQ, tR, tL);
+		return new Result(main.arm(), off.arm(), wMain, 1.0, fSaya, fSword, gT, gQ, tR, tL, gS);
 	}
 }

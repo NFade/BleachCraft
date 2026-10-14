@@ -68,6 +68,7 @@ final class BladeFlights {
 		final Set<Integer> refusedLogged = new HashSet<>();
 		final String name;
 		int lastSent = Integer.MIN_VALUE / 2;
+		int lastWallHit = Integer.MIN_VALUE / 2;
 		int lastPhase = -1;
 		int flightHits;
 		int landingTargets;
@@ -102,6 +103,7 @@ final class BladeFlights {
 	}
 
 	static void init() {
+		ConfigReload.register(() -> config = ModConfig.loadFlight());
 		ServerLifecycleEvents.SERVER_STARTED.register(srv -> {
 			config = ModConfig.loadFlight();
 			ACTIVE.clear();
@@ -251,6 +253,9 @@ final class BladeFlights {
 			Vec3d tv = new Vec3d(to.x(), to.y(), to.z());
 			BlockHitResult br = a.world.raycast(new RaycastContext(fv, tv, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, p));
 			if (br.getType() == HitResult.Type.BLOCK) {
+				if (now - a.lastWallHit >= a.cfg.hitCooldownTicks() && IceWall.absorbNear(a.world, br.getPos(), 0.6, a.cfg.hitDamage(), "mode_attack flight")) {
+					a.lastWallHit = now; // R11 T5: the head stops at an ice wall and spends its strength once per hit cooldown
+				}
 				if (st.leg() == HitCooldown.LEG_BACK) {
 					Vec3d hit = br.getPos();
 					to = new V3(hit.x, hit.y, hit.z);
@@ -304,6 +309,9 @@ final class BladeFlights {
 				continue;
 			}
 			Box b = e.getBoundingBox();
+			if (IceWall.blocked(a.world, tv, b.getCenter())) {
+				continue; // R11 T5: an ice wall between the head and the target (the sweep sphere is wider than a thin wall)
+			}
 			double t = SweepMath.sweepSphereVsBox(from, to, r, b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ);
 			if (t >= 0.0) {
 				cands.add(new Cand(e, t));

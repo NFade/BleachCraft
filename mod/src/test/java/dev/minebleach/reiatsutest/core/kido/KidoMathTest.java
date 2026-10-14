@@ -33,8 +33,8 @@ class KidoMathTest {
 
 	@Test
 	void burstDamageUsesTheSpec() {
-		assertEquals(2.0, KidoMath.burstDamage(SHAKKAHO, 0.0), 1e-9); // r8: 4.0 halved
-		assertEquals(0.8, KidoMath.burstDamage(SHAKKAHO, 3.5), 1e-9); // 40 percent at the edge
+		assertEquals(1.0, KidoMath.burstDamage(SHAKKAHO, 0.0), 1e-9); // R11 T4: half a heart
+		assertEquals(0.4, KidoMath.burstDamage(SHAKKAHO, 3.5), 1e-9); // 40 percent at the edge
 		assertEquals(0.0, KidoMath.burstDamage(SHAKKAHO, 4.0));
 		double prev = Double.MAX_VALUE;
 		for (double d = 0; d <= 3.5; d += 0.25) {

@@ -156,6 +156,7 @@ public final class ClientNet {
 				case DENIED_RAGE -> "message.reiatsu_test.denied.rage";
 
 			case DENIED_NOT_DRAWN -> "message.reiatsu_test.denied.not_drawn";
+			case DENIED_SHIKAI_TIME -> "message.reiatsu_test.denied.shikai_time";
 			case BLOCKED -> "hud.reiatsu_test.denied.blocked";
 			case COOLDOWN -> null; // the HUD icons shake, no text spam
 			case OK, RATE_LIMIT -> null;

@@ -8,6 +8,8 @@ public enum RejectReason {
 	NOT_ENOUGH_REIATSU(ResultCode.DENIED_REIATSU),
 	/** Round 5: shikai / bankai entry needs Rage (rage.shikaiCost / rage.bankaiCost). */
 	NOT_ENOUGH_RAGE(ResultCode.DENIED_RAGE),
+	/** R11 T3: bankai entry needs {@code rage.bankaiMinShikaiTicks} spent in shikai. */
+	SHIKAI_TOO_SHORT(ResultCode.DENIED_SHIKAI_TIME),
 	ON_COOLDOWN(ResultCode.COOLDOWN),
 	RELEASE_LOCK(ResultCode.COOLDOWN),
 	TRANSITION_LOCK(ResultCode.COOLDOWN),

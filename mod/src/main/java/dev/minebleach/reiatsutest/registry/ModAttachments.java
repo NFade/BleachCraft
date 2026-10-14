@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.registry;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.registry.data.CooldownData;
+import dev.minebleach.reiatsutest.registry.data.MomentumData;
 import dev.minebleach.reiatsutest.registry.data.RageData;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
 import dev.minebleach.reiatsutest.registry.data.ZanpakutoData;
@@ -36,6 +37,12 @@ public final class ModAttachments {
 			ReiatsuTest.id("rage"),
 			b -> b.initializer(() -> RageData.EMPTY)
 					.syncWith(RageData.PACKET_CODEC, AttachmentSyncPredicate.targetOnly()));
+
+	/** Frost stacks of Rukia (R11 T6), owner only, not persistent. */
+	public static final AttachmentType<MomentumData> MOMENTUM = AttachmentRegistry.create(
+			ReiatsuTest.id("momentum"),
+			b -> b.initializer(() -> MomentumData.EMPTY)
+					.syncWith(MomentumData.PACKET_CODEC, AttachmentSyncPredicate.targetOnly()));
 
 	private ModAttachments() {
 	}

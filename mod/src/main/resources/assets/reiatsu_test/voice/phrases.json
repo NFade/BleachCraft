@@ -126,18 +126,17 @@
       ]
     },
     {
-      "id": "rukia.bankai.ice_spike", "states": ["BANKAI"], "item": "rukia",
-      "interimSafe": false, "optional": false, "say": "Ice spike",
+      "id": "rukia.bankai.ice_wall", "states": ["BANKAI"], "item": "rukia",
+      "interimSafe": false, "optional": false, "say": "Ice wall",
       "variants": [
-        {"text": "こおりのとげ", "origin": "M"},
-        {"text": "アイススパイク", "origin": "M"},
-        {"text": "Koori no toge", "origin": "M"},
-        {"text": "Ice spike", "origin": "M"},
-        {"text": "Ice spikes", "origin": "M"},
-        {"text": "Ice thorn", "origin": "M"},
-        {"text": "Ледяной шип", "origin": "M"},
-        {"text": "Ледяные шипы", "origin": "M"},
-        {"text": "Шип льда", "origin": "M"}
+        {"text": "こおりのかべ", "origin": "M"},
+        {"text": "アイスウォール", "origin": "M"},
+        {"text": "Koori no kabe", "origin": "M"},
+        {"text": "Ice wall", "origin": "M"},
+        {"text": "Ice walls", "origin": "M"},
+        {"text": "Ледяная стена", "origin": "M"},
+        {"text": "Ледяные стены", "origin": "M"},
+        {"text": "Стена льда", "origin": "M"}
       ]
     },
     {

@@ -40,7 +40,7 @@ import net.minecraft.client.option.Perspective;
 
 /**
  * Phase 6 steps 6 and 7 scenarios: the Rukia shikai abilities (3.1 to 3.3), the bankai release (5.1), the passive (5.2) and
- * the ice spike with zombies as targets, plus the frame cost scenarios F6 (ice spike, 32 zombies) and F7 (three
+ * the ice wall with zombies as targets (it was the ice spike), plus the frame cost scenarios F6 (ice wall, 32 zombies) and F7 (three
  * abilities within 2 s). Scenario names for {@code -Phold}: {@code rk6}, {@code rk7}, {@code rkperf}; console lines are
  * {@code rk <tsuki|hak|shira|abs|rb|passive> <ms> <name> [night] [front] [up] [down] [far]} and {@code rkperf <f6|f7>}.
  */
@@ -206,7 +206,7 @@ final class Phase6Rukia {
 		press(ReiatsuKeys.SLOTS[slot]);
 	}
 
-	/** Bankai row (U I O): the ice spike is the first one. */
+	/** Bankai row (U I O): the ice wall is the first one. */
 	private static void castBankai(int slot) {
 		press(ReiatsuKeys.BANKAI_SLOTS[slot]);
 	}
@@ -370,7 +370,7 @@ final class Phase6Rukia {
 		return peakGlow * 4;
 	}
 
-	/** F6: the ice spike with 32 zombies; F7: three Rukia abilities within 2 seconds. */
+	/** F6: the ice wall with 32 zombies; F7: three Rukia abilities within 2 seconds. */
 	static void perfSteps() {
 		step("perf: unlimited fps, baseline", 4, () -> {
 			mc.options.getMaxFps().setValue(260);
@@ -395,8 +395,8 @@ final class Phase6Rukia {
 			startRecording();
 			castBankai(0);
 		});
-		step("perf F6: 5 s of ice spike", 20 * 5, () -> { });
-		step("perf F6: report", 1, () -> report("F6 ice spike, 32 zombies", 60, 45));
+		step("perf F6: 5 s of ice wall", 20 * 5, () -> { });
+		step("perf F6: report", 1, () -> report("F6 ice wall, 32 zombies", 60, 45));
 	}
 
 	private static void perfF7() {

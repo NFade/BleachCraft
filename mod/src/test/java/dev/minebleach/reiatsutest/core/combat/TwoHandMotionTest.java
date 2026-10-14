@@ -228,7 +228,8 @@ class TwoHandMotionTest {
 
 	/**
 	 * The user's own pose (2026-10-13): the cross-body diagonal guard. Camera frame (+x right, +y up, -z ahead): the blade (-0.508, 0.860, -0.037) is a diagonal
-	 * in the frontal plane with the tip up and to the left, the cutting edge (model +Z) points up and right (0.861, 0.509, 0), the flats face forward and back.
+	 * in the frontal plane with the tip up and to the left. R11 T1: the cutting edge (model +Z) faces forward, (0.019, -0.032, -0.999) (the forward direction made
+	 * square to the blade); it pointed up and right (0.861, 0.509, 0) in R10, the flats faced forward and back.
 	 */
 	@Test
 	void guardIsTheCrossBodyDiagonalWithTheTipUpAndLeft() {
@@ -237,9 +238,10 @@ class TwoHandMotionTest {
 		assertTrue(d[0] < -0.45f && d[1] > 0.7f && Math.abs(d[2]) < 0.1f, "across the chest, tip up left: " + java.util.Arrays.toString(d));
 		assertEquals(0f, angleDeg(d, new float[] {-0.508f, 0.860f, -0.037f}), 1f, "blade direction of the user's pose");
 		float[] edge = g.applyDir(modelDir(0f, 0f, 1f));
-		assertEquals(0f, angleDeg(edge, new float[] {0.861f, 0.509f, 0f}), 1f, "cutting edge up and right in the frontal plane");
+		assertEquals(0f, angleDeg(edge, new float[] {0.0186f, -0.0316f, -0.9993f}), 1f, "cutting edge forward");
+		assertTrue(edge[2] < -0.998f, "the edge looks straight ahead within 3.6 degrees: " + edge[2]);
 		float[] flat = g.applyDir(modelDir(1f, 0f, 0f));
-		assertTrue(Math.abs(flat[2]) > 0.99f, "the flats of the blade face forward and back: " + flat[2]);
+		assertTrue(Math.abs(flat[2]) < 0.05f, "the flats of the blade lie in the frontal plane: " + flat[2]);
 	}
 
 	private static float[] modelDir(float x, float y, float z) {

@@ -27,7 +27,7 @@ final class StripHud {
 			case SCATTER -> 6;
 			case HAKUTEIKEN -> 7;
 			case SENKEI -> 8;
-			case ICE_SPIKE -> 12; // second row of 4 after the 12 cells of round 5 (gen_hud_textures.py: 4 x 4 cells)
+			case ICE_WALL -> 12; // second row of 4 after the 12 cells of round 5 (gen_hud_textures.py: 4 x 4 cells)
 			case CAGE -> 13;
 		};
 	}

@@ -56,10 +56,10 @@ class KidoConfigTest {
 		assertEquals(200, s.costTenths());
 		assertEquals(200, s.cooldownTicks());
 		assertEquals(24.0, s.range());
-		assertEquals(2.0, s.damage(), "r8: half of the 4.0 of the 2026-10-12 rebalance");
+		assertEquals(1.0, s.damage(), "R11 T4: half a heart (r8 had 2.0)");
 		assertEquals(3.5, s.radius());
 		assertEquals(1.2, s.speed());
-		assertEquals(60, s.fireTicks());
+		assertEquals(15, s.fireTicks(), "R11 T4: short of the 20-tick fire damage step");
 		KidoSpec a = c.spec(KidoId.SAI);
 		assertEquals(60, a.costTenths());
 		assertEquals(100, a.cooldownTicks());

@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.registry;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.block.FrostSprigBlock;
+import dev.minebleach.reiatsutest.block.IceWallBlock;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.MapColor;
@@ -35,6 +36,15 @@ public final class ModBlocks {
 			.noCollision().nonOpaque().allowsSpawning((state, world, pos, type) -> false).suffocates((state, world, pos) -> false)
 			.blockVision((state, world, pos) -> false)));
 
+	/**
+	 * The ice wall of the Rukia bankai (R11 T5). Unbreakable like the frost blocks (strength -1), drops nothing, pistons do not move it,
+	 * standard friction, translucent. Wall blocks are real blocks, so nobody walks through; their strength is a separate pool kept by
+	 * {@code server/IceWall}. Creative mode can still break them (the journal treats an air cell as free).
+	 */
+	public static final Block ICE_WALL = register("ice_wall", new IceWallBlock(ground(MapColor.LIGHT_BLUE, BlockSoundGroup.GLASS)
+			.nonOpaque().allowsSpawning((state, world, pos, type) -> false).suffocates((state, world, pos) -> false)
+			.blockVision((state, world, pos) -> false)));
+
 	private ModBlocks() {
 	}
 
@@ -55,5 +65,10 @@ public final class ModBlocks {
 	/** True for the five frost blocks. */
 	public static boolean isFrost(Block b) {
 		return b == FROST_CRUST || b == FROST_STONE || b == FROST_LEAVES || b == FROST_FILM || b == FROST_SPRIG;
+	}
+
+	/** True for blocks of the mod that abilities never break and that the world's own rules never restore as terrain: the frost blocks and the ice wall. */
+	public static boolean isModTerrain(Block b) {
+		return isFrost(b) || b == ICE_WALL;
 	}
 }

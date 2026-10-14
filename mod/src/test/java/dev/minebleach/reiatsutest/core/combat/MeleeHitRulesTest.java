@@ -13,10 +13,10 @@ class MeleeHitRulesTest {
 	private static final int ONE_POINT = 10; // tenths
 
 	@Test
-	void defaultIsOnePointWhichIsTenTenthsOfAHundredPointBar() {
+	void defaultIsFivePointsWhichIsFiftyTenthsOfAHundredPointBar() {
 		BalanceConfig c = BalanceConfig.defaults();
-		assertEquals(1.0, c.meleeHitReiatsu(), 1e-9);
-		assertEquals(ONE_POINT, c.meleeHitTenths());
+		assertEquals(5.0, c.meleeHitReiatsu(), 1e-9, "R11 T2: was 1.0");
+		assertEquals(5 * ONE_POINT, c.meleeHitTenths());
 		assertEquals(1000, c.maxTenths(), "the bar is 1000 tenths = 100.0 points on the HUD");
 		assertEquals(100.0, c.maxTenths() / 10.0, 1e-9);
 	}
@@ -52,7 +52,7 @@ class MeleeHitRulesTest {
 	}
 
 	@Test
-	void hundredHitsFillAnEmptyBarAndWorkInAnyState() {
+	void twentyHitsFillAnEmptyBarAndWorkInAnyState() {
 		Fx f = new Fx().toShikai(CharacterId.RUKIA);
 		f.sm.devSetReiatsu(0);
 		int hits = 0;
@@ -60,7 +60,7 @@ class MeleeHitRulesTest {
 			f.sm.grantReiatsu(f.cfg.meleeHitTenths());
 			hits++;
 		}
-		assertEquals(100, hits, "1.0 point per hit, 100 points in the bar");
+		assertEquals(20, hits, "R11 T2: 5.0 points per hit, 100 points in the bar");
 	}
 
 	@Test

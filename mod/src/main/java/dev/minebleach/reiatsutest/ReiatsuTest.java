@@ -25,6 +25,7 @@ public class ReiatsuTest implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModConfig.migrate();
 		ModBlocks.init();
 		ModComponents.init();
 		ModItems.init();
@@ -34,8 +35,10 @@ public class ReiatsuTest implements ModInitializer {
 		ModNetworking.registerPayloads();
 		ZanpakutoManager.init();
 		dev.minebleach.reiatsutest.server.RageManager.init();
+		dev.minebleach.reiatsutest.server.RukiaMomentum.init();
 		dev.minebleach.reiatsutest.server.KidoManager.init();
 		ReiatsuCommand.register();
+		dev.minebleach.reiatsutest.server.GrassGuard.init();
 		VoiceControl.init();
 		dev.minebleach.reiatsutest.server.RukiaServerFx.init();
 		dev.minebleach.reiatsutest.server.FrostField.init();

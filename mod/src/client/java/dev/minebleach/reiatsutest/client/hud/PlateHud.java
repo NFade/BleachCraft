@@ -83,6 +83,7 @@ final class PlateHud {
 		}
 		drawValueLine(g, font, barX, y0 + 26, barW, ch, st, accent, alpha, tickDelta);
 		drawRage(g, font, barX, y0 + 37, barW, alpha, now);
+		drawMomentum(g, barX, y0 + 37, barW, alpha, now);
 		long q3 = System.nanoTime();
 		PROF[0] += q1 - q0;
 		PROF[1] += q2 - q1;
@@ -620,6 +621,44 @@ final class PlateHud {
 		ms.scale(0.75f, 0.75f, 1f);
 		g.textAt(font, HudText.tr("hud.reiatsu_test.rage"), (HudGfx.argb(full ? RAGE_TEXT_FULL : RAGE_CAPTION, 1f) & 0x00FFFFFF) | alphaInt(a * 0.9f) << 24, true);
 		ms.pop();
+	}
+
+	/** R11 T6: 5x5 pixel snowflake, the stack marker of the Rukia passive. */
+	private static final String[] FLAKE = {"..#..", "#.#.#", ".###.", "#.#.#", "..#.."};
+	private static final float[] FLAKE_ON = {0.72f, 0.92f, 1.0f};
+	private static final float[] FLAKE_MAX = {1.0f, 1.0f, 1.0f};
+	private static final float[] FLAKE_OFF = {0.30f, 0.42f, 0.55f};
+
+	/**
+	 * R11 T6: the frost stacks of Rukia as a row of snowflakes at the right end of the caption line under the rage bar (the caption is on the left,
+	 * so they do not meet). Only while she holds at least one stack; empty slots up to the current maximum are dim; at the maximum the flakes
+	 * glow white and pulse (steady with reduceMotion). Follows the rage bar when the voice toast pushes it down. UNVERIFIED in the game.
+	 */
+	private static void drawMomentum(HudGfx g, int bx, int by0, int barW, float alpha, double now) {
+		var m = dev.minebleach.reiatsutest.client.ClientState.momentum();
+		if (m.max() <= 0 || m.stacks() <= 0) {
+			return;
+		}
+		boolean rm = FxConfig.reduceMotion;
+		int y = by0 + (int) Math.round(rageYOff) + RAGE_H + 2;
+		int step = 7;
+		int x = bx + barW - m.max() * step + 2;
+		boolean atMax = m.stacks() >= m.max();
+		float pulse = atMax && !rm ? (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.6 * now)) : atMax ? 0.6f : 0f;
+		for (int i = 0; i < m.max(); i++) {
+			boolean on = i < m.stacks();
+			float[] c = on ? (atMax ? FxMath.mix(FLAKE_ON, FLAKE_MAX, 0.4 + 0.6 * pulse) : FLAKE_ON) : FLAKE_OFF;
+			float a = alpha * (on ? 1.0f : 0.45f);
+			int fx = x + i * step;
+			for (int row = 0; row < 5; row++) {
+				String line = FLAKE[row];
+				for (int col = 0; col < 5; col++) {
+					if (line.charAt(col) == '#') {
+						g.fill(fx + col, y + row, fx + col + 1, y + row + 1, HudGfx.argb(c, a));
+					}
+				}
+			}
+		}
 	}
 
 	/** 9x9 pixel flame; brighter with the fill, white-hot pulse on a full bar. */

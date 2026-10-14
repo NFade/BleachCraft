@@ -44,6 +44,12 @@ public final class ReiatsuCommand {
 				.requires(src -> src.hasPermissionLevel(2))
 				.then(CommandManager.literal("info").executes(c -> info(c.getSource())))
 				.then(CommandManager.literal("voice").executes(c -> voice(c.getSource())))
+				// /reiatsu reload: migrate config/reiatsu_test.json and re-read the sections that can change on a running server (R11 T0)
+				.then(CommandManager.literal("reload").executes(c -> {
+					int n = ConfigReload.run();
+					c.getSource().sendFeedback(() -> Text.literal("config reloaded: " + n + " sections (voice and frost need a restart)"), true);
+					return n;
+				}))
 				.then(CommandManager.literal("full").executes(c -> setPoints(c.getSource(), 100.0)))
 				.then(CommandManager.literal("set")
 						.then(CommandManager.argument("points", DoubleArgumentType.doubleArg(0.0, 100.0))

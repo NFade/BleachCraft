@@ -65,6 +65,7 @@ class RageGateTest {
 	void bankaiNeedsEightyAndPaysIt() {
 		Rig g = new Rig(1000);
 		g.fx.toShikai(R);
+		g.fx.adv(RC.bankaiMinShikaiTicks()); // R11 T3: bankai also needs the minimum time in shikai (see bankaiWaitsForTheMinimumTimeInShikai)
 		g.rage[0] = 799;
 		TransitionResult denied = g.fx.tr(ZanpakutoState.BANKAI, R);
 		assertEquals(RejectReason.NOT_ENOUGH_RAGE, denied.reason());
@@ -74,6 +75,57 @@ class RageGateTest {
 		TransitionResult ok = g.fx.tr(ZanpakutoState.BANKAI, R);
 		assertTrue(ok.ok(), String.valueOf(ok.reason()));
 		assertEquals(800, Fx.events(ok.events(), StateEvent.RageSpent.class).get(0).tenths());
+	}
+
+	// ------------------------------------------------------------------ R11 T3: minimum time in shikai
+
+	@Test
+	void bankaiWaitsForTheMinimumTimeInShikai() {
+		Rig g = new Rig(1000);
+		g.fx.toShikai(R);
+		int wait = g.fx.sm.bankaiWaitTicks();
+		assertTrue(wait > 0 && wait <= RC.bankaiMinShikaiTicks(), "just released: still waiting, " + wait);
+		TransitionResult early = g.fx.tr(ZanpakutoState.BANKAI, R);
+		assertFalse(early.ok());
+		assertEquals(RejectReason.SHIKAI_TOO_SHORT, early.reason());
+		assertEquals(ResultCode.DENIED_SHIKAI_TIME, early.code());
+		assertTrue(early.events().isEmpty(), "a refusal changes and costs nothing");
+		assertEquals(ZanpakutoState.SHIKAI, g.fx.sm.state());
+		g.fx.adv(wait - 1);
+		g.fx.adv(0);
+		assertEquals(RejectReason.SHIKAI_TOO_SHORT, g.fx.tr(ZanpakutoState.BANKAI, R).reason(), "one tick short");
+		g.fx.adv(2);
+		assertEquals(0, g.fx.sm.bankaiWaitTicks());
+		assertTrue(g.fx.tr(ZanpakutoState.BANKAI, R).ok());
+	}
+
+	@Test
+	void notEnoughRageIsReportedBeforeTheShikaiTime() {
+		Rig g = new Rig(0);
+		g.fx.sm.setRageFree(true);
+		g.fx.toShikai(R);
+		g.fx.sm.setRageFree(false);
+		assertEquals(RejectReason.NOT_ENOUGH_RAGE, g.fx.tr(ZanpakutoState.BANKAI, R).reason());
+	}
+
+	@Test
+	void ragefreeAndAMachineWithoutTheGateIgnoreTheShikaiTime() {
+		Rig g = new Rig(0);
+		g.fx.sm.setRageFree(true);
+		g.fx.toShikai(R);
+		assertEquals(0, g.fx.sm.bankaiWaitTicks());
+		assertTrue(g.fx.tr(ZanpakutoState.BANKAI, R).ok());
+		Fx plain = new Fx().toShikai(R);
+		assertEquals(0, plain.sm.bankaiWaitTicks());
+		assertTrue(plain.tr(ZanpakutoState.BANKAI, R).ok());
+	}
+
+	@Test
+	void theWaitCountsFromEnteringShikaiAndIsZeroOutsideShikai() {
+		Rig g = new Rig(1000);
+		assertEquals(0, g.fx.sm.bankaiWaitTicks(), "sealed");
+		g.fx.toBase(R);
+		assertEquals(0, g.fx.sm.bankaiWaitTicks(), "base");
 	}
 
 	@Test
@@ -140,7 +192,7 @@ class RageGateTest {
 		g.fx.adv(g.fx.cfg.transitionLockTicks() + 1);
 		g.fx.sm.onHandChanged(CharacterId.NONE);
 		assertTrue(g.fx.sm.castKido(new KidoRequest(KidoId.SAI, RequestSource.KEY, ++g.fx.seq)).ok(), "SHIKAI, sword away");
-		g.fx.adv(300);
+		g.fx.adv(RC.bankaiMinShikaiTicks()); // R11 T3: 300 ticks were enough before the minimum shikai time
 		g.fx.toBankai(R);
 		g.fx.adv(g.fx.cfg.transitionLockTicks() + 1);
 		assertEquals(ZanpakutoState.BANKAI, g.fx.sm.state());

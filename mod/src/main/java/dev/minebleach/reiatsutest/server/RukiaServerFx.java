@@ -43,8 +43,7 @@ public final class RukiaServerFx {
 		}
 		java.util.List<Integer> offs = ctx.spec.phaseOffsets();
 		double half = ctx.spec.params().containsKey(dev.minebleach.reiatsutest.core.state.AbilityParams.HALF_WIDTH) ? ctx.spec.num(dev.minebleach.reiatsutest.core.state.AbilityParams.HALF_WIDTH) : Double.NaN;
-		int stepTicks = offs.size() >= 2 ? offs.get(1) - offs.get(0) : RukiaFxParams.ICE_SPIKE_STEP_TICKS;
-		return RukiaFxParams.extend(RukiaFxParams.abilityOf(effectId), params, ctx.eye.distanceTo(ctx.aim), Math.max(1, offs.size()), half, stepTicks, offs.isEmpty() ? RukiaFxParams.ICE_SPIKE_FIRST_TICKS : offs.get(0));
+		return RukiaFxParams.extend(RukiaFxParams.abilityOf(effectId), params, ctx.eye.distanceTo(ctx.aim), Math.max(1, offs.size()), half, offs.isEmpty() ? RukiaFxParams.ICE_WALL_FIRST_TICKS : offs.get(0));
 	}
 
 	/** Called for every broadcast effect: creates the standing field of a Rukia bankai. */

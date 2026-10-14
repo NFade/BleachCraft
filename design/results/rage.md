@@ -39,3 +39,6 @@ Feel: a 6 hp hit = 3.0, a parry = 15.0, so ~7 parries or ~10 capped hits fill th
 
 ## Open
 F3 (rage replaces or adds to the reiatsu requirement), thresholds 1/2 opening shikai/bankai, damage dealt as a source, a command for tests (`/reiatsu rage`), Rage in `LegacyHud`.
+
+## R11 (2026-10-14): рейдж переделан, см. `r11_T3.md`
+Этот файл описывает версию раунда 3/5; с R11 числа ниже НЕ действуют. Что изменилось: урон по тебе даёт 0; нанесённый урон 0.2 за хп (до 2.5 за удар), мобы 25%, не более 8.0 за 10 с с одной цели; парирование +4.0 не чаще раза в 20 тиков; абилка или кидо +2.0 за каст; пассивного притока нет; банкай не раньше 20 с в шикае (`bankaiMinShikaiTicks`). Числа теперь в секции `rage` файла `config/reiatsu_test.json` (`/reiatsu reload`), `RageManager.CONFIG` заменён на `RageManager.config()`. Таблица времён до шикая и банкая: `r11_T3.md` (симулятор `RageSimulatorTest`).

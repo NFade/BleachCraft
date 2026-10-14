@@ -16,7 +16,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * landed, so a parried, barrier-eaten, missed or Creative-immune hit gives nothing) and {@code AFTER_DEATH} for the killing blow, which
  * Fabric does not report through AFTER_DAMAGE. Only {@code PLAYER_ATTACK} damage counts: Better Combat strikes call the vanilla attack and
  * arrive as that type, abilities and kido arrive as FREEZE / INDIRECT_MAGIC and never match. One reward per damaged target (a Better
- * Combat swing through two mobs pays twice).
+ * Combat swing through two mobs pays twice). R11 T2: the reward goes through a per-player limiter ({@code MeleeRewardLimiter}: one reward per
+ * target per few ticks and a cap of points per second), and an armor stand pays nothing.
  */
 public final class MeleeReiatsu {
 	private MeleeReiatsu() {
@@ -35,8 +36,8 @@ public final class MeleeReiatsu {
 		boolean holds = a.getMainHandStack().getItem() instanceof ZanpakutoItem;
 		int perHit = ZanpakutoManager.configOf(a).meleeHitTenths();
 		int tenths = MeleeHitRules.reiatsuTenths(melee, holds, damageTaken, perHit);
-		if (tenths > 0) {
-			ZanpakutoManager.grantMeleeReiatsu(a, tenths);
+		if (tenths > 0 && !(victim instanceof net.minecraft.entity.decoration.ArmorStandEntity)) { // an armor stand is a farm, not a fight (R11 T2)
+			ZanpakutoManager.rewardMeleeHit(a, victim.getId(), tenths);
 		}
 	}
 }

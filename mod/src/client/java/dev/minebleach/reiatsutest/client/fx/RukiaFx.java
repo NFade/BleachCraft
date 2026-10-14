@@ -37,7 +37,7 @@ public final class RukiaFx {
 				RukiaShikaiFx.play(e);
 				RukiaBankaiClient.flare(e.casterId());
 			}
-			case 24 -> IceSpikeFx.play(e);
+			case 24 -> IceWallFx.play(e);
 			case 42 -> FrostFieldFx.field(e);
 			case 43 -> FrostFieldFx.thaw(e);
 			case 2 -> RukiaBankaiFx.release(e);

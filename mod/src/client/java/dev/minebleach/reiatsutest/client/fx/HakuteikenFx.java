@@ -211,6 +211,7 @@ public final class HakuteikenFx {
 		t.burst = FxTune.d("hak.burst", t.burst);
 		t.lineFade = FxTune.d("hak.lineFade", t.lineFade);
 		t.lineFadeSpan = FxTune.d("hak.lineFadeSpan", t.lineFadeSpan);
+		t.haloFade = FxTune.d("hak.haloFade", t.haloFade);
 		t.dissolveStart = FxTune.d("hak.dissolveStart", t.dissolveStart);
 		t.dissolveEnd = FxTune.d("hak.dissolveEnd", t.dissolveEnd);
 		t.life = FxTune.d("hak.life", t.life);

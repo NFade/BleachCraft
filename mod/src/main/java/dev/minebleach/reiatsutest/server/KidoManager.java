@@ -32,7 +32,7 @@ import net.minecraft.util.math.Vec3d;
  *
  * <p>Damage is {@code INDIRECT_MAGIC} attributed to the caster, a damage type that the block and the parry never touch
  * ({@code BlockParry.kindOf} only counts a direct melee hit), so a kido hit cannot be blocked or parried by the target's
- * sword. Nothing here damages blocks. Targets are chosen by {@link Targeting#valid} (never the caster, never an immune type,
+ * sword. Blocks are only touched by the Shakkaho burst and only when {@code terrain.shakkaho.enabled} (off by default, R11 T9). Targets are chosen by {@link Targeting#valid} (never the caster, never an immune type,
  * players only when {@link Tuning#affectPlayers} and PvP allow it).
  */
 public final class KidoManager {
@@ -62,6 +62,7 @@ public final class KidoManager {
 	}
 
 	public static void init() {
+		ConfigReload.register(() -> config = ModConfig.loadKido());
 		ServerLifecycleEvents.SERVER_STARTED.register(srv -> {
 			config = ModConfig.loadKido();
 			BURSTS.clear();
@@ -111,7 +112,9 @@ public final class KidoManager {
 		switch (k.kido()) {
 			case BYAKURAI -> {
 				if (t.entity() != null) {
-					Targeting.hurt(p, t.entity(), (float) spec.damage(), DamageTypes.INDIRECT_MAGIC, true);
+					Targeting.hurtPlain(p, t.entity(), (float) spec.damage(), DamageTypes.INDIRECT_MAGIC, true);
+				} else if (t.hitKind() == KidoMath.HIT_BLOCK) {
+					IceWall.absorbNear(p.getServerWorld(), t.end().add(dir.multiply(0.1)), 0.6, spec.damage(), "byakurai"); // R11 T5: the beam ended on an ice wall
 				}
 			}
 			case SHAKKAHO -> {
@@ -205,18 +208,20 @@ public final class KidoManager {
 
 	/** The red burst: every valid living entity within the radius takes damage with falloff and burns; no block is touched. */
 	static void burst(ServerPlayerEntity p, KidoSpec spec, Vec3d center) {
+		IceWall.absorbNear(p.getServerWorld(), center, 1.3, spec.damage(), "shakkaho"); // R11 T5: a burst on an ice wall spends its strength; the sphere below does not reach through it
 		List<LivingEntity> targets = Targeting.sphere(p, center, spec.radius(), MAX_TARGETS);
 		for (LivingEntity e : targets) {
 			double dist = distanceToBox(center, e.getBoundingBox());
 			float dmg = (float) KidoMath.burstDamage(spec, dist);
 			if (dmg > 0f) {
-				Targeting.hurt(p, e, dmg, DamageTypes.INDIRECT_MAGIC, true);
+				Targeting.hurtPlain(p, e, dmg, DamageTypes.INDIRECT_MAGIC, true);
 			}
 			if (spec.fireTicks() > 0) {
 				e.setOnFireForTicks(spec.fireTicks());
 			}
 			Targeting.knockback(e, center, BURST_KNOCKBACK);
 		}
+		AbilityTerrain.shakkaho(p, center); // R11 T9: off by default (terrain.shakkaho.enabled); no fire is placed on blocks either way
 	}
 
 	static double distanceToBox(Vec3d point, Box b) {

@@ -4,14 +4,24 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import dev.minebleach.reiatsutest.core.combat.FrostMomentum;
+import dev.minebleach.reiatsutest.core.config.ConfigMigrations;
 import dev.minebleach.reiatsutest.core.kido.KidoConfig;
+import dev.minebleach.reiatsutest.core.rage.RageConfig;
+import dev.minebleach.reiatsutest.core.state.MechSpec;
 import dev.minebleach.reiatsutest.core.swarm.FlightConfig;
 import dev.minebleach.reiatsutest.core.voice.VoiceConfig;
 import dev.minebleach.reiatsutest.core.world.FrostConfig;
+import dev.minebleach.reiatsutest.core.world.IceWallConfig;
+import dev.minebleach.reiatsutest.core.world.TerrainRules;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
@@ -25,6 +35,125 @@ public final class ModConfig {
 
 	public static Path file() {
 		return FabricLoader.getInstance().getConfigDir().resolve(ReiatsuTest.MOD_ID + ".json");
+	}
+
+	/**
+	 * R11 T0: stamps {@code configVersion} on a fresh file and, for an older one, replaces the values that still equal an old default (see
+	 * {@link ConfigMigrations}), after copying the file to {@code reiatsu_test.json.bak_v<N>}. An unreadable file is left alone. Run before
+	 * the section loaders (mod init and {@code /reiatsu reload}).
+	 *
+	 * @return the number of keys rewritten
+	 */
+	public static synchronized int migrate() {
+		Path file = file();
+		try {
+			if (!Files.isRegularFile(file)) {
+				JsonObject fresh = new JsonObject();
+				fresh.addProperty(ConfigMigrations.VERSION_KEY, ConfigMigrations.SERVER_VERSION);
+				Files.createDirectories(file.getParent());
+				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(fresh) + System.lineSeparator(), StandardCharsets.UTF_8);
+				return 0;
+			}
+			var el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
+			if (!el.isJsonObject()) {
+				return 0;
+			}
+			JsonObject root = el.getAsJsonObject();
+			ConfigMigrations.Result r = ConfigMigrations.migrateServer(root);
+			if (!r.touched()) {
+				return 0;
+			}
+			Path bak = file.resolveSibling(file.getFileName() + ".bak_v" + r.fromVersion());
+			if (!Files.exists(bak)) {
+				Files.copy(file, bak);
+			}
+			Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(), StandardCharsets.UTF_8);
+			ReiatsuTest.LOGGER.info("[config] updated {} keys from v{} to v{} (backup {}): {}", r.changed().size(), r.fromVersion(), r.toVersion(),
+					bak.getFileName(), r.changed());
+			return r.changed().size();
+		} catch (IOException | JsonParseException e) {
+			ReiatsuTest.LOGGER.warn("[config] could not migrate {} ({}), leaving it alone", file, e.toString());
+			return 0;
+		}
+	}
+
+	/**
+	 * R11: the generic section loader of the new sections ({@code mech}, {@code rage}, {@code terrain} ...). Same rules as {@link #loadKido}: a
+	 * missing section is written with the defaults next to whatever else the file holds, an unreadable file is left alone and the defaults are used.
+	 */
+	static <T> T loadSection(String section, Supplier<T> defaults, Function<JsonObject, T> fromRoot, BiConsumer<T, JsonObject> writeInto) {
+		return loadSection(section, defaults, fromRoot, writeInto, root -> root.has(section));
+	}
+
+	/** Same with an own test whether the file already holds the section (for a nested section that shares its parent object with other tasks). */
+	static <T> T loadSection(String section, Supplier<T> defaults, Function<JsonObject, T> fromRoot, BiConsumer<T, JsonObject> writeInto,
+			Predicate<JsonObject> present) {
+		Path file = file();
+		JsonObject root = new JsonObject();
+		boolean write = true;
+		if (Files.isRegularFile(file)) {
+			try {
+				var el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
+				if (el.isJsonObject()) {
+					root = el.getAsJsonObject();
+					write = !present.test(root);
+				} else {
+					write = false;
+				}
+			} catch (IOException | JsonParseException e) {
+				ReiatsuTest.LOGGER.warn("[config] {} is not readable ({}), using {} defaults and leaving it alone", file, e.toString(), section);
+				return defaults.get();
+			}
+		}
+		T cfg = fromRoot.apply(root);
+		if (write) {
+			writeInto.accept(cfg, root);
+			try {
+				Files.createDirectories(file.getParent());
+				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(), StandardCharsets.UTF_8);
+			} catch (IOException e) {
+				ReiatsuTest.LOGGER.warn("[config] could not write {}: {}", file, e.toString());
+			}
+		}
+		return cfg;
+	}
+
+	/** The {@code "mech"} section (R11 T2: melee and parry reiatsu, block, barrier push). */
+	public static MechSpec loadMech() {
+		return loadSection(MechSpec.SECTION, MechSpec::defaults, MechSpec::fromRoot, (m, root) -> root.add(MechSpec.SECTION, m.toJson()));
+	}
+
+	/** The {@code "rage"} section (R11 T3: rage gain, parry, ability reward, mob share, target cap, minimum shikai time before bankai). */
+	public static RageConfig loadRage() {
+		return loadSection(RageConfig.SECTION, RageConfig::defaults, RageConfig::fromRoot, (r, root) -> root.add(RageConfig.SECTION, r.toJson()));
+	}
+
+	/** The {@code "rukia.iceWall"} section (R11 T5): geometry, life and strength of the ice wall. Written into the {@code rukia} object next to {@code rukia.passive}. */
+	public static IceWallConfig loadIceWall() {
+		return loadSection(IceWallConfig.SECTION, IceWallConfig::defaults, IceWallConfig::fromRoot, (c, root) -> {
+			JsonObject rukia = root.has(IceWallConfig.SECTION) && root.get(IceWallConfig.SECTION).isJsonObject()
+					? root.getAsJsonObject(IceWallConfig.SECTION) : new JsonObject();
+			rukia.add(IceWallConfig.SUB, c.toJson());
+			root.add(IceWallConfig.SECTION, rukia);
+		}, root -> root.has(IceWallConfig.SECTION) && root.get(IceWallConfig.SECTION).isJsonObject()
+				&& root.getAsJsonObject(IceWallConfig.SECTION).has(IceWallConfig.SUB));
+	}
+
+	/** The {@code "terrain"} section (R11 T9: abilities break blocks, profiles S / M / L, batches per tick, mob griefing). */
+	public static TerrainRules.Config loadTerrain() {
+		return loadSection(TerrainRules.Config.SECTION, TerrainRules.Config::defaults, TerrainRules.Config::fromRoot,
+				(c, root) -> root.add(TerrainRules.Config.SECTION, c.toJson()));
+	}
+
+	/** The {@code "rukia.passive"} section (R11 T6): the frost momentum of Rukia. Written into an existing {@code rukia} object without touching its other keys. */
+	public static FrostMomentum.Config loadRukiaPassive() {
+		return loadSection(FrostMomentum.Config.SECTION, FrostMomentum.Config::defaults, FrostMomentum.Config::fromRoot, (c, root) -> {
+			JsonObject rukia = root.has(FrostMomentum.Config.SECTION) && root.get(FrostMomentum.Config.SECTION).isJsonObject()
+					? root.getAsJsonObject(FrostMomentum.Config.SECTION) : new JsonObject();
+			rukia.add(FrostMomentum.Config.SUB, c.toJson());
+			root.add(FrostMomentum.Config.SECTION, rukia);
+		}, root -> root.has(FrostMomentum.Config.SECTION) && root.get(FrostMomentum.Config.SECTION).isJsonObject()
+				&& root.getAsJsonObject(FrostMomentum.Config.SECTION).has(FrostMomentum.Config.SUB));
 	}
 
 	public static VoiceConfig loadVoice() {

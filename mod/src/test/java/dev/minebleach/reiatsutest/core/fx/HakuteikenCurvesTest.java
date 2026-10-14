@@ -87,13 +87,13 @@ class HakuteikenCurvesTest {
 		assertEquals(0.0, HakuteikenCurves.bladeLength(T, 0.5, len), 1e-9);
 		assertTrue(HakuteikenCurves.bladeLength(T, 1.2, len) > 1.0);
 		assertEquals(4.0, HakuteikenCurves.bladeLength(T, 1.45, len), 0.05);
-		assertEquals(len, HakuteikenCurves.bladeLength(T, 1.5 + 0.08 + 0.3, len), 0.05);
+		assertEquals(len, HakuteikenCurves.bladeLength(T, 1.5 + 0.08, len), 0.05);
 		assertEquals(1.0, HakuteikenCurves.bladeLength(T, 2.6, len), 1e-9);
 		assertEquals(0.0, HakuteikenCurves.lineReach(T, 1.49, len), 1e-9);
 		assertEquals(len, HakuteikenCurves.lineReach(T, 1.7, len), 0.05);
 		assertTrue(HakuteikenCurves.lineReach(T, 1.54, len) > 0.5 * len);
-		assertEquals(1.0, HakuteikenCurves.lineAlpha(T, 2.0), 1e-9);
-		assertEquals(0.0, HakuteikenCurves.lineAlpha(T, 2.6), 1e-9);
+		assertEquals(1.0, HakuteikenCurves.lineAlpha(T, 1.55), 1e-9);
+		assertEquals(0.0, HakuteikenCurves.lineAlpha(T, 2.0), 1e-9);
 	}
 
 	@Test
@@ -126,5 +126,18 @@ class HakuteikenCurvesTest {
 		// darker than the night while the blade is out
 		HakuteikenCurves.gradeColour(1.8, base, out);
 		assertTrue(out[2] < base[2]);
+	}
+
+	@Test
+	void theLineVanishesRightAfterTheStrike() {
+		// R11 T8: bright up to strike + 0.10, gone 0.08 s later, never later than 0.25 s after the strike
+		assertEquals(T.strike + 0.10, T.lineFade, 1e-9);
+		assertEquals(1.0, HakuteikenCurves.lineAlpha(T, T.strike + 0.05), 1e-9);
+		assertEquals(1.0, HakuteikenCurves.lineAlpha(T, T.lineFade), 1e-9);
+		assertEquals(0.0, HakuteikenCurves.lineAlpha(T, T.lineFade + T.lineFadeSpan), 1e-9);
+		assertTrue(T.lineFade + T.lineFadeSpan <= T.strike + 0.25);
+		assertEquals(0.0, HakuteikenCurves.lineAlpha(T, T.strike + 0.5), 1e-9);
+		// the glow at the hand keeps its old fade
+		assertEquals(2.20, T.haloFade, 1e-9);
 	}
 }

@@ -17,13 +17,16 @@ package dev.minebleach.reiatsutest.core.combat;
 public final class GuardMotion {
 	/**
 	 * One handed block (fallback when the two handed hold is off), 2026-10-13: the user's cross-body diagonal guard as in {@link TwoHandMotion#GUARD} (same
-	 * rotation, so the same blade direction and roll) but about the grip instead of the point {@code two.pivot_s}; the shift was searched again for the grip
-	 * pivot and the vanilla one handed arms (no {@code two.arm.shift} / {@code two.arm.rot}): the blade line on the screen is the same (bottom edge 2 degrees right
-	 * of the middle, horizon 20 degrees left, closest approach 17.8 degrees), the right fist at the bottom edge (ndc -0.05, -0.90). The left hand supports the blade
-	 * 0.72 blocks up the hilt ({@code guard.left.s}), so it ends at the upper left of the picture (ndc -0.66, 0.97); both arms clear the keep-out rectangle (margins
-	 * 0.18 and 0.50 at 16:9). Replaces the Pose B pose (-0.317, -0.208, -0.337, -41.5, 0.5, -5.3) and the old pose (-0.22, 0.14, -0.04, -12, -22, 62). UNVERIFIED in game.
+	 * rotation, so the same blade direction and roll: R11 T1, the cutting edge faces forward) but about the grip instead of the point {@code two.pivot_s}; the
+	 * shift was searched again for the grip pivot and the vanilla one handed arms (no {@code two.arm.shift} / {@code two.arm.rot}): the blade line on the screen is
+	 * the old one within a degree (bottom edge 1.8 degrees right of the middle, horizon 20.4 degrees left, closest approach 17.8 degrees), the right fist at the
+	 * bottom edge (ndc -0.01, -0.83). The left hand supports the blade 0.30 model units up the hilt ({@code guard.left.s}), so it ends at the upper left of the picture
+	 * (ndc -0.49, 0.50); both arms clear the keep-out rectangle (smaller margin 0.29 / 0.23 / 0.14 at 4:3 / 16:9 / 21:9), nearest corner 0.17 blocks from the camera. During the
+	 * blend from the rest pose the free left arm dips up to 0.07 ndc into the keep-out rectangle for about 0.03 s (the old pose stayed 0.14 clear; with the edge forward
+	 * the vanilla arms cannot satisfy all rules at once, see design/results/r11_T1.md). Was (-0.802, 0.272, 0.418, -89.3, -112.5, -80.3); before that the Pose B pose
+	 * (-0.317, -0.208, -0.337, -41.5, 0.5, -5.3) and the old pose (-0.22, 0.14, -0.04, -12, -22, 62). UNVERIFIED in game.
 	 */
-	public static final FpPose GUARD = FpPose.of(-0.802f, 0.272f, 0.418f, -89.3f, -112.5f, -80.3f);
+	public static final FpPose GUARD = FpPose.of(-0.815f, 0.154f, 0.204f, -8.8f, -5.1f, 37.1f);
 	/**
 	 * Block with the sheathed sword (SEALED, round 5): the scabbard with the sword in it is carried as one body in both hands across the view,
 	 * the mouth near the right fist, the scabbard rising to the upper left at about 30 degrees on the screen (blade tilt 20 forward, 36 about the

@@ -48,8 +48,8 @@ public final class KidoConfig {
 		// Hado 4: instant thin beam, 1.25 hp (0.6 hearts; r8 item 4 halved the 2.5 of the 2026-10-12 rebalance), 30 blocks, 5 s cooldown
 		m.put(KidoId.BYAKURAI, new KidoSpec(KidoId.BYAKURAI, true, 100, 100, 30.0, 1.25, 0.0, 0, 0, 0.0, 0.35));
 		// Hado 31: a ball at 1.2 blocks/tick (24 blocks/s) to the first block or target within 24 blocks, burst radius 3.5,
-		// 2.0 hp in the centre (r8 item 4 halved the 4.0 of the 2026-10-12 rebalance) falling to 40 percent at the edge, targets burn 3 s, no block damage, 10 s cooldown
-		m.put(KidoId.SHAKKAHO, new KidoSpec(KidoId.SHAKKAHO, true, 200, 200, 24.0, 2.0, 3.5, 0, 60, 1.2, 0.5));
+		// 1.0 hp in the centre (half a heart, R11 T4; r8 item 4 had 2.0) falling to 40 percent at the edge, targets burn 15 ticks (0.75 s, short of the 20-tick fire damage step), no block damage, 10 s cooldown
+		m.put(KidoId.SHAKKAHO, new KidoSpec(KidoId.SHAKKAHO, true, 200, 200, 24.0, 1.0, 3.5, 0, 15, 1.2, 0.5));
 		// Bakudo 1: first target within 8 blocks cannot move for 3 s (slowness to a standstill), no damage, 5 s cooldown
 		m.put(KidoId.SAI, new KidoSpec(KidoId.SAI, true, 60, 100, 8.0, 0.0, 0.0, 60, 0, 0.0, 0.4));
 		return new KidoConfig(true, 10, m);

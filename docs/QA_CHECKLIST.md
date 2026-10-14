@@ -98,7 +98,7 @@ flat arena). Say each phrase once and press the key once.
 
 ## 5. Bankai abilities and the way back to sealed (4 min)
 
-- [ ] **Rukia, ice spike** (`U`): a thrust of ice spikes along the look direction. Key `I` does nothing for Rukia (Absolute Zero was removed).
+- [ ] **Rukia, ice wall** (`U`): a wall of ice (9 wide, 5 high, 2 thick) grows bottom to top where you look, stands 10 s, nobody walks through it and abilities stop at it (R11 T5, UNVERIFIED in the game). Key `I` does nothing for Rukia (Absolute Zero was removed).
 - [ ] **Rukia, frost territory (passive)**: stand your ground in her bankai with zombies (a skeleton, a player with pvp on) 5 to 25 blocks
       away: they are slowed (Slowness I) and lose exactly one heart every 3 s even in full netherite armor; cows and villagers are not
       touched; you and your team are not touched; everything stops the moment the bankai ends (V, 45 s, death, leaving the world).

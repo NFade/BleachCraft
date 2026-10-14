@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Round 6 (design/results/rukia_bankai_round6.md): Rukia's bankai has the ice spike (the second ability, Absolute Zero, was removed in
+ * Round 6 (design/results/rukia_bankai_round6.md): Rukia's bankai had the ice spike (R11 T5 made it the ice wall; the second ability, Absolute Zero, was removed in
  * mech2 task 4) and Byakuya's shikai has a third ability, the petal cage. Balance rules: the bankai does less damage per second than the
  * Rukia shikai set, the cage less than the attack mode.
  */
@@ -31,37 +31,43 @@ class Round6AbilityTest {
 	@Test
 	void rukiaHasOneBankaiAbilityAndTheSecondSlotIsEmpty() {
 		// mech2 task 4: Absolute Zero (key I) was the same effect as Tsukishiro and is gone; the frost territory is a passive (BankaiFieldSpec)
-		AbilitySpec spike = s(AbilityId.ICE_SPIKE);
-		assertEquals(0, AbilityId.ICE_SPIKE.slot());
-		assertEquals(AbilityId.ICE_SPIKE, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
+		AbilitySpec wall = s(AbilityId.ICE_WALL);
+		assertEquals(0, AbilityId.ICE_WALL.slot());
+		assertEquals(AbilityId.ICE_WALL, AbilityId.forSlot(R, ZanpakutoState.BANKAI, 0));
 		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 1), "no second Rukia bankai ability");
 		assertNull(AbilityId.forSlot(R, ZanpakutoState.BANKAI, 2));
 		assertNull(AbilityId.fromCommandId("rukia.bankai.absolute_zero"));
 		assertNull(AbilityId.fromCode((byte) 4), "code 4 stays unused");
 		for (AbilityId a : AbilityId.values()) {
 			if (a.character == R && a.requiredState == ZanpakutoState.BANKAI) {
-				assertEquals(AbilityId.ICE_SPIKE, a, "the only Rukia bankai ability");
+				assertEquals(AbilityId.ICE_WALL, a, "the only Rukia bankai ability");
 			}
 		}
-		// a long narrow line, no area
-		assertTrue(spike.num(AbilityParams.LENGTH) >= 30.0 && spike.num(AbilityParams.HALF_WIDTH) <= 2.5);
-		assertEquals(0.0, spike.num(AbilityParams.RADIUS), 0.0, "the spike has no area, only a line");
-		assertEquals("rukia.bankai.ice_spike", AbilityId.ICE_SPIKE.commandId);
-		assertEquals(AbilityId.ICE_SPIKE, AbilityId.fromCommandId("rukia.bankai.ice_spike"));
+		// R11 T5 (variant W): a wall in front of her, no damage; 10 block reach, 14 ticks of cast time, 18 reiatsu, 14 s cooldown
+		assertEquals(10.0, wall.num(AbilityParams.LENGTH), 0.0);
+		assertEquals(180, wall.costTenths(), "18 reiatsu (it was 15 for the spike)");
+		assertEquals(280, wall.cooldownTicks(), "14 s (it was 8 s for the spike)");
+		assertEquals(List.of(14), wall.phaseOffsets(), "one release phase at tick 14");
+		assertEquals(24, wall.effectId());
+		assertEquals(0.0, wall.num(AbilityParams.DAMAGE), 0.0, "the wall deals no damage");
+		assertEquals(0.0, wall.num(AbilityParams.RADIUS), 0.0);
+		assertEquals("rukia.bankai.ice_wall", AbilityId.ICE_WALL.commandId);
+		assertEquals(AbilityId.ICE_WALL, AbilityId.fromCommandId("rukia.bankai.ice_wall"));
 	}
 
 	@Test
 	void rukiaBankaiDamagePerSecondStaysBelowTheShikaiSet() {
 		double shikai = dps(AbilityId.TSUKISHIRO, 1) + dps(AbilityId.HAKUREN, 1) + dps(AbilityId.SHIRAFUNE, 1);
-		double bankai = dps(AbilityId.ICE_SPIKE, 1);
+		double bankai = dps(AbilityId.ICE_WALL, 1);
 		assertTrue(bankai <= shikai, "bankai ability " + bankai + " HP/s must not exceed the shikai set " + shikai + " HP/s");
 		// and it does not beat the best single shikai one
 		double best = Math.max(dps(AbilityId.TSUKISHIRO, 1), Math.max(dps(AbilityId.HAKUREN, 1), dps(AbilityId.SHIRAFUNE, 1)));
-		assertTrue(dps(AbilityId.ICE_SPIKE, 1) <= best);
+		assertTrue(dps(AbilityId.ICE_WALL, 1) <= best);
+		assertEquals(0.0, bankai, 0.0, "the ice wall does no damage at all");
 		// the passive territory adds one heart per 3 s per enemy: 0.67 HP/s, still below any single shikai ability
 		BankaiFieldSpec f = CFG.bankaiField();
 		double field = f.tickDamage() / (f.periodTicks() / 20.0);
-		assertTrue(field + dps(AbilityId.ICE_SPIKE, 1) <= shikai, "bankai total with the field " + (field + dps(AbilityId.ICE_SPIKE, 1)) + " HP/s");
+		assertTrue(field + dps(AbilityId.ICE_WALL, 1) <= shikai, "bankai total with the field " + (field + dps(AbilityId.ICE_WALL, 1)) + " HP/s");
 	}
 
 	@Test
@@ -98,9 +104,9 @@ class Round6AbilityTest {
 
 	@Test
 	void newAbilitiesUseUniqueCodesEffectsAndSlots() {
-		assertEquals(10, AbilityId.ICE_SPIKE.code);
+		assertEquals(10, AbilityId.ICE_WALL.code);
 		assertEquals(11, AbilityId.CAGE.code);
-		assertEquals(AbilityId.ICE_SPIKE, AbilityId.fromCode((byte) 10));
+		assertEquals(AbilityId.ICE_WALL, AbilityId.fromCode((byte) 10));
 		assertEquals(AbilityId.CAGE, AbilityId.fromCode((byte) 11));
 		assertTrue(EffectIds.FROST_FIELD != EffectIds.FROST_THAW);
 		for (AbilityId a : AbilityId.values()) {
@@ -110,16 +116,17 @@ class Round6AbilityTest {
 	}
 
 	@Test
-	void iceSpikeCastsInBankaiPaysItsCostAndSchedulesSixSegments() {
+	void iceWallCastsInBankaiPaysItsCostAndSchedulesOneReleasePhase() {
 		Fx f = new Fx().toShikai(R).toBankai(R);
 		f.adv(44);
 		int before = f.sm.reiatsu().value();
-		TransitionResult r = f.cast(AbilityId.ICE_SPIKE, R);
+		TransitionResult r = f.cast(AbilityId.ICE_WALL, R);
 		assertTrue(r.ok(), String.valueOf(r.reason()));
-		assertEquals(before - s(AbilityId.ICE_SPIKE).costTenths(), f.sm.reiatsu().value());
+		assertEquals(before - s(AbilityId.ICE_WALL).costTenths(), f.sm.reiatsu().value());
 		assertEquals(24, Fx.events(r.events(), StateEvent.BroadcastEffect.class).get(0).effectId());
-		assertEquals(6, Fx.events(r.events(), StateEvent.ScheduledPhase.class).size());
-		assertEquals(s(AbilityId.ICE_SPIKE).cooldownTicks(), f.sm.cooldownRemaining(AbilityId.ICE_SPIKE));
+		assertEquals(1, Fx.events(r.events(), StateEvent.ScheduledPhase.class).size());
+		assertEquals(14, Fx.events(r.events(), StateEvent.ScheduledPhase.class).get(0).offsetTicks());
+		assertEquals(s(AbilityId.ICE_WALL).cooldownTicks(), f.sm.cooldownRemaining(AbilityId.ICE_WALL));
 	}
 
 	@Test
@@ -142,20 +149,17 @@ class Round6AbilityTest {
 	}
 
 	@Test
-	void iceSpikeParamsCarryTheStepsTheWidthAndTheFirstSegmentTime() {
-		AbilitySpec sp = s(AbilityId.ICE_SPIKE);
+	void iceWallParamsCarryTheReachTheFreeRayAndTheReleaseTime() {
+		AbilitySpec sp = s(AbilityId.ICE_WALL);
 		float[] base = {1f, 2f, 3f, (float) sp.num(AbilityParams.LENGTH)};
-		float[] p = RukiaFxParams.extend(AbilityId.ICE_SPIKE, base, 20.0, sp.phaseOffsets().size(), sp.num(AbilityParams.HALF_WIDTH),
-				sp.phaseOffsets().get(1) - sp.phaseOffsets().get(0), sp.phaseOffsets().get(0));
-		assertEquals(9, p.length);
-		assertEquals(36f, p[3], 1e-4);
-		assertEquals(20f, p[4], 1e-4, "the free ray length");
-		assertEquals(6f, p[5], 1e-4);
-		assertEquals(0.1f, p[6], 1e-4, "2 ticks per segment");
-		assertEquals(1.5f, p[7], 1e-4);
-		assertEquals(0.7f, p[8], 1e-4, "the first segment at tick 14");
-		assertEquals(36f, RukiaFxParams.extend(AbilityId.ICE_SPIKE, base, 99.0, 6, Double.NaN)[4], 1e-4, "never longer than the reach");
-		assertTrue(RukiaFxParams.handles(AbilityId.ICE_SPIKE));
-		assertEquals(AbilityId.ICE_SPIKE, RukiaFxParams.abilityOf(24));
+		float[] p = RukiaFxParams.extend(AbilityId.ICE_WALL, base, 6.0, sp.phaseOffsets().size(), Double.NaN, sp.phaseOffsets().get(0));
+		assertEquals(6, p.length);
+		assertEquals(10f, p[3], 1e-4);
+		assertEquals(6f, p[4], 1e-4, "the free ray length");
+		assertEquals(0.7f, p[5], 1e-4, "the wall appears at tick 14");
+		assertEquals(10f, RukiaFxParams.extend(AbilityId.ICE_WALL, base, 99.0, 1, Double.NaN)[4], 1e-4, "never longer than the reach");
+		assertEquals(0.7f, RukiaFxParams.extend(AbilityId.ICE_WALL, base, 5.0, 1, Double.NaN)[5], 1e-4, "the default release time is tick 14");
+		assertTrue(RukiaFxParams.handles(AbilityId.ICE_WALL));
+		assertEquals(AbilityId.ICE_WALL, RukiaFxParams.abilityOf(24));
 	}
 }
