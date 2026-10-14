@@ -253,7 +253,7 @@ public final class StormMath {
 
 		/** Height of the birth slot on the blade: {@code 8 - 8 k / P}. */
 		public double slotHeight(int j) {
-			return RowsPhase.BLADE_LENGTH * (1.0 - (double) slot(j) / perBlade);
+			return BladeSpec.length() * (1.0 - (double) slot(j) / perBlade);
 		}
 
 		/** Birth time: the burning cut of the blade passes the slot height. */

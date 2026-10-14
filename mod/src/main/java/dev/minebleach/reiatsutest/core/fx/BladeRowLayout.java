@@ -16,32 +16,36 @@ public final class BladeRowLayout {
 	public static final double START_AHEAD = 3.0;
 	/** The ground hilt falls 0.6 ahead of the feet along the flat look; row distances are measured from it. */
 	public static final double HILT_AHEAD = 0.6;
-	public static final double BLADE_LENGTH = 8.0;
 	/** Start of the eruption of the first blade and the delay per block of distance (6.1). */
 	public static final double ERUPT_START = 1.0;
 	public static final double ERUPT_PER_BLOCK = 0.012;
 	public static final double RISE_TIME = 0.45;
-	public static final double SINK_DEPTH = 8.5;
+	/** The sunk blade is hidden this far under its rest height, mesh metres, beyond the length of the blade ({@link #sinkDepth()}). */
+	public static final double SINK_MARGIN = 0.5;
 	public static final double LEAN_DEG = 3.0;
 
-	// ---- r7: the wall of wide slab blades (references ep52 / ep58 of the anime: pages of a book, neighbours almost touching)
-	/** Width of the blade mesh across its flat face (blade space, metres) and its thickness; the mesh is 8 long. */
-	public static final double MESH_WIDTH = 0.55;
-	public static final double MESH_THICK = 0.14;
+	// ---- r7: the wall of slab blades (references ep52 / ep58 of the anime: pages of a book). R11 T13: the mesh is the user's straight blade, its size
+	// (length 5.5, width 0.4026, thickness 0.1477) comes from the meta through BladeSpec, not from constants of the old 8 m scimitar.
 	/** High tier: blades per side. */
 	public static final int DEFAULT_PER_SIDE = 10;
-	/** Blade height in blocks (bankai.bladeScale 1.0 x the 8 m mesh): 4 to 5 person heights, the reference reads as 3 to 4 plus the curve. */
+	/** Uniform scale of the blades (bankai.bladeScale): 1.0 = the mesh as it is, 5.5 blocks tall (3 heights of Byakuya, measured on the anime). */
 	public static final double DEFAULT_BLADE_SCALE = 1.0;
-	/** Blade width across the lane in blocks (bankai.bladeWidth): wider than a player's shoulders (0.6), 1.2 to 1.8 asked for. */
-	public static final double DEFAULT_BLADE_WIDTH = 1.5;
-	/** Multiplier of the blade thickness (bankai.bladeThick): 0.14 m x 2.0 = 0.28 blocks, so the slab edge still reads from the side. */
-	public static final double DEFAULT_BLADE_THICK = 2.0;
-	/** Distance from the axis to the blade bases (rows.halfWidth): lane wide open around the caster, blade spans 6.25 to 7.75. */
+	/** Multiplier of the blade thickness (bankai.bladeThick): 1.0 = the mesh thickness 0.1477 blocks (the old 8 m mesh needed 2.0 to read from the side). */
+	public static final double DEFAULT_BLADE_THICK = 1.0;
+	/** Distance from the axis to the blade bases (rows.halfWidth): lane wide open around the caster. */
 	public static final double DEFAULT_HALF_WIDTH = 7.0;
-	/** Distance between neighbours along the row (rows.spacing): 0.28 thick slabs, so the gap is 0.72 blocks = 0.48 of the blade width (neighbours almost touch). */
+	/** Distance between neighbours along the row (rows.spacing): with the 0.1477 thick slab the gap is 0.85 blocks. */
 	public static final double DEFAULT_PITCH = 1.0;
 	/** First blade this many blocks ahead of the feet (rows.startAhead). r7 user request: the big blades appear BEHIND the character, so it is negative: the first blade 2 blocks behind the feet, the rest run further back. */
 	public static final double DEFAULT_START_AHEAD = -2.0;
+
+	// ---- R9 measurement of the anime (design/results/bankai_blade_r9.md), switched on by bankai.layout = r9 only; the default layout above is unchanged.
+	/** bankai.layout value that selects the R9 numbers below. */
+	public static final String LAYOUT_R9 = "r9";
+	public static final double R9_START_AHEAD = -1.0;
+	public static final double R9_PITCH = 2.0;
+	public static final int R9_PER_SIDE = 12;
+	public static final double R9_HALF_WIDTH = 3.7;
 
 	public final int n;
 	public final int ranks;
@@ -143,14 +147,29 @@ public final class BladeRowLayout {
 		return pitch * Math.min(2.0, (high - 1.0) / (perSide - 1.0));
 	}
 
-	/** Width scale (local z of the mesh) that makes the blade {@code widthBlocks} wide at the uniform scale {@code bladeScale}. */
+	/** Height of a blade in blocks at the uniform scale {@code bladeScale}. */
+	public static double height(double bladeScale) {
+		return BladeSpec.length() * bladeScale;
+	}
+
+	/** Default width of a blade across the lane in blocks (bankai.bladeWidth): the mesh width times the uniform scale, so the width scale is 1.0. */
+	public static double defaultBladeWidth(double bladeScale) {
+		return BladeSpec.width() * bladeScale;
+	}
+
+	/** Width scale (local z of the mesh) that makes the blade {@code widthBlocks} wide at the uniform scale {@code bladeScale} (1.0 for {@link #defaultBladeWidth}). */
 	public static double widthScale(double widthBlocks, double bladeScale) {
-		return widthBlocks / (MESH_WIDTH * bladeScale);
+		return widthBlocks / (BladeSpec.width() * bladeScale);
 	}
 
 	/** Gap between two neighbouring blades along the row, blocks: pitch minus the thickness of a slab. */
 	public static double gap(double pitch, double bladeScale, double thickMul) {
-		return pitch - MESH_THICK * bladeScale * thickMul;
+		return pitch - BladeSpec.thickness() * bladeScale * thickMul;
+	}
+
+	/** How deep a blade sinks under its rest height (mesh metres): the blade length plus a margin, so that a risen blade starts completely buried. */
+	public static double sinkDepth() {
+		return BladeSpec.length() + SINK_MARGIN;
 	}
 
 	/** Time at which the last blade has settled (2.2 s for 200 blades, 2.8 s for 1000). */
@@ -173,16 +192,17 @@ public final class BladeRowLayout {
 		return max - min;
 	}
 
-	/** Vertical offset of a blade base from its rest height {@code tau} seconds after its eruption start: -8.5, then up with a 0.3 overshoot. */
+	/** Vertical offset of a blade base from its rest height {@code tau} seconds after its eruption start: {@code -sinkDepth()} (6.0), then up with a 0.3 overshoot. */
 	public static double riseOffset(double tau) {
+		double depth = sinkDepth();
 		if (tau <= 0) {
-			return -SINK_DEPTH;
+			return -depth;
 		}
 		double x = Math.min(1.0, tau / RISE_TIME);
 		double u = x - 1;
 		double c1 = 1.0;
 		double ob = 1 + (c1 + 1) * u * u * u + c1 * u * u;
-		return -SINK_DEPTH + SINK_DEPTH * ob;
+		return -depth + depth * ob;
 	}
 
 	/** The lean toward the axis in degrees at time t (starts when the rows are complete, ease in-out over 0.6 s). */
