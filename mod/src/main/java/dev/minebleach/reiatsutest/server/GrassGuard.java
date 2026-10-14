@@ -9,7 +9,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.entity.player.PlayerEntity;
 
 /**
- * R11 T11, server half: a player with a zanpakuto in the main hand does not break grass-like blocks (no collision, hardness 0) with it. The client half
+ * R11 T11, server half: a player with a zanpakuto in the main hand does not break soft vegetation ({@link SoftPlants}: grass, ferns, flowers, dead bushes, sprigs) with it. The client half
  * ({@code client/BcGrassSwing}) makes the click swing the sword; this guard covers a client that still sends a dig (other versions, Better Combat settings).
  */
 public final class GrassGuard {
@@ -25,6 +25,8 @@ public final class GrassGuard {
 			return true;
 		}
 		boolean noCollision = state.getCollisionShape(world, pos).isEmpty();
-		return !SwingThruRules.shouldSwing(player.getMainHandStack().getItem() instanceof ZanpakutoItem, noCollision, state.getHardness(world, pos));
+		// R11 review fix 7: only soft vegetation is protected; torches, crops, sugar cane, saplings, redstone dust ... break as usual
+		return !SwingThruRules.shouldSwing(player.getMainHandStack().getItem() instanceof ZanpakutoItem, SoftPlants.isSoftPlant(state), noCollision,
+				state.getHardness(world, pos));
 	}
 }

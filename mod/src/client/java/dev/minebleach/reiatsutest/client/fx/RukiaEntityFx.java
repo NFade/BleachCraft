@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.net.EntityFxS2C;
 import java.util.HashMap;
@@ -65,7 +66,7 @@ public final class RukiaEntityFx {
 					FxMeshPass.Shell sh = FxMeshPass.shell(id, enc, FxServerClock.fxTimeOf(fx.untilTick(), enc ? 1.5 : 4.0));
 					sh.grow = azActive() ? FxTune.d("shell.growAz", 0.12) : FxTune.d("shell.grow", enc ? 0.25 : 0.4);
 					shellsMade++;
-					FxSound.play(null, "block.amethyst_cluster.place", c.x, c.y, c.z, enc ? 1.4 : 1.2, 0.5);
+					FxSound.play(null, SoundIds.RUKIA_BANKAI_ENCASE, "block.amethyst_cluster.place", c.x, c.y, c.z, enc ? 1.4 : 1.2, 0.5);
 					puff(en, lod, RukiaKit.count(enc ? 10 : 8), "#EAF8FF");
 					// the shell catches the light: 8 glints over its surface at the moment it snaps on
 					for (int i = 0; i < RukiaKit.count(8); i++) {
@@ -111,7 +112,7 @@ public final class RukiaEntityFx {
 				boolean az = azActive();
 				if (FxMeshPass.breakShell(en.getId(), azShellShards(), az ? FxTune.d("shell.speedAz", 8.0) : FxTune.d("shell.speed", 5.0)) != null) {
 					shellsBroken++;
-					FxSound.play(null, "block.glass.break", c.x, c.y, c.z, 1.2, 0.6);
+					FxSound.play(null, SoundIds.RUKIA_BANKAI_ENCASE_BREAK, "block.glass.break", c.x, c.y, c.z, 1.2, 0.6);
 				}
 				break;
 			}

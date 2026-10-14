@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.AnchorPlan;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
@@ -351,17 +352,17 @@ public final class RowsFx {
 		double contact = swordContact(hiltScale);
 		double hangY = hg + swordHang() + 0.5 * BankaiCurves.HILT_LENGTH * hiltScale;
 		t.at(0.0, x -> {
-			x.soundAt("item.trident.throw", new Vec3d(hx, hangY, hz), 1.4, 0.35);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_DROP, "item.trident.throw", new Vec3d(hx, hangY, hz), 1.4, 0.35);
 			FxGlowBatch.sprite(GlowSprite.STAR4).at(hx, hangY, hz).lifeTicks(8).size(0.9, 0.2).sizeEase(FxMath.IQ).color("#F3E4FF").peak(0.9).owner(x).spawn();
 		});
-		t.at(BankaiCurves.SWORD_HANG_END, x -> x.soundAt("block.amethyst_block.chime", new Vec3d(hx, hangY, hz), 0.7, 0.4));
+		t.at(BankaiCurves.SWORD_HANG_END, x -> x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_HANG, "block.amethyst_block.chime", new Vec3d(hx, hangY, hz), 0.7, 0.4));
 		t.at(contact, x -> {
-			x.soundAt("item.trident.hit_ground", new Vec3d(hx, hg, hz), 0.9, 0.5);
-			x.soundAt("entity.generic.splash", new Vec3d(hx, hg, hz), 1.5, 0.3);
-			x.soundAt("block.bubble_column.whirlpool_inside", new Vec3d(hx, hg, hz), 1.6, 0.3);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_ENTER, "item.trident.hit_ground", new Vec3d(hx, hg, hz), 0.9, 0.5);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_ENTER, "entity.generic.splash", new Vec3d(hx, hg, hz), 1.5, 0.3);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_ENTER, "block.bubble_column.whirlpool_inside", new Vec3d(hx, hg, hz), 1.6, 0.3);
 			splash(x, hx, hg, hz);
 		});
-		t.at(contact + 0.5, x -> x.soundAt("block.bell.use", new Vec3d(hx, hg, hz), 0.5, 0.35));
+		t.at(contact + 0.5, x -> x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_RING, "block.bell.use", new Vec3d(hx, hg, hz), 0.5, 0.35));
 		// 0.30 to 0.90: night falls
 		t.at(0.30, x -> {
 			// others: the night is graded by the distance to the NEAREST ROW POINT (standing in the corridor = full night), not to the caster (6.1)
@@ -371,13 +372,13 @@ public final class RowsFx {
 			}
 			st.grade = x.screen ? ScreenFx.grade(FxMath.hex(FxTune.s("bankai.night", NIGHT)), FxTune.d("bankai.nightStrength", 1.0), 0.6, gs).owner(e.casterId()) : null;
 			st.vignette = x.screen ? ScreenFx.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.45), 0.6, gs).owner(e.casterId()) : null;
-			x.sound("ambient.cave", 0.8, 0.6);
-			x.sound("block.respawn_anchor.charge", 0.6, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_NIGHT, "ambient.cave", 0.8, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_NIGHT, "block.respawn_anchor.charge", 0.6, 0.6);
 		});
-		t.at(0.60, x -> x.sound("entity.warden.heartbeat", 0.7, 0.5));
+		t.at(0.60, x -> x.sound(SoundIds.BYAKUYA_BANKAI_HEARTBEAT, "entity.warden.heartbeat", 0.7, 0.5));
 		// 0.90: fault lines (anticipation)
 		t.at(0.90 + delay, x -> {
-			x.sound("entity.warden.emerge", 1.4, 0.4);
+			x.sound(SoundIds.BYAKUYA_BANKAI_FAULT, "entity.warden.emerge", 1.4, 0.4);
 			faultLines(x, st);
 		});
 		for (int k = 0; k < 6; k++) {
@@ -386,8 +387,8 @@ public final class RowsFx {
 		}
 		// 1.00: eruption starts
 		t.at(1.00 + delay, x -> {
-			x.sound("item.mace.smash_ground_heavy", 0.6, 0.7);
-			x.sound("entity.ender_dragon.growl", 0.5, 0.25);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ERUPTION, "item.mace.smash_ground_heavy", 0.6, 0.7);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ERUPTION, "entity.ender_dragon.growl", 0.5, 0.25);
 		});
 		for (double ts = 1.2; ts < comp; ts += 0.2) {
 			t.at(ts + delay, x -> x.shake(0.6, 0.25));
@@ -395,8 +396,8 @@ public final class RowsFx {
 		// rows complete
 		t.at(comp + delay, x -> {
 			x.shake(FxTune.d("bankai.completeShake", 1.2), 0.4);
-			x.sound("block.beacon.ambient", 0.6, 0.35);
-			x.sound("block.bell.resonate", 0.6, 0.4);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ROWS_DONE, "block.beacon.ambient", 0.6, 0.35);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ROWS_DONE, "block.bell.resonate", 0.6, 0.4);
 		});
 		// hold: the vignette settles to the playable level
 		t.at(comp + delay + 0.6, x -> {
@@ -576,7 +577,7 @@ public final class RowsFx {
 				if (t > l.completionTime() && FxClock.dt > 0) {
 					if (FxClock.now >= st.nextHeartbeat && st.owner) {
 						st.nextHeartbeat = FxClock.now + 1.5;
-						FxSound.play(null, "entity.warden.heartbeat", st.fx, st.fy + 1, st.fz, 0.7, 0.15);
+						FxSound.play(null, SoundIds.BYAKUYA_BANKAI_HEARTBEAT, "entity.warden.heartbeat", st.fx, st.fy + 1, st.fz, 0.7, 0.15);
 					}
 					if (FxClock.now >= st.nextHaze && !st.phaseBusy()) {
 						st.nextHaze = FxClock.now + 0.1;
@@ -584,7 +585,7 @@ public final class RowsFx {
 					}
 					if (FxClock.now >= st.nextBeacon && cam.distanceTo(new Vec3d(st.fx, st.fy, st.fz)) < 60) {
 						st.nextBeacon = FxClock.now + 3.0;
-						FxSound.play(null, "block.beacon.ambient", st.fx, st.fy + 1, st.fz, 0.6, 0.25);
+						FxSound.play(null, SoundIds.BYAKUYA_BANKAI_ROWS_HUM, "block.beacon.ambient", st.fx, st.fy + 1, st.fz, 0.6, 0.25);
 					}
 					if (FxClock.now >= st.nextRippleLoop) {
 						st.nextRippleLoop = FxClock.now + 4.0;
@@ -629,7 +630,7 @@ public final class RowsFx {
 				}
 			}
 			if (i % 3 == 0) {
-				FxSound.play(null, "block.pointed_dripstone.land", x, g, z, 0.6 + r.nextDouble() * 0.3, 0.4);
+				FxSound.play(null, SoundIds.BYAKUYA_BANKAI_ROWS_DUST, "block.pointed_dripstone.land", x, g, z, 0.6 + r.nextDouble() * 0.3, 0.4);
 			}
 		}
 		if (l.n <= 400 || i % 2 == 0) {

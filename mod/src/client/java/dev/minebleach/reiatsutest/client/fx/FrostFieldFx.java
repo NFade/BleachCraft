@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
 import dev.minebleach.reiatsutest.core.state.EffectIds;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
@@ -50,9 +51,9 @@ final class FrostFieldFx {
 			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(pos.x, ry + 0.08, pos.z).ground().size(1.0, R / 0.4375).sizeEase(FxMath.LINEAR).life(dur).curve(0.02, 0.35).delay(0.08).color("#FFFFFF")
 					.peak(RukiaKit.glow(0.45)).owner(x).spawn();
 			x.shake(0.25, 0.4);
-			x.sound("block.glass.break", 0.55, 0.7);
-			x.sound("block.amethyst_block.resonate", 0.5, 0.8);
-			x.sound("block.powder_snow.break", 0.6, 0.6);
+			x.sound(SoundIds.RUKIA_BANKAI_FIELD_FRONT, "block.glass.break", 0.55, 0.7);
+			x.sound(SoundIds.RUKIA_BANKAI_FIELD_FRONT, "block.amethyst_block.resonate", 0.5, 0.8);
+			x.sound(SoundIds.RUKIA_BANKAI_FIELD_FRONT, "block.powder_snow.break", 0.6, 0.6);
 		});
 		for (int i = 1; i * STEP <= dur + 1e-9; i++) {
 			final int ii = i;
@@ -76,7 +77,7 @@ final class FrostFieldFx {
 				}
 				FxGlowBatch.sprite(GlowSprite.STAR4).at(px, gy + 0.3 + r.nextDouble(), pz).lifeTicks(10).size(RukiaKit.size(0.6)).color("#FFFFFF").peak(RukiaKit.glow(0.8)).twinkle().rot(r.nextDouble() * 6.28, 1).owner(x).spawn();
 			}
-			x.sound("block.amethyst_block.chime", 0.5, 0.5);
+			x.sound(SoundIds.RUKIA_BANKAI_FIELD_CHIME, "block.amethyst_block.chime", 0.5, 0.5);
 		});
 		FxTimelines.start(t);
 	}
@@ -136,7 +137,7 @@ final class FrostFieldFx {
 			double pz = pos.z + Math.sin(a) * r;
 			double gy = surface(w, px, pz, pos.y);
 			if (!Double.isNaN(gy)) {
-				FxSound.play(x, CRACKS[rnd.nextInt(CRACKS.length)], px, gy, pz, 1.1 + rnd.nextDouble() * 0.9, 0.3);
+				FxSound.play(x, SoundIds.RUKIA_BANKAI_FIELD_CRACKLE, CRACKS[rnd.nextInt(CRACKS.length)], px, gy, pz, 1.1 + rnd.nextDouble() * 0.9, 0.3);
 			}
 		}
 		if (step % 7 == 3 && crystalsMade < 400 && r > 3.0) {
@@ -167,7 +168,7 @@ final class FrostFieldFx {
 		c.grow = 0.5;
 		c.emissive = 0.7;
 		RukiaKit.iceShards(x, rnd, 4, c.x, c.y + 0.1, c.z, 0.4, 1.2, 2.0, 0.6, 18, 0.3);
-		x.soundAt("block.amethyst_cluster.place", new Vec3d(c.x, c.y + 0.5, c.z), 0.8 + 0.5 * rnd.nextDouble(), 0.4);
+		x.soundAt(SoundIds.RUKIA_BANKAI_FIELD_CRYSTAL, "block.amethyst_cluster.place", new Vec3d(c.x, c.y + 0.5, c.z), 0.8 + 0.5 * rnd.nextDouble(), 0.4);
 	}
 
 	/** Effect 43: the field thaws, the ring runs inward (speed 0 = fast thaw after a death or a disconnect). */
@@ -180,8 +181,8 @@ final class FrostFieldFx {
 		thaws++;
 		t.lifetime(dur + 2.0);
 		t.at(0.0, x -> {
-			x.sound("block.amethyst_block.resonate", 0.4, 0.6);
-			x.sound("block.glass.break", 0.5, 0.5);
+			x.sound(SoundIds.RUKIA_BANKAI_FIELD_THAW, "block.amethyst_block.resonate", 0.4, 0.6);
+			x.sound(SoundIds.RUKIA_BANKAI_FIELD_THAW, "block.glass.break", 0.5, 0.5);
 		});
 		for (int i = 1; i * STEP <= dur + 1e-9; i++) {
 			final int ii = i;
@@ -217,7 +218,7 @@ final class FrostFieldFx {
 			double pz = pos.z + Math.sin(a) * r;
 			double gy = surface(w, px, pz, pos.y);
 			if (!Double.isNaN(gy)) {
-				FxSound.play(x, rnd.nextBoolean() ? "block.powder_snow.break" : "block.glass.break", px, gy, pz, 0.7 + rnd.nextDouble() * 0.5, 0.25);
+				FxSound.play(x, SoundIds.RUKIA_BANKAI_FIELD_THAW_CRACKLE, rnd.nextBoolean() ? "block.powder_snow.break" : "block.glass.break", px, gy, pz, 0.7 + rnd.nextDouble() * 0.5, 0.25);
 			}
 		}
 	}

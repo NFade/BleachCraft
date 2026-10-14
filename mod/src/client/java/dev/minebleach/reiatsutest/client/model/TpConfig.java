@@ -1,17 +1,18 @@
 package dev.minebleach.reiatsutest.client.model;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.client.ClientConfigFile;
+import dev.minebleach.reiatsutest.core.combat.TpKeyLimits;
+import dev.minebleach.reiatsutest.core.config.ConfigFileIo;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * R11 T10: the third person pose numbers a player may set without rebuilding, section {@code "tp"} of {@code config/reiatsu_test_client.json}:
@@ -32,8 +33,6 @@ public final class TpConfig {
 	public static final double DEFAULT_SWORD_SCALE = 1.25;
 	public static final double MIN_SWORD_SCALE = 0.5;
 	public static final double MAX_SWORD_SCALE = 2.5;
-	/** Largest shift (px) of a component of {@code guard.shift} that is accepted. */
-	private static final double MAX_SHIFT_PX = 8.0;
 
 	private static volatile JsonObject section = new JsonObject();
 	private static long lastCheckNanos;
@@ -43,25 +42,36 @@ public final class TpConfig {
 	}
 
 	private static Path file() {
-		return FabricLoader.getInstance().getConfigDir().resolve("reiatsu_test_client.json");
+		return ClientConfigFile.file();
 	}
 
-	/** Client start: adds the {@code tp} section with {@code swordScale} to an existing file that has none, then reads it. */
+	/**
+	 * Client start: adds the {@code tp} section with {@code swordScale} to a file that has none, then reads it. R11 review fix 9: the order of the client
+	 * loaders does not matter any more: a file that does not exist yet is created here with the section (stamped with the config version), so the
+	 * section is there from the first start; a file that exists keeps every key it has (nothing is replaced, the section is only added when missing); a file
+	 * that does not parse is left alone. The read-add-write cycle holds the lock of the client file and the write is atomic (R11 review fix 8).
+	 */
 	public static void load() {
 		Path f = file();
-		try {
-			if (Files.isRegularFile(f)) {
-				JsonElement el = JsonParser.parseString(Files.readString(f, StandardCharsets.UTF_8));
-				if (el.isJsonObject() && !el.getAsJsonObject().has("tp")) {
-					JsonObject root = el.getAsJsonObject();
+		synchronized (ClientConfigFile.lock()) {
+			try {
+				JsonObject root = null;
+				if (Files.isRegularFile(f)) {
+					JsonElement el = JsonParser.parseString(Files.readString(f, StandardCharsets.UTF_8));
+					root = el.isJsonObject() ? el.getAsJsonObject() : null;
+				} else {
+					root = new JsonObject();
+					ClientConfigFile.stampFresh(root);
+				}
+				if (root != null && !root.has("tp")) {
 					JsonObject tp = new JsonObject();
 					tp.addProperty("swordScale", DEFAULT_SWORD_SCALE);
 					root.add("tp", tp);
-					Files.writeString(f, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(), StandardCharsets.UTF_8);
+					ConfigFileIo.writeJson(f, root);
 				}
+			} catch (IOException | RuntimeException e) {
+				ReiatsuTest.LOGGER.warn("[tp] cannot add the tp section to {}: {}", f, e.toString());
 			}
-		} catch (IOException | RuntimeException e) {
-			ReiatsuTest.LOGGER.warn("[tp] cannot add the tp section to {}: {}", f, e.toString());
 		}
 		lastStamp = Long.MIN_VALUE;
 		lastCheckNanos = 0L;
@@ -87,7 +97,10 @@ public final class TpConfig {
 				return;
 			}
 			lastStamp = stamp;
-			JsonElement el = JsonParser.parseString(Files.readString(f, StandardCharsets.UTF_8));
+			JsonElement el;
+			synchronized (ClientConfigFile.lock()) {
+				el = JsonParser.parseString(Files.readString(f, StandardCharsets.UTF_8));
+			}
 			JsonObject tp = el.isJsonObject() && el.getAsJsonObject().get("tp") instanceof JsonObject o ? o : new JsonObject();
 			section = tp;
 			ReiatsuTest.LOGGER.info("[tp] config {}", tp);
@@ -96,34 +109,34 @@ public final class TpConfig {
 		}
 	}
 
-	/** Number {@code key} of the section; {@code def} when missing, not a finite number. */
+	/**
+	 * Number {@code key} of the section, clamped into the range of the key ({@link TpKeyLimits}); {@code def} when missing, not a finite number or
+	 * not a key the pose reads (R11 review fix 9).
+	 */
 	public static double num(String key, double def) {
 		JsonElement e = section.get(key);
 		if (e instanceof JsonPrimitive p && p.isNumber()) {
-			double v = p.getAsDouble();
-			if (!Double.isNaN(v) && !Double.isInfinite(v)) {
-				return v;
-			}
+			return TpKeyLimits.num(key, p.getAsDouble(), def);
 		}
 		return def;
 	}
 
-	/** Three numbers {@code key}; {@code def} when missing or not an array of three finite numbers (each within +-8 px). */
+	/**
+	 * The vector {@code key} of the section with every component clamped ({@link TpKeyLimits}: {@code guard.shift} +-8 px, {@code hold.pos} +-16 px,
+	 * {@code guard.arm_*} six numbers); {@code def} when missing, too short, not numbers or not a key the pose reads.
+	 */
 	public static double[] vec(String key, double[] def) {
 		JsonElement e = section.get(key);
-		if (e instanceof JsonArray a && a.size() >= 3) {
-			double[] r = new double[3];
-			for (int i = 0; i < 3; i++) {
+		int n = TpKeyLimits.vecSize(key);
+		if (n > 0 && e instanceof JsonArray a && a.size() >= n) {
+			double[] r = new double[n];
+			for (int i = 0; i < n; i++) {
 				if (!(a.get(i) instanceof JsonPrimitive p) || !p.isNumber()) {
 					return def;
 				}
-				double v = p.getAsDouble();
-				if (Double.isNaN(v) || Double.isInfinite(v)) {
-					return def;
-				}
-				r[i] = Math.max(-MAX_SHIFT_PX, Math.min(MAX_SHIFT_PX, v));
+				r[i] = p.getAsDouble();
 			}
-			return r;
+			return TpKeyLimits.vec(key, r, def);
 		}
 		return def;
 	}

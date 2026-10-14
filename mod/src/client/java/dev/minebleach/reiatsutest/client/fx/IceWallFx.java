@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.Random;
@@ -48,7 +49,7 @@ final class IceWallFx {
 						.size(RukiaKit.size(0.3)).color("#FFFFFF").colorTo("#9ED3F0").seed(i).fade(0.4).owner(x).spawn();
 			}
 			FxGlowBatch.sprite(GlowSprite.GLOW_CORE).at(tip.x, tip.y, tip.z).size(0.3, 1.1).sizeEase(FxMath.OC).life(Math.max(0.2, lunge)).curve(0.1, 0.4).color("#CFEFFF").peak(RukiaKit.glow(0.9)).owner(x).spawn();
-			x.sound("block.beacon.power_select", 1.5, 0.6);
+			x.sound(SoundIds.RUKIA_BANKAI_ICE_WALL_GATHER, "block.beacon.power_select", 1.5, 0.6);
 		});
 		// the release: a flare at the tip and a ring of frost along the look
 		t.at(lunge, x -> {
@@ -57,7 +58,7 @@ final class IceWallFx {
 			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(tip.x, tip.y, tip.z).plane(look.x, look.y, look.z).size(0.3, 2.0).sizeEase(FxMath.OC).life(0.25).curve(0.02, 0.8).color("#FFFFFF")
 					.peak(RukiaKit.glow(0.8)).owner(x).spawn();
 			x.shake(0.3, 0.2);
-			x.sound("entity.player.attack.sweep", 1.7, 0.7);
+			x.sound(SoundIds.RUKIA_BANKAI_ICE_WALL_RELEASE, "entity.player.attack.sweep", 1.7, 0.7);
 		});
 		// where the wall rises: frost motes, shards and a ground ring (the blocks themselves come from the server)
 		t.at(first, x -> {
@@ -75,7 +76,7 @@ final class IceWallFx {
 			RukiaKit.iceShards(x, r, 8, p.x, gy + 0.1, p.z, 2.5, 2.0, 3.0, 0.7, 20, 0.34);
 			RukiaKit.frostMotes(x, r, 14, p.x, gy + 0.6, p.z, 3.0, 1.2, 1.8, 1.2, 18, 0.34, "#FFFFFF", "#BFE4FF", 0.9);
 			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(p.x, gy + 0.06, p.z).ground().size(0.6, 9.0).sizeEase(FxMath.OC).life(0.5).curve(0.02, 0.7).color("#EAF8FF").peak(RukiaKit.glow(0.6)).owner(x).spawn();
-			x.soundAt("block.amethyst_cluster.place", new Vec3d(p.x, gy + 0.5, p.z), 0.8, 0.5);
+			x.soundAt(SoundIds.RUKIA_BANKAI_ICE_WALL_RISE, "block.amethyst_cluster.place", new Vec3d(p.x, gy + 0.5, p.z), 0.8, 0.5);
 		});
 		FxTimelines.start(t);
 		RukiaBankaiClient.flare(e.casterId());

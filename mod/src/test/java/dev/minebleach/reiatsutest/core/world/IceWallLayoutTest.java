@@ -291,6 +291,54 @@ class IceWallLayoutTest {
 		assertEquals("iceWall", IceWallConfig.SUB);
 	}
 
+	/**
+	 * R11 review fix 1: a layer of vegetation (grass, flowers, the frost sprig of the frost field) lies on the ground. The plant cell is free (the glue
+	 * counts {@code SoftPlants} as passable) but is no support; the floor search must go through it to the real ground instead of giving up.
+	 */
+	private static Probe meadow(BiFunction<Integer, Integer, Integer> height, java.util.function.BiPredicate<Integer, Integer> plantOnTop, boolean plantsAreFree) {
+		return new Probe() {
+			@Override
+			public boolean passable(int x, int y, int z) {
+				int h = height.apply(x, z);
+				return y > h + (plantOnTop.test(x, z) && !plantsAreFree ? 1 : 0);
+			}
+
+			@Override
+			public boolean support(int x, int y, int z) {
+				return y <= height.apply(x, z);
+			}
+		};
+	}
+
+	@Test
+	void aMeadowOfPlantsDoesNotLiftTheWallIntoTheAir() {
+		Probe free = meadow((x, z) -> 63, (x, z) -> true, true);
+		Plan p = IceWallLayout.plan(free, CFG, 10.5, 64.5, 20.5, 1.0, 0.0);
+		assertTrue(p.grounded(), "the plant layer is free, the floor is the ground below it");
+		assertEquals(64, p.baseY(), "the wall stands in the plant cells");
+		assertEquals(90, p.cells().size(), "no holes where a plant stands");
+		assertEquals(5, p.layers());
+		// the old behaviour: a plant that is neither free nor ground ends the search and the wall hangs at the aimed height
+		Probe blocked = meadow((x, z) -> 63, (x, z) -> true, false);
+		Plan hang = IceWallLayout.plan(blocked, CFG, 10.5, 65.5, 20.5, 1.0, 0.0);
+		assertFalse(hang.grounded(), "documents why the plants must count as free");
+	}
+
+	@Test
+	void plantsOnSomeColumnsOnlyKeepEveryColumnFilledFromTheGround() {
+		Probe patchy = meadow((x, z) -> 63, (x, z) -> (x + z) % 2 == 0, true);
+		Plan p = IceWallLayout.plan(patchy, CFG, 10.5, 64.5, 20.5, 1.0, 0.0);
+		assertTrue(p.grounded());
+		assertEquals(64, p.lowestY());
+		Set<Integer> bottoms = new HashSet<>();
+		for (WallCell c : p.cells()) {
+			if (c.layer() == 0) {
+				bottoms.add(c.z() * 100 + c.x());
+			}
+		}
+		assertEquals(18, bottoms.size(), "all 9 columns x 2 deep have a cell in layer 0");
+	}
+
 	@Test
 	void configClampsGarbageAndFillsMissingKeys() {
 		JsonObject root = JsonParser.parseString("""

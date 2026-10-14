@@ -7,6 +7,7 @@ import dev.minebleach.reiatsutest.core.combat.CombatConfig;
 import dev.minebleach.reiatsutest.core.combat.DamageKind;
 import dev.minebleach.reiatsutest.core.combat.ParryBus;
 import dev.minebleach.reiatsutest.core.combat.ParryEvent;
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.registry.ZanpakutoItem;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.entity.LivingEntity;
@@ -16,8 +17,6 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.Vec3d;
 
@@ -76,13 +75,13 @@ public final class BlockParry {
 			// r8 fx2: the sparks, rings and sounds are drawn by the clients from the feedback event (client/fx/BlockFx); the plain server
 			// sound below only plays when the rate limit refused the event (a flood of hits), so a parry is never silent
 			if (!ServerFx.blockFeedback(defender, attacker, true, amount)) {
-				world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ITEM_TRIDENT_HIT, SoundCategory.PLAYERS, 0.9F, 1.7F);
-				world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ENTITY_PLAYER_ATTACK_KNOCKBACK, SoundCategory.PLAYERS, 0.7F, 1.4F);
+				ModSound.play(world, SoundIds.GENERAL_PARRY, mid.x, mid.y, mid.z, "item.trident.hit", 0.9F, 1.7F);
+				ModSound.play(world, SoundIds.GENERAL_PARRY, mid.x, mid.y, mid.z, "entity.player.attack.knockback", 0.7F, 1.4F);
 			}
 		} else {
 			boolean sent = source.getAttacker() instanceof LivingEntity attacker && ServerFx.blockFeedback(defender, attacker, false, amount);
 			if (!sent) {
-				world.playSound(null, mid.x, mid.y, mid.z, SoundEvents.ITEM_SHIELD_BLOCK, SoundCategory.PLAYERS, 0.8F, 1.1F);
+				ModSound.play(world, SoundIds.GENERAL_BLOCK_HIT, mid.x, mid.y, mid.z, "item.shield.block", 0.8F, 1.1F);
 			}
 		}
 		return out;

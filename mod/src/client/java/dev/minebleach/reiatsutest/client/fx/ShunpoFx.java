@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
@@ -187,10 +188,10 @@ public final class ShunpoFx {
 		lastTrailParticles = before;
 
 		// ---- sound: a sweep at the start, a softer one at the arrival, plus a character accent
-		FxSound.play(null, "entity.player.attack.sweep", start.x, start.y + 1.0, start.z, 1.6, 0.7);
-		FxSound.play(null, byakuya ? "block.cherry_leaves.break" : "block.amethyst_block.chime", start.x, start.y + 1.0, start.z,
+		FxSound.play(null, SoundIds.GENERAL_SHUNPO_START, "entity.player.attack.sweep", start.x, start.y + 1.0, start.z, 1.6, 0.7);
+		FxSound.play(null, byakuya ? SoundIds.BYAKUYA_SHUNPO_ACCENT : SoundIds.RUKIA_SHUNPO_ACCENT, byakuya ? "block.cherry_leaves.break" : "block.amethyst_block.chime", start.x, start.y + 1.0, start.z,
 				byakuya ? 0.9 : 1.8, 0.6);
-		FxSound.play(null, "entity.player.attack.sweep", start.x + delta.x, start.y + delta.y + 1.0, start.z + delta.z, 1.9, 0.4);
+		FxSound.play(null, SoundIds.GENERAL_SHUNPO_ARRIVE, "entity.player.attack.sweep", start.x + delta.x, start.y + delta.y + 1.0, start.z + delta.z, 1.9, 0.4);
 	}
 
 	private static PlayerEntityModel<AbstractClientPlayerEntity> model(boolean thin) {

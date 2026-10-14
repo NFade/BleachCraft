@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.Random;
 import net.minecraft.client.MinecraftClient;
@@ -45,31 +46,31 @@ public final class ReleaseFx {
 				x.flash(0.40, BYAKUYA_FLASH, false);
 			}
 			if (rukia) {
-				x.sound("block.beacon.activate", bankai ? 0.9 : 1.2, bankai ? 0.9 : 0.7);
+				x.sound(id == 1 ? SoundIds.RUKIA_SHIKAI_RELEASE_FLASH : SoundIds.RUKIA_BANKAI_RELEASE_FLASH, "block.beacon.activate", bankai ? 0.9 : 1.2, bankai ? 0.9 : 0.7);
 			} else if (bankai) {
-				x.sound("item.trident.return", 0.6, 0.5);
+				x.sound(SoundIds.BYAKUYA_BANKAI_SWORD_DROP, "item.trident.return", 0.6, 0.5);
 			} else {
-				x.sound("block.beacon.activate", 1.4, 0.6);
-				x.sound("entity.illusioner.cast_spell", 1.2, 0.5);
+				x.sound(SoundIds.BYAKUYA_SHIKAI_RELEASE_FLASH, "block.beacon.activate", 1.4, 0.6);
+				x.sound(SoundIds.BYAKUYA_SHIKAI_RELEASE_FLASH, "entity.illusioner.cast_spell", 1.2, 0.5);
 			}
 			bloom(x, tint, bankai ? 5.5 : 3.2);
 		});
 		// 0.05: the ground ring (two rings, the thin one a little behind), then a few streaks of light
 		t.at(0.05, x -> {
 			new Ring(x, FxTune.s("release.ringTint", rukia ? RUKIA_RING : BYAKUYA_RING), ringR, 0.0).soft();
-			x.sound("entity.generic.explode", bankai ? 1.3 : 1.6, bankai ? 0.6 : 0.5);
+			x.sound(id == 1 ? SoundIds.RUKIA_SHIKAI_RELEASE_BLAST : id == 2 ? SoundIds.RUKIA_BANKAI_RELEASE_BLAST : SoundIds.BYAKUYA_SHIKAI_RELEASE_BLAST, "entity.generic.explode", bankai ? 1.3 : 1.6, bankai ? 0.6 : 0.5);
 		});
 		t.at(0.11, x -> new Ring(x, tint, ringR * 0.85, 0.0).thin());
 		// 0.10: burst from the chest
 		t.at(0.10, x -> {
 			burst(x, rukia, tint, speed, count);
 			x.shake(bankai ? 0.55 : 0.4, 0.3);
-			x.sound("entity.player.attack.sweep", 1.0, 0.7);
+			x.sound(id == 1 ? SoundIds.RUKIA_SHIKAI_RELEASE_BLAST : id == 2 ? SoundIds.RUKIA_BANKAI_RELEASE_BLAST : SoundIds.BYAKUYA_SHIKAI_RELEASE_BLAST, "entity.player.attack.sweep", 1.0, 0.7);
 			streaks(x, tint, bankai ? 20 : 14);
 		});
 		// 0.20 to 0.50: Rukia: a vertical light ring around the blade, following the hand
 		if (rukia) {
-			t.at(0.20, x -> x.sound("block.amethyst_block.chime", 1.3, 0.6));
+			t.at(0.20, x -> x.sound(SoundIds.RUKIA_SHIKAI_RELEASE_RING, "block.amethyst_block.chime", 1.3, 0.6));
 			for (int k = 0; k < 8; k++) {
 				double at = 0.20 + 0.04 * k;
 				final double progress = k / 7.0;
@@ -79,7 +80,7 @@ public final class ReleaseFx {
 		// title card sound (the card itself is the HUD's), caster only
 		t.at(0.12, x -> {
 			if (x.localCaster) {
-				x.sound("block.bell.use", 1.5, 0.4);
+				x.sound(SoundIds.GENERAL_TITLE_CARD, "block.bell.use", 1.5, 0.4);
 			}
 		});
 		t.lifetime(1.0);

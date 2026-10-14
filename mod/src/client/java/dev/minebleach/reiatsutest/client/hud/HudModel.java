@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.hud;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.client.ClientState;
 import dev.minebleach.reiatsutest.client.fx.FxClock;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
@@ -273,12 +274,12 @@ public final class HudModel {
 
 		// bankai ready gem (SHIKAI with enough Rage; the reiatsu bar does not matter any more, mech2 task 3)
 		boolean ready = st == ZanpakutoState.SHIKAI
-				&& ClientState.rage().value() >= dev.minebleach.reiatsutest.core.rage.RageConfig.defaults().bankaiCostTenths() && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0)
+				&& ClientState.rageTuning().bankaiAffordable(ClientState.rage().value()) && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0)
 				&& shikaiHoldLeft() <= 0.0; // R11 T3: bankai also needs the minimum time in shikai
 		if (ready && !gemReady) {
 			gemSparkAt = now;
 			if (FxConfig.cooldownReadySound && plateWanted) {
-				FxSound.ui("block.amethyst_block.chime", 1.6, 0.3);
+				FxSound.ui(SoundIds.GENERAL_BANKAI_READY, "block.amethyst_block.chime", 1.6, 0.3);
 			}
 		}
 		gemReady = ready;
@@ -288,7 +289,7 @@ public final class HudModel {
 			double rem = bankaiRemaining(tickDelta);
 			int sec = (int) Math.ceil(rem);
 			if (sec != lastTickSecond && sec >= 1 && sec <= 5 && lastTickSecond != -1) {
-				FxSound.ui("block.note_block.bell", 1.6, 0.25);
+				FxSound.ui(SoundIds.GENERAL_BANKAI_TIMER_TICK, "block.note_block.bell", 1.6, 0.25);
 			}
 			lastTickSecond = sec;
 		} else {
@@ -447,7 +448,7 @@ public final class HudModel {
 
 	private static void pingSlot(Slot s) {
 		if (FxConfig.cooldownReadySound && FxConfig.hud) {
-			FxSound.ui("block.note_block.chime", 1.8, 0.25);
+			FxSound.ui(SoundIds.GENERAL_ABILITY_READY, "block.note_block.chime", 1.8, 0.25);
 		}
 	}
 
@@ -483,7 +484,7 @@ public final class HudModel {
 				VOICE.line2Tint = HudAssets.OK;
 				VOICE.bankai = cmd != null && cmd.endsWith(".bankai.release");
 				if (FxConfig.voiceToastSound) {
-					FxSound.ui("ui.toast.in", 1.4, 0.15);
+					FxSound.ui(SoundIds.UI_VOICE_TOAST, "ui.toast.in", 1.4, 0.15);
 				}
 			}
 			case COOLDOWN -> {
@@ -669,28 +670,27 @@ public final class HudModel {
 				Text msg = Text.translatable("hud.reiatsu_test.need", String.format(java.util.Locale.ROOT, "%d", Math.round(needed / 10.0)));
 				pushToast(msg, HudAssets.ERROR, ToastKind.DENIED, 1.6);
 				if (FxConfig.hud) {
-					FxSound.ui("block.note_block.bass", 0.6, 0.6);
+					FxSound.ui(SoundIds.GENERAL_REIATSU_EMPTY, "block.note_block.bass", 0.6, 0.6);
 				}
 			}
 			case DENIED_RAGE -> {
-				// round 5: shikai / bankai entry needs Rage; the numbers are the client's copy of the defaults (server config may differ)
+				// round 5: shikai / bankai entry needs Rage; the numbers are the server's (synced as the rage_tuning attachment, R11 review fix 4)
 				boolean bankai = req != null && req.target() == ZanpakutoState.BANKAI;
-				var rc = dev.minebleach.reiatsutest.core.rage.RageConfig.defaults();
-				int need = rc.releaseCostTenths(bankai);
+				int need = ClientState.rageTuning().releaseCostTenths(bankai);
 				var rg = ClientState.rage();
 				PlateHud.flashRageDenied(rg.max() <= 0 ? 0.0 : need / (double) rg.max());
 				Text msg = rageNeedText(rg.value(), need);
 				pushToast(msg, HudAssets.ERROR, ToastKind.DENIED, 1.6);
 				if (FxConfig.hud) {
-					FxSound.ui("block.note_block.bass", 0.6, 0.6);
+					FxSound.ui(SoundIds.GENERAL_RAGE_EMPTY, "block.note_block.bass", 0.6, 0.6);
 				}
 			}
 			case DENIED_SHIKAI_TIME -> {
-				// R11 T3: bankai needs the minimum time in shikai; the number is the client's copy of the default (the server config may differ)
-				double left = Math.max(1.0, Math.ceil(shikaiHoldLeft()));
-				pushToast(Text.translatable("hud.reiatsu_test.shikai_time", String.format(java.util.Locale.ROOT, "%d", (long) left)), HudAssets.ERROR, ToastKind.DENIED, 1.6);
+				// R11 T3: bankai needs the minimum time in shikai (the server's number, synced as the rage_tuning attachment, R11 review fix 4)
+				long left = dev.minebleach.reiatsutest.core.rage.RageTuning.toastSeconds(shikaiHoldLeft());
+				pushToast(Text.translatable("hud.reiatsu_test.shikai_time", String.format(java.util.Locale.ROOT, "%d", left)), HudAssets.ERROR, ToastKind.DENIED, 1.6);
 				if (FxConfig.hud) {
-					FxSound.ui("block.note_block.bass", 0.6, 0.6);
+					FxSound.ui(SoundIds.UI_DENY_SHIKAI_TIME, "block.note_block.bass", 0.6, 0.6);
 				}
 			}
 			case COOLDOWN -> {
@@ -699,13 +699,13 @@ public final class HudModel {
 					slot.flashGold = now + 0.3;
 				}
 				if (FxConfig.hud) {
-					FxSound.ui("ui.button.click", 0.5, 0.4);
+					FxSound.ui(SoundIds.GENERAL_ABILITY_COOLDOWN, "ui.button.click", 0.5, 0.4);
 				}
 			}
 			case BLOCKED -> {
 				pushToast(Text.translatable("hud.reiatsu_test.denied.blocked"), HudAssets.DIM, ToastKind.GREY, 1.2);
 				if (FxConfig.hud) {
-					FxSound.ui("block.note_block.bass", 0.5, 0.3);
+					FxSound.ui(SoundIds.UI_DENY_BLOCKED, "block.note_block.bass", 0.5, 0.3);
 				}
 			}
 			case DENIED_STATE, DENIED_NOT_DRAWN -> {
@@ -726,14 +726,14 @@ public final class HudModel {
 					SLOTS[i].flashGrey = now + 0.2;
 				}
 				if (FxConfig.hud) {
-					FxSound.ui("block.note_block.bass", 0.5, 0.4);
+					FxSound.ui(SoundIds.UI_DENY_STATE, "block.note_block.bass", 0.5, 0.4);
 				}
 			}
 			case DENIED_ITEM -> {
 				iconFlash = now;
 				pushToast(Text.translatable("hud.reiatsu_test.denied.item"), HudAssets.DIM, ToastKind.GREY, 1.4);
 				if (FxConfig.hud) {
-					FxSound.ui("block.note_block.bass", 0.5, 0.4);
+					FxSound.ui(SoundIds.UI_DENY_ITEM, "block.note_block.bass", 0.5, 0.4);
 				}
 			}
 			case RATE_LIMIT -> {
@@ -741,18 +741,16 @@ public final class HudModel {
 		}
 	}
 
-	/** "Not enough Rage 23/40" with whole points (the bar shows tenths of a point). */
 	/**
 	 * R11 T3: seconds of shikai still needed before bankai (0 when not in shikai or long enough). Counted from the client-side moment the
-	 * shikai state appeared, with the default {@code bankaiMinShikaiTicks} (the server config may differ).
+	 * shikai state appeared (so it leads or lags the server by the latency), with {@code rage.bankaiMinShikaiTicks} of the server config
+	 * (synced as the {@code rage_tuning} attachment, R11 review fix 4; the code default until the first sync).
 	 */
 	public static double shikaiHoldLeft() {
-		if (state != ZanpakutoState.SHIKAI || stateChangeAt < 0) {
-			return 0.0;
-		}
-		return Math.max(0.0, dev.minebleach.reiatsutest.core.rage.RageConfig.defaults().bankaiMinShikaiTicks() / 20.0 - (now - stateChangeAt));
+		return ClientState.rageTuning().shikaiHoldLeftSeconds(state == ZanpakutoState.SHIKAI, now, stateChangeAt);
 	}
 
+	/** "Not enough Rage 23/40" with whole points (the bar shows tenths of a point). */
 	public static Text rageNeedText(int haveTenths, int needTenths) {
 		return Text.translatable("hud.reiatsu_test.rage_need", Math.round(haveTenths / 10.0f), Math.round(needTenths / 10.0f));
 	}

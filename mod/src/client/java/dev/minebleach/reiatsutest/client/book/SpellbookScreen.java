@@ -9,6 +9,7 @@ import dev.minebleach.reiatsutest.core.book.SpellbookCatalog;
 import dev.minebleach.reiatsutest.core.book.SpellbookCatalog.Availability;
 import dev.minebleach.reiatsutest.core.book.SpellbookId;
 import dev.minebleach.reiatsutest.core.kido.KidoConfig;
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.state.BalanceConfig;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.SpellbookItem;
@@ -23,8 +24,6 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.BookScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.PageTurnWidget;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
@@ -122,8 +121,7 @@ public final class SpellbookScreen extends Screen {
 	}
 
 	private static void playTurnSound() {
-		MinecraftClient.getInstance().getSoundManager()
-				.play(PositionedSoundInstance.master(SoundEvents.ITEM_BOOK_PAGE_TURN, 1.0f));
+		dev.minebleach.reiatsutest.client.fx.FxSound.ui(SoundIds.UI_BOOK_PAGE, "item.book.page_turn", 1.0, 0.25);
 	}
 
 	private void updateButtons() {

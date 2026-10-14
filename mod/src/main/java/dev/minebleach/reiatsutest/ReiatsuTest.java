@@ -31,6 +31,7 @@ public class ReiatsuTest implements ModInitializer {
 		ModItems.init();
 		ModAttachments.init();
 		ModParticles.init();
+		dev.minebleach.reiatsutest.registry.ModSounds.init(); // R11 T12: one SoundEvent per entry of core/sound/SoundIds
 		ModEntities.init();
 		ModNetworking.registerPayloads();
 		ZanpakutoManager.init();
@@ -43,6 +44,7 @@ public class ReiatsuTest implements ModInitializer {
 		dev.minebleach.reiatsutest.server.RukiaServerFx.init();
 		dev.minebleach.reiatsutest.server.FrostField.init();
 		dev.minebleach.reiatsutest.server.uryu.UryuManager.init();
+		dev.minebleach.reiatsutest.server.ModSound.init(); // R11 T12: config/reiatsu_sounds.json
 		LOGGER.info("registered items {}, {}, {} (component {}), attachments and payloads",
 				ModItems.SODE_NO_SHIRAYUKI, ModItems.SENBONZAKURA, ModItems.SPIKE_ITEM, ModComponents.RELEASE_STATE);
 	}

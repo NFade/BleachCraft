@@ -5,6 +5,7 @@ import dev.minebleach.reiatsutest.core.world.TempBlockJournal.Entry;
 import dev.minebleach.reiatsutest.registry.ModBlocks;
 import java.util.List;
 import java.util.UUID;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -19,6 +20,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.WorldChunk;
 
 /**
  * Temporary ice and snow with a rollback journal (no permanent world change). Only air, a single snow layer or still
@@ -31,8 +34,73 @@ import net.minecraft.world.World;
  */
 public final class TempBlocks {
 	private static TempBlockState state;
+	/** Greater than 0 while a restore reads or writes a cell: the orphan sweep stays out (see {@link #restore}), like {@code FrostField.restoring}. */
+	private static int restoring;
 
 	private TempBlocks() {
+	}
+
+	/** Registered once from the mod initialiser: the orphan sweep of the ice wall blocks (R11 review fix 6). */
+	public static void init() {
+		ServerChunkEvents.CHUNK_LOAD.register(TempBlocks::sweepOrphanWalls);
+	}
+
+	/**
+	 * R11 review fix 6, the same last line of defence as {@code FrostField.sweepOrphans}: the journal is saved with the world, the chunks are saved on their
+	 * own. When the process dies while a wall stands, a chunk can be saved with {@code ice_wall} blocks (strength -1: nobody can break them in survival)
+	 * while the journal on disk does not know them. When a chunk loads, every {@code ice_wall} block without a journal entry is replaced by air (the grass
+	 * it replaced is gone with the lost journal; a cell that held a frost sprig is handled by the frost sweep and journal). Only sections whose palette holds
+	 * the block are scanned.
+	 */
+	private static void sweepOrphanWalls(ServerWorld world, WorldChunk chunk) {
+		if (state == null || restoring > 0) {
+			return;
+		}
+		String dim = dimensionOf(world);
+		ChunkSection[] sections = chunk.getSectionArray();
+		int fixed = 0;
+		for (int i = 0; i < sections.length; i++) {
+			ChunkSection sec = sections[i];
+			if (sec == null || sec.isEmpty() || !sec.hasAny(st -> st.isOf(ModBlocks.ICE_WALL))) {
+				continue;
+			}
+			int baseY = (chunk.getBottomSectionCoord() + i) << 4;
+			for (int lx = 0; lx < 16; lx++) {
+				for (int ly = 0; ly < 16; ly++) {
+					for (int lz = 0; lz < 16; lz++) {
+						if (!sec.getBlockState(lx, ly, lz).isOf(ModBlocks.ICE_WALL)) {
+							continue;
+						}
+						int x = (chunk.getPos().x << 4) + lx;
+						int y = baseY + ly;
+						int z = (chunk.getPos().z << 4) + lz;
+						if (state.journal.contains(dim, x, y, z)) {
+							continue; // a live wall owns it
+						}
+						chunk.setBlockState(new BlockPos(x, y, z), Blocks.AIR.getDefaultState(), false);
+						fixed++;
+					}
+				}
+			}
+		}
+		if (fixed > 0) {
+			ReiatsuTest.LOGGER.warn("[tempblocks] chunk {} in {}: {} ice wall block(s) without a journal entry removed (the journal was lost in a crash)", chunk.getPos(), dim, fixed);
+		}
+	}
+
+	/** The chunks that were loaded before the journal (the spawn area) did not see the sweep: run it for them after the leftover rollback. */
+	private static void sweepLoadedSpawnChunks(MinecraftServer server) {
+		for (ServerWorld w : server.getWorlds()) {
+			BlockPos sp = w.getSpawnPos();
+			for (int cx = (sp.getX() >> 4) - 12; cx <= (sp.getX() >> 4) + 12; cx++) {
+				for (int cz = (sp.getZ() >> 4) - 12; cz <= (sp.getZ() >> 4) + 12; cz++) {
+					WorldChunk c = w.getChunkManager().getWorldChunk(cx, cz);
+					if (c != null) {
+						sweepOrphanWalls(w, c);
+					}
+				}
+			}
+		}
 	}
 
 	/** SERVER_STARTED: load the journal and roll back anything left from an earlier run. */
@@ -46,6 +114,7 @@ public final class TempBlocks {
 			state.markDirty();
 			ReiatsuTest.LOGGER.info("[tempblocks] rolled back {} leftover temporary block(s) from the previous run", leftovers.size());
 		}
+		sweepLoadedSpawnChunks(server);
 	}
 
 	public static void onServerStopping(MinecraftServer server) {
@@ -102,9 +171,13 @@ public final class TempBlocks {
 	private static final int WALL_FLAGS = Block.NOTIFY_LISTENERS | Block.FORCE_STATE;
 	private static final String WALL = "ice_wall";
 
-	/** True when a wall block may replace {@code cur}: air, or a replaceable block with no fluid and no block entity (grass, flowers, snow layers ...). */
+	/**
+	 * True when a wall block may replace {@code cur}: air, a replaceable block with no fluid and no block entity (grass, snow layers ...), or soft
+	 * vegetation ({@link SoftPlants}: flowers, which are not replaceable in the game, and the frost sprig that the frost field turns grass into).
+	 * The ice wall search for the floor treats these cells as free, so a wall in a frozen meadow stands on the ground, not in the air above the sprigs.
+	 */
 	public static boolean wallReplaceable(BlockState cur) {
-		return cur.isAir() || (cur.isReplaceable() && cur.getFluidState().isEmpty() && !cur.hasBlockEntity());
+		return cur.isAir() || (cur.isReplaceable() && cur.getFluidState().isEmpty() && !cur.hasBlockEntity()) || SoftPlants.isSoftPlant(cur);
 	}
 
 	/**
@@ -123,7 +196,9 @@ public final class TempBlocks {
 		if (!state.journal.canAdd(owner, dim, pos.getX(), pos.getY(), pos.getZ(), cap)) {
 			return false;
 		}
-		String previous = cur.isAir() ? "air" : "state:" + BlockArgumentParser.stringifyBlockState(cur);
+		// a frost sprig is owned by the frost field journal (it holds the grass under it): the wall remembers "air" there, so when the wall goes the
+		// cell is free and the field puts the grass back (FrostField.restoreOne accepts air and, for a thaw while the wall still stands, the wall block)
+		String previous = cur.isAir() || cur.isOf(ModBlocks.FROST_SPRIG) ? "air" : "state:" + BlockArgumentParser.stringifyBlockState(cur);
 		state.journal.add(new Entry(owner, dim, pos.getX(), pos.getY(), pos.getZ(), previous, WALL, restoreAtTick));
 		world.setBlockState(pos, ModBlocks.ICE_WALL.getDefaultState(), WALL_FLAGS);
 		state.markDirty();
@@ -217,13 +292,19 @@ public final class TempBlocks {
 			return;
 		}
 		BlockPos pos = new BlockPos(e.x(), e.y(), e.z());
-		BlockState cur = world.getBlockState(pos);
-		boolean wall = e.placed().equals(WALL);
-		boolean untouched = wall ? cur.isOf(ModBlocks.ICE_WALL) : e.placed().equals("ice") ? cur.isOf(Blocks.ICE) : cur.isOf(Blocks.SNOW);
-		if (!untouched) {
-			return; // someone changed the cell (or ice melted into water, or creative mode broke a wall block): leave their change alone
+		// reading the cell may load its chunk; the orphan sweep of that load must not see a wall block whose entry was just taken out of the journal
+		restoring++;
+		try {
+			BlockState cur = world.getBlockState(pos);
+			boolean wall = e.placed().equals(WALL);
+			boolean untouched = wall ? cur.isOf(ModBlocks.ICE_WALL) : e.placed().equals("ice") ? cur.isOf(Blocks.ICE) : cur.isOf(Blocks.SNOW);
+			if (!untouched) {
+				return; // someone changed the cell (or ice melted into water, or creative mode broke a wall block): leave their change alone
+			}
+			world.setBlockState(pos, previousState(e.previous()), wall ? WALL_FLAGS : Block.NOTIFY_ALL);
+		} finally {
+			restoring--;
 		}
-		world.setBlockState(pos, previousState(e.previous()), wall ? WALL_FLAGS : Block.NOTIFY_ALL);
 	}
 
 	/** Package visible for the tests of the token format. */

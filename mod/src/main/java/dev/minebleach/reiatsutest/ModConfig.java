@@ -1,10 +1,10 @@
 package dev.minebleach.reiatsutest;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import dev.minebleach.reiatsutest.core.combat.FrostMomentum;
+import dev.minebleach.reiatsutest.core.config.ConfigFileIo;
 import dev.minebleach.reiatsutest.core.config.ConfigMigrations;
 import dev.minebleach.reiatsutest.core.kido.KidoConfig;
 import dev.minebleach.reiatsutest.core.movement.DoubleJumpConfig;
@@ -29,6 +29,10 @@ import net.fabricmc.loader.api.FabricLoader;
  * {@code config/reiatsu_test.json} (ADR section 2 "Config"): one JSON object, one section per feature. The
  * {@code "voice"}, {@code "kido"}, {@code "bladeFlight"} and {@code "frost"} sections exist so far. A missing file or section is written with defaults; a file that does not parse
  * is left untouched (defaults are used for the session) so a typo never destroys the user's settings.
+ *
+ * <p>R11 review fix 8: every writer goes through {@link ConfigFileIo#writeJson} (temporary file, then an atomic move: a crash during the write cannot leave an
+ * empty file), and every loader and {@link #migrate} is {@code synchronized} on this class, so the read-modify-write cycles of the sections never interleave
+ * (the server thread at {@code SERVER_STARTED}, the command thread of {@code /reiatsu reload}).
  */
 public final class ModConfig {
 	private ModConfig() {
@@ -48,27 +52,11 @@ public final class ModConfig {
 	public static synchronized int migrate() {
 		Path file = file();
 		try {
-			if (!Files.isRegularFile(file)) {
-				JsonObject fresh = new JsonObject();
-				fresh.addProperty(ConfigMigrations.VERSION_KEY, ConfigMigrations.SERVER_VERSION);
-				Files.createDirectories(file.getParent());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(fresh) + System.lineSeparator(), StandardCharsets.UTF_8);
-				return 0;
-			}
-			var el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
-			if (!el.isJsonObject()) {
-				return 0;
-			}
-			JsonObject root = el.getAsJsonObject();
-			ConfigMigrations.Result r = ConfigMigrations.migrateServer(root);
-			if (!r.touched()) {
+			ConfigMigrations.Result r = ConfigFileIo.migrateFile(file, ConfigMigrations.SERVER_VERSION, ConfigMigrations::migrateServer);
+			if (r == null) {
 				return 0;
 			}
 			Path bak = file.resolveSibling(file.getFileName() + ".bak_v" + r.fromVersion());
-			if (!Files.exists(bak)) {
-				Files.copy(file, bak);
-			}
-			Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(), StandardCharsets.UTF_8);
 			ReiatsuTest.LOGGER.info("[config] updated {} keys from v{} to v{} (backup {}): {}", r.changed().size(), r.fromVersion(), r.toVersion(),
 					bak.getFileName(), r.changed());
 			return r.changed().size();
@@ -82,12 +70,12 @@ public final class ModConfig {
 	 * R11: the generic section loader of the new sections ({@code mech}, {@code rage}, {@code terrain} ...). Same rules as {@link #loadKido}: a
 	 * missing section is written with the defaults next to whatever else the file holds, an unreadable file is left alone and the defaults are used.
 	 */
-	static <T> T loadSection(String section, Supplier<T> defaults, Function<JsonObject, T> fromRoot, BiConsumer<T, JsonObject> writeInto) {
+	static synchronized <T> T loadSection(String section, Supplier<T> defaults, Function<JsonObject, T> fromRoot, BiConsumer<T, JsonObject> writeInto) {
 		return loadSection(section, defaults, fromRoot, writeInto, root -> root.has(section));
 	}
 
 	/** Same with an own test whether the file already holds the section (for a nested section that shares its parent object with other tasks). */
-	static <T> T loadSection(String section, Supplier<T> defaults, Function<JsonObject, T> fromRoot, BiConsumer<T, JsonObject> writeInto,
+	static synchronized <T> T loadSection(String section, Supplier<T> defaults, Function<JsonObject, T> fromRoot, BiConsumer<T, JsonObject> writeInto,
 			Predicate<JsonObject> present) {
 		Path file = file();
 		JsonObject root = new JsonObject();
@@ -111,7 +99,7 @@ public final class ModConfig {
 			writeInto.accept(cfg, root);
 			try {
 				Files.createDirectories(file.getParent());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(), StandardCharsets.UTF_8);
+				ConfigFileIo.writeJson(file, root);
 			} catch (IOException e) {
 				ReiatsuTest.LOGGER.warn("[config] could not write {}: {}", file, e.toString());
 			}
@@ -163,7 +151,7 @@ public final class ModConfig {
 				&& root.getAsJsonObject(FrostMomentum.Config.SECTION).has(FrostMomentum.Config.SUB));
 	}
 
-	public static VoiceConfig loadVoice() {
+	public static synchronized VoiceConfig loadVoice() {
 		Path file = file();
 		JsonObject root = new JsonObject();
 		boolean write = true;
@@ -186,8 +174,7 @@ public final class ModConfig {
 			cfg.writeInto(root);
 			try {
 				Files.createDirectories(file.getParent());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(),
-						StandardCharsets.UTF_8);
+				ConfigFileIo.writeJson(file, root);
 			} catch (IOException e) {
 				ReiatsuTest.LOGGER.warn("[config] could not write {}: {}", file, e.toString());
 			}
@@ -198,7 +185,7 @@ public final class ModConfig {
 	/**
 	 * The {@code "bladeFlight"} section (steerable Senbonzakura attack swarm). Same rules as {@link #loadKido}.
 	 */
-	public static FlightConfig loadFlight() {
+	public static synchronized FlightConfig loadFlight() {
 		Path file = file();
 		JsonObject root = new JsonObject();
 		boolean write = true;
@@ -221,8 +208,7 @@ public final class ModConfig {
 			cfg.writeInto(root);
 			try {
 				Files.createDirectories(file.getParent());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(),
-						StandardCharsets.UTF_8);
+				ConfigFileIo.writeJson(file, root);
 			} catch (IOException e) {
 				ReiatsuTest.LOGGER.warn("[config] could not write {}: {}", file, e.toString());
 			}
@@ -234,7 +220,7 @@ public final class ModConfig {
 	 * The {@code "kido"} section (B5). Same rules as {@link #loadVoice}: a missing section is written with the defaults next
 	 * to whatever else the file holds, an unreadable file is left alone and the defaults are used for the session.
 	 */
-	public static KidoConfig loadKido() {
+	public static synchronized KidoConfig loadKido() {
 		Path file = file();
 		JsonObject root = new JsonObject();
 		boolean write = true;
@@ -257,8 +243,7 @@ public final class ModConfig {
 			cfg.writeInto(root);
 			try {
 				Files.createDirectories(file.getParent());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(),
-						StandardCharsets.UTF_8);
+				ConfigFileIo.writeJson(file, root);
 			} catch (IOException e) {
 				ReiatsuTest.LOGGER.warn("[config] could not write {}: {}", file, e.toString());
 			}
@@ -270,7 +255,7 @@ public final class ModConfig {
 	 * The {@code "frost"} section (territory freeze of the Rukia bankai, round 6). Same rules as {@link #loadKido}: a missing section is
 	 * written with the defaults next to whatever else the file holds, an unreadable file is left alone and the defaults are used.
 	 */
-	public static FrostConfig loadFrost() {
+	public static synchronized FrostConfig loadFrost() {
 		Path file = file();
 		JsonObject root = new JsonObject();
 		boolean write = true;
@@ -293,8 +278,7 @@ public final class ModConfig {
 			cfg.writeInto(root);
 			try {
 				Files.createDirectories(file.getParent());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(),
-						StandardCharsets.UTF_8);
+				ConfigFileIo.writeJson(file, root);
 			} catch (IOException e) {
 				ReiatsuTest.LOGGER.warn("[config] could not write {}: {}", file, e.toString());
 			}

@@ -5,8 +5,11 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.combat.ParryBus;
 import dev.minebleach.reiatsutest.core.rage.RageConfig;
 import dev.minebleach.reiatsutest.core.rage.RageMeter;
+import dev.minebleach.reiatsutest.core.rage.RageReward;
+import dev.minebleach.reiatsutest.core.rage.RageTuning;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.data.RageData;
+import dev.minebleach.reiatsutest.registry.data.RageTuningData;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -38,7 +41,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * <li>successful parries ({@link ParryBus}).</li>
  * </ul>
  * R11 T3: damage taken gives nothing (default), sword/projectile hits give 0.3 per hp (mobs 25 percent, capped per target per 10 s), a parry
- * 6.0 at most once a second, an ability or kido cast one fixed 2.0 for its first landed hit ({@link #onCast}); the numbers are the
+ * 4.0 at most once a second, an ability or kido cast one fixed 2.0 for its first landed hit ({@link #onCast}); the numbers are the
  * {@code rage} section of the config ({@link #config()}).
  * Every gain is an INFO line {@code [rage] +X from <reason> ...} in the server log. The bar drains out of combat, resets on death
  * and logout, and is synced to its owner as the {@link ModAttachments#RAGE} attachment (only when the value changed).
@@ -57,11 +60,22 @@ public final class RageManager {
 	/** Players in dev god mode ({@code /reiatsu dev god on}): their Rage bar is held at the maximum every tick. */
 	private static final java.util.Set<UUID> INFINITE = new java.util.HashSet<>();
 	private static MinecraftServer server;
+	/** R11 review fix 2: greater than 0 while {@code Targeting.hurtUnrewarded} runs its damage call (single server thread); hits inside pay no Rage. */
+	private static int noRewardDepth;
 	/** A player-caused hit that may turn out lethal: who, how much was asked, how much health the victim had. */
 	private record Pending(UUID attacker, float amount, float healthBefore) {
 	}
 
 	private RageManager() {
+	}
+
+	/** Marks the damage call that follows as unrewarded (the frost field pulses): see {@link RageReward}. Pair with {@link #endUnrewarded}. */
+	static void beginUnrewarded() {
+		noRewardDepth++;
+	}
+
+	static void endUnrewarded() {
+		noRewardDepth = Math.max(0, noRewardDepth - 1);
 	}
 
 	/** The rage numbers in force. */
@@ -194,7 +208,11 @@ public final class RageManager {
 		if (attacker instanceof ServerPlayerEntity a && a != victim && !(victim instanceof ArmorStandEntity)) {
 			RageMeter m = meterOf(a.getUuid());
 			boolean mob = !(victim instanceof PlayerEntity);
-			if (isAbilityDamage(source)) {
+			RageReward reward = RageReward.classify(noRewardDepth > 0, isAbilityDamage(source));
+			if (reward == RageReward.NONE) {
+				return; // R11 review fix 2: a frost field pulse pays nothing and leaves the armed cast reward for a real ability hit
+			}
+			if (reward == RageReward.ABILITY) {
 				int gained = m.onAbilityHit(mob, now); // R11 T3: one fixed reward per cast, however many targets it hits
 				if (gained > 0) {
 					logGain(a, gained, "ability", " " + fmt1(damageTaken) + " hp to " + victim.getName().getString());
@@ -224,8 +242,8 @@ public final class RageManager {
 			return;
 		}
 		float landed = Math.min(hit.amount(), hit.healthBefore());
-		if (victim instanceof ArmorStandEntity) {
-			return;
+		if (victim instanceof ArmorStandEntity || noRewardDepth > 0) {
+			return; // an armor stand, or an unrewarded hit (frost field pulse, R11 review fix 2)
 		}
 		RageMeter m = meterOf(a.getUuid());
 		boolean mob = !(victim instanceof PlayerEntity);
@@ -279,6 +297,11 @@ public final class RageManager {
 		RageData d = RageData.of(m.state());
 		if (!d.equals(p.getAttached(ModAttachments.RAGE))) {
 			p.setAttached(ModAttachments.RAGE, d);
+		}
+		// R11 review fix 4: the HUD shows the costs and the minimum shikai time of THIS config (a reload reaches the owners within a tick)
+		RageTuningData t = RageTuningData.of(RageTuning.of(config));
+		if (!t.equals(p.getAttached(ModAttachments.RAGE_TUNING))) {
+			p.setAttached(ModAttachments.RAGE_TUNING, t);
 		}
 	}
 }

@@ -91,6 +91,13 @@ public final class ClientState {
 		return r == null ? RageData.EMPTY : r;
 	}
 
+	/** Rage costs and minimum shikai time of the server config (R11 review fix 4); the code defaults until the first sync arrives. */
+	public static dev.minebleach.reiatsutest.core.rage.RageTuning rageTuning() {
+		ClientPlayerEntity p = MinecraftClient.getInstance().player;
+		var d = p == null ? null : p.getAttached(ModAttachments.RAGE_TUNING);
+		return d == null ? dev.minebleach.reiatsutest.core.rage.RageTuning.defaults() : d.toTuning();
+	}
+
 	/** Synced frost stacks of Rukia (R11 T6); empty until the first sync arrives. */
 	public static dev.minebleach.reiatsutest.registry.data.MomentumData momentum() {
 		ClientPlayerEntity p = MinecraftClient.getInstance().player;

@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.HeadTrack;
 import dev.minebleach.reiatsutest.core.fx.SwarmMath;
@@ -134,7 +135,7 @@ public final class SwarmFx {
 		EffectTimeline t = FxTimelines.create(3, e.seed(), pos, dir, e.params(), e.casterId(), FxClient.forceRemote());
 		t.at(0.0, x -> {
 			// the flash (0.40 lilac) and the cast_spell sound come from ReleaseFx (id 3)
-			x.sound("block.pink_petals.break", 1.0, 0.7);
+			x.sound(SoundIds.BYAKUYA_SHIKAI_SWARM_RELEASE, "block.pink_petals.break", 1.0, 0.7);
 			double[] o = new double[3];
 			double yaw = Math.toRadians(MinecraftClient.getInstance().player != null && e.casterId() == MinecraftClient.getInstance().player.getId()
 					? MinecraftClient.getInstance().player.getYaw() : Math.toDegrees(Math.atan2(-dir.x, dir.z)));
@@ -145,12 +146,12 @@ public final class SwarmFx {
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(pos.x + o[0], pos.y + o[1] + 0.1, pos.z + o[2]).size(0.6, 1.8).sizeEase(FxMath.OC).life(0.35).curve(0.02, 0.8)
 					.color("#F9C8F6").peak(0.8).owner(x).spawn();
 		});
-		t.at(0.1, x -> x.sound("block.pink_petals.break", 1.1, 0.6));
+		t.at(0.1, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_SWARM_RELEASE, "block.pink_petals.break", 1.1, 0.6));
 		t.at(0.2, x -> {
-			x.sound("block.pink_petals.break", 0.9, 0.6);
-			x.sound("entity.phantom.flap", 1.4, 0.25);
+			x.sound(SoundIds.BYAKUYA_SHIKAI_SWARM_RELEASE, "block.pink_petals.break", 0.9, 0.6);
+			x.sound(SoundIds.BYAKUYA_SHIKAI_SWARM_FLUTTER, "entity.phantom.flap", 1.4, 0.25);
 		});
-		t.at(1.0, x -> x.sound("entity.phantom.flap", 1.5, 0.15));
+		t.at(1.0, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_SWARM_FLUTTER, "entity.phantom.flap", 1.5, 0.15));
 		// the 60 glowing petals along the stream (life 12 ticks), spawned over the launch
 		for (int k = 0; k < 10; k++) {
 			final int kk = k;
@@ -192,17 +193,17 @@ public final class SwarmFx {
 		st.setMode(m);
 		attacks++;
 		EffectTimeline tl = FxTimelines.create(30, e.seed(), pos, new Vec3d(e.dx(), e.dy(), e.dz()), e.params(), e.casterId(), FxClient.forceRemote());
-		tl.at(0.0, x -> x.sound("entity.player.attack.sweep", 0.9, 0.8));
+		tl.at(0.0, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_START, "entity.player.attack.sweep", 0.9, 0.8));
 		tl.at(0.2, x -> {
-			x.sound("entity.breeze.wind_burst", 1.1, 0.8);
-			x.sound("entity.phantom.swoop", 1.6, 0.4);
+			x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_START, "entity.breeze.wind_burst", 1.1, 0.8);
+			x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_START, "entity.phantom.swoop", 1.6, 0.4);
 		});
 		tl.at(0.5, x -> {
 			x.shake(FxTune.d("swarm.attackShake", 0.3), 0.2);
-			x.sound("entity.player.attack.crit", 1.0, 0.6);
+			x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_HIT, "entity.player.attack.crit", 1.0, 0.6);
 		});
-		tl.at(0.6, x -> x.sound("entity.player.attack.crit", 1.1, 0.6));
-		tl.at(0.7, x -> x.sound("entity.player.attack.crit", 1.2, 0.6));
+		tl.at(0.6, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_HIT, "entity.player.attack.crit", 1.1, 0.6));
+		tl.at(0.7, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_HIT, "entity.player.attack.crit", 1.2, 0.6));
 		// cutting core: glow at the aim and a sound every 0.25 s, 30 petal sparks per second
 		final int caster = e.casterId();
 		tl.at(0.45, x -> {
@@ -212,11 +213,11 @@ public final class SwarmFx {
 		});
 		for (int k = 0; k < 4; k++) {
 			tl.at(1.0 + 0.25 * k, x -> {
-				x.sound("block.pink_petals.break", 1.0 + 0.1 * (x.rng(5).nextDouble() - 0.5), 0.5);
+				x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_PETALS, "block.pink_petals.break", 1.0 + 0.1 * (x.rng(5).nextDouble() - 0.5), 0.5);
 				sparks(x, headOr(caster, aimWorld), 8);
 			});
 		}
-		tl.at(1.5, x -> x.sound("block.pink_petals.step", 1.0, 0.4));
+		tl.at(1.5, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_PETALS, "block.pink_petals.step", 1.0, 0.4));
 		tl.lifetime(2.4);
 		FxTimelines.start(tl);
 	}
@@ -319,10 +320,10 @@ public final class SwarmFx {
 		st.setMode(new SwarmMath.Mode(SwarmMath.Kind.BARRIER, st.time()));
 		barriers++;
 		EffectTimeline tl = FxTimelines.create(31, e.seed(), pos, new Vec3d(e.dx(), e.dy(), e.dz()), e.params(), e.casterId(), FxClient.forceRemote());
-		tl.at(0.0, x -> x.sound("block.beacon.power_select", 1.1, 0.6));
-		tl.at(0.3, x -> x.sound("item.shield.block", 0.8, 0.7));
-		tl.at(0.6, x -> x.sound("block.amethyst_block.resonate", 0.7, 0.3));
-		tl.at(5.0, x -> x.sound("block.pink_petals.step", 0.9, 0.5));
+		tl.at(0.0, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_BARRIER_START, "block.beacon.power_select", 1.1, 0.6));
+		tl.at(0.3, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_BARRIER_START, "item.shield.block", 0.8, 0.7));
+		tl.at(0.6, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_BARRIER_START, "block.amethyst_block.resonate", 0.7, 0.3));
+		tl.at(5.0, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_BARRIER_END, "block.pink_petals.step", 0.9, 0.5));
 		tl.lifetime(5.6);
 		FxTimelines.start(tl);
 	}
@@ -395,7 +396,7 @@ public final class SwarmFx {
 						}
 						if ((serverOver && t - m.t0 > 0.6) || t - m.t0 > 5.0) {
 							m.collapseAt = t;
-							FxSound.play(null, "block.pink_petals.step", st.lastFeet.x, st.lastFeet.y + 1, st.lastFeet.z, 0.9, 0.5);
+							FxSound.play(null, SoundIds.BYAKUYA_SHIKAI_SWARM_HUM, "block.pink_petals.step", st.lastFeet.x, st.lastFeet.y + 1, st.lastFeet.z, 0.9, 0.5);
 						}
 					} else if (t - m.collapseAt > 1.0) {
 						st.mode = new SwarmMath.Mode(SwarmMath.Kind.IDLE, t);
@@ -429,7 +430,7 @@ public final class SwarmFx {
 			}
 			if (st.endAt < 0 && st.mode.kind == SwarmMath.Kind.IDLE && FxClock.now >= st.nextStepSound && mc.player != null && mc.player.distanceTo(ow) < 24) {
 				st.nextStepSound = FxClock.now + 0.5 + r.nextDouble() * 0.3;
-				FxSound.play(null, "block.pink_petals.step", ow.getX(), ow.getY() + 1.0, ow.getZ(), 1.2 + r.nextDouble() * 0.2, 0.3);
+				FxSound.play(null, SoundIds.BYAKUYA_SHIKAI_SWARM_HUM, "block.pink_petals.step", ow.getX(), ow.getY() + 1.0, ow.getZ(), 1.2 + r.nextDouble() * 0.2, 0.3);
 			}
 			if (ow instanceof LivingEntity le) {
 				if (st.mode.kind == SwarmMath.Kind.BARRIER && Double.isInfinite(st.mode.collapseAt) && le.hurtTime > st.lastHurt) {
@@ -463,8 +464,8 @@ public final class SwarmFx {
 					.drag(0.92).gravity(0.4).life(20).size(0.28).color("#F9C8F6").seed(r.nextInt(4)).spawn();
 		}
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(c.x, c.y, c.z).plane(dx, 0, dz).size(2.6).life(0.25).curve(0.02, 0.8).color("#F3E4FF").peak(0.5).spawn();
-		FxSound.play(null, "item.shield.block", c.x, c.y, c.z, 1.1, 0.8);
-		FxSound.play(null, "block.pink_petals.break", c.x, c.y, c.z, 1.0, 0.6);
+		FxSound.play(null, SoundIds.BYAKUYA_SHIKAI_BARRIER_HIT, "item.shield.block", c.x, c.y, c.z, 1.1, 0.8);
+		FxSound.play(null, SoundIds.BYAKUYA_SHIKAI_BARRIER_HIT, "block.pink_petals.break", c.x, c.y, c.z, 1.0, 0.6);
 		ScreenFx.shake(0.2, 0.2, 1.0);
 		ReiatsuTest.LOGGER.info("[fx] barrier hit reaction");
 	}

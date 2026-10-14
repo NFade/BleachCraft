@@ -597,7 +597,9 @@ public final class FrostField {
 		restoring++;
 		try {
 			BlockState cur = world.getBlockState(pos);
-			if (!ModBlocks.isFrost(cur.getBlock()) && !cur.isAir()) {
+			// R11 review: an ice wall block that was built over a sprig of this field (TempBlocks.placeWall) also counts as ours, so a thaw that comes
+			// before the wall expires does not lose the original grass; the wall's own restore then finds a changed cell and leaves it alone
+			if (!ModBlocks.isFrost(cur.getBlock()) && !cur.isAir() && !IceWall.isWall(cur)) {
 				return false;
 			}
 			world.setBlockState(pos, parse(e.previous()), FLAGS);

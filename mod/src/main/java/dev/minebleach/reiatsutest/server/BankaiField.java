@@ -85,7 +85,7 @@ final class BankaiField {
 				damagePulses++;
 				// resetInvulnerability: the pulse must land as exactly tickDamage even right after another hit (no i-frame reduction)
 				for (LivingEntity e : inside) {
-					Targeting.hurtPlain(caster, e, spec.tickDamage(), DamageTypes.INDIRECT_MAGIC, true);
+					Targeting.hurtUnrewarded(caster, e, spec.tickDamage(), DamageTypes.INDIRECT_MAGIC, true);
 				}
 				ServerFx.entities(caster, EntityFxS2C.HIT, now, inside);
 			}

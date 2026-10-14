@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.fx.FieldAnchorPolicy;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
@@ -250,11 +251,11 @@ public final class RukiaBankaiClient {
 			if (age >= 2.0 && dist <= 24) {
 				if (now >= p.nextHum) {
 					p.nextHum = now + 4.0;
-					FxSound.play(null, "block.amethyst_block.resonate", pl.getX(), pl.getY() + 1.0, pl.getZ(), FxTune.d("rbankai.humPitch", 0.6), FxTune.d("rbankai.humVolume", 0.15));
+					FxSound.play(null, SoundIds.RUKIA_BANKAI_HUM, "block.amethyst_block.resonate", pl.getX(), pl.getY() + 1.0, pl.getZ(), FxTune.d("rbankai.humPitch", 0.6), FxTune.d("rbankai.humVolume", 0.15));
 				}
 				if (now >= p.nextSnow) {
 					p.nextSnow = now + 2.0 + RNG.nextDouble() * 2.0;
-					FxSound.play(null, "block.powder_snow.step", pl.getX() + (RNG.nextDouble() - 0.5) * 3, pl.getY(), pl.getZ() + (RNG.nextDouble() - 0.5) * 3, 1.3, FxTune.d("rbankai.snowVolume", 0.2));
+					FxSound.play(null, SoundIds.RUKIA_BANKAI_SNOW_STEP, "block.powder_snow.step", pl.getX() + (RNG.nextDouble() - 0.5) * 3, pl.getY(), pl.getZ() + (RNG.nextDouble() - 0.5) * 3, 1.3, FxTune.d("rbankai.snowVolume", 0.2));
 				}
 			}
 			// ---- glints on the crystals
@@ -382,7 +383,7 @@ public final class RukiaBankaiClient {
 			}
 			boolean first = !c.glinted && c.grown(now);
 			if (first && c.rim) {
-				FxSound.play(null, "block.amethyst_block.chime", c.x, c.y + 0.5, c.z, FxTune.d("rbankai.chimePitch", 1.2), FxTune.d("rbankai.chimeVolume", 0.3));
+				FxSound.play(null, SoundIds.RUKIA_BANKAI_GLINT, "block.amethyst_block.chime", c.x, c.y + 0.5, c.z, FxTune.d("rbankai.chimePitch", 1.2), FxTune.d("rbankai.chimeVolume", 0.3));
 			}
 			if (first || RNG.nextInt(60) == 0) {
 				c.glinted = true;
@@ -411,7 +412,7 @@ public final class RukiaBankaiClient {
 				mf = new MobFrost();
 				MOBS.put(m.getId(), mf);
 				mf.decal = FxDecals.create(FxDecals.FROST, m.getX(), m.getZ(), m.getY(), Math.max(0.6, m.getWidth() * 0.9), 0).reveal(0.4).alpha(0.8);
-				FxSound.play(null, "entity.player.hurt_freeze", m.getX(), m.getY() + 1, m.getZ(), 1.2, 0.4);
+				FxSound.play(null, SoundIds.RUKIA_BANKAI_MOB_FROST, "entity.player.hurt_freeze", m.getX(), m.getY() + 1, m.getZ(), 1.2, 0.4);
 			}
 			mf.lastSeen = FxClock.now;
 			if (FxClock.now >= mf.nextBreath) {

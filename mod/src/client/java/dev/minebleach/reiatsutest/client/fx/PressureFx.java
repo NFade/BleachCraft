@@ -9,6 +9,7 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.PressureMath;
 import dev.minebleach.reiatsutest.core.fx.PressurePlan;
 import dev.minebleach.reiatsutest.core.fx.PressureStripes;
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +86,11 @@ public final class PressureFx {
 		double k = plan.strength();
 		if (k < 0.03) {
 			return PressurePlan.OFF;
+		}
+		// R11 T12: the low drone and heartbeats of a foreign bankai release; no vanilla sound (it was silent), a clip plays when the player installed one
+		net.minecraft.client.network.ClientPlayerEntity me = MinecraftClient.getInstance().player;
+		if (me != null) {
+			FxSound.playEvent(null, SoundIds.GENERAL_PRESSURE_RELEASE, me.getX(), me.getEyeY(), me.getZ(), Math.min(1.0, k));
 		}
 		float[] tint = FxMath.hex(byakuya ? "#CDBBE6" : "#BCD6EE");
 		ScreenFx.Layer vignette = ScreenFx.vignette(ScreenFx.Kind.DARK, FxTune.d("pressure.vignette", 0.75), PressureMath.RAMP, k).owner(ownerId);

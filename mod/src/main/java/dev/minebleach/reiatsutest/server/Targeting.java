@@ -171,7 +171,7 @@ final class Targeting {
 	 * percent of the hit) and the total can never pass 100 percent.
 	 */
 	static HitRules.Outcome hurt(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
-		return hurt(caster, target, hp, type, resetInvulnerability, true);
+		return hurt(caster, target, hp, type, resetInvulnerability, true, false);
 	}
 
 	/**
@@ -179,11 +179,20 @@ final class Targeting {
 	 * bonus of the stacks nor add a stack, so a field with an enemy inside cannot keep the passive full on its own.
 	 */
 	static HitRules.Outcome hurtPlain(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
-		return hurt(caster, target, hp, type, resetInvulnerability, false);
+		return hurt(caster, target, hp, type, resetInvulnerability, false, false);
+	}
+
+	/**
+	 * {@link #hurtPlain} that also pays no Rage to the caster (R11 review fix 2): the pulses of the frost field are damage over time that exists only
+	 * while the field stands; they must not consume the armed cast reward ({@code abilityHitTenths}) nor pay the "dealt" share. Kido keeps using
+	 * {@link #hurtPlain} and pays its cast reward as intended.
+	 */
+	static HitRules.Outcome hurtUnrewarded(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability) {
+		return hurt(caster, target, hp, type, resetInvulnerability, false, true);
 	}
 
 	private static HitRules.Outcome hurt(ServerPlayerEntity caster, LivingEntity target, float hp, RegistryKey<DamageType> type, boolean resetInvulnerability,
-			boolean momentum) {
+			boolean momentum, boolean unrewarded) {
 		if (momentum) {
 			hp *= RukiaMomentum.abilityMultiplier(caster); // R11 T6: Rukia's stacks raise the ability before the block and barrier cuts
 		}
@@ -208,7 +217,17 @@ final class Targeting {
 		boolean iframes = target.timeUntilRegen > 10;
 		float before = target.getHealth() + target.getAbsorptionAmount();
 		DmgLog.clearVeto();
-		boolean returned = target.damage(src, hp);
+		boolean returned;
+		if (unrewarded) {
+			RageManager.beginUnrewarded(); // AFTER_DAMAGE / AFTER_DEATH run inside damage(): the mark covers exactly this call
+			try {
+				returned = target.damage(src, hp);
+			} finally {
+				RageManager.endUnrewarded();
+			}
+		} else {
+			returned = target.damage(src, hp);
+		}
 		float lost = before - (target.getHealth() + target.getAbsorptionAmount());
 		HitRules.Outcome out = HitRules.outcome(hp, returned, lost, DmgLog.vetoFor(target), creative, invulnerable, team, iframes);
 		DmgLog.clearVeto();

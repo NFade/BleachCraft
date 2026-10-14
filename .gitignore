@@ -35,3 +35,10 @@ mod/gradle-home/
 
 # generated TTS fixtures (tools/gen_voice_fixtures.ps1)
 tests/voice/audio/
+
+# R11 T12: anime sound clips are copyrighted and the repository is public: they stay on the player's machine
+mod/src/main/resources/assets/reiatsu_test/sounds/anime/
+sounds_local/
+**/sounds_local/
+reiatsu_test_anime_sounds/
+reiatsu_test_anime_sounds.zip

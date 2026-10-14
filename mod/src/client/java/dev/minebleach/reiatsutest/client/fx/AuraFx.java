@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
@@ -199,14 +200,14 @@ public final class AuraFx {
 		boolean bankai = a.state == ZanpakutoState.BANKAI;
 		if (rukia && !bankai) {
 			a.nextSoundTick = tickCounter + 40;
-			FxSound.play(null, "block.powder_snow.step", at.x, at.y + 1.0, at.z, 1.2, 0.25);
+			FxSound.play(null, SoundIds.RUKIA_SHIKAI_AURA, "block.powder_snow.step", at.x, at.y + 1.0, at.z, 1.2, 0.25);
 		} else if (!rukia && bankai) {
 			a.nextSoundTick = tickCounter + 30;
-			FxSound.play(null, "entity.warden.heartbeat", at.x, at.y + 1.0, at.z, 0.7, 0.15);
+			FxSound.play(null, SoundIds.BYAKUYA_BANKAI_AURA, "entity.warden.heartbeat", at.x, at.y + 1.0, at.z, 0.7, 0.15);
 		} else if (rukia) {
 			// the cold hum (every 4 s) and a snow step at random 2 to 4 s
 			a.nextSoundTick = tickCounter + 40 + RNG.nextInt(40);
-			FxSound.play(null, RNG.nextBoolean() ? "block.amethyst_block.resonate" : "block.powder_snow.step", at.x, at.y + 1.0, at.z, 0.6 + RNG.nextDouble() * 0.7,
+			FxSound.play(null, SoundIds.RUKIA_BANKAI_AURA, RNG.nextBoolean() ? "block.amethyst_block.resonate" : "block.powder_snow.step", at.x, at.y + 1.0, at.z, 0.6 + RNG.nextDouble() * 0.7,
 					0.15);
 		} else {
 			a.nextSoundTick = tickCounter + 40;

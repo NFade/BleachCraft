@@ -91,6 +91,17 @@ class IceWallSourceTest {
 	}
 
 	@Test
+	void theWallSeesSoftVegetationAndTheFrostSprigAsFreeCells() throws IOException {
+		String temp = read("server/TempBlocks.java");
+		assertTrue(temp.contains("SoftPlants.isSoftPlant(cur)"), "wallReplaceable (floor search and placement) accepts the soft plants");
+		assertTrue(temp.contains("cur.isOf(ModBlocks.FROST_SPRIG) ? \"air\""), "a sprig cell is remembered as air: the frost journal owns the grass");
+		String plants = read("server/SoftPlants.java");
+		assertTrue(plants.contains("ModBlocks.FROST_SPRIG") && plants.contains("SMALL_FLOWERS") && plants.contains("SHORT_GRASS"));
+		assertTrue(read("server/IceWall.java").contains("TempBlocks.wallReplaceable(world.getBlockState(pos))"), "the probe uses the same rule as the placement");
+		assertTrue(read("server/FrostField.java").contains("!IceWall.isWall(cur)"), "a thaw puts the grass back even under a standing wall block");
+	}
+
+	@Test
 	void theBlockHasItsResources() throws IOException {
 		Path assets = SRC.resolve(Paths.get("main", "resources", "assets", "reiatsu_test"));
 		assertTrue(Files.isRegularFile(assets.resolve("blockstates/ice_wall.json")));
