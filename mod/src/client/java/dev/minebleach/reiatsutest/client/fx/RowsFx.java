@@ -5,6 +5,7 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.AnchorPlan;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
 import dev.minebleach.reiatsutest.core.fx.BladeRowLayout;
+import dev.minebleach.reiatsutest.core.fx.BladeRowPresets;
 import dev.minebleach.reiatsutest.core.fx.BladeSpec;
 import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
@@ -215,9 +216,9 @@ public final class RowsFx {
 		return FxMath.clamp(s, 0.2, 4.0);
 	}
 
-	/** True when {@code bankai.layout} is {@code r9}: the R9 measured layout (start 1 behind the feet, pitch 2.0, 12 per side, half width 3.7) instead of the current one. */
-	public static boolean layoutR9() {
-		return BladeRowLayout.LAYOUT_R9.equalsIgnoreCase(FxTune.s("bankai.layout", ""));
+	/** Preset chosen by {@code bankai.layout} (dense / book / anime / r7 / r9, default book); explicit {@code rows.*} keys still win over it. */
+	public static BladeRowPresets.Preset layoutPreset() {
+		return BladeRowPresets.byKey(FxTune.s("bankai.layout", ""));
 	}
 
 	/** Spacing and corridor width of the rows (fx_override.json {@code rows.scale}, default 0.65; 1.0 = the original 6 block half width, spacing 1.1). */
@@ -226,22 +227,21 @@ public final class RowsFx {
 	}
 
 	/**
-	 * The wall of slab blades of the Byakuya bankai (r7): ONE rank per side, {@code rows.perSide} 10 blades each at {@code rows.halfWidth} 7 blocks from the axis,
-	 * {@code rows.spacing} 1.0 between neighbours, from {@code rows.startAhead} -2 (2 blocks BEHIND the feet, r7 user request) further back. {@code bankai.layout = r9} swaps these defaults for the
-	 * R9 measurement (start -1, pitch 2.0, 12 per side, half width 3.7). The count follows
-	 * the quality tier ({@code bankaiBladeCount} 200 / 100 / 50 = 10 / 5 / 3 per side, the pitch widens for the lower tiers). {@code rows.legacy} 1 brings back the old two rank corridor.
+	 * The wall of slab blades of the Byakuya bankai: ONE rank per side, the numbers of the {@code bankai.layout} preset ({@link BladeRowPresets}: dense / book (default) /
+	 * anime fit the corridor of the anime frame, r7 / r9 are the older layouts). Each can be overridden by {@code rows.perSide}, {@code rows.halfWidth}, {@code rows.spacing},
+	 * {@code rows.startAhead} (negative = behind the feet). The count follows the quality tier ({@code bankaiBladeCount} 200 / 100 / 50 = 100% / 50% / 25% of perSide,
+	 * the pitch widens for the lower tiers). {@code rows.legacy} 1 brings back the old two rank corridor.
 	 */
 	public static BladeRowLayout makeLayout(long seed) {
 		if (FxTune.d("rows.legacy", 0.0) > 0.5) {
 			return BladeRowLayout.of(FxConfig.bankaiBladeCount, seed, rowsScaleSetting());
 		}
-		boolean r9 = layoutR9(); // (explicit rows.* keys still win over either set of defaults)
-		int high = (int) Math.round(FxTune.d("rows.perSide", r9 ? BladeRowLayout.R9_PER_SIDE : BladeRowLayout.DEFAULT_PER_SIDE));
+		BladeRowPresets.Preset pr = layoutPreset();
+		int high = (int) Math.round(FxTune.d("rows.perSide", pr.perSide()));
 		int per = (int) Math.round(high * FxConfig.bankaiBladeCount / 200.0);
 		per = Math.max(3, Math.min(250, per));
-		double pitch = BladeRowLayout.tierPitch(per, high, FxTune.d("rows.spacing", r9 ? BladeRowLayout.R9_PITCH : BladeRowLayout.DEFAULT_PITCH));
-		return BladeRowLayout.lane(per, seed, FxTune.d("rows.halfWidth", r9 ? BladeRowLayout.R9_HALF_WIDTH : BladeRowLayout.DEFAULT_HALF_WIDTH), pitch,
-				FxTune.d("rows.startAhead", r9 ? BladeRowLayout.R9_START_AHEAD : BladeRowLayout.DEFAULT_START_AHEAD));
+		double pitch = BladeRowLayout.tierPitch(per, high, FxTune.d("rows.spacing", pr.pitch()));
+		return BladeRowLayout.lane(per, seed, FxTune.d("rows.halfWidth", pr.halfWidth()), pitch, FxTune.d("rows.startAhead", pr.startAhead()));
 	}
 
 	/** The rows (fault lines, eruption) start this long after the throw of the sword, which needs about 1.5 s to hang and sink. */

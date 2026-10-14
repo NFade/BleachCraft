@@ -83,7 +83,7 @@ class BladeRowLayoutTest {
 	void leanArrivesAfterCompletionAndStaysSmall() {
 		BladeRowLayout l = BladeRowLayout.of(200, 1);
 		assertEquals(0.0, l.leanDeg(l.completionTime(), 3), 1e-9);
-		assertEquals(3.0, l.leanDeg(l.settledTime() + 1, 0), 0.6);
+		assertEquals(BladeRowLayout.LEAN_DEG, l.leanDeg(l.settledTime() + 1, 0), 0.6);
 	}
 
 	@Test

@@ -22,7 +22,8 @@ public final class BladeRowLayout {
 	public static final double RISE_TIME = 0.45;
 	/** The sunk blade is hidden this far under its rest height, mesh metres, beyond the length of the blade ({@link #sinkDepth()}). */
 	public static final double SINK_MARGIN = 0.5;
-	public static final double LEAN_DEG = 3.0;
+	/** R12 pass 2: 0. The shafts of the blades in the anime frame (ep52) are vertical: the left edge of the nearest blade drifts 4 px over 440 px, 0.5 degrees; only the point of the blade is bent. The lean machinery stays (a seeded jitter of up to 0.5 degrees remains). */
+	public static final double LEAN_DEG = 0.0;
 
 	// ---- r7: the wall of slab blades (references ep52 / ep58 of the anime: pages of a book). R11 T13: the mesh is the user's straight blade, its size
 	// (length 5.5, width 0.4026, thickness 0.1477) comes from the meta through BladeSpec, not from constants of the old 8 m scimitar.
