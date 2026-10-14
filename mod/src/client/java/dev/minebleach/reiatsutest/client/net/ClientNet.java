@@ -1,11 +1,14 @@
 package dev.minebleach.reiatsutest.client.net;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.client.ClientState;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.client.hud.HudModel;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
+import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.CharacterWording;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
 import dev.minebleach.reiatsutest.core.state.ResultCode;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
@@ -154,14 +157,15 @@ public final class ClientNet {
 			HudModel.onResult(code, null);
 			return;
 		}
+		CharacterId who = ClientState.activeCharacter();
 		String key = switch (code) {
 			case DENIED_STATE -> "message.reiatsu_test.denied.state";
-			case DENIED_ITEM -> "message.reiatsu_test.denied.item";
+			case DENIED_ITEM -> CharacterWording.key("message.reiatsu_test.denied.item", who);
 							case DENIED_REIATSU -> "message.reiatsu_test.denied.reiatsu";
 				case DENIED_RAGE -> "message.reiatsu_test.denied.rage";
 
-			case DENIED_NOT_DRAWN -> "message.reiatsu_test.denied.not_drawn";
-			case DENIED_SHIKAI_TIME -> "message.reiatsu_test.denied.shikai_time";
+			case DENIED_NOT_DRAWN -> CharacterWording.key("message.reiatsu_test.denied.not_drawn", who);
+			case DENIED_SHIKAI_TIME -> CharacterWording.key("message.reiatsu_test.denied.shikai_time", who);
 			case BLOCKED -> "hud.reiatsu_test.denied.blocked";
 			case COOLDOWN -> null; // the HUD icons shake, no text spam
 			case OK, RATE_LIMIT -> null;

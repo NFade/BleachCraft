@@ -6,6 +6,7 @@ import dev.minebleach.reiatsutest.client.fx.FxClock;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.client.fx.FxMath;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.CharacterWording;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -187,7 +188,12 @@ final class PlateHud {
 	// ------------------------------------------------------------------------------------------ name line
 
 	static Text stateWord(ZanpakutoState s) {
-		return Text.translatable("hud.reiatsu_test.state." + s.name().toLowerCase(java.util.Locale.ROOT));
+		return stateWord(CharacterId.NONE, s);
+	}
+
+	/** The state word in the wording of the character (Uryu: Heilig Bogen / Blut Arterie / Quincy: Vollstaendig). */
+	static Text stateWord(CharacterId ch, ZanpakutoState s) {
+		return Text.translatable(CharacterWording.stateKey(ch, s));
 	}
 
 	private static String nameKey = "";
@@ -198,10 +204,14 @@ final class PlateHud {
 		String key = "hud.reiatsu_test.zanpakuto." + ch.langKey() + (st == ZanpakutoState.BANKAI ? ".bankai" : "");
 		String ck = st + "|" + key + "|" + accentRgb + "|" + barW + "|" + HudText.generation();
 		if (!ck.equals(nameKey)) {
-			String word = HudText.tr("hud.reiatsu_test.state." + st.name().toLowerCase(java.util.Locale.ROOT)).toUpperCase(java.util.Locale.ROOT);
-			String sep = " \u00b7 ";
-			int used = font.getWidth(word) + font.getWidth(sep);
+			String word = HudText.tr(CharacterWording.stateKey(ch, st)).toUpperCase(java.util.Locale.ROOT);
 			String name = HudText.tr(key);
+			// Uryu: the state word and the name can be the same words (Heilig Bogen, Quincy: Vollstaendig); then they show once
+			String sep = name.equalsIgnoreCase(word) ? "" : " \u00b7 ";
+			if (sep.isEmpty()) {
+				name = "";
+			}
+			int used = font.getWidth(word) + font.getWidth(sep);
 			int avail = barW + 40 - used;
 			if (font.getWidth(name) > avail) {
 				name = font.trimToWidth(name, Math.max(0, avail - font.getWidth("..."))) + "...";
@@ -422,7 +432,7 @@ final class PlateHud {
 		String left = null;
 		int col = 0x00AEB9C9;
 		if (now - HudModel.endedAt >= 0 && now - HudModel.endedAt < 2.0) {
-			left = HudText.tr("hud.reiatsu_test.bankai_ended");
+			left = HudText.tr(CharacterWording.key("hud.reiatsu_test.bankai_ended", ch));
 			col = HudGfx.argb(WARN, 1f) & 0x00FFFFFF;
 		} else if (st == ZanpakutoState.BANKAI) {
 			int s = (int) Math.ceil(HudModel.bankaiRemaining(tickDelta));
@@ -434,9 +444,9 @@ final class PlateHud {
 				left = HudText.tr("hud.reiatsu_test.seal_in", Math.max(1, (int) Math.ceil(idle)));
 			}
 		} else if (st == ZanpakutoState.SEALED) {
-			left = HudText.tr("hud.reiatsu_test.hint.draw.short", dev.minebleach.reiatsutest.client.input.ReiatsuKeys.DRAW.getBoundKeyLocalizedText().getString());
+			left = HudText.tr(CharacterWording.key("hud.reiatsu_test.hint.draw.short", ch), dev.minebleach.reiatsutest.client.input.ReiatsuKeys.DRAW.getBoundKeyLocalizedText().getString());
 		} else if (st == ZanpakutoState.BASE) {
-			left = HudText.tr("hud.reiatsu_test.hint.release.short", dev.minebleach.reiatsutest.client.input.ReiatsuKeys.RELEASE.getBoundKeyLocalizedText().getString());
+			left = HudText.tr(CharacterWording.key("hud.reiatsu_test.hint.release.short", ch), dev.minebleach.reiatsutest.client.input.ReiatsuKeys.RELEASE.getBoundKeyLocalizedText().getString());
 		}
 		if (left != null) {
 			int maxW = barW - rw - 6;

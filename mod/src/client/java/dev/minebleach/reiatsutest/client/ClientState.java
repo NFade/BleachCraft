@@ -103,6 +103,15 @@ public final class ClientState {
 		return p == null ? CharacterId.NONE : ModItems.characterOf(p.getMainHandStack());
 	}
 
+	/**
+	 * The character the local player is playing: the released one while a state is active, else the one of the item in the main hand
+	 * (NONE with neither). Used for the per character wording and for the kido rule.
+	 */
+	public static CharacterId activeCharacter() {
+		CharacterId released = zanpakuto().characterId();
+		return released != CharacterId.NONE ? released : heldCharacter();
+	}
+
 	/** Remaining cooldown of an ability in ticks (0 = ready). */
 	public static int cooldownRemaining(AbilityId id) {
 		if (lastCooldowns == null) {

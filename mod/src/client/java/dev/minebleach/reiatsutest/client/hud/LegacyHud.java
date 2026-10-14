@@ -5,6 +5,7 @@ import dev.minebleach.reiatsutest.client.input.ReiatsuKeys;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.BalanceConfig;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.CharacterWording;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
 import dev.minebleach.reiatsutest.registry.data.ZanpakutoData;
@@ -71,7 +72,7 @@ public final class LegacyHud {
 		ctx.fill(tickX, y, tickX + 1, y + BAR_H, 0x99FFFFFF);
 
 		// label: state and value
-		Text stateText = Text.translatable("hud.reiatsu_test.state." + state.name().toLowerCase(java.util.Locale.ROOT));
+		Text stateText = Text.translatable(CharacterWording.stateKey(character, state));
 		String values = r == null ? "-" : String.format(java.util.Locale.ROOT, "%.1f / %.1f", value / 10.0, max / 10.0);
 		Text label = Text.translatable("hud.reiatsu_test.reiatsu").append(Text.literal(" " + values + "  "))
 				.append(stateText);
@@ -85,8 +86,8 @@ public final class LegacyHud {
 		if (state == ZanpakutoState.SEALED || state == ZanpakutoState.BASE) {
 			// sheathed: the draw key (a right click is the block now); drawn base form: the release key (no abilities before shikai)
 			Text hint = state == ZanpakutoState.SEALED
-					? Text.translatable("hud.reiatsu_test.hint.draw", ReiatsuKeys.DRAW.getBoundKeyLocalizedText())
-					: Text.translatable("hud.reiatsu_test.hint.release", ReiatsuKeys.RELEASE.getBoundKeyLocalizedText());
+					? Text.translatable(CharacterWording.key("hud.reiatsu_test.hint.draw", character), ReiatsuKeys.DRAW.getBoundKeyLocalizedText())
+					: Text.translatable(CharacterWording.key("hud.reiatsu_test.hint.release", character), ReiatsuKeys.RELEASE.getBoundKeyLocalizedText());
 			ctx.drawText(font, hint, x, y + BAR_H + 3, 0xFFCCCCCC, true);
 			return;
 		}

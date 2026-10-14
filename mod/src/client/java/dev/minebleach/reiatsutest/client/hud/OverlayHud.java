@@ -107,7 +107,10 @@ final class OverlayHud {
 			g.textAt(font, phrase, 0x00FFFFFF | ia << 24, true);
 			ms.pop();
 			// SHIKAI, letter spaced, accent, one size smaller than the phrase
-			String label = dev.minebleach.reiatsutest.client.hud.PlateHud.stateWord(dev.minebleach.reiatsutest.core.state.ZanpakutoState.SHIKAI).getString().toUpperCase(java.util.Locale.ROOT);
+			String label = dev.minebleach.reiatsutest.client.hud.PlateHud.stateWord(c.character, dev.minebleach.reiatsutest.core.state.ZanpakutoState.SHIKAI).getString().toUpperCase(java.util.Locale.ROOT);
+			if (label.equalsIgnoreCase(phrase)) {
+				label = ""; // Uryu: the release phrase is the state word (Blut Arterie), show it once
+			}
 			int lw = 0;
 			for (char ch : label.toCharArray()) {
 				lw += font.getWidth(String.valueOf(ch)) + 1;
@@ -147,7 +150,7 @@ final class OverlayHud {
 		double kt = FxMath.clamp((t - 0.15) / 0.2);
 		double pop = rm ? 1.0 : FxMath.lerp(1.6, 1.0, FxMath.ob(kt));
 		float ka = (float) kt * fade;
-		String kanji = "卍解";
+		String kanji = Text.translatable(dev.minebleach.reiatsutest.core.state.CharacterWording.key("hud.reiatsu_test.bankai_kanji", c.character)).getString();
 		MatrixStack ms = g.ctx().getMatrices();
 		if (ka > 0.02f) {
 			float gw = 40f * ks * (float) pop;

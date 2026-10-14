@@ -5,6 +5,7 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.CharacterWording;
 import dev.minebleach.reiatsutest.core.state.RequestSource;
 import dev.minebleach.reiatsutest.core.state.ResultCode;
 import dev.minebleach.reiatsutest.core.state.StateMachine;
@@ -152,7 +153,7 @@ public final class VoiceControl implements VoiceIngest.Host {
 	public void hintNotDrawn(UUID id) {
 		ServerPlayerEntity p = player(id);
 		if (p != null) {
-			p.sendMessage(Text.translatable("message.reiatsu_test.denied.not_drawn"), true);
+			p.sendMessage(Text.translatable(CharacterWording.key("message.reiatsu_test.denied.not_drawn", whoIs(p))), true);
 		}
 	}
 
@@ -172,10 +173,10 @@ public final class VoiceControl implements VoiceIngest.Host {
 	private TransitionResult dispatch(ServerPlayerEntity p, String id) {
 		TransitionResult r;
 		if (id.endsWith(".shikai.release")) {
-			announceHeard(p, "message.reiatsu_test.voice.cmd.shikai");
+			announceHeard(p, CharacterWording.key("message.reiatsu_test.voice.cmd.shikai", whoIs(p)));
 			r = ZanpakutoManager.performTransition(p, ZanpakutoState.SHIKAI, RequestSource.VOICE, StateMachine.SERVER_SEQ);
 		} else if (id.endsWith(".bankai.release")) {
-			announceHeard(p, "message.reiatsu_test.voice.cmd.bankai");
+			announceHeard(p, CharacterWording.key("message.reiatsu_test.voice.cmd.bankai", whoIs(p)));
 			r = ZanpakutoManager.performTransition(p, ZanpakutoState.BANKAI, RequestSource.VOICE, StateMachine.SERVER_SEQ);
 		} else if (id.equals("common.seal")) {
 			announceHeard(p, "message.reiatsu_test.voice.cmd.seal");
@@ -194,6 +195,13 @@ public final class VoiceControl implements VoiceIngest.Host {
 			r = ZanpakutoManager.performCast(p, a, RequestSource.VOICE, StateMachine.SERVER_SEQ);
 		}
 		return r;
+	}
+
+	/** The character the player plays: the released one, else the one of the item in the main hand (for the per character wording). */
+	static CharacterId whoIs(ServerPlayerEntity p) {
+		StateMachine sm = ZanpakutoManager.machine(p);
+		CharacterId released = sm == null ? CharacterId.NONE : sm.character();
+		return released != CharacterId.NONE ? released : ModItems.characterOf(p.getMainHandStack());
 	}
 
 	private static void announceHeard(ServerPlayerEntity p, String nameKey) {

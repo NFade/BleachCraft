@@ -9,6 +9,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.CharacterWording;
 import dev.minebleach.reiatsutest.core.state.StateMachine;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.ModItems;
@@ -191,7 +192,11 @@ public final class ReiatsuCommand {
 		}
 		ServerPlayerEntity p = src.getPlayer();
 		StateMachine sm = p == null ? null : ZanpakutoManager.machine(p);
-		src.sendFeedback(() -> Text.translatable("message.reiatsu_test.voice.status", sm == null ? "-" : sm.state().name()), false);
+		// the state is shown in the wording of the character (Uryu: Blut Arterie, not shikai)
+		CharacterId who = p == null ? CharacterId.NONE : VoiceControl.whoIs(p);
+		src.sendFeedback(() -> Text.translatable("message.reiatsu_test.voice.status",
+				sm == null ? Text.literal("-") : who == CharacterId.URYU ? Text.translatable(CharacterWording.stateKey(who, sm.state())) : Text.literal(sm.state().name())),
+				false);
 		return 1;
 	}
 
@@ -250,7 +255,11 @@ public final class ReiatsuCommand {
 		}
 		ZanpakutoManager.applyExternal(p, sm.devSetState(target, who));
 		CharacterId shown = who;
-		src.sendFeedback(() -> Text.literal("state forced to " + target + (target == ZanpakutoState.SEALED ? "" : " (" + shown + ")")), true);
+		// Uryu is a Quincy: his states are shown by their own words (translated by the client), the others by the enum name as before
+		Text word = shown == CharacterId.URYU && target != ZanpakutoState.SEALED ? Text.translatable(CharacterWording.stateKey(shown, target))
+				: Text.literal(target.toString());
+		src.sendFeedback(() -> Text.literal("state forced to ").append(word)
+				.append(Text.literal(target == ZanpakutoState.SEALED ? "" : " (" + shown + ")")), true);
 		return 1;
 	}
 

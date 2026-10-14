@@ -9,6 +9,7 @@ import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.AbilitySpec;
 import dev.minebleach.reiatsutest.core.state.BalanceConfig;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
+import dev.minebleach.reiatsutest.core.state.CharacterWording;
 import dev.minebleach.reiatsutest.core.state.EffectIds;
 import dev.minebleach.reiatsutest.core.state.ResultCode;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
@@ -520,17 +521,28 @@ public final class HudModel {
 		return cmd.startsWith("byakuya") ? "byakuya" : cmd.startsWith("gin.") ? "gin" : cmd.startsWith("uryu.") ? "uryu" : "rukia";
 	}
 
+	/** The character a command id belongs to, for the per character wording. */
+	private static CharacterId commandWho(String cmd) {
+		return cmd.startsWith("uryu.") ? CharacterId.URYU : CharacterId.NONE;
+	}
+
+	/** "Shikai: Sode no Shirayuki"; the name alone when it is the state word already (Uryu's Quincy: Vollstaendig). */
+	private static String stateAndName(String stateKey, String nameKey) {
+		String word = Text.translatable(stateKey).getString();
+		String name = Text.translatable(nameKey).getString();
+		return word.equalsIgnoreCase(name) ? word : word + ": " + name;
+	}
+
 	private static String commandName(String cmd) {
 		if (cmd == null) {
 			return "";
 		}
 		if (cmd.endsWith(".shikai.release")) {
-			return Text.translatable("hud.reiatsu_test.state.shikai").getString() + ": "
-					+ Text.translatable("hud.reiatsu_test.zanpakuto." + commandCharacter(cmd)).getString();
+			return stateAndName(CharacterWording.stateKey(commandWho(cmd), ZanpakutoState.SHIKAI), "hud.reiatsu_test.zanpakuto." + commandCharacter(cmd));
 		}
 		if (cmd.endsWith(".bankai.release")) {
-			return Text.translatable("hud.reiatsu_test.state.bankai").getString() + ": "
-					+ Text.translatable("hud.reiatsu_test.zanpakuto." + commandCharacter(cmd) + ".bankai").getString();
+			return stateAndName(CharacterWording.stateKey(commandWho(cmd), ZanpakutoState.BANKAI),
+					"hud.reiatsu_test.zanpakuto." + commandCharacter(cmd) + ".bankai");
 		}
 		if (cmd.equals("common.seal")) {
 			return Text.translatable("hud.reiatsu_test.state.sealed").getString();
@@ -688,7 +700,7 @@ public final class HudModel {
 			case DENIED_SHIKAI_TIME -> {
 				// R11 T3: bankai needs the minimum time in shikai; the number is the client's copy of the default (the server config may differ)
 				double left = Math.max(1.0, Math.ceil(shikaiHoldLeft()));
-				pushToast(Text.translatable("hud.reiatsu_test.shikai_time", String.format(java.util.Locale.ROOT, "%d", (long) left)), HudAssets.ERROR, ToastKind.DENIED, 1.6);
+				pushToast(Text.translatable(CharacterWording.key("hud.reiatsu_test.shikai_time", character), String.format(java.util.Locale.ROOT, "%d", (long) left)), HudAssets.ERROR, ToastKind.DENIED, 1.6);
 				if (FxConfig.hud) {
 					FxSound.ui("block.note_block.bass", 0.6, 0.6);
 				}
@@ -711,15 +723,15 @@ public final class HudModel {
 			case DENIED_STATE, DENIED_NOT_DRAWN -> {
 				Text msg;
 				if (code == ResultCode.DENIED_NOT_DRAWN) {
-					msg = Text.translatable("message.reiatsu_test.denied.not_drawn");
+					msg = Text.translatable(CharacterWording.key("message.reiatsu_test.denied.not_drawn", character));
 				} else if (req != null && req.transition() && req.target() == ZanpakutoState.BANKAI) {
-					msg = Text.translatable("hud.reiatsu_test.denied.bankai_needs_shikai");
+					msg = Text.translatable(CharacterWording.key("hud.reiatsu_test.denied.bankai_needs_shikai", character));
 				} else if (req != null && req.ability() != null) {
-					msg = Text.translatable("hud.reiatsu_test.denied.not_in." + req.ability().requiredState.name().toLowerCase(java.util.Locale.ROOT));
+					msg = Text.translatable(CharacterWording.key("hud.reiatsu_test.denied.not_in." + req.ability().requiredState.name().toLowerCase(java.util.Locale.ROOT), character));
 				} else if (state == ZanpakutoState.SHIKAI || state == ZanpakutoState.BANKAI) {
-					msg = Text.translatable("hud.reiatsu_test.denied.not_in.bankai");
+					msg = Text.translatable(CharacterWording.key("hud.reiatsu_test.denied.not_in.bankai", character));
 				} else {
-					msg = Text.translatable("hud.reiatsu_test.denied.not_in.shikai");
+					msg = Text.translatable(CharacterWording.key("hud.reiatsu_test.denied.not_in.shikai", character));
 				}
 				pushToast(msg, HudAssets.DIM, ToastKind.GREY, 1.4);
 				for (int i = 0; i < slotCount; i++) {
@@ -731,7 +743,7 @@ public final class HudModel {
 			}
 			case DENIED_ITEM -> {
 				iconFlash = now;
-				pushToast(Text.translatable("hud.reiatsu_test.denied.item"), HudAssets.DIM, ToastKind.GREY, 1.4);
+				pushToast(Text.translatable(CharacterWording.key("hud.reiatsu_test.denied.item", character)), HudAssets.DIM, ToastKind.GREY, 1.4);
 				if (FxConfig.hud) {
 					FxSound.ui("block.note_block.bass", 0.5, 0.4);
 				}
