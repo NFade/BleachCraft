@@ -258,7 +258,8 @@ public final class FpMotion {
 	/** True when the stack in the main hand draws a sword in the hand (not the empty hand of the Byakuya bankai). */
 	private static ObjItemBakedModel handModel(ClientPlayerEntity player, ItemStack main) {
 		BakedModel model = MinecraftClient.getInstance().getItemRenderer().getModel(main, player.getWorld(), player, 0);
-		return model instanceof ObjItemBakedModel obj && obj.drawsInHand(main) ? obj : null;
+		// Uryu's bow is no sword: no two handed sword stance for it
+		return model instanceof ObjItemBakedModel obj && obj.drawsInHand(main) && !(main.getItem() instanceof dev.minebleach.reiatsutest.registry.UryuCrossItem) ? obj : null;
 	}
 
 	/** Once per frame at the head of the first person hand pass: advances the clocks and computes the pose of this frame. */
