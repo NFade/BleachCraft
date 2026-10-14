@@ -217,8 +217,8 @@ class ArrowSimTest {
 	@Test
 	void homingTurnsAtMostTheRateEveryTick() {
 		ArrowSim sim = new ArrowSim();
-		double rate = Math.toRadians(UryuBalance.VOLLEY_TURN_DEG);
-		ArrowSim.Arrow a = sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.VOLLEY, new V3(0, 0, 0), new V3(1.8, 0, 0), 0.0, 3f, 30, 0, 0.3, 1, rate, 0));
+		double rate = Math.toRadians(UryuBalance.WING_TURN_DEG);
+		ArrowSim.Arrow a = sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.WING, new V3(0, 0, 0), new V3(1.8, 0, 0), 0.0, 3f, 30, 0, 0.3, 1, rate, 0));
 		FakeWorld w = new FakeWorld();
 		w.entities.put(1, new V3(0, 0, 400)); // 90 degrees to the side and far away, so the aim stays the same
 		V3 prev = a.vel();
@@ -238,7 +238,7 @@ class ArrowSimTest {
 	@Test
 	void homingArrowReachesTheTargetAndHitsIt() {
 		ArrowSim sim = new ArrowSim();
-		ArrowSim.Arrow a = sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.VOLLEY, new V3(0, 0, 0), new V3(1.8, 0, 0), 0.0, 3f, 30, 0, 0.3, 1,
+		ArrowSim.Arrow a = sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.WING, new V3(0, 0, 0), new V3(1.8, 0, 0), 0.0, 3f, 30, 0, 0.3, 1,
 				Math.toRadians(12), 0));
 		assertNotNull(a);
 		FakeWorld w = new FakeWorld();
@@ -257,7 +257,7 @@ class ArrowSimTest {
 	@Test
 	void homingArrowFliesStraightOnWhenTheTargetIsGone() {
 		ArrowSim sim = new ArrowSim();
-		ArrowSim.Arrow a = sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.VOLLEY, new V3(0, 0, 0), new V3(1.8, 0, 0), 0.0, 3f, 30, 0, 0.3, 4,
+		ArrowSim.Arrow a = sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.WING, new V3(0, 0, 0), new V3(1.8, 0, 0), 0.0, 3f, 30, 0, 0.3, 4,
 				Math.toRadians(12), 0));
 		FakeWorld w = new FakeWorld(); // entity 4 does not exist
 		sim.step(w);

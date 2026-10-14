@@ -96,6 +96,7 @@ final class CastContext {
 			case MODE_ATTACK, SCATTER, CAGE -> spec.num(AbilityParams.AIM_RANGE);
 			case IKOROSE, SNAKE_HOOK, BUTOU_RENJIN, KOROSE -> spec.num(AbilityParams.LENGTH); // Gin hitscan lines, like Shirafune
 			case SPRENGER -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RANGE; // Uryu: aimed ground point
+			case LICHT_REGEN -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_RANGE; // Uryu: aimed point of the arrow rain
 			default -> 0.0;
 		};
 		Vec3d aim = range > 0 ? Targeting.rayPoint(p, eye, dir, range) : p.getPos();
@@ -148,6 +149,10 @@ final class CastContext {
 			case SPRENGER -> { // Uryu: radius, seconds to the explosion
 				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RADIUS;
 				size2 = dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_EXPLODE_AT / 20f;
+			}
+			case LICHT_REGEN -> { // Uryu: half width of the square, seconds of the rain
+				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_HALF_WIDTH;
+				size2 = dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_TICKS / 20f;
 			}
 			case WING_BARRAGE -> { // range of the targets, seconds of the barrage
 				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.WING_RANGE;

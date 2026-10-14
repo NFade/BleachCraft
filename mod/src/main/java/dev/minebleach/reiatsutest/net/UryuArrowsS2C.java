@@ -25,7 +25,7 @@ public record UryuArrowsS2C(byte kind, int tick, int[] ids, float[] data) implem
 	public static final int KIND_SLASH = 99;
 	public static final int IMPACT_ENTITY = 0;
 	public static final int IMPACT_BLOCK = 1;
-	public static final int MAX_ARROWS = 48;
+	public static final int MAX_ARROWS = 96;
 	public static final int PER_ARROW = 7;
 
 	public static final CustomPayload.Id<UryuArrowsS2C> ID = new CustomPayload.Id<>(ReiatsuTest.id("uryu_arrows"));

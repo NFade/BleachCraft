@@ -38,7 +38,7 @@ final class StripHud {
 			case SPRENGER -> 0;
 			case SEELE_SCHNEIDER -> 4;
 			case WING_BARRAGE -> 6;
-			case HOMING_VOLLEY -> 8;
+			case LICHT_REGEN -> 8;
 		};
 	}
 

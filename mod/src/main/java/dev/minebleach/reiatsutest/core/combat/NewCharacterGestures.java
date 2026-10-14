@@ -27,7 +27,7 @@ final class NewCharacterGestures {
 		thrust(m, "uryu.shikai.sprenger", 2.4);
 		thrust(m, "uryu.shikai.seele_schneider", 0.8);
 		thrust(m, "uryu.bankai.wing_barrage", 0.9);
-		thrust(m, "uryu.bankai.homing_volley", 2.4);
+		thrust(m, "uryu.bankai.licht_regen", 2.4);
 		thrust(m, "uryu.bankai.sternenstaub", 3.0);
 	}
 

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** Sprenger, Homing Volley and Sternenstaub: the numbers of design/URYU.md section 5 in ticks (Seele Schneider and the wing barrage have their own tests). */
+/** Sprenger and Sternenstaub: the numbers of design/URYU.md section 5 in ticks (Seele Schneider and the wing barrage have their own tests). */
 class AbilityRulesTest {
 	private static final UUID OWNER = UUID.randomUUID();
 
@@ -109,83 +109,9 @@ class AbilityRulesTest {
 		assertEquals(3.0, UryuBalance.SPRENGER_RADIUS);
 		assertEquals(16, UryuBalance.SPRENGER_BIND_AT);
 		assertEquals(40, UryuBalance.SPRENGER_EXPLODE_AT);
-		assertEquals(40, UryuBalance.SPRENGER_BIND_TICKS);
-		assertEquals(4, UryuBalance.SPRENGER_SLOW_AMP);
+		assertEquals(24, UryuBalance.SPRENGER_BIND_TICKS, "the root lasts from the bind (0.8 s) to the explosion (2.0 s)");
 		assertEquals(9.0f, UryuBalance.SPRENGER_DAMAGE);
 		assertEquals(20.0, UryuBalance.SPRENGER_RANGE);
-	}
-
-	// ------------------------------------------------------------------ Homing Volley
-
-	@Test
-	void volleyFiresThreePlusFocusMaxSix() {
-		assertEquals(3, Volley.arrowCount(0));
-		assertEquals(4, Volley.arrowCount(1));
-		assertEquals(5, Volley.arrowCount(2));
-		assertEquals(6, Volley.arrowCount(3));
-		assertEquals(6, Volley.arrowCount(9));
-		assertEquals(3.0f, UryuBalance.VOLLEY_DAMAGE);
-		assertEquals(30, UryuBalance.VOLLEY_LIFE);
-		assertEquals(12.0, UryuBalance.VOLLEY_TURN_DEG);
-		assertEquals(15.0, UryuBalance.VOLLEY_CONE_DEG);
-		assertEquals(30.0, UryuBalance.VOLLEY_LOCK_RANGE);
-		// total 9 to 18 HP
-		assertEquals(9.0f, Volley.arrowCount(0) * UryuBalance.VOLLEY_DAMAGE);
-		assertEquals(18.0f, Volley.arrowCount(3) * UryuBalance.VOLLEY_DAMAGE);
-	}
-
-	@Test
-	void coneLockPicksTheNearestInsideFifteenDegreesAndWithinThirtyBlocks() {
-		V3 eye = new V3(0, 65, 0);
-		V3 look = new V3(0, 0, 1);
-		List<Volley.Candidate> c = new ArrayList<>();
-		c.add(new Volley.Candidate(1, new V3(0, 65, 20))); // dead ahead, 20 blocks
-		c.add(new Volley.Candidate(2, new V3(0, 65, 8))); // nearer, dead ahead
-		c.add(new Volley.Candidate(3, new V3(10, 65, 10))); // 45 degrees: outside the cone
-		c.add(new Volley.Candidate(4, new V3(0, 65, 35))); // too far
-		assertEquals(2, Volley.pickTarget(eye, look, c, 15, 30));
-		c.remove(1);
-		assertEquals(1, Volley.pickTarget(eye, look, c, 15, 30));
-		c.remove(0);
-		assertEquals(-1, Volley.pickTarget(eye, look, c, 15, 30), "45 degrees and 35 blocks are no lock");
-	}
-
-	@Test
-	void coneEdgeIsInclusive() {
-		V3 eye = new V3(0, 0, 0);
-		double a = Math.toRadians(14.9);
-		V3 in = new V3(Math.sin(a) * 10, 0, Math.cos(a) * 10);
-		double b = Math.toRadians(15.5);
-		V3 out = new V3(Math.sin(b) * 10, 0, Math.cos(b) * 10);
-		assertEquals(1, Volley.pickTarget(eye, new V3(0, 0, 1), List.of(new Volley.Candidate(1, in)), 15, 30));
-		assertEquals(-1, Volley.pickTarget(eye, new V3(0, 0, 1), List.of(new Volley.Candidate(1, out)), 15, 30));
-	}
-
-	@Test
-	void volleyDirectionsFanAroundTheLookAtTheSpreadAngle() {
-		V3 look = new V3(0, 0, 1);
-		for (int n = 3; n <= 6; n++) {
-			V3[] d = Volley.directions(look, n, 20);
-			assertEquals(n, d.length);
-			for (V3 v : d) {
-				assertEquals(1.0, v.length(), 1e-9);
-				assertEquals(20.0, Math.toDegrees(Math.acos(v.dot(look))), 1e-6);
-			}
-			// all different
-			for (int i = 0; i < n; i++) {
-				for (int j = i + 1; j < n; j++) {
-					assertTrue(d[i].distanceTo(d[j]) > 0.1);
-				}
-			}
-		}
-	}
-
-	@Test
-	void volleyDirectionsWorkLookingStraightUp() {
-		V3[] d = Volley.directions(new V3(0, 1, 0), 4, 20);
-		for (V3 v : d) {
-			assertEquals(20.0, Math.toDegrees(Math.acos(v.y())), 1e-6);
-		}
 	}
 
 	// ------------------------------------------------------------------ Sternenstaub

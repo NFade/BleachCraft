@@ -19,7 +19,7 @@ final class UryuAbilities {
 			case SPRENGER -> UryuManager.sprenger(p, ctx.aim);
 			case SEELE_SCHNEIDER -> UryuManager.seeleSchneider(p);
 			case WING_BARRAGE -> UryuManager.wingBarrage(p);
-			case HOMING_VOLLEY -> UryuManager.homingVolley(p);
+			case LICHT_REGEN -> UryuManager.lichtRegen(p, ctx.aim);
 			case STERNENSTAUB -> UryuManager.sternenstaub(p);
 			default -> throw new IllegalArgumentException("not an Uryu ability: " + ability);
 		}

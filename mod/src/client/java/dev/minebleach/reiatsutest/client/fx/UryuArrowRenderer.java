@@ -130,10 +130,18 @@ public final class UryuArrowRenderer {
 		return a.kind == ArrowSim.Kind.FOCUS.ordinal();
 	}
 
+	/** The Licht Regen arrows: 6 start every tick, so they get a lean look (no launch flash, few sparks, a short trail). */
+	private static boolean rain(Arrow a) {
+		return a.kind == ArrowSim.Kind.RAIN.ordinal();
+	}
+
 	/** The muzzle flash: a bright core, a ring of sparks along the flight direction, a soft sound. */
 	private static void launch(Arrow a) {
 		Vec3d v = new Vec3d(a.vx, a.vy, a.vz);
 		if (v.lengthSquared() < 1.0E-6) {
+			return;
+		}
+		if (rain(a)) {
 			return;
 		}
 		Vec3d u = v.normalize();
@@ -170,7 +178,7 @@ public final class UryuArrowRenderer {
 			double px = a.x + a.vx * age;
 			double py = a.y + a.vy * age;
 			double pz = a.z + a.vz * age;
-			if (strong(a) || Math.random() < 0.5) {
+			if (strong(a) || Math.random() < (rain(a) ? 0.1 : 0.5)) {
 				w.addParticle(ParticleTypes.END_ROD, px, py, pz, -a.vx * 0.03 + (Math.random() - 0.5) * 0.02, -a.vy * 0.03 + (Math.random() - 0.5) * 0.02,
 						-a.vz * 0.03 + (Math.random() - 0.5) * 0.02);
 			}
@@ -266,8 +274,12 @@ public final class UryuArrowRenderer {
 			// the trail: the head, then the last positions; each piece dimmer and thinner
 			double[] prev = h;
 			int k = 0;
-			double width0 = z ? 0.55 : 0.32;
+			double width0 = z ? 0.55 : rain(a) ? 0.22 : 0.32;
+			int trailMax = rain(a) ? 3 : TRAIL_POINTS;
 			for (double[] p : a.trail) {
+				if (k >= trailMax) {
+					break;
+				}
 				double f = 1.0 - (double) k / (TRAIL_POINTS + 1);
 				if (Math.abs(p[0] - prev[0]) + Math.abs(p[1] - prev[1]) + Math.abs(p[2] - prev[2]) > 1.0E-4) {
 					e.streak(GlowSprite.STREAK, prev[0], prev[1], prev[2], p[0], p[1], p[2], width0 * f, GLOW[0], GLOW[1], GLOW[2], (z ? 1.0 : 0.75) * f);
