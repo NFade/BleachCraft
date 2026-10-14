@@ -36,8 +36,8 @@ final class StripHud {
 			case KOROSE, STERNENSTAUB -> 7;
 			case HAKUFUKU -> 5;
 			case SPRENGER -> 0;
-			case HIRENKYAKU -> 4;
-			case LICHT_REGEN -> 6;
+			case SEELE_SCHNEIDER -> 4;
+			case WING_BARRAGE -> 6;
 			case HOMING_VOLLEY -> 8;
 		};
 	}

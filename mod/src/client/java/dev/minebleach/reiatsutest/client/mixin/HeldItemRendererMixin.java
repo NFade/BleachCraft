@@ -86,6 +86,8 @@ public abstract class HeldItemRendererMixin {
 			reiatsu$bcPushed = dev.minebleach.reiatsutest.client.model.BcItemPose.push(entity, leftHanded,
 					MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false), matrices);
 		}
+		// Uryu: third person, the bow of a drawing archer follows the BOW_AND_ARROW arm pose (display transform is solved for the idle arm)
+		reiatsu$uryuPushed = !mode.isFirstPerson() && dev.minebleach.reiatsutest.client.model.UryuBowPose.push(entity, stack, leftHanded, matrices);
 		// plan G-glow round 2: while the Byakuya release effect is alive, hand the sword's model to view matrix to the world part of it
 		if (stack.getItem() instanceof ZanpakutoItem && entity.getMainHandStack() == stack
 				&& dev.minebleach.reiatsutest.client.fx.ShikaiDissolve.wantsPose(entity.getId())
@@ -103,6 +105,9 @@ public abstract class HeldItemRendererMixin {
 
 	@org.spongepowered.asm.mixin.Unique
 	private boolean reiatsu$bcPushed;
+
+	@org.spongepowered.asm.mixin.Unique
+	private boolean reiatsu$uryuPushed;
 
 	/** B4 step 2: the scabbard in the other hand, drawn with the hands, before the buffer is flushed (no item, no inventory slot). */
 	@Inject(method = "renderItem(FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/network/ClientPlayerEntity;I)V",
@@ -130,6 +135,10 @@ public abstract class HeldItemRendererMixin {
 		if (reiatsu$lifted) {
 			matrices.pop();
 			reiatsu$lifted = false;
+		}
+		if (reiatsu$uryuPushed) {
+			matrices.pop();
+			reiatsu$uryuPushed = false;
 		}
 		if (reiatsu$bcPushed) {
 			matrices.pop();

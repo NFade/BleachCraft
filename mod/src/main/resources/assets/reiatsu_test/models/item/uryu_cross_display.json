@@ -2,13 +2,13 @@
   "gui_light": "front",
   "textures": { "particle": "reiatsu_test:item/uryu_diffuse" },
   "display": {
-    "thirdperson_righthand": { "rotation": [45, 180, 0], "translation": [0, -2, 1.75], "scale": [1.6, 1.6, 1.6] },
-    "thirdperson_lefthand": { "rotation": [45, 180, 0], "translation": [0, -2, 1.75], "scale": [1.6, 1.6, 1.6] },
-    "firstperson_righthand": { "rotation": [-172.0, 1.0, -173.1], "translation": [2.14, -0.29, -5], "scale": [2.4, 2.4, 2.4] },
-    "firstperson_lefthand": { "rotation": [-172.0, 1.0, -173.1], "translation": [2.14, -0.29, -5], "scale": [2.4, 2.4, 2.4] },
-    "ground": { "rotation": [90, 0, 0], "translation": [0, 3, -4.5], "scale": [0.9, 0.9, 0.9] },
-    "fixed": { "rotation": [0, 0, 45], "translation": [5.6, -5.6, 0], "scale": [1.6, 1.6, 1.6] },
-    "head": { "rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.6, 0.6, 0.6] },
+    "thirdperson_righthand": { "rotation": [-118.0, 0.0, -180.0], "translation": [0, 0, 0], "scale": [0.9, 0.9, 0.9] },
+    "thirdperson_lefthand": { "rotation": [-118.0, 0.0, -180.0], "translation": [0, 0, 0], "scale": [0.9, 0.9, 0.9] },
+    "firstperson_righthand": { "rotation": [178.95, -9.89, 173.91], "translation": [2.14, -0.29, -5.06], "scale": [0.7, 0.7, 0.7] },
+    "firstperson_lefthand": { "rotation": [178.95, -9.89, 173.91], "translation": [2.14, -0.29, -5.06], "scale": [0.7, 0.7, 0.7] },
+    "ground": { "rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [2.5, 2.5, 2.5] },
+    "fixed": { "rotation": [0, 180, 0], "translation": [0, 0, 0], "scale": [4.0, 4.0, 4.0] },
+    "head": { "rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [3.0, 3.0, 3.0] },
     "gui": { "rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1.0, 1.0, 1.0] }
   }
 }

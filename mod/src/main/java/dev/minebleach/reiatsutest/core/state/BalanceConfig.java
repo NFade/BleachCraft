@@ -223,10 +223,10 @@ public record BalanceConfig(
 		a.put(AbilityId.HEILIG_PFEIL, new AbilitySpec(AbilityId.HEILIG_PFEIL, 120, 60, 72, true, List.of(0)));
 		// Uryu shikai H: 25 reiatsu, 14 s
 		a.put(AbilityId.SPRENGER, new AbilitySpec(AbilityId.SPRENGER, 250, 280, 73, true, List.of(0)));
-		// Uryu shikai B: 10 reiatsu, 6 s
-		a.put(AbilityId.HIRENKYAKU, new AbilitySpec(AbilityId.HIRENKYAKU, 100, 120, 74, true, List.of(0)));
-		// Uryu bankai Z: 28 reiatsu, 16 s
-		a.put(AbilityId.LICHT_REGEN, new AbilitySpec(AbilityId.LICHT_REGEN, 280, 320, 75, true, List.of(0)));
+		// Uryu shikai B: Seele Schneider (melee combo), 10 reiatsu, 5 s
+		a.put(AbilityId.SEELE_SCHNEIDER, new AbilitySpec(AbilityId.SEELE_SCHNEIDER, 100, 100, 74, true, List.of(0)));
+		// Uryu bankai Z: Wing barrage, 28 reiatsu, 22 s
+		a.put(AbilityId.WING_BARRAGE, new AbilitySpec(AbilityId.WING_BARRAGE, 280, 440, 75, true, List.of(0)));
 		// Uryu bankai H: 30 reiatsu, 16 s
 		a.put(AbilityId.HOMING_VOLLEY, new AbilitySpec(AbilityId.HOMING_VOLLEY, 300, 320, 76, true, List.of(0)));
 		// Uryu bankai B: 50 reiatsu, 40 s

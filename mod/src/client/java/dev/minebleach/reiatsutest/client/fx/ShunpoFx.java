@@ -101,6 +101,7 @@ public final class ShunpoFx {
 		double dist = pr.length > 0 ? pr[0] : Math.sqrt(e.dx() * e.dx() + e.dy() * e.dy() + e.dz() * e.dz());
 		CharacterId who = pr.length > 1 ? CharacterId.fromCode((byte) Math.round(pr[1])) : CharacterId.NONE;
 		boolean byakuya = who == CharacterId.BYAKUYA;
+		boolean uryu = who == CharacterId.URYU;
 		Vec3d start = new Vec3d(e.x(), e.y(), e.z());
 		Vec3d delta = new Vec3d(e.dx(), e.dy(), e.dz());
 		Entity caster = world.getEntityById(e.casterId());
@@ -134,7 +135,7 @@ public final class ShunpoFx {
 		if (texture != null && dist > 0.5) {
 			Random rnd = new Random(e.seed());
 			double now = FxClock.now;
-			int rgb = byakuya ? 0xFFD6E4 : 0xC8E6FF;
+			int rgb = byakuya ? 0xFFD6E4 : uryu ? 0xA9D8F5 : 0xC8E6FF;
 			for (int i = 0; i < n; i++) {
 				Image im = new Image();
 				double f = (double) i / n; // the first copy stands where the player was, the last one just before the arrival
@@ -158,7 +159,10 @@ public final class ShunpoFx {
 		Random rnd = new Random(e.seed() ^ 0x5DEECE66DL);
 		int steps = (int) Math.max(4, Math.round(dist * 2.0));
 		int before = 0;
-		ParticleEffect main = byakuya ? ParticleTypes.CHERRY_LEAVES : ParticleTypes.SNOWFLAKE;
+		ParticleEffect main = byakuya ? ParticleTypes.CHERRY_LEAVES : uryu ? ParticleTypes.END_ROD : ParticleTypes.SNOWFLAKE;
+		if (uryu) {
+			UryuFx.shunpoReishi(start, delta); // Quincy flavour: a blue Reishi trail and a Reishi platform disc under the feet
+		}
 		for (int i = 0; i <= steps; i++) {
 			double f = (double) i / steps;
 			double px = start.x + delta.x * f;

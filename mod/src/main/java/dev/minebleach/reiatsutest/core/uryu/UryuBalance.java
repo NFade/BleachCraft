@@ -71,6 +71,10 @@ public final class UryuBalance {
 	/** A locked target is kept until it is farther than radius times this (or hidden behind a block). */
 	public static final double HOMING_KEEP_FACTOR = 1.25;
 
+	// ---------------------------------------------------------------- shunpo
+	/** Blocks added to the normal shunpo distance for Uryu (the Quincy flavour: Hirenkyaku). */
+	public static final double SHUNPO_BONUS = 2.0;
+
 	// ---------------------------------------------------------------- Sprenger (H, SHIKAI)
 	public static final double SPRENGER_RANGE = 20.0;
 	public static final double SPRENGER_RADIUS = 3.0;
@@ -91,28 +95,40 @@ public final class UryuBalance {
 	/** Pentagons of one player alive at once. */
 	public static final int SPRENGER_MAX_PER_PLAYER = 2;
 
-	// ---------------------------------------------------------------- Hirenkyaku (B, SHIKAI)
-	public static final double DASH_BLOCKS = 8.0;
-	/** Ticks the dash velocity is applied (8 blocks at 2 per tick). */
-	public static final int DASH_TICKS = 4;
-	/** The fall is cancelled for this many ticks from the cast (0.6 s). */
-	public static final int HOVER_TICKS = 12;
-	/** The vertical share of the look that the dash follows. */
-	public static final double DASH_MIN_Y = -0.3;
-	public static final double DASH_MAX_Y = 0.5;
+	// ---------------------------------------------------------------- Seele Schneider (B, SHIKAI; replaces Hirenkyaku)
+	/** Forward lunge in blocks (velocity based, no teleport): 3 ticks of {@link #SEELE_LUNGE_SPEED}, then the friction of the ground. */
+	public static final double SEELE_LUNGE = 1.5;
+	public static final int SEELE_LUNGE_TICKS = 3;
+	public static final double SEELE_LUNGE_SPEED = 0.36;
+	/** Three slashes, 5 ticks (0.25 s) apart, the first right after the lunge. */
+	public static final int SEELE_SLASHES = 3;
+	public static final int SEELE_FIRST_SLASH = 3;
+	public static final int SEELE_SLASH_GAP = 5;
+	/** Reach in blocks and the full opening angle in degrees of the cone of one slash (centred on the look). */
+	public static final double SEELE_REACH = 3.5;
+	public static final double SEELE_CONE_DEG = 100.0;
+	public static final float SEELE_DAMAGE = 2.5F;
+	/** The third slash also knocks back. */
+	public static final double SEELE_KNOCKBACK = 1.0;
+	/** Ticks after the cast in which Focus is neither built nor reset (the lunge moves the player; Focus is not consumed either). */
+	public static final int SEELE_FOCUS_GRACE = 12;
 
-	// ---------------------------------------------------------------- Licht Regen (Z, BANKAI)
-	public static final double RAIN_RANGE = 28.0;
-	public static final double RAIN_RADIUS = 4.0;
-	public static final int RAIN_ARROWS = 12;
-	/** The 12 arrows leave over 1.2 s. */
-	public static final int RAIN_TICKS = 24;
-	public static final float RAIN_DAMAGE = 1.2F;
-	/** Height above the landing point where an arrow starts, and its fall speed. */
-	public static final double RAIN_DROP_HEIGHT = 10.0;
-	public static final double RAIN_SPEED = 2.2;
-	/** Scatter around a picked target (blocks); with no target the arrows land uniformly in the circle. */
-	public static final double RAIN_JITTER = 0.6;
+	// ---------------------------------------------------------------- Wing barrage (Z, BANKAI; replaces Licht Regen)
+	/** The wings fire for 6 s. */
+	public static final int WING_TICKS = 120;
+	/** Targets are the nearest valid enemies within this many blocks of Uryu, at most one per wing slot. */
+	public static final double WING_RANGE = 30.0;
+	public static final int WING_SLOTS = 4;
+	/** The targets are chosen again every 8 ticks; every target gets one arrow per cycle (0.4 s), the slots staggered by {@link #WING_STAGGER}. */
+	public static final int WING_CYCLE = 8;
+	public static final int WING_STAGGER = 2;
+	public static final float WING_DAMAGE = 2.0F;
+	public static final double WING_SPEED = 2.2;
+	public static final int WING_LIFE = 50;
+	/** Strong homing of a wing arrow, degrees per tick. */
+	public static final double WING_TURN_DEG = 12.0;
+	/** Wing tips relative to the feet in the body frame: sideways (right positive), height, backwards, for the slots upper right, upper left, lower right, lower left. */
+	public static final double[][] WING_TIPS = {{1.7, 2.35, 0.45}, {-1.7, 2.35, 0.45}, {1.25, 1.2, 0.6}, {-1.25, 1.2, 0.6}};
 
 	// ---------------------------------------------------------------- Homing Volley (H, BANKAI)
 	public static final int VOLLEY_BASE_ARROWS = 3;

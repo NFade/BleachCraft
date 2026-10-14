@@ -33,6 +33,7 @@ public final class FxEvents {
 			return;
 		}
 		if (id == dev.minebleach.reiatsutest.core.state.EffectIds.BANKAI_CLEANUP) {
+			UryuFx.clearWings(e.casterId()); // Uryu: the wings of the wing barrage go with his bankai
 			BankaiEnd.onEvent(e);
 			return;
 		}

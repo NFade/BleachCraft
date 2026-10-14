@@ -17,6 +17,15 @@ public final class BowDraw {
 		return Math.min(1.0, (t * t + t * 2.0) / 3.0);
 	}
 
+	/** The same curve for a fractional tick count (the client animation adds the partial tick). */
+	public static double powerAt(double ticks) {
+		if (ticks <= 0.0) {
+			return 0.0;
+		}
+		double t = ticks / UryuBalance.BOW_FULL_DRAW_TICKS;
+		return Math.min(1.0, (t * t + t * 2.0) / 3.0);
+	}
+
 	/** True when a release at this power fires an arrow (vanilla ignores releases under 0.1). */
 	public static boolean fires(double power) {
 		return power >= UryuBalance.BOW_MIN_POWER;

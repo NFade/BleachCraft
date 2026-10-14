@@ -157,6 +157,10 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			}
 		}
 
+		if (man.objects.containsKey("uryu_arrow") && man.objects.containsKey("uryu_bow_string") && man.objects.containsKey("uryu_bow")) {
+			states.bow = buildBow(mb, sprite, cutout, translucent, glow, quadCount); // Uryu: the drawn bow with the pulled string and the nocked arrow
+		}
+
 		ModelTransformation transformation = display instanceof JsonUnbakedModel j ? j.getTransformations() : ModelTransformation.NONE;
 		Sprite particle = sprite.apply(man.objects.values().iterator().next().diffuse());
 		ReiatsuTest.LOGGER.info("[spike] baked {} : quads={} sprites={} missing={} bake={} ms (parse {} ms) display={}",
@@ -170,6 +174,85 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 	}
 
 	private static final float[] NO_SHIFT = new float[3];
+
+	/** Half width of the pulled string ribbon (model units = blocks). */
+	private static final float STRING_HALF_WIDTH = 0.0035f;
+
+	/**
+	 * Uryu's bow while it is drawn: the bow without the straight string, a string bent into a V (its middle vertices are at y = 0.5 and
+	 * are pulled back along the arrow axis when drawn, see {@code ObjItemBakedModel#emitBowDraw}) and the arrow. All in model space.
+	 */
+	private BowMeshes buildBow(MeshBuilder mb, Function<String, Sprite> sprite, RenderMaterial cutout, RenderMaterial translucent, RenderMaterial glow, int[] count) {
+		BowMeshes b = new BowMeshes();
+		b.bow = buildBase(mb, List.of("uryu_bow"), sprite, cutout, translucent, NO_SHIFT, count);
+		b.bowGlow = buildGlow(mb, List.of("uryu_bow"), sprite, glow, NO_SHIFT, count);
+		b.arrow = buildBase(mb, List.of("uryu_arrow"), sprite, cutout, translucent, NO_SHIFT, count);
+		b.arrowGlow = buildGlow(mb, List.of("uryu_arrow"), sprite, glow, NO_SHIFT, count);
+		ItemManifest.ObjectDef sd = data.manifest().objects.get("uryu_bow_string");
+		List<ObjGeometry.Quad> src = data.quads().get("uryu_bow_string");
+		float[][] uv = src.get(0).uv();
+		// string tips from the straight string mesh: the highest and lowest vertex (model space), the middle on the line between them
+		float topY = -1e9f;
+		float botY = 1e9f;
+		float tipZ = 0.5f;
+		for (ObjGeometry.Quad q : src) {
+			for (int c = 0; c < 4; c++) {
+				topY = Math.max(topY, q.pos()[c][1]);
+				botY = Math.min(botY, q.pos()[c][1]);
+				tipZ = q.pos()[c][2];
+			}
+		}
+		float w = STRING_HALF_WIDTH;
+		QuadEmitter em = mb.getEmitter();
+		for (int pass = 0; pass < 2; pass++) { // 0 = lit string, 1 = emissive overlay
+			Sprite sp = sprite.apply(pass == 0 ? sd.diffuse() : sd.emissive() != null ? sd.emissive() : sd.diffuse());
+			RenderMaterial mat = pass == 0 ? cutout : glow;
+			for (int plane = 0; plane < 2; plane++) {
+				for (int half = 0; half < 2; half++) {
+					float y0 = half == 0 ? topY : botY;
+					float y1 = 0.5f;
+					for (int side = 0; side < 2; side++) { // both windings: the string is seen from every side
+						float[][] p = new float[4][];
+						float dx = plane == 0 ? w : 0f;
+						float dz = plane == 0 ? 0f : w;
+						p[0] = new float[] {0.5f - dx, y0, tipZ - dz};
+						p[1] = new float[] {0.5f + dx, y0, tipZ + dz};
+						p[2] = new float[] {0.5f + dx, y1, tipZ + dz};
+						p[3] = new float[] {0.5f - dx, y1, tipZ - dz};
+						float[] n = plane == 0 ? new float[] {0f, 0f, 1f} : new float[] {1f, 0f, 0f};
+						if (side == 1) {
+							float[] t = p[0];
+							p[0] = p[1];
+							p[1] = t;
+							t = p[2];
+							p[2] = p[3];
+							p[3] = t;
+							n = new float[] {-n[0], -n[1], -n[2]};
+						}
+						float[][] nn = {n, n, n, n};
+						ObjGeometry.Quad q = new ObjGeometry.Quad(p, uv, nn, false);
+						emit(em, q, sp, mat, pass == 0 ? 0xFFFFFFFF : data.manifest().emissiveTint, pass == 0 ? 0f : GLOW_OFFSET, NO_SHIFT);
+					}
+				}
+			}
+			if (pass == 0) {
+				b.string = mb.build();
+			} else {
+				b.stringGlow = mb.build();
+			}
+		}
+		return b;
+	}
+
+	/** The meshes of the drawn bow, see {@link #buildBow}. */
+	static final class BowMeshes {
+		Mesh bow;
+		Mesh bowGlow;
+		Mesh arrow;
+		Mesh arrowGlow;
+		Mesh string;
+		Mesh stringGlow;
+	}
 
 	private Mesh buildBase(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial mat,
 			RenderMaterial translucentMat, float[] shift, int[] count) {
@@ -299,6 +382,8 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		float bladeLen;
 		/** The drawn blade cut into small fragments for the shikai dissolve; null when the blade axis is unknown. */
 		BladeShards shards;
+		/** Uryu's bow with the pulled string and the nocked arrow (items with those three objects), null otherwise. */
+		BowMeshes bow;
 	}
 
 	/** Fragments of the drawn blade per source quad along / across the longer edge (the shikai dissolve breaks them off one by one). */

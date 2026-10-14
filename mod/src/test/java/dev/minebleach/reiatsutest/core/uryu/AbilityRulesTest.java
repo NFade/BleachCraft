@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** Sprenger, Licht Regen, Homing Volley, Sternenstaub and Hirenkyaku: the numbers of design/URYU.md section 5 in ticks. */
+/** Sprenger, Homing Volley and Sternenstaub: the numbers of design/URYU.md section 5 in ticks (Seele Schneider and the wing barrage have their own tests). */
 class AbilityRulesTest {
 	private static final UUID OWNER = UUID.randomUUID();
 
@@ -115,61 +115,6 @@ class AbilityRulesTest {
 		assertEquals(20.0, UryuBalance.SPRENGER_RANGE);
 	}
 
-	// ------------------------------------------------------------------ Licht Regen
-
-	@Test
-	void lichtRegenTwelveArrowsEveryTwoTicksOver24() {
-		assertEquals(12, UryuBalance.RAIN_ARROWS);
-		assertEquals(24, UryuBalance.RAIN_TICKS);
-		assertEquals(1.2f, UryuBalance.RAIN_DAMAGE, 1e-6);
-		assertEquals(28.0, UryuBalance.RAIN_RANGE);
-		for (int i = 0; i < 12; i++) {
-			assertEquals(i * 2, LichtRegen.leaveTick(i));
-		}
-		assertTrue(LichtRegen.leaveTick(11) < UryuBalance.RAIN_TICKS);
-	}
-
-	@Test
-	void everyRainArrowLandsInsideTheCircleOfRadius4() {
-		V3 center = new V3(100, 64, -40);
-		List<V3> none = List.of();
-		List<V3> edge = List.of(new V3(103.9, 64, -40), new V3(104.6, 64, -40)); // one target half outside
-		for (int i = 0; i < 12; i++) {
-			V3 a = LichtRegen.landingPoint(i, center, 42L, none);
-			assertTrue(LichtRegen.inside(center, a.x(), a.z()), "no targets, arrow " + i);
-			V3 b = LichtRegen.landingPoint(i, center, 42L, edge);
-			assertTrue(LichtRegen.inside(center, b.x(), b.z()), "edge targets, arrow " + i);
-		}
-	}
-
-	@Test
-	void rainArrowsFollowTheTargetsRoundRobinWithSmallScatter() {
-		V3 center = new V3(0, 64, 0);
-		V3 a = new V3(1, 64, 1);
-		V3 b = new V3(-2, 64, 2);
-		List<V3> targets = List.of(a, b);
-		for (int i = 0; i < 12; i++) {
-			V3 want = i % 2 == 0 ? a : b;
-			V3 got = LichtRegen.landingPoint(i, center, 7L, targets);
-			assertTrue(Math.hypot(got.x() - want.x(), got.z() - want.z()) <= UryuBalance.RAIN_JITTER + 1e-9, "arrow " + i);
-			assertEquals(64.0, got.y(), 1e-9);
-		}
-	}
-
-	@Test
-	void rainIsDeterministicForASeed() {
-		V3 c = new V3(0, 64, 0);
-		assertEquals(LichtRegen.landingPoint(3, c, 5L, List.of()), LichtRegen.landingPoint(3, c, 5L, List.of()));
-	}
-
-	@Test
-	void rainStartsStraightAbove() {
-		V3 s = LichtRegen.startPoint(new V3(1, 64, 2));
-		assertEquals(1.0, s.x());
-		assertEquals(74.0, s.y());
-		assertEquals(2.0, s.z());
-	}
-
 	// ------------------------------------------------------------------ Homing Volley
 
 	@Test
@@ -264,47 +209,6 @@ class AbilityRulesTest {
 		assertEquals(2.0, UryuBalance.STAR_HALF_WIDTH * 2.0);
 	}
 
-	// ------------------------------------------------------------------ Hirenkyaku
-
-	@Test
-	void hirenkyakuDashesEightBlocksOverFourTicksAndHoversSixTenthsOfASecond() {
-		assertEquals(8.0, Hirenkyaku.distance(), 1e-9);
-		assertEquals(2.0, Hirenkyaku.speed(), 1e-9);
-		for (int k = 0; k < 4; k++) {
-			assertEquals(Hirenkyaku.Phase.DASH, Hirenkyaku.phaseAt(k));
-		}
-		assertEquals(Hirenkyaku.Phase.BRAKE, Hirenkyaku.phaseAt(4));
-		for (int k = 5; k < 12; k++) {
-			assertEquals(Hirenkyaku.Phase.HOVER, Hirenkyaku.phaseAt(k));
-		}
-		assertEquals(Hirenkyaku.Phase.DONE, Hirenkyaku.phaseAt(12));
-		assertEquals(12, UryuBalance.HOVER_TICKS, "0.6 s");
-	}
-
-	@Test
-	void dashDirectionIsAUnitVectorWithTheVerticalShareLimited() {
-		V3 level = Hirenkyaku.direction(new V3(1, 0, 0));
-		assertEquals(1.0, level.length(), 1e-9);
-		assertEquals(0.0, level.y(), 1e-9);
-		V3 down = Hirenkyaku.direction(new V3(0, -1, 0.01));
-		assertEquals(1.0, down.length(), 1e-9);
-		assertEquals(UryuBalance.DASH_MIN_Y, down.y(), 1e-9);
-		V3 up = Hirenkyaku.direction(new V3(0, 1, 0.01));
-		assertEquals(UryuBalance.DASH_MAX_Y, up.y(), 1e-9);
-		assertEquals(1.0, up.length(), 1e-9);
-	}
-
-	@Test
-	void hirenkyakuClearsFocus() {
-		// the glue calls reset(); the rule itself lives in Focus
-		Focus f = new Focus();
-		for (int i = 0; i < 42; i++) {
-			f.tick(true, false, 0, false);
-		}
-		assertTrue(f.full());
-		f.reset();
-		assertEquals(0, f.stacks());
-	}
 
 	// ------------------------------------------------------------------ arrows numbers
 

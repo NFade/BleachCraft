@@ -60,9 +60,9 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `uryu.shikai.release` | BASE | Uryu's Quincy cross | Blut Arterie | no | BASE to SHIKAI (the bow must be drawn first). Canon (offensive Blut). |
 | `uryu.shikai.heilig_pfeil` | SHIKAI | Uryu's Quincy cross | Heilig Pfeil | no | Z: the focus shot. Canon name. |
 | `uryu.shikai.sprenger` | SHIKAI | Uryu's Quincy cross | Sprenger | no | H: the pentagon seal and explosion. Canon name. |
-| `uryu.shikai.hirenkyaku` | SHIKAI | Uryu's Quincy cross | Hirenkyaku | no | B: the Quincy flash step dash. Canon name. |
+| `uryu.shikai.seele_schneider` | SHIKAI | Uryu's Quincy cross | Seele Schneider | no | B: the Reishi blade combo (lunge and three slashes). Canon name. Replaces Hirenkyaku. |
 | `uryu.bankai.release` | SHIKAI | Uryu's Quincy cross | Quincy: Vollstandig | no | SHIKAI to BANKAI. Server requires 80 Rage. Canon name of the full form (the umlaut is left out on purpose). |
-| `uryu.bankai.licht_regen` | BANKAI | Uryu's Quincy cross | Licht Regen | no | Z: the barrage of arrows. Canon name. |
+| `uryu.bankai.wing_barrage` | BANKAI | Uryu's Quincy cross | Heiligen Fliegen | no | Z: the wings fire homing arrows at the nearest enemies for 6 s. Mod-defined. Replaces Licht Regen. |
 | `uryu.bankai.homing_volley` | BANKAI | Uryu's Quincy cross | (mod-defined) Homing volley | no | H: three or more curving arrows. Mod-defined name (the canon idea is trajectory control). |
 | `uryu.bankai.sternenstaub` | BANKAI | Uryu's Quincy cross | Sternenstaub | no | B: the giant arrow of flechettes. Canon name. |
 
@@ -626,18 +626,18 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | Russian (Cyrillic) | Шпренгер | `X` | `sprenger` |
 |  | Спренгер | `X` | `sprenger` |
 
-### 1.31 `uryu.shikai.hirenkyaku`
+### 1.31 `uryu.shikai.seele_schneider`
 
 - **Required state:** SHIKAI. **Item:** Uryu's Quincy cross in the main hand.
-- **Canonical phrase:** Hirenkyaku
-- **Notes:** B: the Quincy flash step dash. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+- **Canonical phrase:** Seele Schneider
+- **Notes:** B: the Reishi blade combo (a short lunge, then three slashes). Canon name of the Quincy Reishi blade. Replaces Hirenkyaku (design/URYU_PLAN.md revision 3).
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
-| Romaji | Hirenkyaku | `C` | `hirenkyaku` |
-|  | Hiren kyaku | `C` | `hiren kyaku` |
-| Russian (Cyrillic) | Хиренкьяку | `X` | `hirenkyaku` |
-|  | Хирэнкьяку | `X` | `hirenkyaku` |
+| Romaji | Seele Schneider | `C` | `sere scneder` |
+|  | Seele Schnaider | `T` | `sere scnaider` |
+| Russian (Cyrillic) | Зеле Шнайдер | `X` | `sere snaider` |
+|  | Зеле Шнайдэр | `X` | `sere snaider` |
 
 ### 1.32 `uryu.bankai.release`
 
@@ -652,17 +652,19 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | Russian (Cyrillic) | Квинси Фольштендиг | `X` | `kvinsi horstendig` |
 |  | Фольштендиг | `X` | `horstendig` |
 
-### 1.33 `uryu.bankai.licht_regen`
+### 1.33 `uryu.bankai.wing_barrage`
 
 - **Required state:** BANKAI. **Item:** Uryu's Quincy cross in the main hand.
-- **Canonical phrase:** Licht Regen
-- **Notes:** Z: the barrage of arrows. Canon name. Added by branch gin-uryu (registration skeleton); the phrases are first drafts, to be tuned with the gameplay steps.
+- **Canonical phrase:** Heiligen Fliegen
+- **Notes:** Z: the wing barrage (the wings fire homing arrows at the nearest enemies for 6 s). Mod-defined from the canon words for a Quincy arrow (Heilig) and flying (fliegen); the short form is "Wing barrage". Replaces Licht Regen (design/URYU_PLAN.md revision 3).
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
-| Romaji | Licht Regen | `C` | `rict regen` |
-| Russian (Cyrillic) | Лихт Реген | `X` | `riht regen` |
-|  | Лихт Регэн | `X` | `riht regen` |
+| Romaji | Heiligen Fliegen | `M` | `herigen hriegen` |
+|  | Heilige Fliegen | `M` | `herige hriegen` |
+| English sub | Wing barrage | `M` | `wing barage` |
+| Russian (Cyrillic) | Хайлиген Флиген | `X` | `hairigen hrigen` |
+|  | Залп крыльев | `M` | `sarp krirev` |
 
 ### 1.34 `uryu.bankai.homing_volley`
 

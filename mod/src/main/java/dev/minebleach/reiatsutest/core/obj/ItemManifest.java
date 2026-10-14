@@ -98,6 +98,10 @@ public final class ItemManifest {
 	public final Map<String, Chain> chains = new LinkedHashMap<>();
 	public String displayModel;
 	public int emissiveTint = 0xFFFFFFFF;
+	/** Optional per state scale of the HAND mesh about the model centre (the Uryu pendant is only 12 cm, the display transform is made for the bow): {@code "hand_scale": {"sealed": 3.0}}. */
+	public final Map<String, Float> handScale = new LinkedHashMap<>();
+	/** Optional per state turn (degrees about model Y, about the grip) of the HAND mesh, e.g. the flat Uryu pendant faces the camera: {@code "hand_yaw": {"sealed": 90}}. */
+	public final Map<String, Float> handYaw = new LinkedHashMap<>();
 	public final Map<String, ObjectDef> objects = new LinkedHashMap<>();
 	public final Map<String, StateDef> states = new LinkedHashMap<>();
 
@@ -108,6 +112,16 @@ public final class ItemManifest {
 		m.displayModel = root.get("display_model").getAsString();
 		if (root.has("emissive_tint")) {
 			m.emissiveTint = (int) Long.parseLong(root.get("emissive_tint").getAsString(), 16);
+		}
+		if (root.has("hand_yaw")) {
+			for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("hand_yaw").entrySet()) {
+				m.handYaw.put(e.getKey(), e.getValue().getAsFloat());
+			}
+		}
+		if (root.has("hand_scale")) {
+			for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("hand_scale").entrySet()) {
+				m.handScale.put(e.getKey(), e.getValue().getAsFloat());
+			}
 		}
 		if (root.has("first_person_arm")) {
 			m.firstPersonArm = arm(root.getAsJsonObject("first_person_arm"));

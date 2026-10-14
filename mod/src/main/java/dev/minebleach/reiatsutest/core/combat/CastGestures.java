@@ -91,8 +91,8 @@ public final class CastGestures {
 			case HAKUFUKU -> 67;
 			case HEILIG_PFEIL -> 72;
 			case SPRENGER -> 73;
-			case HIRENKYAKU -> 74;
-			case LICHT_REGEN -> 75;
+			case SEELE_SCHNEIDER -> 74;
+			case WING_BARRAGE -> 75;
 			case HOMING_VOLLEY -> 76;
 			case STERNENSTAUB -> 77;
 		};

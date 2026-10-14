@@ -9,8 +9,8 @@ import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
 import dev.minebleach.reiatsutest.core.uryu.BowDraw;
 import dev.minebleach.reiatsutest.core.uryu.Focus;
-import dev.minebleach.reiatsutest.core.uryu.Hirenkyaku;
-import dev.minebleach.reiatsutest.core.uryu.LichtRegen;
+import dev.minebleach.reiatsutest.core.uryu.SeeleCombo;
+import dev.minebleach.reiatsutest.core.uryu.WingBarrage;
 import dev.minebleach.reiatsutest.core.uryu.Shots;
 import dev.minebleach.reiatsutest.core.uryu.SprengerTrap;
 import dev.minebleach.reiatsutest.core.uryu.Sternenstaub;
@@ -52,7 +52,7 @@ import net.minecraft.world.World;
 
 /**
  * Server side of Uryu Ishida (design/URYU.md, core rules in {@code core.uryu}): the Focus counter of every Uryu, one {@link ArrowSim}
- * per world stepped once per server tick, the Sprenger pentagons, the Licht Regen barrage, the Hirenkyaku dash and the six ability
+ * per world stepped once per server tick, the Sprenger pentagons, the wing barrage, the Seele Schneider combo and the six ability
  * bodies called by {@code UryuAbilities}. Damage goes through the one damage function ({@link UryuTargets#hurt}), so the caster is
  * safe, the usual target rules apply and the Byakuya barrier / block rules cut it like any other ability.
  *
@@ -71,31 +71,29 @@ public final class UryuManager {
 	private record Trap(SprengerTrap trap, RegistryKey<World> world) {
 	}
 
-	private static final class Rain {
+	/** The barrage of one player: pending shots of the current cycle. */
+	private static final class Wing {
 		final UUID owner;
 		final RegistryKey<World> world;
-		final V3 center;
-		final long seed;
 		final int start;
-		int next;
+		List<WingBarrage.Shot> pending = new ArrayList<>();
 
-		Rain(UUID owner, RegistryKey<World> world, V3 center, long seed, int start) {
+		Wing(UUID owner, RegistryKey<World> world, int start) {
 			this.owner = owner;
 			this.world = world;
-			this.center = center;
-			this.seed = seed;
 			this.start = start;
 		}
 	}
 
-	private record Dash(int start, V3 dir) {
+	/** The Seele Schneider combo of one player: start tick and the horizontal lunge direction. */
+	private record Seele(int start, V3 dir) {
 	}
 
 	private static final Map<UUID, Data> PLAYERS = new HashMap<>();
 	private static final Map<RegistryKey<World>, ArrowSim> SIMS = new HashMap<>();
 	private static final List<Trap> TRAPS = new ArrayList<>();
-	private static final List<Rain> RAINS = new ArrayList<>();
-	private static final Map<UUID, Dash> DASHES = new HashMap<>();
+	private static final List<Wing> WINGS = new ArrayList<>();
+	private static final Map<UUID, Seele> SEELES = new HashMap<>();
 
 	private UryuManager() {
 	}
@@ -166,8 +164,8 @@ public final class UryuManager {
 	/** Everything of one Uryu goes: pentagons, barrage, dash, arrows in flight. */
 	static void cancelAll(UUID id) {
 		TRAPS.removeIf(t -> t.trap().owner().equals(id));
-		RAINS.removeIf(r -> r.owner.equals(id));
-		DASHES.remove(id);
+		WINGS.removeIf(w -> w.owner.equals(id));
+		SEELES.remove(id);
 		for (ArrowSim sim : SIMS.values()) {
 			sim.removeOwned(id);
 		}
@@ -175,9 +173,9 @@ public final class UryuManager {
 
 	/** The bankai of this player is over (any reason): the barrage and the bankai arrows in the air stop. */
 	public static void onBankaiEnd(UUID id) {
-		RAINS.removeIf(r -> r.owner.equals(id));
+		WINGS.removeIf(w -> w.owner.equals(id));
 		for (ArrowSim sim : SIMS.values()) {
-			sim.removeOwned(id, ArrowSim.Kind.RAIN);
+			sim.removeOwned(id, ArrowSim.Kind.WING);
 			sim.removeOwned(id, ArrowSim.Kind.VOLLEY);
 		}
 	}
@@ -186,8 +184,8 @@ public final class UryuManager {
 		PLAYERS.clear();
 		SIMS.clear();
 		TRAPS.clear();
-		RAINS.clear();
-		DASHES.clear();
+		WINGS.clear();
+		SEELES.clear();
 		UryuNet.clear();
 	}
 
@@ -198,11 +196,11 @@ public final class UryuManager {
 		for (ServerPlayerEntity p : srv.getPlayerManager().getPlayerList()) {
 			tickPlayer(p, now);
 		}
-		if (!RAINS.isEmpty()) {
-			tickRains(srv, now);
+		if (!WINGS.isEmpty()) {
+			tickWings(srv, now);
 		}
-		if (!DASHES.isEmpty()) {
-			tickDashes(srv, now);
+		if (!SEELES.isEmpty()) {
+			tickSeele(srv, now);
 		}
 		if (!TRAPS.isEmpty()) {
 			tickTraps(srv, now);
@@ -322,9 +320,8 @@ public final class UryuManager {
 					return;
 				}
 				UryuNet.sendImpact(w, e.to(), UryuArrowsS2C.IMPACT_ENTITY, e.kind().ordinal(), now);
-				boolean rain = e.kind() == ArrowSim.Kind.RAIN;
-				boolean reset = rain || e.kind() == ArrowSim.Kind.VOLLEY;
-				RegistryKey<DamageType> type = rain ? DamageTypes.INDIRECT_MAGIC : DamageTypes.ARROW; // the rain ignores armor
+				boolean reset = e.kind() == ArrowSim.Kind.WING || e.kind() == ArrowSim.Kind.VOLLEY; // many small arrows: each lands through the i-frames
+				RegistryKey<DamageType> type = DamageTypes.ARROW;
 				UryuTargets.logged("uryu.arrow." + e.kind().name().toLowerCase(java.util.Locale.ROOT),
 						() -> UryuTargets.hurt(caster, le, e.damage(), type, reset));
 			}
@@ -530,49 +527,83 @@ public final class UryuManager {
 		}
 	}
 
-	// ------------------------------------------------------------------ Hirenkyaku
+	// ------------------------------------------------------------------ Seele Schneider
 
-	/** Hirenkyaku (B, SHIKAI): the dash and the cancelled fall run in {@link #tickDashes}; Focus goes to 0. */
-	public static void hirenkyaku(ServerPlayerEntity p) {
+	/**
+	 * Seele Schneider (B, SHIKAI): a 1.5 block lunge by velocity (no teleport, three packets of 0.36 blocks per tick, then the ground
+	 * friction), then three slashes of a Reishi blade 0.25 s apart ({@link #tickSeele}). Focus is neither consumed nor reset: the stacks
+	 * wait through the lunge ({@code Focus.grace}).
+	 */
+	public static void seeleSchneider(ServerPlayerEntity p) {
 		Data d = data(p);
-		d.focus.reset();
-		show(p, d);
-		Vec3d look = p.getRotationVec(1.0F);
-		DASHES.put(p.getUuid(), new Dash(p.getServer().getTicks(), Hirenkyaku.direction(v3(look))));
+		d.focus.grace(UryuBalance.SEELE_FOCUS_GRACE);
+		V3 look = v3(p.getRotationVec(1.0F));
+		V3 fallback = new V3(-Math.sin(Math.toRadians(p.getYaw())), 0.0, Math.cos(Math.toRadians(p.getYaw())));
+		SEELES.put(p.getUuid(), new Seele(p.getServer().getTicks(), SeeleCombo.lungeDirection(look, fallback)));
+		ReiatsuTest.LOGGER.info("[uryu] {} seele schneider", p.getName().getString());
 	}
 
-	private static void tickDashes(MinecraftServer srv, int now) {
-		for (Iterator<Map.Entry<UUID, Dash>> it = DASHES.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<UUID, Dash> en = it.next();
+	private static void tickSeele(MinecraftServer srv, int now) {
+		for (Iterator<Map.Entry<UUID, Seele>> it = SEELES.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<UUID, Seele> en = it.next();
 			ServerPlayerEntity p = srv.getPlayerManager().getPlayer(en.getKey());
-			Dash dash = en.getValue();
-			if (p == null || p.isDead()) {
+			Seele s = en.getValue();
+			if (p == null || p.isDead() || p.isSpectator()) {
 				it.remove();
 				continue;
 			}
-			int k = now - dash.start();
-			switch (Hirenkyaku.phaseAt(k)) {
-				case DASH -> {
-					double s = Hirenkyaku.speed();
-					push(p, new Vec3d(dash.dir().x() * s, dash.dir().y() * s, dash.dir().z() * s));
-					p.fallDistance = 0.0F;
-				}
-				case BRAKE -> {
-					push(p, Vec3d.ZERO); // the dash stops here, no sliding on
-					p.fallDistance = 0.0F;
-				}
-				case HOVER -> {
-					p.fallDistance = 0.0F;
-					if (!p.isOnGround()) {
-						push(p, Vec3d.ZERO); // the Reishi platform: no falling for 0.6 s from the cast
-					}
-				}
-				case DONE -> {
-					p.fallDistance = 0.0F;
-					it.remove();
-				}
+			int k = now - s.start;
+			if (SeeleCombo.lungeAt(k)) {
+				V3 v = SeeleCombo.lungeVelocity(s.dir);
+				push(p, new Vec3d(v.x(), p.getVelocity().y, v.z()));
+			}
+			int slash = SeeleCombo.slashAt(k);
+			if (slash >= 0) {
+				slash(p, slash, now);
+			}
+			if (SeeleCombo.over(k)) {
+				it.remove();
 			}
 		}
+	}
+
+	/** One slash: everything valid in the cone in front of the player takes 2.5 HP; the third also gets knocked back 1.0. */
+	private static void slash(ServerPlayerEntity p, int index, int now) {
+		Vec3d eye = p.getEyePos();
+		Vec3d look = p.getRotationVec(1.0F).normalize();
+		V3 o = v3(eye);
+		V3 l = v3(look);
+		List<LivingEntity> hit = new ArrayList<>();
+		for (LivingEntity e : UryuTargets.sphere(p, eye, UryuBalance.SEELE_REACH + 1.0, 32)) {
+			Vec3d c = e.getBoundingBox().getCenter();
+			Vec3d seen = UryuTargets.rayPoint(p, eye, c.subtract(eye).normalize(), eye.distanceTo(c));
+			if (eye.distanceTo(seen) < eye.distanceTo(c) - 0.6) {
+				continue; // a block between
+			}
+			// the centre or the nearest point of the box counts (a big mob on the edge of the cone is still hit)
+			net.minecraft.util.math.Box b = e.getBoundingBox();
+			Vec3d near = new Vec3d(Math.max(b.minX, Math.min(eye.x, b.maxX)), Math.max(b.minY, Math.min(eye.y, b.maxY)), Math.max(b.minZ, Math.min(eye.z, b.maxZ)));
+			if (SeeleCombo.inCone(o, l, v3(c)) || SeeleCombo.inCone(o, l, v3(near))) {
+				hit.add(e);
+			}
+		}
+		boolean knock = SeeleCombo.knocksBack(index);
+		UryuTargets.logged("uryu.shikai.seele_schneider#" + (index + 1), () -> {
+			for (LivingEntity e : hit) {
+				if (UryuTargets.hurt(p, e, UryuBalance.SEELE_DAMAGE, DamageTypes.PLAYER_ATTACK, true) && knock) {
+					UryuTargets.knockback(e, p.getPos(), UryuBalance.SEELE_KNOCKBACK);
+				}
+			}
+		});
+		UryuNet.sendEffect(p.getServerWorld(), eye.x, eye.y, eye.z, UryuArrowsS2C.SLASH, now,
+				new float[] {(float) eye.x, (float) eye.y, (float) eye.z, (float) look.x, (float) look.y, (float) look.z, index, (float) UryuBalance.SEELE_REACH,
+						(float) UryuBalance.SEELE_CONE_DEG, hit.size()});
+		for (LivingEntity e : hit) {
+			Vec3d c = e.getBoundingBox().getCenter();
+			UryuNet.sendImpact(p.getServerWorld(), new V3(c.x, c.y, c.z), UryuArrowsS2C.IMPACT_ENTITY, UryuArrowsS2C.KIND_SLASH, now);
+		}
+		p.getServerWorld().playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 0.9F, 1.5F + index * 0.15F);
+		ReiatsuTest.LOGGER.info("[uryu] {} seele slash {} hits={} knockback={}", p.getName().getString(), index + 1, hit.size(), knock);
 	}
 
 	private static void push(ServerPlayerEntity p, Vec3d v) {
@@ -581,54 +612,66 @@ public final class UryuManager {
 		p.networkHandler.sendPacket(new EntityVelocityUpdateS2CPacket(p));
 	}
 
-	// ------------------------------------------------------------------ Licht Regen
+	// ------------------------------------------------------------------ Wing barrage
 
-	/** Licht Regen (Z, BANKAI): 12 arrows over 1.2 s fall into the circle of radius 4 around the aimed point. */
-	public static void lichtRegen(ServerPlayerEntity p, Vec3d aim, int seed) {
-		RAINS.add(new Rain(p.getUuid(), p.getServerWorld().getRegistryKey(), v3(aim), seed, p.getServer().getTicks()));
-		ReiatsuTest.LOGGER.info("[uryu] {} licht regen at ({}, {}, {})", p.getName().getString(), String.format(java.util.Locale.ROOT, "%.1f", aim.x),
-				String.format(java.util.Locale.ROOT, "%.1f", aim.y), String.format(java.util.Locale.ROOT, "%.1f", aim.z));
+	/** Wing barrage (Z, BANKAI): for 6 s the wings fire homing arrows at the nearest enemies ({@link #tickWings}). */
+	public static void wingBarrage(ServerPlayerEntity p) {
+		WINGS.removeIf(w -> w.owner.equals(p.getUuid())); // one barrage per player
+		WINGS.add(new Wing(p.getUuid(), p.getServerWorld().getRegistryKey(), p.getServer().getTicks()));
+		ReiatsuTest.LOGGER.info("[uryu] {} wing barrage", p.getName().getString());
 	}
 
-	private static void tickRains(MinecraftServer srv, int now) {
-		for (Iterator<Rain> it = RAINS.iterator(); it.hasNext();) {
-			Rain r = it.next();
-			ServerWorld w = srv.getWorld(r.world);
-			ServerPlayerEntity p = srv.getPlayerManager().getPlayer(r.owner);
-			if (w == null || p == null || p.isDead() || p.getServerWorld() != w) {
+	private static void tickWings(MinecraftServer srv, int now) {
+		for (Iterator<Wing> it = WINGS.iterator(); it.hasNext();) {
+			Wing w = it.next();
+			ServerWorld world = srv.getWorld(w.world);
+			ServerPlayerEntity p = srv.getPlayerManager().getPlayer(w.owner);
+			if (world == null || p == null || p.isDead() || p.getServerWorld() != world) {
 				it.remove();
 				continue;
 			}
-			int k = now - r.start;
-			while (r.next < UryuBalance.RAIN_ARROWS && LichtRegen.leaveTick(r.next) <= k) {
-				rainArrow(p, w, r, r.next);
-				r.next++;
-			}
-			if (r.next >= UryuBalance.RAIN_ARROWS) {
+			int k = now - w.start;
+			if (!WingBarrage.active(k)) {
 				it.remove();
+				continue;
+			}
+			if (WingBarrage.isCycleStart(k)) {
+				w.pending = WingBarrage.cycle(k, wingTargets(p));
+			}
+			for (Iterator<WingBarrage.Shot> si = w.pending.iterator(); si.hasNext();) {
+				WingBarrage.Shot s = si.next();
+				if (s.fireTick() <= k) {
+					si.remove();
+					fireWing(p, world, s, now);
+				}
 			}
 		}
 	}
 
-	private static void rainArrow(ServerPlayerEntity p, ServerWorld w, Rain r, int i) {
-		List<V3> feet = new ArrayList<>();
-		for (LivingEntity e : UryuTargets.cylinder(p, vec(r.center), UryuBalance.RAIN_RADIUS, 4.0, 12)) {
-			feet.add(new V3(e.getX(), e.getY(), e.getZ()));
+	/** Valid enemies within 30 blocks with a free line from the chest, nearest first, as the pure rule wants them. */
+	private static List<WingBarrage.Target> wingTargets(ServerPlayerEntity p) {
+		Vec3d eye = p.getEyePos();
+		List<WingBarrage.Target> out = new ArrayList<>();
+		for (LivingEntity e : UryuTargets.sphere(p, p.getPos().add(0, 1.0, 0), UryuBalance.WING_RANGE, 24)) {
+			if (e instanceof ServerPlayerEntity sp && sp.isCreative()) {
+				continue;
+			}
+			Vec3d c = e.getBoundingBox().getCenter();
+			Vec3d seen = UryuTargets.rayPoint(p, eye, c.subtract(eye).normalize(), eye.distanceTo(c));
+			if (eye.distanceTo(seen) >= eye.distanceTo(c) - 0.6) {
+				out.add(new WingBarrage.Target(e.getId(), v3(c)));
+			}
 		}
-		V3 landing = LichtRegen.landingPoint(i, r.center, r.seed, feet);
-		V3 start = LichtRegen.startPoint(landing);
-		// a roof stops the rain: start just under the first ceiling above the landing point
-		Vec3d from = new Vec3d(landing.x(), landing.y() + 0.3, landing.z());
-		BlockHitResult roof = w.raycast(new RaycastContext(from, from.add(0, UryuBalance.RAIN_DROP_HEIGHT, 0), RaycastContext.ShapeType.COLLIDER,
-				RaycastContext.FluidHandling.NONE, ShapeContext.absent()));
-		if (roof.getType() != HitResult.Type.MISS) {
-			start = new V3(landing.x(), Math.max(landing.y() + 1.0, roof.getPos().y - 0.3), landing.z());
-		}
-		int life = (int) Math.ceil((start.y() - landing.y() + 3.0) / UryuBalance.RAIN_SPEED) + 2;
-		spawn(w, new ArrowSim.Spec(p.getUuid(), ArrowSim.Kind.RAIN, start, new V3(0, -UryuBalance.RAIN_SPEED, 0), 0.0, UryuBalance.RAIN_DAMAGE, life, 0,
-				UryuBalance.ARROW_RADIUS, -1, 0.0, 0));
+		out.sort(java.util.Comparator.comparingDouble((WingBarrage.Target t) -> t.pos().distanceTo(v3(p.getPos()))).thenComparingInt(WingBarrage.Target::id));
+		return out;
 	}
 
+	private static void fireWing(ServerPlayerEntity p, ServerWorld world, WingBarrage.Shot s, int now) {
+		V3 tip = WingBarrage.tip(s.slot(), p.getBodyYaw(), v3(p.getPos()));
+		V3 dir = s.target().pos().sub(tip).normalizedOr(v3(p.getRotationVec(1.0F)));
+		spawn(world, new ArrowSim.Spec(p.getUuid(), ArrowSim.Kind.WING, tip, dir.scale(UryuBalance.WING_SPEED), 0.0, UryuBalance.WING_DAMAGE, UryuBalance.WING_LIFE, 0,
+				UryuBalance.ARROW_RADIUS, s.target().id(), Math.toRadians(UryuBalance.WING_TURN_DEG), 0));
+	}
 	// ------------------------------------------------------------------ Homing Volley
 
 	/** Homing Volley (H, BANKAI): locks the nearest living target in a 15 degree cone, fires 3 + Focus arrows that curve to it. */

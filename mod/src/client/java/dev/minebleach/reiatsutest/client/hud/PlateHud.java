@@ -84,6 +84,7 @@ final class PlateHud {
 		drawValueLine(g, font, barX, y0 + 26, barW, ch, st, accent, alpha, tickDelta);
 		drawRage(g, font, barX, y0 + 37, barW, alpha, now);
 		drawMomentum(g, barX, y0 + 37, barW, alpha, now);
+		drawFocus(g, barX, y0 + 37, barW, alpha, now, ch, st);
 		long q3 = System.nanoTime();
 		PROF[0] += q1 - q0;
 		PROF[1] += q2 - q1;
@@ -654,6 +655,45 @@ final class PlateHud {
 				String line = FLAKE[row];
 				for (int col = 0; col < 5; col++) {
 					if (line.charAt(col) == '#') {
+						g.fill(fx + col, y + row, fx + col + 1, y + row + 1, HudGfx.argb(c, a));
+					}
+				}
+			}
+		}
+	}
+
+	private static final String[] PIP_FULL = {"..#..", ".###.", "#####", ".###.", "..#.."};
+	private static final String[] PIP_EMPTY = {"..#..", ".#.#.", "#...#", ".#.#.", "..#.."};
+	private static final float[] PIP_ON = {0.66f, 0.85f, 0.96f};
+	private static final float[] PIP_MAX = {1.0f, 1.0f, 1.0f};
+	private static final float[] PIP_OFF = {0.38f, 0.52f, 0.66f};
+
+	/**
+	 * Uryu's Focus (design/URYU.md section 3): three Reishi diamonds in the row under the reiatsu / Rage bars (the row the Rukia frost
+	 * stacks use, right aligned). Server synced ({@code UryuFx.focus}); only for a drawn Uryu. Filled diamonds pale blue, empty ones
+	 * an outline, white and pulsing at 3 stacks (steady with reduceMotion). Without the Rage bar the row moves up under the value line.
+	 * Pure rectangles, so it cannot crash on a missing atlas (the Gin / Uryu placeholder rule).
+	 */
+	private static void drawFocus(HudGfx g, int bx, int by0, int barW, float alpha, double now, CharacterId ch, ZanpakutoState st) {
+		if (ch != CharacterId.URYU || st == ZanpakutoState.SEALED) {
+			return;
+		}
+		int stacks = Math.max(0, Math.min(3, dev.minebleach.reiatsutest.client.fx.UryuFx.focus));
+		boolean rm = FxConfig.reduceMotion;
+		int y = rageOnScreen ? by0 + (int) Math.round(rageYOff) + RAGE_H + 2 : by0 + 2;
+		int step = 8;
+		int x = bx + barW - 3 * step + 3;
+		boolean atMax = stacks >= 3;
+		float pulse = atMax && !rm ? (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.6 * now)) : atMax ? 0.6f : 0f;
+		for (int i = 0; i < 3; i++) {
+			boolean on = i < stacks;
+			float[] c = on ? (atMax ? FxMath.mix(PIP_ON, PIP_MAX, 0.4 + 0.6 * pulse) : PIP_ON) : PIP_OFF;
+			float a = alpha * (on ? 1.0f : 0.5f);
+			String[] pat = on ? PIP_FULL : PIP_EMPTY;
+			int fx = x + i * step;
+			for (int row = 0; row < 5; row++) {
+				for (int col = 0; col < 5; col++) {
+					if (pat[row].charAt(col) == '#') {
 						g.fill(fx + col, y + row, fx + col + 1, y + row + 1, HudGfx.argb(c, a));
 					}
 				}

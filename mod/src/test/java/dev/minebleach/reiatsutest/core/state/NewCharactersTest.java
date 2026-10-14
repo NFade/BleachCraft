@@ -30,8 +30,8 @@ class NewCharactersTest {
 			new Row(AbilityId.HAKUFUKU, "gin.bankai.hakufuku", GIN, ZanpakutoState.BANKAI, 2, 150, 360, 67),
 			new Row(AbilityId.HEILIG_PFEIL, "uryu.shikai.heilig_pfeil", URYU, ZanpakutoState.SHIKAI, 0, 120, 60, 72),
 			new Row(AbilityId.SPRENGER, "uryu.shikai.sprenger", URYU, ZanpakutoState.SHIKAI, 1, 250, 280, 73),
-			new Row(AbilityId.HIRENKYAKU, "uryu.shikai.hirenkyaku", URYU, ZanpakutoState.SHIKAI, 2, 100, 120, 74),
-			new Row(AbilityId.LICHT_REGEN, "uryu.bankai.licht_regen", URYU, ZanpakutoState.BANKAI, 0, 280, 320, 75),
+			new Row(AbilityId.SEELE_SCHNEIDER, "uryu.shikai.seele_schneider", URYU, ZanpakutoState.SHIKAI, 2, 100, 100, 74),
+			new Row(AbilityId.WING_BARRAGE, "uryu.bankai.wing_barrage", URYU, ZanpakutoState.BANKAI, 0, 280, 440, 75),
 			new Row(AbilityId.HOMING_VOLLEY, "uryu.bankai.homing_volley", URYU, ZanpakutoState.BANKAI, 1, 300, 320, 76),
 			new Row(AbilityId.STERNENSTAUB, "uryu.bankai.sternenstaub", URYU, ZanpakutoState.BANKAI, 2, 500, 800, 77));
 

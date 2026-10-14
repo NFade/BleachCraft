@@ -58,6 +58,7 @@ public final class FxClient {
 			p.pop();
 		});
 		PetalSwarmRenderer.init();
+		UryuArrowRenderer.init();
 		AuraFx.init();
 		ReleaseHold.init();
 		ShikaiDissolve.init();

@@ -19,6 +19,10 @@ public record UryuArrowsS2C(byte kind, int tick, int[] ids, float[] data) implem
 	public static final byte IMPACT = 4;
 	/** ids = {stacks of Focus}, sent only to the owner when the count changes (HUD pips). */
 	public static final byte FOCUS = 5;
+	/** data = {x, y, z (eye), dx, dy, dz (look), index 0..2, reach, cone degrees, hits}: one slash of the Seele Schneider combo. */
+	public static final byte SLASH = 6;
+	/** The arrow kind value of an impact that comes from a slash and not from an arrow. */
+	public static final int KIND_SLASH = 99;
 	public static final int IMPACT_ENTITY = 0;
 	public static final int IMPACT_BLOCK = 1;
 	public static final int MAX_ARROWS = 48;

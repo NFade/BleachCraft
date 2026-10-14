@@ -23,6 +23,11 @@ public final class UryuTargets {
 	private UryuTargets() {
 	}
 
+	/** A push away from {@code from} (the same knockback as every other ability). */
+	public static void knockback(LivingEntity target, Vec3d from, double strength) {
+		Targeting.knockback(target, from, strength);
+	}
+
 	public static boolean valid(ServerPlayerEntity caster, LivingEntity e) {
 		return Targeting.valid(caster, e);
 	}

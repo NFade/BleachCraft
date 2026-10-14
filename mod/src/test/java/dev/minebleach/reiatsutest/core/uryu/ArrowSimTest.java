@@ -291,8 +291,8 @@ class ArrowSimTest {
 	void removeOwnedByKindLeavesTheOthers() {
 		ArrowSim sim = new ArrowSim();
 		sim.spawn(straight(new V3(0, 0, 0), new V3(1, 0, 0), 4f, 50, 0));
-		sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.RAIN, new V3(0, 0, 0), new V3(0, -1, 0), 0, 1.2f, 50, 0, 0.3, -1, 0, 0));
-		assertEquals(1, sim.removeOwned(OWNER, ArrowSim.Kind.RAIN));
+		sim.spawn(new ArrowSim.Spec(OWNER, ArrowSim.Kind.WING, new V3(0, 0, 0), new V3(0, -1, 0), 0, 1.2f, 50, 0, 0.3, -1, 0, 0));
+		assertEquals(1, sim.removeOwned(OWNER, ArrowSim.Kind.WING));
 		assertEquals(1, sim.size());
 		assertEquals(ArrowSim.Kind.BASIC, sim.arrows().get(0).kind());
 	}

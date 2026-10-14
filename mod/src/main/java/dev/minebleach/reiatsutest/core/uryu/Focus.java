@@ -70,7 +70,12 @@ public final class Focus {
 
 	/** The next {@link UryuBalance#FOCUS_GRACE_TICKS} ticks are skipped (shunpo): the stacks stay and nothing is built. */
 	public void grace() {
-		graceLeft = UryuBalance.FOCUS_GRACE_TICKS;
+		grace(UryuBalance.FOCUS_GRACE_TICKS);
+	}
+
+	/** The next {@code ticks} ticks are skipped (shunpo, the lunge of the Seele Schneider): the stacks stay and nothing is built. */
+	public void grace(int ticks) {
+		graceLeft = Math.max(graceLeft, ticks);
 	}
 
 	/** A push (knockback of a hit or of any ability), a state change: everything back to 0. Returns true when a stack was lost. */

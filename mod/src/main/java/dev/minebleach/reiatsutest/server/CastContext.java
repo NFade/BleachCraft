@@ -96,7 +96,6 @@ final class CastContext {
 			case MODE_ATTACK, SCATTER, CAGE -> spec.num(AbilityParams.AIM_RANGE);
 			case IKOROSE, SNAKE_HOOK, BUTOU_RENJIN, KOROSE -> spec.num(AbilityParams.LENGTH); // Gin hitscan lines, like Shirafune
 			case SPRENGER -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RANGE; // Uryu: aimed ground point
-			case LICHT_REGEN -> dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_RANGE;
 			default -> 0.0;
 		};
 		Vec3d aim = range > 0 ? Targeting.rayPoint(p, eye, dir, range) : p.getPos();
@@ -150,11 +149,14 @@ final class CastContext {
 				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_RADIUS;
 				size2 = dev.minebleach.reiatsutest.core.uryu.UryuBalance.SPRENGER_EXPLODE_AT / 20f;
 			}
-			case LICHT_REGEN -> { // radius, seconds of the barrage
-				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_RADIUS;
-				size2 = dev.minebleach.reiatsutest.core.uryu.UryuBalance.RAIN_TICKS / 20f;
+			case WING_BARRAGE -> { // range of the targets, seconds of the barrage
+				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.WING_RANGE;
+				size2 = dev.minebleach.reiatsutest.core.uryu.UryuBalance.WING_TICKS / 20f;
 			}
-			case HIRENKYAKU -> size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.DASH_BLOCKS;
+			case SEELE_SCHNEIDER -> { // lunge blocks, reach of the slashes
+				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.SEELE_LUNGE;
+				size2 = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.SEELE_REACH;
+			}
 			case STERNENSTAUB -> {
 				size = (float) dev.minebleach.reiatsutest.core.uryu.UryuBalance.STAR_LENGTH;
 				size2 = (float) (dev.minebleach.reiatsutest.core.uryu.UryuBalance.STAR_HALF_WIDTH * 2.0);

@@ -2,6 +2,8 @@
   "model": "uryu",
   "display_model": "reiatsu_test:item/uryu_cross_display",
   "emissive_tint": "FFBFD8FF",
+  "hand_scale": { "sealed": 3.0 },
+  "hand_yaw": { "sealed": 90 },
   "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
   "objects": {
     "uryu_cross":       { "diffuse": "uryu_diffuse", "emissive": "uryu_emissive" },
@@ -11,9 +13,9 @@
     "uryu_seele":       { "diffuse": "uryu_diffuse", "emissive": "uryu_emissive" }
   },
   "states": {
-    "sealed":  {"hand": ["uryu_cross"], "other": ["uryu_cross"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
-    "base":    {"hand": ["uryu_bow", "uryu_bow_string"], "other": ["uryu_cross"], "dynamic": [], "icon": "sode_no_shirayuki_sealed_icon"},
-    "shikai":  {"hand": ["uryu_bow", "uryu_bow_string"], "other": ["uryu_cross"], "dynamic": [], "icon": "sode_no_shirayuki_shikai_icon"},
-    "bankai":  {"hand": ["uryu_bow", "uryu_bow_string"], "other": ["uryu_cross"], "dynamic": [], "icon": "sode_no_shirayuki_bankai_icon"}
+    "sealed":  {"hand": ["uryu_cross"], "other": ["uryu_cross"], "dynamic": [], "icon": "uryu_cross_sealed_icon"},
+    "base":    {"hand": ["uryu_bow", "uryu_bow_string"], "other": ["uryu_cross"], "dynamic": [], "icon": "uryu_bow_icon"},
+    "shikai":  {"hand": ["uryu_bow", "uryu_bow_string"], "other": ["uryu_cross"], "dynamic": [], "icon": "uryu_bow_icon"},
+    "bankai":  {"hand": ["uryu_bow", "uryu_bow_string"], "other": ["uryu_cross"], "dynamic": [], "icon": "uryu_bow_icon"}
   }
 }

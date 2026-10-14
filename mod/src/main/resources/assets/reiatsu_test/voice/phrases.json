@@ -782,17 +782,20 @@
       ]
     },
     {
-      "id": "uryu.shikai.hirenkyaku", "states": ["SHIKAI"], "item": "uryu",
-      "interimSafe": false, "optional": false, "say": "Hirenkyaku",
+      "id": "uryu.shikai.seele_schneider", "states": ["SHIKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Seele Schneider",
       "variants": [
-        {"text": "Hirenkyaku", "origin": "C"},
-        {"text": "Hiren kyaku", "origin": "C"},
-        {"text": "Хиренкьяку", "origin": "X"},
-        {"text": "Хирэнкьяку", "origin": "X"},
-        {"text": "ヒレンキャク", "origin": "A"},
-        {"text": "ひれんきゃく", "origin": "A"},
-        {"text": "hirenkiaku", "origin": "A"},
-        {"text": "hi ren kyaku", "origin": "A"}
+        {"text": "Seele Schneider", "origin": "C"},
+        {"text": "Seele Schnaider", "origin": "T"},
+        {"text": "Зеле Шнайдер", "origin": "X"},
+        {"text": "Зеле Шнайдэр", "origin": "X"},
+        {"text": "sele schneider", "origin": "A"},
+        {"text": "zeele schneider", "origin": "A"},
+        {"text": "zeile schneider", "origin": "A"},
+        {"text": "seal schneider", "origin": "A"},
+        {"text": "ゼーレ シュナイダー", "origin": "A"},
+        {"text": "seele schnider", "origin": "A"},
+        {"text": "sea la shnider", "origin": "A"}
       ]
     },
     {
@@ -818,18 +821,19 @@
       ]
     },
     {
-      "id": "uryu.bankai.licht_regen", "states": ["BANKAI"], "item": "uryu",
-      "interimSafe": false, "optional": false, "say": "Licht Regen",
+      "id": "uryu.bankai.wing_barrage", "states": ["BANKAI"], "item": "uryu",
+      "interimSafe": false, "optional": false, "say": "Heiligen Fliegen",
       "variants": [
-        {"text": "Licht Regen", "origin": "C"},
-        {"text": "Лихт Реген", "origin": "X"},
-        {"text": "Лихт Регэн", "origin": "X"},
-        {"text": "lickt regen", "origin": "A"},
-        {"text": "light regen", "origin": "A"},
-        {"text": "リヒト レーゲン", "origin": "A"},
-        {"text": "licht reagan", "origin": "A"},
-        {"text": "lixt regen", "origin": "A"},
-        {"text": "lihct regen", "origin": "A"}
+        {"text": "Heiligen Fliegen", "origin": "M"},
+        {"text": "Heilige Fliegen", "origin": "M"},
+        {"text": "Wing barrage", "origin": "M"},
+        {"text": "Хайлиген Флиген", "origin": "X"},
+        {"text": "Залп крыльев", "origin": "M"},
+        {"text": "hylighen fleegen", "origin": "A"},
+        {"text": "heiligen flügen", "origin": "A"},
+        {"text": "wings barrage", "origin": "A"},
+        {"text": "ハイリゲン フリーゲン", "origin": "A"},
+        {"text": "залп крыла", "origin": "A"}
       ]
     },
     {

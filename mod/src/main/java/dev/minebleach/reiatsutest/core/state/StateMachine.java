@@ -391,7 +391,7 @@ public final class StateMachine {
 		if (now < shunpoEnd) {
 			return reject(RejectReason.ON_COOLDOWN);
 		}
-		ShunpoSpec sp = cfg.shunpo();
+		ShunpoSpec sp = cfg.shunpo().forCharacter(character() != CharacterId.NONE ? character() : held); // Uryu: +2 blocks (UryuBalance)
 		if (!reiatsu.canSpend(sp.costTenths())) {
 			return reject(RejectReason.NOT_ENOUGH_REIATSU);
 		}

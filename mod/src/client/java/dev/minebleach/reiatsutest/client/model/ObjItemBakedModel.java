@@ -144,6 +144,16 @@ public final class ObjItemBakedModel implements BakedModel {
 				return;
 			}
 		}
+		if (states.bow != null && state != ReleaseState.SEALED && isHandMode(mode)) {
+			// Uryu: while the bow is drawn the string is pulled back and the arrow is nocked (client only, follows the real draw time)
+			LivingEntity archer = DrawTracker.renderEntity();
+			if (archer != null && archer.getMainHandStack() == stack && archer.isUsingItem()
+					&& archer.getActiveHand() == net.minecraft.util.Hand.MAIN_HAND) {
+				emitBowDraw(archer, context);
+				stats(t0);
+				return;
+			}
+		}
 		switch (mode) {
 			case GUI -> {
 				if (sm.icon != null) {
@@ -158,17 +168,103 @@ public final class ObjItemBakedModel implements BakedModel {
 				emitDynamic(sm, context);
 			}
 			default -> { // hand modes, and NONE (R1.3: fall back to the hand mesh)
+				Float hs = manifest.handScale.get(state.asString());
+				Float hy = manifest.handYaw.get(state.asString());
+				boolean tweaked = (hs != null && hs != 1f) || (hy != null && hy != 0f);
+				if (tweaked) {
+					// the mesh of this state is bigger or smaller than the display transform expects, or turned wrong (the Uryu pendant):
+					// scale and turn about the grip (the same transform for the normals)
+					final float k = hs == null ? 1f : hs;
+					final double yaw = Math.toRadians(hy == null ? 0f : hy);
+					final float cs = (float) Math.cos(yaw);
+					final float sn = (float) Math.sin(yaw);
+					context.pushTransform(q -> {
+						Vector3f v = new Vector3f();
+						for (int c = 0; c < 4; c++) {
+							q.copyPos(c, v);
+							float x = (v.x - 0.5f) * k;
+							float z = (v.z - 0.5f) * k;
+							q.pos(c, 0.5f + x * cs + z * sn, 0.5f + (v.y - 0.5f) * k, 0.5f - x * sn + z * cs);
+							if (q.hasNormal(c)) {
+								q.copyNormal(c, v);
+								q.normal(c, v.x * cs + v.z * sn, v.y, -v.x * sn + v.z * cs);
+							}
+						}
+						return true;
+					});
+				}
 				sm.handBase.outputTo(em);
 				if (sm.handGlow != null) {
 					sm.handGlow.outputTo(em);
 				}
 				emitDynamic(sm, context);
+				if (tweaked) {
+					context.popTransform();
+				}
 			}
 		}
 		if (STATS) {
 			EMIT_NANOS.addAndGet(System.nanoTime() - t0);
 			EMIT_CALLS.incrementAndGet();
 		}
+	}
+
+	/** How far (model units = blocks) the nock point travels back along the arrow axis at full draw, and where the draw starts. */
+	private static final float PULL_START = 0.04f;
+	private static final float PULL_TRAVEL = 0.26f;
+
+	/**
+	 * The drawn Heilig Bogen: bow, the V string whose middle vertices (model y = 0.5) are pulled back towards the archer (model -Z, the
+	 * string side of the exported bow) by the draw, and the arrow lying on the grip with its tail on the string. The draw follows the same
+	 * curve as the real power ({@code BowDraw}), so the arrow is at full draw when the shot is at full power.
+	 */
+	private void emitBowDraw(LivingEntity archer, RenderContext context) {
+		ObjItemUnbakedModel.BowMeshes b = states.bow;
+		QuadEmitter em = context.getEmitter();
+		float td = net.minecraft.client.MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);
+		double pull = dev.minebleach.reiatsutest.core.uryu.BowDraw.powerAt(archer.getItemUseTime() + td);
+		final float back = PULL_START + PULL_TRAVEL * (float) pull;
+		b.bow.outputTo(em);
+		if (b.bowGlow != null) {
+			b.bowGlow.outputTo(em);
+		}
+		// the arrow: the OBJ arrow lies along +Y from its tail; turn it onto +Z ((x, y, z) -> (x, -z, y) after centring) and put the tail on the nock
+		final float nockZ = 0.395f - back;
+		context.pushTransform(q -> {
+			Vector3f v = new Vector3f();
+			for (int c = 0; c < 4; c++) {
+				q.copyPos(c, v);
+				float x = v.x - 0.5f;
+				float y = v.y - 0.5f;
+				float z = v.z - 0.5f;
+				q.pos(c, 0.5f + x, 0.5f - z, nockZ + y);
+				if (q.hasNormal(c)) {
+					q.copyNormal(c, v);
+					q.normal(c, v.x, -v.z, v.y);
+				}
+			}
+			return true;
+		});
+		b.arrow.outputTo(em);
+		if (b.arrowGlow != null) {
+			b.arrowGlow.outputTo(em);
+		}
+		context.popTransform();
+		context.pushTransform(q -> {
+			Vector3f v = new Vector3f();
+			for (int c = 0; c < 4; c++) {
+				q.copyPos(c, v);
+				if (Math.abs(v.y - 0.5f) < 1.0E-4f) { // the middle of the string follows the nock
+					q.pos(c, v.x, v.y, v.z - back);
+				}
+			}
+			return true;
+		});
+		b.string.outputTo(em);
+		if (b.stringGlow != null) {
+			b.stringGlow.outputTo(em);
+		}
+		context.popTransform();
 	}
 
 	/** Component wise product of two ARGB colours (alpha of the first kept). */
