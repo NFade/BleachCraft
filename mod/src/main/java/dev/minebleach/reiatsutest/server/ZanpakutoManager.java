@@ -256,6 +256,15 @@ public final class ZanpakutoManager {
 		performKido(p, kido, RequestSource.fromCode(pl.source()), Math.max(0, pl.clientSeq()));
 	}
 
+	/** False while the player's cross or released character is Uryu's (design/results/uryu_names_nokido.md): no kido for him. */
+	public static boolean kidoAllowed(ServerPlayerEntity p) {
+		return kidoAllowed(p, session(p));
+	}
+
+	private static boolean kidoAllowed(ServerPlayerEntity p, Session s) {
+		return dev.minebleach.reiatsutest.core.kido.KidoAccess.allowed(ModItems.characterOf(p.getMainHandStack()), s.sm.character());
+	}
+
 	/**
 	 * The one server path of a kido cast (B5), shared by the key ({@code cast_kido}) and the voice bridge. Needs no state and no
 	 * sword. Like every ability it is refused while the block is held (design/PARRY_PLAN.md section 5), before the machine
@@ -263,6 +272,13 @@ public final class ZanpakutoManager {
 	 */
 	public static TransitionResult performKido(ServerPlayerEntity p, KidoId kido, RequestSource source, int seq) {
 		Session s = session(p);
+		if (!kidoAllowed(p, s)) {
+			// Uryu is a Quincy and has no kido (KidoAccess): refused quietly, before the machine charges reiatsu or a cooldown; no reply, no
+			// action bar text (the client does not even send the key)
+			ZanpakutoState st = s.sm.state();
+			ReiatsuTest.LOGGER.debug("[kido] {} cast {} ({}): refused, no kido for this character", p.getName().getString(), kido, source);
+			return new TransitionResult(ResultCode.DENIED_ITEM, dev.minebleach.reiatsutest.core.state.RejectReason.WRONG_ITEM, st, st, List.of());
+		}
 		if (!BlockRules.allowsAbility(ZanpakutoItem.isBlocking(p))) {
 			ZanpakutoState st = s.sm.state();
 			ReiatsuTest.LOGGER.info("[kido] {} cast {} ({}): denied, blocking", p.getName().getString(), kido, source);

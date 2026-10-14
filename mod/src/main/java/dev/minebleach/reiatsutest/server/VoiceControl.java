@@ -184,7 +184,9 @@ public final class VoiceControl implements VoiceIngest.Host {
 		} else if (KidoId.fromCommandId(id) != null) {
 			// kido (B5): no state, no sword; the same server path as the kido keys
 			KidoId k = KidoId.fromCommandId(id);
-			announceHeard(p, "kido.reiatsu_test." + k.key);
+			if (ZanpakutoManager.kidoAllowed(p)) {
+				announceHeard(p, "kido.reiatsu_test." + k.key);
+			}
 			r = ZanpakutoManager.performKido(p, k, RequestSource.VOICE, StateMachine.SERVER_SEQ);
 		} else {
 			AbilityId a = AbilityId.fromCommandId(id);

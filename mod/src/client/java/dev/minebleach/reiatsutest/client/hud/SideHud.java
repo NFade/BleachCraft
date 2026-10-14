@@ -52,7 +52,11 @@ public final class SideHud {
 			boolean vis = visible(mc);
 			SideHudLayout.Result layout = SideHudLayout.compute(w, h, SideHudLayout.compact(FxConfig.hudCompact, w), topReserve);
 			float alpha = (float) Math.min(1.0, HudModel.plateAlpha);
-			KidoCornerHud.draw(g, font, layout, vis, alpha);
+			if (ReiatsuKeys.kidoAvailable()) {
+				KidoCornerHud.draw(g, font, layout, vis, alpha); // Uryu has no kido: no cells for him, the shunpo cell stays
+			} else {
+				KidoCornerHud.reset();
+			}
 			ShunpoSideHud.draw(g, font, layout, vis, alpha);
 		} catch (RuntimeException e) {
 			if (!failedOnce) {
@@ -73,7 +77,7 @@ public final class SideHud {
 				return;
 			}
 			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < 3; i++) {
+			for (int i = 0; i < 3 && ReiatsuKeys.kidoAvailable(); i++) {
 				KidoId id = KidoId.forSlot(i);
 				sb.append(SideCellMath.keyLetter(ReiatsuKeys.KIDO[i].getBoundKeyLocalizedText().getString())).append(' ')
 						.append(label(id == null ? 0 : ClientState.cooldownRemaining(id))).append("  ");

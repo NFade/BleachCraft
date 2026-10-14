@@ -3,6 +3,7 @@ package dev.minebleach.reiatsutest.client.input;
 import dev.minebleach.reiatsutest.client.ClientState;
 import dev.minebleach.reiatsutest.client.net.ClientNet;
 import dev.minebleach.reiatsutest.core.combat.BlockRules;
+import dev.minebleach.reiatsutest.core.kido.KidoAccess;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
@@ -105,11 +106,16 @@ public final class ReiatsuKeys {
 		}
 	}
 
+	/** False while the local player's cross or released character is Uryu's (core KidoAccess). */
+	public static boolean kidoAvailable() {
+		return KidoAccess.allowed(ClientState.heldCharacter(), ClientState.zanpakuto().characterId());
+	}
+
 	/** A kido key: only the local block rule is checked here (like the ability slots), the server re-validates everything. */
 	public static void castKido(MinecraftClient client, int slot) {
 		KidoId kido = KidoId.forSlot(slot);
-		if (kido == null) {
-			return;
+		if (kido == null || !kidoAvailable()) {
+			return; // Uryu has no kido: the key does nothing, nothing is sent
 		}
 		if (client.player != null && !BlockRules.allowsAbility(ZanpakutoItem.isBlocking(client.player))) {
 			ClientNet.feedback(client, ResultCode.DENIED_STATE);

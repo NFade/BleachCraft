@@ -40,6 +40,9 @@ public final class PhraseBook {
 			if (!ctx.gated()) {
 				return true;
 			}
+			if (dev.minebleach.reiatsutest.core.kido.KidoAccess.isKidoCommand(id) && !dev.minebleach.reiatsutest.core.kido.KidoAccess.allowed(ctx.held())) {
+				return false; // Uryu (the Quincy cross in hand) has no kido: the kido phrases are not considered at all
+			}
 			return states.contains(ctx.state()) && (item == CharacterId.NONE || item == ctx.held());
 		}
 	}

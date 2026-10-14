@@ -27,7 +27,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 ## 1. Command list
 
-**19 commands** (18 required, 1 optional: `byakuya.bankai.senkei`). Round 6 added `rukia.bankai.ice_wall` (as `ice_spike`; R11 T5 turned it into the ice wall, same byte code 10) and `byakuya.shikai.cage`. The last three (`kido.*`, B5) are valid in every state with any sword or none. Branch gin-uryu added 16 more commands, those of Gin Ichimaru and Uryu Ishida (sections 1.20 to 1.35).
+**19 commands** (18 required, 1 optional: `byakuya.bankai.senkei`). Round 6 added `rukia.bankai.ice_wall` (as `ice_spike`; R11 T5 turned it into the ice wall, same byte code 10) and `byakuya.shikai.cage`. The last three (`kido.*`, B5) are valid in every state with any sword or none, except for Uryu (no kido for the Quincy: gated off while his cross is in hand). Branch gin-uryu added 16 more commands, those of Gin Ichimaru and Uryu Ishida (sections 1.20 to 1.35).
 
 | id | state | item in hand | canonical phrase | weak | notes |
 |---|---|---|---|---|---|
@@ -47,7 +47,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 | `byakuya.bankai.senkei` | BANKAI | Byakuya's zanpakuto | Senkei | no | OPTIONAL (ART_BIBLE stretch). Build only if Senkei is built. |
 | `common.seal` | BASE / SHIKAI / BANKAI | either zanpakuto | (mod-defined) Seal | yes | Back to SEALED (sheathed) from BASE, SHIKAI or BANKAI. Mod-defined. Whole-utterance only. |
 | `kido.byakurai` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Hado no yon, Byakurai | no | Kido (B5): Hado 4, white lightning beam. Castable in every state, no sword needed. Number optional, "Hado" alone never fires. |
-| `kido.shakkaho` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Hado no sanjuichi, Shakkaho | no | Kido (B5): Hado 31, red fireball with a burst. Every state, no sword. Number optional, "Hado" alone never fires. |
+| `kido.shakkaho` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Hado no sanjuichi, Shakkaho | no | Kido (B5): Hado 31, red fireball with a burst. Every state, no sword (not for Uryu). Number optional, "Hado" alone never fires. |
 | `kido.sai` | SEALED / BASE / SHIKAI / BANKAI | any sword or none | Bakudo no ichi, Sai | no | Kido (B5): Bakudo 1, short binding. Every state, no sword. Lone "Sai" and lone "Bakudo" are weak (whole utterance). |
 | `gin.shikai.release` | BASE | Gin's Shinso | Ikorose, Shinso | no | BASE to SHIKAI (the wakizashi must be drawn first). Canon release phrase (Shoot to kill). Lone "Ikorose" is the same word as the shikai ability, a different state. |
 | `gin.shikai.ikorose` | SHIKAI | Gin's Shinso | Ikorose | no | Z: the instant thrust. Canon word, same as the release but in SHIKAI. |
@@ -349,7 +349,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 - **Required state:** any (SEALED, BASE, SHIKAI or BANKAI). **Item:** any sword, or none (bare hands). Costs reiatsu and has a cooldown (server).
 - **Canonical phrase:** Hado no yon, Byakurai
-- **Notes:** Hado no 4, Byakurai (white lightning): a thin hitscan beam. Castable in ANY state with ANY sword or bare hands. The number is optional, the name alone is enough; "Hado" alone is never enough (it would be ambiguous with Hado 31).
+- **Notes:** Hado no 4, Byakurai (white lightning): a thin hitscan beam. Castable in ANY state with ANY sword or bare hands. Not for Uryu: with his Quincy cross in the main hand the kido phrases are gated off (core KidoAccess, PhraseBook.Command.validIn); the server refuses a kido cast for him as well. The number is optional, the name alone is enough; "Hado" alone is never enough (it would be ambiguous with Hado 31).
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
@@ -380,7 +380,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 - **Required state:** any (SEALED, BASE, SHIKAI or BANKAI). **Item:** any sword, or none (bare hands). Costs reiatsu and has a cooldown (server).
 - **Canonical phrase:** Hado no sanjuichi, Shakkaho
-- **Notes:** Hado no 31, Shakkaho (red fire cannon): a red fireball that bursts where it lands. Castable in ANY state with ANY sword or bare hands. Short key (sakaho, 6 letters): exact-only, so the spelling variants of the ASR are explicit aliases in the generator. The number is optional; "Hado" alone is never enough.
+- **Notes:** Hado no 31, Shakkaho (red fire cannon): a red fireball that bursts where it lands. Castable in ANY state with ANY sword or bare hands. Not for Uryu: with his Quincy cross in the main hand the kido phrases are gated off (core KidoAccess, PhraseBook.Command.validIn); the server refuses a kido cast for him as well. Short key (sakaho, 6 letters): exact-only, so the spelling variants of the ASR are explicit aliases in the generator. The number is optional; "Hado" alone is never enough.
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
@@ -412,7 +412,7 @@ Sources: `MASTER_PROMPT.md` section 5 (phase 5 command table) and section 10; `r
 
 - **Required state:** any (SEALED, BASE, SHIKAI or BANKAI). **Item:** any sword, or none (bare hands). Costs reiatsu and has a cooldown (server).
 - **Canonical phrase:** Bakudo no ichi, Sai
-- **Notes:** Bakudo no 1, Sai (restraint): a short range binding, the target cannot move for a moment. Castable in ANY state with ANY sword or bare hands. Bakudo is the only binding spell the mod has, so "Bakudo" alone fires it (weak, whole utterance); a lone "Sai" is weak too (3 letters).
+- **Notes:** Bakudo no 1, Sai (restraint): a short range binding, the target cannot move for a moment. Castable in ANY state with ANY sword or bare hands. Not for Uryu: with his Quincy cross in the main hand the kido phrases are gated off (core KidoAccess, PhraseBook.Command.validIn); the server refuses a kido cast for him as well. Bakudo is the only binding spell the mod has, so "Bakudo" alone fires it (weak, whole utterance); a lone "Sai" is weak too (3 letters).
 
 | Group | Phrase | Origin | Key form |
 |---|---|---|---|
