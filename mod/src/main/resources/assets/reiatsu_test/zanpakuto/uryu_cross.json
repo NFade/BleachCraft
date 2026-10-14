@@ -7,9 +7,12 @@
   "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
   "objects": {
     "uryu_cross":       { "diffuse": "uryu_diffuse", "emissive": "uryu_emissive" },
-    "uryu_bow":         { "diffuse": "uryu_diffuse", "emissive": "uryu_emissive" },
+    "uryu_bow":         { "diffuse": "uryu_fx_diffuse", "emissive": "uryu_fx_emissive", "model": "uryu_fx" },
+    "uryu_bow_flex_1":  { "diffuse": "uryu_fx_diffuse", "emissive": "uryu_fx_emissive", "model": "uryu_fx" },
+    "uryu_bow_flex_2":  { "diffuse": "uryu_fx_diffuse", "emissive": "uryu_fx_emissive", "model": "uryu_fx" },
+    "uryu_bow_flex_3":  { "diffuse": "uryu_fx_diffuse", "emissive": "uryu_fx_emissive", "model": "uryu_fx" },
     "uryu_bow_string":  { "diffuse": "uryu_diffuse", "emissive": "uryu_emissive" },
-    "uryu_arrow":       { "diffuse": "uryu_diffuse", "emissive": "uryu_emissive" },
+    "uryu_arrow":       { "diffuse": "uryu_fx_diffuse", "emissive": "uryu_fx_emissive", "model": "uryu_fx" },
     "uryu_seele":       { "diffuse": "uryu_diffuse", "emissive": "uryu_emissive" }
   },
   "states": {

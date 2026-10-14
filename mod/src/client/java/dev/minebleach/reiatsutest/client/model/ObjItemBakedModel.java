@@ -2,8 +2,11 @@ package dev.minebleach.reiatsutest.client.model;
 
 import dev.minebleach.reiatsutest.client.fx.ShikaiDissolve;
 import dev.minebleach.reiatsutest.client.fx.FxTune;
+import dev.minebleach.reiatsutest.client.fx.UryuBowFx;
 import dev.minebleach.reiatsutest.core.fx.DissolveMath;
 import dev.minebleach.reiatsutest.core.fx.DissolveSwirl;
+import dev.minebleach.reiatsutest.core.fx.UryuBowForm;
+import dev.minebleach.reiatsutest.core.fx.UryuBowGlow;
 import dev.minebleach.reiatsutest.core.obj.DrawRig;
 import dev.minebleach.reiatsutest.core.obj.ItemManifest;
 import net.minecraft.entity.LivingEntity;
@@ -144,12 +147,27 @@ public final class ObjItemBakedModel implements BakedModel {
 				return;
 			}
 		}
+		double bowK = 1.0; // the emissive multiplier of the Uryu bow (and of the pendant while it gathers), see UryuBowGlow
+		if (states.bow != null && isHandMode(mode)) {
+			LivingEntity fh = DrawTracker.renderEntity();
+			if (fh != null && fh.getMainHandStack() == stack) {
+				double ft = state == ReleaseState.SEALED ? -1.0 : UryuBowFx.formAge(fh.getId());
+				if (UryuBowForm.itemForming(ft)) {
+					// URYU_VFX_STORYBOARD 2.1: the bow forms from Reishi: the pendant stays in the hand (brightening x1.6) until 0.30 s, then the bow
+					// fades in as a translucent mesh while its limbs relax from the bent flex bows to the rest curve
+					emitBowForming(ft, fh, context);
+					stats(t0);
+					return;
+				}
+				bowK = UryuBowFx.glowMultiplier(fh, state == ReleaseState.SEALED);
+			}
+		}
 		if (states.bow != null && state != ReleaseState.SEALED && isHandMode(mode)) {
 			// Uryu: while the bow is drawn the string is pulled back and the arrow is nocked (client only, follows the real draw time)
 			LivingEntity archer = DrawTracker.renderEntity();
 			if (archer != null && archer.getMainHandStack() == stack && archer.isUsingItem()
 					&& archer.getActiveHand() == net.minecraft.util.Hand.MAIN_HAND) {
-				emitBowDraw(archer, context);
+				emitBowDraw(archer, context, bowK);
 				stats(t0);
 				return;
 			}
@@ -167,41 +185,7 @@ public final class ObjItemBakedModel implements BakedModel {
 				}
 				emitDynamic(sm, context);
 			}
-			default -> { // hand modes, and NONE (R1.3: fall back to the hand mesh)
-				Float hs = manifest.handScale.get(state.asString());
-				Float hy = manifest.handYaw.get(state.asString());
-				boolean tweaked = (hs != null && hs != 1f) || (hy != null && hy != 0f);
-				if (tweaked) {
-					// the mesh of this state is bigger or smaller than the display transform expects, or turned wrong (the Uryu pendant):
-					// scale and turn about the grip (the same transform for the normals)
-					final float k = hs == null ? 1f : hs;
-					final double yaw = Math.toRadians(hy == null ? 0f : hy);
-					final float cs = (float) Math.cos(yaw);
-					final float sn = (float) Math.sin(yaw);
-					context.pushTransform(q -> {
-						Vector3f v = new Vector3f();
-						for (int c = 0; c < 4; c++) {
-							q.copyPos(c, v);
-							float x = (v.x - 0.5f) * k;
-							float z = (v.z - 0.5f) * k;
-							q.pos(c, 0.5f + x * cs + z * sn, 0.5f + (v.y - 0.5f) * k, 0.5f - x * sn + z * cs);
-							if (q.hasNormal(c)) {
-								q.copyNormal(c, v);
-								q.normal(c, v.x * cs + v.z * sn, v.y, -v.x * sn + v.z * cs);
-							}
-						}
-						return true;
-					});
-				}
-				sm.handBase.outputTo(em);
-				if (sm.handGlow != null) {
-					sm.handGlow.outputTo(em);
-				}
-				emitDynamic(sm, context);
-				if (tweaked) {
-					context.popTransform();
-				}
-			}
+			default -> emitHandDefault(sm, state, context, bowK); // hand modes, and NONE (R1.3: fall back to the hand mesh)
 		}
 		if (STATS) {
 			EMIT_NANOS.addAndGet(System.nanoTime() - t0);
@@ -209,25 +193,128 @@ public final class ObjItemBakedModel implements BakedModel {
 		}
 	}
 
+	/**
+	 * The hand mesh of a state with the per state scale and turn of the manifest (the Uryu pendant is only 12 cm and flat); {@code glowK} is
+	 * the multiplier of the emissive pass ({@link UryuBowGlow}, 1 for every item but the Uryu bow and pendant).
+	 */
+	private void emitHandDefault(ObjItemUnbakedModel.StateMeshes sm, ReleaseState state, RenderContext context, double glowK) {
+		Float hs = manifest.handScale.get(state.asString());
+		Float hy = manifest.handYaw.get(state.asString());
+		boolean tweaked = (hs != null && hs != 1f) || (hy != null && hy != 0f);
+		if (tweaked) {
+			// the mesh of this state is bigger or smaller than the display transform expects, or turned wrong (the Uryu pendant):
+			// scale and turn about the grip (the same transform for the normals)
+			final float k = hs == null ? 1f : hs;
+			final double yaw = Math.toRadians(hy == null ? 0f : hy);
+			final float cs = (float) Math.cos(yaw);
+			final float sn = (float) Math.sin(yaw);
+			context.pushTransform(q -> {
+				Vector3f v = new Vector3f();
+				for (int c = 0; c < 4; c++) {
+					q.copyPos(c, v);
+					float x = (v.x - 0.5f) * k;
+					float z = (v.z - 0.5f) * k;
+					q.pos(c, 0.5f + x * cs + z * sn, 0.5f + (v.y - 0.5f) * k, 0.5f - x * sn + z * cs);
+					if (q.hasNormal(c)) {
+						q.copyNormal(c, v);
+						q.normal(c, v.x * cs + v.z * sn, v.y, -v.x * sn + v.z * cs);
+					}
+				}
+				return true;
+			});
+		}
+		sm.handBase.outputTo(context.getEmitter());
+		outputGlow(sm.handGlow, context, glowK);
+		emitDynamic(sm, context);
+		if (tweaked) {
+			context.popTransform();
+		}
+	}
+
+	/**
+	 * The emissive overlay of the Uryu bow or pendant with the effect multiplier {@code k} ({@link UryuBowGlow}): below 1 the overlay is dimmed
+	 * (its colour alpha is its intensity), above 1 its colour moves towards white and a second pass adds the rest. {@code k} about 1 draws the
+	 * mesh as baked, so every other item takes the plain path.
+	 */
+	private static void outputGlow(Mesh glow, RenderContext context, double k) {
+		if (glow == null) {
+			return;
+		}
+		if (UryuBowGlow.neutral(k)) {
+			glow.outputTo(context.getEmitter());
+			return;
+		}
+		context.pushTransform(q -> {
+			for (int c = 0; c < 4; c++) {
+				q.color(c, UryuBowGlow.argb(q.color(c), k));
+			}
+			return true;
+		});
+		glow.outputTo(context.getEmitter());
+		context.popTransform();
+		double extra = UryuBowGlow.extraPass(k);
+		if (extra > 0.01) {
+			context.pushTransform(q -> {
+				for (int c = 0; c < 4; c++) {
+					q.color(c, UryuBowGlow.scaleAlpha(UryuBowGlow.argb(q.color(c), k), extra));
+				}
+				return true;
+			});
+			glow.outputTo(context.getEmitter());
+			context.popTransform();
+		}
+	}
+
+	/**
+	 * The item side of the bow forming (URYU_VFX_STORYBOARD 2.1, {@code t} seconds since the draw started): until 0.30 the pendant (the sealed
+	 * hand mesh, emissive x1.6), then the translucent bow fading in over 0.15 s while the limbs relax through the flex bows, the straight string
+	 * from the string sweep on (0.38).
+	 */
+	private void emitBowForming(double t, LivingEntity holder, RenderContext context) {
+		if (UryuBowForm.pendantShown(t)) {
+			emitHandDefault(states.byState[ReleaseState.SEALED.ordinal()], ReleaseState.SEALED, context, UryuBowForm.pendantBoost(t));
+			return;
+		}
+		ObjItemUnbakedModel.BowMeshes b = states.bow;
+		QuadEmitter em = context.getEmitter();
+		final double alpha = UryuBowForm.bowAlpha(t);
+		int idx = UryuBowForm.flexIndex(t);
+		double k = UryuBowFx.glowMultiplier(holder, false);
+		context.pushTransform(q -> {
+			for (int c = 0; c < 4; c++) {
+				q.color(c, UryuBowGlow.scaleAlpha(q.color(c), alpha));
+			}
+			return true;
+		});
+		b.formBase[idx].outputTo(em);
+		outputGlow(b.formGlow[idx], context, k);
+		context.popTransform();
+		if (t >= UryuBowForm.T_STRING) {
+			b.straight.outputTo(em);
+			outputGlow(b.straightGlow, context, k);
+		}
+	}
+
 	/** How far (model units = blocks) the nock point travels back along the arrow axis at full draw, and where the draw starts. */
 	private static final float PULL_START = 0.04f;
 	private static final float PULL_TRAVEL = 0.26f;
+	/** The arrow of the Quincy set lies on the arrow rest of the bow (empty {@code arrow_rest}, 0.03 above the grip) and its tail starts 0.02 from the origin. */
+	private static final float ARROW_REST_UP = 0.03f;
+	private static final float ARROW_TAIL_GAP = 0.02f;
 
 	/**
 	 * The drawn Heilig Bogen: bow, the V string whose middle vertices (model y = 0.5) are pulled back towards the archer (model -Z, the
 	 * string side of the exported bow) by the draw, and the arrow lying on the grip with its tail on the string. The draw follows the same
 	 * curve as the real power ({@code BowDraw}), so the arrow is at full draw when the shot is at full power.
 	 */
-	private void emitBowDraw(LivingEntity archer, RenderContext context) {
+	private void emitBowDraw(LivingEntity archer, RenderContext context, double glowK) {
 		ObjItemUnbakedModel.BowMeshes b = states.bow;
 		QuadEmitter em = context.getEmitter();
 		float td = net.minecraft.client.MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);
 		double pull = dev.minebleach.reiatsutest.core.uryu.BowDraw.powerAt(archer.getItemUseTime() + td);
 		final float back = PULL_START + PULL_TRAVEL * (float) pull;
 		b.bow.outputTo(em);
-		if (b.bowGlow != null) {
-			b.bowGlow.outputTo(em);
-		}
+		outputGlow(b.bowGlow, context, glowK);
 		// the arrow: the OBJ arrow lies along +Y from its tail; turn it onto +Z ((x, y, z) -> (x, -z, y) after centring) and put the tail on the nock
 		final float nockZ = 0.395f - back;
 		context.pushTransform(q -> {
@@ -237,7 +324,7 @@ public final class ObjItemBakedModel implements BakedModel {
 				float x = v.x - 0.5f;
 				float y = v.y - 0.5f;
 				float z = v.z - 0.5f;
-				q.pos(c, 0.5f + x, 0.5f - z, nockZ + y);
+				q.pos(c, 0.5f + x, ARROW_REST_UP + 0.5f - z, nockZ - ARROW_TAIL_GAP + y);
 				if (q.hasNormal(c)) {
 					q.copyNormal(c, v);
 					q.normal(c, v.x, -v.z, v.y);
@@ -246,9 +333,7 @@ public final class ObjItemBakedModel implements BakedModel {
 			return true;
 		});
 		b.arrow.outputTo(em);
-		if (b.arrowGlow != null) {
-			b.arrowGlow.outputTo(em);
-		}
+		outputGlow(b.arrowGlow, context, glowK);
 		context.popTransform();
 		context.pushTransform(q -> {
 			Vector3f v = new Vector3f();
@@ -261,9 +346,7 @@ public final class ObjItemBakedModel implements BakedModel {
 			return true;
 		});
 		b.string.outputTo(em);
-		if (b.stringGlow != null) {
-			b.stringGlow.outputTo(em);
-		}
+		outputGlow(b.stringGlow, context, glowK);
 		context.popTransform();
 	}
 

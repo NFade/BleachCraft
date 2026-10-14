@@ -20,34 +20,30 @@ final class UryuAuraFx {
 	}
 
 	static void init() {
-		// nothing yet (U-FX 2 and 3 add their per frame sources here)
+		UryuFocusFx.init(); // U-FX 2: the Focus feedback (its per frame source and tick hook)
+	}
+
+	/**
+	 * The Blut Arterie release (effect 70, SHIKAI, U-FX 6): the timeline of {@link UryuBlutFx} and the vein overlay clock of
+	 * {@link UryuQuincyFeature}. The state aura of SHIKAI (veins at 0.5 / 0.8, the forearm motes) lives in the feature's per tick hook.
+	 */
+	static void releaseShikai(dev.minebleach.reiatsutest.net.EffectEventS2C e) {
+		UryuBlutFx.release(e);
 	}
 
 	/** The FOCUS packet: {@code ids = {stacks, casterId}}; an older packet without caster id is the owner's own count. */
 	static void onFocus(int[] ids) {
-		int stacks = ids.length > 0 ? Math.max(0, Math.min(3, ids[0])) : 0;
-		ClientPlayerEntity me = MinecraftClient.getInstance().player;
-		if (ids.length < 2 || me != null && ids[1] == me.getId()) {
-			UryuFx.focus = stacks;
-			return;
-		}
-		if (stacks <= 0) {
-			OTHERS.remove(ids[1]);
-		} else {
-			OTHERS.put(ids[1], stacks);
-		}
+		UryuFocusFx.onFocus(ids); // U-FX 2: the bookkeeping and the Focus feedback on the body live in UryuFocusFx
 	}
 
-	/** Stacks of Focus of another player (0 when none was sent). */
+	/** Stacks of Focus of a player (the local one too; 0 when none was sent). */
 	static int focusOf(int entityId) {
-		return OTHERS.getOrDefault(entityId, 0);
+		return UryuFocusFx.stacksOf(entityId);
 	}
 
-	/** Per frame: nothing of another player's Focus stays when there is no world (disconnect). */
+	/** Per frame: the Focus state of players that are gone (or all of it without a world) is dropped. */
 	static void frame() {
-		if (!OTHERS.isEmpty() && MinecraftClient.getInstance().world == null) {
-			OTHERS.clear();
-		}
+		UryuFocusFx.cleanup();
 	}
 
 	/** The Uryu shunpo: a blue Reishi trail along the path and a Reishi platform disc under the feet at the start and the arrival. */

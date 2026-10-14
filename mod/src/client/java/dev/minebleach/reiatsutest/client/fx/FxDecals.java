@@ -279,7 +279,7 @@ public final class FxDecals {
 			}
 		}
 		// one layer per texture: all decals of a texture are written together
-		for (Identifier tex : new Identifier[] {FROST, CRACK}) {
+		for (Identifier tex : new Identifier[] {FROST, CRACK, PENT_SCAR, BURST_SCAR}) {
 			VertexConsumer vc = null;
 			for (Decal d : DECALS) {
 				if (!d.tex.equals(tex) || now < d.birth) {

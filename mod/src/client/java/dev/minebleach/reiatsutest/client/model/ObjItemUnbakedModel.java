@@ -188,6 +188,20 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		b.bowGlow = buildGlow(mb, List.of("uryu_bow"), sprite, glow, NO_SHIFT, count);
 		b.arrow = buildBase(mb, List.of("uryu_arrow"), sprite, cutout, translucent, NO_SHIFT, count);
 		b.arrowGlow = buildGlow(mb, List.of("uryu_arrow"), sprite, glow, NO_SHIFT, count);
+		// the forming bow (URYU_VFX_STORYBOARD 2.1): the rest bow and the three flex bows (limbs bent 3, 6 and 9 degrees) as translucent meshes
+		// that fade in while the limbs relax, and the straight string on its own (it appears at the string sweep); a missing flex bow falls back to the rest bow
+		b.formBase = new Mesh[4];
+		b.formGlow = new Mesh[4];
+		for (int i = 0; i < 4; i++) {
+			String obj = i == 0 ? "uryu_bow" : "uryu_bow_flex_" + i;
+			if (!data.manifest().objects.containsKey(obj)) {
+				obj = "uryu_bow";
+			}
+			b.formBase[i] = buildBase(mb, List.of(obj), sprite, translucent, translucent, NO_SHIFT, count);
+			b.formGlow[i] = buildGlow(mb, List.of(obj), sprite, glow, NO_SHIFT, count);
+		}
+		b.straight = buildBase(mb, List.of("uryu_bow_string"), sprite, cutout, translucent, NO_SHIFT, count);
+		b.straightGlow = buildGlow(mb, List.of("uryu_bow_string"), sprite, glow, NO_SHIFT, count);
 		ItemManifest.ObjectDef sd = data.manifest().objects.get("uryu_bow_string");
 		List<ObjGeometry.Quad> src = data.quads().get("uryu_bow_string");
 		float[][] uv = src.get(0).uv();
@@ -252,6 +266,12 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		Mesh arrowGlow;
 		Mesh string;
 		Mesh stringGlow;
+		/** The forming bow (translucent): index 0 the rest bow, 1 to 3 the flex bows; with their emissive overlays (an entry may be null). */
+		Mesh[] formBase;
+		Mesh[] formGlow;
+		/** The straight string alone, for the forming (cutout) and its emissive overlay. */
+		Mesh straight;
+		Mesh straightGlow;
 	}
 
 	private Mesh buildBase(MeshBuilder mb, List<String> objects, Function<String, Sprite> sprite, RenderMaterial mat,

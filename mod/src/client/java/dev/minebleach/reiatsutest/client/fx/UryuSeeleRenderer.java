@@ -23,6 +23,14 @@ import net.minecraft.util.math.Vec3d;
 public final class UryuSeeleRenderer {
 	private static final Identifier TEXTURE = ReiatsuTest.id("textures/item/uryu_diffuse.png");
 	private static final int FULL_LIGHT = 0xF000F0;
+	/**
+	 * The Quincy tone of a Seele Schneider (U-FX 4): the silver of the mesh multiplied with the cold rim colour Q1 ({@code #E4FAFF}), so the
+	 * blade reads white-cyan next to the glow card at its hilt; the Sprenger modulates it between {@link #TONE_DIM} and white with the
+	 * pulse of the pentagon ({@link #tone}).
+	 */
+	public static final int TONE_QUINCY = 0xFFE4FAFF;
+	/** The dim end of the tone (the colour of the daggers while the pentagon holds its breath at the anticipation). */
+	public static final int TONE_DIM = 0xFF7FA6B8;
 
 	/** One dagger. Fields are plain on purpose: the owners (Sprenger, the combo) update them. */
 	public static final class Seele {
@@ -84,6 +92,25 @@ public final class UryuSeeleRenderer {
 
 	public static int live() {
 		return LIVE.size();
+	}
+
+	/** Colour of the Quincy tone at a brightness 0 (dim) to 1 (white), ARGB for {@link Seele#color}. */
+	public static int tone(double brightness) {
+		double k = Math.max(0.0, Math.min(1.0, brightness));
+		int r = (int) Math.round(((TONE_DIM >> 16) & 255) + (255 - ((TONE_DIM >> 16) & 255)) * k);
+		int g = (int) Math.round(((TONE_DIM >> 8) & 255) + (255 - ((TONE_DIM >> 8) & 255)) * k);
+		int b = (int) Math.round((TONE_DIM & 255) + (255 - (TONE_DIM & 255)) * k);
+		return 0xFF000000 | (r << 16) | (g << 8) | b;
+	}
+
+	/** Height of a dagger above its resting place at the time {@code now} (it falls from {@link Seele#dropHeight} with an easing in). */
+	public static double lift(Seele s, double now) {
+		double age = now - s.born;
+		if (s.fall > 0 && age >= 0 && age < s.fall) {
+			double f = age / s.fall;
+			return s.dropHeight * (1.0 - f * f);
+		}
+		return 0.0;
 	}
 
 	private static void draw(WorldRenderContext ctx) {

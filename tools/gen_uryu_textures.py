@@ -9,8 +9,8 @@ ONE/ONE blending, fade = vertex colour); alpha textures are RGBA white or palett
 scars) are nearest filtered and alpha-quantised to 8 levels; glow sprites are smooth. This script NEVER touches fx_glow.png (the Rukia and
 Byakuya atlas, owned by gen_fx_textures.py): the Quincy sprites live in their own 512 x 256 atlas uryu_glow.png.
 
-NOT generated here (they come after the Blender models, U-FX 1): textures/fx/uryu_vein_skin.png and textures/item/uryu_fx_diffuse.png /
-uryu_fx_emissive.png.
+NOT generated here: textures/item/uryu_fx_diffuse.png / uryu_fx_emissive.png (the Blender atlas, written by blender/scripts/uq_paint.py; this
+file never writes them). The vein skin (U-FX 6: textures/fx/uryu_vein_skin.png and uryu_vein/stage_NN.png) has its own clearly separated block.
 
 The rect table URYU_RECTS below is the single source for the Java side too: core/fx/GlowAtlasTable.java repeats it and the unit test
 GlowAtlasTableTest parses this file, the generated uryu_glow_atlas.json and the PNG and fails when they differ.
@@ -818,6 +818,188 @@ def gen_uryu_glitter():
     save(os.path.join(ASSETS, "textures", "fx", "uryu_glitter.png"), np.stack([g, g, g], -1))
 
 
+# =============================================================================================== U-FX 6: the vein skin (Blut Arterie)
+# Everything of the vein overlay lives in this block. It writes ONLY textures/fx/uryu_vein_skin.png and textures/fx/uryu_vein/stage_NN.png
+# (NEVER the Blender atlas files uryu_fx_diffuse.png / uryu_fx_emissive.png). Design: URYU_VFX_STORYBOARD 2.5, 4.2 (uryu_vein_skin), 4.4.
+#
+# The overlay is drawn by client/fx/UryuQuincyFeature over the posed player model in the PLAYER SKIN UV layout (64 x 64), on arms, chest and
+# neck only (the head is hidden in that pass, the legs are not painted). No shader is available for a per pixel draw-on mask, so the
+# "alpha = 255 - v_gradient" idea of 4.2 became VEIN_STAGES textures: stage k contains every vein pixel whose draw-on gradient g (0 at the
+# fingertips, 1 at the neck) is <= (k+1)/VEIN_STAGES, and the pixels of the last 1.5 steps are the bright head (Q1) that the next stage turns
+# into Q3. The last stage is the finished skin and is also written as uryu_vein_skin.png. Rules of 4.2: seed 4711, random walk step 2 px,
+# turn <= 40 deg, fork probability 0.12, 3 passes (arms first), segments of 3 to 6 px with 1 px gaps, Q3 alpha 255 with a Q1 core pixel on
+# every third segment; the halo (Q4 alpha 110, the right and lower neighbours of a vein pixel) is what makes the lines read on a pale skin at noon.
+# The faces below are only the columns that belong to the arm in BOTH layouts (classic 4 px and slim 3 px arms), so one texture serves both.
+VEIN_SEED = 4711
+VEIN_STAGES = 12
+VEIN_HALO_ALPHA = 110
+# The veins are walked on UNWRAPPED belts: a belt is the list of the pixel columns that go around a limb in order (the columns that exist in both
+# the classic and the slim layout), so a vein can run diagonally up and around the arm over the face edges like a circuit trace.
+# (name, columns around the limb, top row, bottom row (the hand end), g at the top row, g at the bottom row, walkers, role)
+VEIN_BELTS = [
+    # right arm (u 40, v 16): right 40..43, front 44..46, left 48..50, back 52..53; rows 20..31
+    ("r_arm", [40, 41, 42, 43, 44, 45, 46, 48, 49, 50, 52, 53], 20, 31, 0.45, 0.0, 2, "arm"),
+    # left arm (u 32, v 48): right 32..35, front 36..38, left 40..42, back 44..45; rows 52..63
+    ("l_arm", [32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 44, 45], 52, 63, 0.45, 0.0, 2, "arm"),
+    # torso (u 16, v 16): right side 16..19, front 20..27, left side 28..31, back 32..39; rows 20..31 (row 20 is the collar = the neck, lit last)
+    ("torso", list(range(16, 40)), 20, 31, 1.0, 0.50, 3, "torso"),
+]
+# shoulder caps (top faces of the arms): common columns, 4 rows, a short vein each side; g = 0.5
+VEIN_CAPS = [("r_arm_top", 44, 16, 46, 19), ("l_arm_top", 36, 48, 38, 51)]
+# the neck: a V of two short veins at the collar of the chest front and back converging at the middle (rows 20..23), g 0.88..1.0
+VEIN_NECK = [("neck_front", [((22, 23), (23, 20)), ((25, 23), (24, 20))]), ("neck_back", [((34, 23), (35, 20)), ((37, 23), (36, 20))])]
+
+
+def _line_px(x0, y0, x1, y1):
+    n = max(1, int(round(max(abs(x1 - x0), abs(y1 - y0)))))
+    out = []
+    for i in range(n + 1):
+        p = (int(round(x0 + (x1 - x0) * i / n)), int(round(y0 + (y1 - y0) * i / n)))
+        if not out or out[-1] != p:
+            out.append(p)
+    return out
+
+
+def _walk(prng, belt, start, heading, depth, paths, forks_left):
+    """One random walk on a belt (step 2 px, turn <= 40 deg per step, never more than 60 deg off "up"); forks (p 0.12) start new walks.
+    Coordinates are unwrapped (x may leave 0..n, the pixel lookup wraps); appends a list of belt pixels (ux, y) to `paths`."""
+    y0, y1 = belt[2], belt[3]
+    x, y = float(start[0]), float(start[1])
+    pts = [(x, y)]
+    up = -math.pi / 2
+    for _ in range(40):
+        heading += math.radians(prng.uniform(-40, 40))
+        heading = up + max(-math.radians(60), min(math.radians(60), heading - up))
+        x += 2 * math.cos(heading)
+        y = max(y + 2 * math.sin(heading), y0)
+        pts.append((x, y))
+        if prng.random() < 0.12 and depth < 2 and forks_left[0] > 0:
+            forks_left[0] -= 1
+            side = 1 if prng.random() < 0.5 else -1
+            _walk(prng, belt, (x, y), heading + side * math.radians(prng.uniform(30, 60)), depth + 1, paths, forks_left)
+        if y <= y0 + 0.01:
+            break
+    px = []
+    for a, b in zip(pts, pts[1:]):
+        for p in _line_px(a[0], a[1], b[0], b[1]):
+            if not px or px[-1] != p:
+                px.append(p)
+    paths.append(px)
+
+
+def vein_paint():
+    """Returns (rgba, g): the finished vein skin (64 x 64 x 4 uint8) and the draw-on gradient of every pixel (float32, nan where empty)."""
+    import random
+    prng = random.Random(VEIN_SEED)
+    img = np.zeros((64, 64, 4), np.uint8)
+    gmap = np.full((64, 64), np.nan, np.float32)
+    kind = np.zeros((64, 64), np.uint8)  # 1 vein Q3, 2 vein core Q1, 3 halo
+    owner = np.full((64, 64), -1, np.int8)  # the belt that painted the pixel (halo only inside the same belt)
+    q3, q1, q4 = [int(v) for v in hexrgb(Q3)], [int(v) for v in hexrgb(Q1)], [int(v) for v in hexrgb(Q4)]
+
+    def gval(belt, y):
+        y0, y1, gt, gb = belt[2], belt[3], belt[4], belt[5]
+        return gt + (gb - gt) * ((y - y0) / max(1, (y1 - y0)))
+
+    def put_path(bi, belt, path, seg_index):
+        """Segments of 3..6 px separated by 1 px gaps; every third segment gets a core pixel."""
+        cols = belt[1]
+        i = 0
+        while i < len(path):
+            seg = path[i:i + prng.randint(3, 6)]
+            for k, (ux, uy) in enumerate(seg):
+                px, py = cols[int(ux) % len(cols)], int(uy)
+                if kind[py, px] == 0:
+                    kind[py, px] = 2 if (seg_index[0] % 3 == 2 and k == len(seg) // 2) else 1
+                    gmap[py, px] = gval(belt, py)
+                    owner[py, px] = bi
+            seg_index[0] += 1
+            i += len(seg) + 1
+
+    seg_index = [0]
+    # pass 1: the arms (thick first), pass 2: the torso, pass 3: one extra fine walker on every belt
+    for pass_no in range(3):
+        for bi, belt in enumerate(VEIN_BELTS):
+            n = belt[6] if (pass_no == 0 and belt[7] == "arm") or (pass_no == 1 and belt[7] == "torso") else (1 if pass_no == 2 else 0)
+            ncol = len(belt[1])
+            for k in range(n):
+                paths = []
+                sx = (k + 0.5) * ncol / max(1, n) + prng.uniform(-0.8, 0.8)
+                _walk(prng, belt, (sx, belt[3]), -math.pi / 2, 0, paths, [3])
+                for p in paths:
+                    put_path(bi, belt, p, seg_index)
+    for name, x0, y0, x1, y1 in VEIN_CAPS:
+        for sx in (x0, x1):
+            for px, py in _line_px(sx, y1, (x0 + x1) // 2, y0):
+                if kind[py, px] == 0:
+                    kind[py, px] = 1
+                    gmap[py, px] = 0.5
+                    owner[py, px] = 100
+    for name, lines in VEIN_NECK:
+        for (a, b) in lines:
+            for i, (px, py) in enumerate(_line_px(a[0], a[1], b[0], b[1])):
+                if kind[py, px] == 0:
+                    kind[py, px] = 2 if i == 1 else 1
+                    gmap[py, px] = 0.88 + 0.04 * (23 - py)
+                    owner[py, px] = 2
+    # halo: the right and lower neighbours (inside the same belt columns and rows) of a vein pixel
+    for bi, belt in enumerate(VEIN_BELTS):
+        cols = set(belt[1])
+        y0, y1 = belt[2], belt[3]
+        for y in range(y0, y1 + 1):
+            for x in cols:
+                if kind[y, x] in (1, 2):
+                    for dx, dy in ((1, 0), (0, 1)):  # one sided (right and below): a shadow edge, not a fat line
+                        nx, ny = x + dx, y + dy
+                        if nx in cols and y0 <= ny <= y1 and kind[ny, nx] == 0:
+                            kind[ny, nx] = 3
+                            gmap[ny, nx] = gmap[y, x]
+    for y in range(64):
+        for x in range(64):
+            k = kind[y, x]
+            if k == 1:
+                img[y, x] = (*q3, 255)
+            elif k == 2:
+                img[y, x] = (*q1, 255)
+            elif k == 3:
+                img[y, x] = (*q4, VEIN_HALO_ALPHA)
+    return img, gmap
+
+
+def vein_stage(img, gmap, k):
+    """Stage k (0..VEIN_STAGES-1): the pixels with g <= (k+1)/VEIN_STAGES; the last 1.5 steps of the sweep are the bright head (Q1, alpha 255)."""
+    t = (k + 1) / VEIN_STAGES
+    out = np.zeros_like(img)
+    shown = np.isfinite(gmap) & (gmap <= t + 1e-6)
+    out[shown] = img[shown]
+    if k < VEIN_STAGES - 1:
+        head = shown & (gmap > t - 1.5 / VEIN_STAGES) & (img[..., 3] == 255)
+        out[head] = (*[int(v) for v in hexrgb(Q1)], 255)
+    return out
+
+
+def gen_vein_skin():
+    img, gmap = vein_paint()
+    folder = os.path.join(ASSETS, "textures", "fx")
+    save(os.path.join(folder, "uryu_vein_skin.png"), img)
+    for k in range(VEIN_STAGES):
+        save(os.path.join(folder, "uryu_vein", "stage_%02d.png" % k), vein_stage(img, gmap, k))
+    return img
+
+
+def vein_sheet(path):
+    """Review only: the finished skin 4x on two skin tones, and the stages 3 / 6 / 9 beside it."""
+    img, gmap = vein_paint()
+    tiles = [img] + [vein_stage(img, gmap, k) for k in (2, 5, 8)]
+    sheet = Image.new("RGB", (8 + 4 * 264, 8 + 2 * 264), (20, 24, 40))
+    for row, base in enumerate(((226, 178, 140), (240, 214, 196))):
+        for i, t in enumerate(tiles):
+            bg = Image.new("RGBA", (64, 64), (*base, 255))
+            bg.alpha_composite(Image.fromarray(t, "RGBA"))
+            sheet.paste(bg.convert("RGB").resize((256, 256), Image.NEAREST), (8 + i * 264, 8 + row * 264))
+    sheet.save(path)
+
+
 # ----------------------------------------------------------------------------------------------- main
 def contact_sheet(path, parts):
     """Review only: the glow atlas (2x), the particle frames, the scars and the glitter."""
@@ -853,6 +1035,9 @@ def main():
     gen_pentagon_scar()
     gen_burst_scar()
     gen_uryu_glitter()
+    gen_vein_skin()  # U-FX 6
+    if "--vein-sheet" in sys.argv:
+        vein_sheet(sys.argv[sys.argv.index("--vein-sheet") + 1])
     if "--sheet" in sys.argv:
         contact_sheet(sys.argv[sys.argv.index("--sheet") + 1], parts)
     print("uryu fx textures written to", ASSETS)

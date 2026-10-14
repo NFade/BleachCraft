@@ -18,12 +18,12 @@ import net.minecraft.util.math.Vec3d;
  */
 public final class UryuFx {
 	/**
-	 * Effect ids 72 to 77 are Uryu's ability events (the server also sends the data packet for the ones that need exact positions), 78 is the
-	 * cast start of the abilities that are aimed at their release (S-U4). 70 and 71 (the releases) are still drawn by the common release
-	 * effects; they join here in U-FX 6 and 7.
+	 * Effect id 70 is the Blut Arterie release (U-FX 6), 72 to 77 are Uryu's ability events (the server also sends the data packet for the ones
+	 * that need exact positions), 78 is the cast start of the abilities that are aimed at their release (S-U4). 71 (the bankai release) is
+	 * still drawn by the common release effects; it joins here in U-FX 7.
 	 */
 	public static boolean handles(int effectId) {
-		return effectId >= 72 && effectId <= 78;
+		return effectId == 70 || effectId >= 72 && effectId <= 78;
 	}
 
 	/** Stacks of Focus of the local player (server sync, drawn by the HUD). */
@@ -65,10 +65,18 @@ public final class UryuFx {
 		return UryuSprengerFx.isBound(entityId);
 	}
 
+	// ------------------------------------------------------------------ the draw of the Quincy cross (J)
+
+	/** The draw and sheathe events of the item ({@link dev.minebleach.reiatsutest.client.model.DrawEvents}) for Uryu: the bow forms from Reishi (2.1) and is put away. */
+	public static void onDraw(dev.minebleach.reiatsutest.client.model.DrawEvents.Phase phase, net.minecraft.entity.LivingEntity entity, boolean local) {
+		init();
+		UryuBowFx.onDraw(phase, entity, local);
+	}
+
 	// ------------------------------------------------------------------ effect events
 
 	/**
-	 * Effect events: 74 the lunge of the Seele Schneider, 75 the wing barrage, 76 the Licht Regen square, 78 the cast start of Licht Regen
+	 * Effect events: 70 the Blut Arterie release, 74 the lunge of the Seele Schneider, 75 the wing barrage, 76 the Licht Regen square, 78 the cast start of Licht Regen
 	 * and Sternenstaub (params[3] says which); the rest is drawn from the data packets.
 	 */
 	public static void play(MinecraftClient client, EffectEventS2C e) {
@@ -78,6 +86,8 @@ public final class UryuFx {
 		}
 		init();
 		switch (e.effectId()) {
+			case 73 -> UryuSprengerFx.onCast(e);
+			case 70 -> UryuAuraFx.releaseShikai(e); // Blut Arterie (U-FX 6)
 			case 74 -> UryuSeeleFx.lunge(w, e);
 			case 75 -> UryuWingFx.barrage(e);
 			case 76 -> UryuRainFx.rainSquare(e);
@@ -103,6 +113,7 @@ public final class UryuFx {
 		ClientWorld w = mc.world;
 		float[] d = p.data();
 		if (p.kind() == UryuArrowsS2C.FOCUS) {
+			init(); // the Focus feedback needs its per frame sources from the first packet on
 			UryuAuraFx.onFocus(p.ids());
 			return;
 		}
@@ -114,7 +125,11 @@ public final class UryuFx {
 			case UryuArrowsS2C.ARROWS -> UryuArrowRenderer.onList(p.ids(), d);
 			case UryuArrowsS2C.IMPACT -> {
 				if (d.length >= 5) {
-					UryuArrowRenderer.impact(d[0], d[1], d[2], Math.round(d[3]), Math.round(d[4]));
+					if (Math.round(d[4]) == UryuArrowsS2C.KIND_SLASH) {
+						UryuSeeleFx.hit(w, d[0], d[1], d[2]); // a Seele Schneider stroke hit a target (U-FX 5)
+					} else {
+						UryuArrowRenderer.impact(d[0], d[1], d[2], Math.round(d[3]), Math.round(d[4]));
+					}
 				}
 			}
 			case UryuArrowsS2C.BURST -> {

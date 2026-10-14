@@ -39,6 +39,12 @@ final class Phase7Uryu {
 		if (wants("uryu_atlas")) {
 			atlasSteps();
 		}
+		if (wants("uryu_blut")) {
+			Phase7Blut.steps(); // U-FX 6: the Blut Arterie release and the vein overlay (p7_06_blut_*)
+		}
+		if (wants("uryu_seele") || wants("uryu_seele_live")) {
+			Phase7Seele.steps(); // U-FX 5: the Seele Schneider combo (p7_05_seele_*)
+		}
 	}
 
 	/** Like {@code Phase6Harness.shot} with the {@code p7_} prefix. */

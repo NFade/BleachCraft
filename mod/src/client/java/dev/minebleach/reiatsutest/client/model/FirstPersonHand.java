@@ -56,6 +56,7 @@ public final class FirstPersonHand {
 		} else {
 			renderer.renderRightArm(m, vcp, light, player);
 		}
+		dev.minebleach.reiatsutest.client.fx.UryuQuincyFeature.firstPersonArm(player, renderer, left, m, vcp); // Uryu SHIKAI: the vein overlay on this arm
 		m.pop();
 	}
 
@@ -175,6 +176,7 @@ public final class FirstPersonHand {
 		} else {
 			renderer.renderRightArm(m, vcp, light, player);
 		}
+		dev.minebleach.reiatsutest.client.fx.UryuQuincyFeature.firstPersonArm(player, renderer, left, m, vcp); // Uryu SHIKAI: the vein overlay on this arm
 		m.pop();
 	}
 }

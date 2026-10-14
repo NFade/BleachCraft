@@ -59,6 +59,7 @@ public final class FxClient {
 		});
 		PetalSwarmRenderer.init();
 		UryuArrowRenderer.init();
+		UryuQuincyFeature.register(); // Uryu: vein overlay (and later the wings) on the player model, must exist before the player renderers are built
 		AuraFx.init();
 		ReleaseHold.init();
 		ShikaiDissolve.init();

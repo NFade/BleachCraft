@@ -32,6 +32,10 @@ public final class DrawFx {
 	}
 
 	static void onDraw(DrawEvents.Phase phase, LivingEntity entity, CharacterId character, ZanpakutoState target, boolean local) {
+		if (character == CharacterId.URYU) {
+			UryuFx.onDraw(phase, entity, local); // the Quincy cross: the bow forms from Reishi (URYU_VFX_STORYBOARD 2.1), no scabbard sounds or steel glint
+			return;
+		}
 		MinecraftClient mc = MinecraftClient.getInstance();
 		Vec3d p = entity.getPos();
 		double lod = FxMath.lod(mc.gameRenderer.getCamera().getPos().distanceTo(p));
