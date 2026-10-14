@@ -428,7 +428,7 @@ public final class ZanpakutoManager {
 			p.setAttached(ModAttachments.REIATSU, r);
 			s.lastReiatsu = r;
 		}
-		CooldownData c = CooldownData.of(s.sm.cooldownRemainingAll(), s.sm.kidoCooldownRemainingAll());
+		CooldownData c = CooldownData.of(s.sm.cooldownRemainingAll(), s.sm.kidoCooldownRemainingAll(), s.sm.shunpoCooldownRemaining());
 		if (!c.remainingTicks().keySet().equals(s.lastCooldownKeys)) {
 			p.setAttached(ModAttachments.COOLDOWNS, c);
 			s.lastCooldownKeys = Set.copyOf(c.remainingTicks().keySet());

@@ -119,6 +119,14 @@ public final class ClientState {
 		return Math.max(0, lastCooldowns.remaining(id) - (int) (ticks - cooldownsReceivedAt));
 	}
 
+	/** Remaining shunpo cooldown in ticks (0 = ready); synced with the other cooldowns (side HUD cell). */
+	public static int shunpoCooldownRemaining() {
+		if (lastCooldowns == null) {
+			return 0;
+		}
+		return Math.max(0, lastCooldowns.shunpoRemaining() - (int) (ticks - cooldownsReceivedAt));
+	}
+
 	/** Client ticks since the synced state last changed. */
 	public static long ticksInState() {
 		return ticks - stateChangedAt;

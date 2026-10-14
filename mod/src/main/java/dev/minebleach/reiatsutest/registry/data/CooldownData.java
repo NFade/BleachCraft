@@ -50,6 +50,22 @@ public record CooldownData(Map<Byte, Integer> remainingTicks) {
 		return new CooldownData(m);
 	}
 
+	/** Code of the shunpo cooldown in the sync map (abilities 1 to 23, kido 101 to 103, so 110 collides with none). */
+	public static final byte SHUNPO_CODE = 110;
+
+	/** Abilities, kido spells and the shunpo cooldown (side HUD cells); {@code shunpoTicks <= 0} adds no entry. */
+	public static CooldownData of(Map<AbilityId, Integer> remaining, Map<KidoId, Integer> kido, int shunpoTicks) {
+		Map<Byte, Integer> m = new HashMap<>(of(remaining, kido).remainingTicks());
+		if (shunpoTicks > 0) {
+			m.put(SHUNPO_CODE, shunpoTicks);
+		}
+		return new CooldownData(m);
+	}
+
+	public int shunpoRemaining() {
+		return remainingTicks.getOrDefault(SHUNPO_CODE, 0);
+	}
+
 	public int remaining(KidoId id) {
 		return remainingTicks.getOrDefault(id.code, 0);
 	}
