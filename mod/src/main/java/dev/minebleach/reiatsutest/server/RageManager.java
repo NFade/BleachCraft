@@ -54,6 +54,8 @@ public final class RageManager {
 	private static final Map<UUID, RageMeter> METERS = new HashMap<>();
 	/** Last player-caused hit seen by ALLOW_DAMAGE per victim entity id, for the killing blow. Cleared every tick. */
 	private static final Map<Integer, Pending> PENDING = new HashMap<>();
+	/** Players in dev god mode ({@code /reiatsu dev god on}): their Rage bar is held at the maximum every tick. */
+	private static final java.util.Set<UUID> INFINITE = new java.util.HashSet<>();
 	private static MinecraftServer server;
 	/** A player-caused hit that may turn out lethal: who, how much was asked, how much health the victim had. */
 	private record Pending(UUID attacker, float amount, float healthBefore) {
@@ -113,11 +115,15 @@ public final class RageManager {
 			meterOf(handler.player.getUuid()).reset();
 			sync(handler.player, meterOf(handler.player.getUuid()));
 		});
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) -> METERS.remove(handler.player.getUuid()));
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) -> {
+			METERS.remove(handler.player.getUuid());
+			INFINITE.remove(handler.player.getUuid());
+		});
 		ServerTickEvents.END_SERVER_TICK.register(RageManager::tick);
 		ServerLifecycleEvents.SERVER_STARTED.register(srv -> server = srv);
 		ServerLifecycleEvents.SERVER_STOPPING.register(srv -> {
 			METERS.clear();
+			INFINITE.clear();
 			PENDING.clear();
 			server = null;
 		});
@@ -163,6 +169,16 @@ public final class RageManager {
 		m.devSet(tenths, p.getServer().getTicks());
 		ReiatsuTest.LOGGER.info("[rage] {} set to {} by command", p.getName().getString(), fmt(m.value()));
 		sync(p, m);
+	}
+
+	/** Dev god mode: keeps the Rage bar of {@code p} full every tick (or lets it behave normally again). */
+	public static void setInfinite(ServerPlayerEntity p, boolean on) {
+		if (on) {
+			INFINITE.add(p.getUuid());
+			devSet(p, meterOf(p.getUuid()).state().max());
+		} else {
+			INFINITE.remove(p.getUuid());
+		}
 	}
 
 	private static void onDamaged(LivingEntity victim, DamageSource source, float damageTaken, boolean blocked) {
@@ -251,6 +267,9 @@ public final class RageManager {
 		for (ServerPlayerEntity p : srv.getPlayerManager().getPlayerList()) {
 			RageMeter m = meterOf(p.getUuid());
 			m.tick(now);
+			if (INFINITE.contains(p.getUuid())) {
+				m.devSet(m.state().max(), now);
+			}
 			sync(p, m);
 		}
 	}

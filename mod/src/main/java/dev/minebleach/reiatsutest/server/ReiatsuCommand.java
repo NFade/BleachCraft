@@ -137,6 +137,19 @@ public final class ReiatsuCommand {
 											c.getSource().sendFeedback(() -> Text.literal("rage set to " + pts), true);
 											return 1;
 										})))
+						// /reiatsu dev god on|off: infinite reiatsu and Rage for the caster (shikai/bankai need no Rage, nothing is spent)
+						.then(CommandManager.literal("god")
+								.then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(c -> {
+									ServerPlayerEntity p = c.getSource().getPlayerOrThrow();
+									StateMachine sm = machine(c.getSource());
+									boolean on = BoolArgumentType.getBool(c, "enabled");
+									sm.setGodMode(on);
+									RageManager.setInfinite(p, on);
+									ZanpakutoManager.applyExternal(p, List.of());
+									dev.minebleach.reiatsutest.ReiatsuTest.LOGGER.info("[dev] god mode {} for {}", on ? "ON" : "off", p.getName().getString());
+									c.getSource().sendFeedback(() -> Text.literal(on ? "god mode ON: infinite reiatsu and Rage" : "god mode off"), true);
+									return 1;
+								})))
 						// /reiatsu dev ragefree on|off: shikai and bankai need and spend no Rage (debug only, default off, creative does not bypass)
 						.then(CommandManager.literal("ragefree")
 								.then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(c -> {

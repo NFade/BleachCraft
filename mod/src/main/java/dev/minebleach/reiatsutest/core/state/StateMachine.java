@@ -65,6 +65,8 @@ public final class StateMachine {
 	private RageConfig rageCfg;
 	private IntSupplier rageSource;
 	private boolean rageFree;
+	/** Dev god mode ({@code /reiatsu dev god on}): the reiatsu bar never drops and Rage is not required for the release. Default off. */
+	private boolean infiniteReiatsu;
 
 	private boolean dead;
 	private boolean spectator;
@@ -100,6 +102,22 @@ public final class StateMachine {
 
 	public boolean rageFree() {
 		return rageFree;
+	}
+
+	/**
+	 * Dev god mode ({@code /reiatsu dev god on|off}): infinite reiatsu (costs are checked against a full bar and never paid, the bar is
+	 * refilled every tick) plus {@link #setRageFree}. Off puts both back to normal, the bar keeps whatever it holds at that moment.
+	 */
+	public void setGodMode(boolean on) {
+		this.infiniteReiatsu = on;
+		this.rageFree = on;
+		if (on) {
+			reiatsu = new ReiatsuState(cfg.maxTenths(), cfg.maxTenths());
+		}
+	}
+
+	public boolean godMode() {
+		return infiniteReiatsu;
 	}
 
 	/** Rage a request to {@code target} needs and pays in tenths (0 = none: not shikai/bankai, requirement off or ragefree). */
@@ -415,6 +433,9 @@ public final class StateMachine {
 		if (t % cfg.regenBatchTicks() == 0) {
 			reiatsu = ReiatsuMath.applyBatch(reiatsu, cfg.rate(state));
 		}
+		if (infiniteReiatsu && !dead) {
+			reiatsu = new ReiatsuState(cfg.maxTenths(), cfg.maxTenths());
+		}
 		if (reiatsu.value() == 0) {
 			// bankai no longer ends at zero: it has no drain and spending cannot reach zero, the timer alone ends it (B4 step 4)
 			if (state == ZanpakutoState.SHIKAI) {
@@ -677,7 +698,9 @@ public final class StateMachine {
 	}
 
 	private void spend(int cost, List<StateEvent> ev) {
-		reiatsu = reiatsu.plus(-cost);
+		if (!infiniteReiatsu) {
+			reiatsu = reiatsu.plus(-cost);
+		}
 		ev.add(new StateEvent.ReiatsuSpent(cost));
 	}
 
