@@ -282,7 +282,7 @@ class CastGestureTest {
 					assertTrue(k.ease() >= 0 && k.ease() <= 4, id + " ease code");
 				}
 				// every channel that is used ends on a zero row so the hand is back on the stance
-				if (!g.keys(ch).isEmpty()) {
+				if (!g.keys(ch).isEmpty() && !UryuGestures.DRAW.equals(g.id())) { // the draw is held at its last row for as long as the key is held
 					CastGesture.Key last = g.keys(ch).get(g.keys(ch).size() - 1);
 					float sum = 0f;
 					for (float v : last.v()) {
@@ -321,6 +321,9 @@ class CastGestureTest {
 	void anInstantGestureStartsGentlyThroughTheEnvelope() {
 		// rows at t = 0 do not make a jump: the envelope brings the hand in over `in`
 		for (CastGesture g : CastGestures.defaults().values()) {
+			if (UryuGestures.startsFromPose(g.id())) {
+				continue; // the shot after a draw and the rain / star gestures start at the pose the bow was already in (UryuGesturesTest)
+			}
 			CastGesture.Sample s0 = g.sampleReal(0f);
 			assertArrayEquals(new float[CastGesture.R_DIM], s0.r(), EPS, g.id() + " R at 0");
 			assertArrayEquals(new float[CastGesture.L_DIM], s0.l(), EPS, g.id() + " L at 0");
