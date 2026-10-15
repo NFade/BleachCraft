@@ -174,7 +174,7 @@ public final class SeeleFxMath {
 
 	static double easeOutExpo(double x) {
 		double u = clamp01(x);
-		return u >= 1 ? 1 : 1 - Math.pow(2, -10 * u);
+		return u >= 1 - 1e-9 ? 1 : 1 - Math.pow(2, -10 * u);
 	}
 
 	static double easeOutCubic(double x) {
@@ -366,7 +366,7 @@ public final class SeeleFxMath {
 	public static List<Cue> slashCues(int index) {
 		return switch (Math.max(0, Math.min(2, index))) {
 			case 0 -> List.of(new Cue(0.0, "block.amethyst_block.chime", 1.9, 0.4), new Cue(0.0, "item.trident.throw", 2.0, 0.2));
-			case 1 -> List.of(new Cue(0.0, "block.amethyst_block.chime", 2.1, 0.35), new Cue(0.0, "item.trident.throw", 2.0, 0.2));
+			case 1 -> List.of(new Cue(0.0, "block.amethyst_block.chime", 2.0, 0.35), new Cue(0.0, "item.trident.throw", 2.0, 0.2));
 			default -> List.of(new Cue(0.0, "entity.player.attack.strong", 1.2, 0.8), new Cue(0.0, "item.mace.smash_air", 1.8, 0.4));
 		};
 	}
