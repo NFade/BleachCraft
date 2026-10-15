@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
 import dev.minebleach.reiatsutest.core.kido.KidoMath;
@@ -147,8 +148,8 @@ public final class KidoFx {
 		for (int i = 0; i < burst; i++) {
 			particle(w, ParticleTypes.ELECTRIC_SPARK, end, (rnd.nextDouble() - 0.5) * 0.5, (rnd.nextDouble() - 0.2) * 0.4, (rnd.nextDouble() - 0.5) * 0.5);
 		}
-		FxSound.play(null, "item.trident.thunder", hand.x, hand.y, hand.z, FxTune.d("kido.byakurai.pitch", 1.9), FxTune.d("kido.byakurai.volume", 0.7));
-		FxSound.play(null, "entity.firework_rocket.blast", end.x, end.y, end.z, 1.6, 0.6);
+		FxSound.play(null, SoundIds.KIDO_BYAKURAI_CAST, "item.trident.thunder", hand.x, hand.y, hand.z, FxTune.d("kido.byakurai.pitch", 1.9), FxTune.d("kido.byakurai.volume", 0.7));
+		FxSound.play(null, SoundIds.KIDO_BYAKURAI_HIT, "entity.firework_rocket.blast", end.x, end.y, end.z, 1.6, 0.6);
 	}
 
 	// ------------------------------------------------------------------ Shakkaho (Hado 31)
@@ -163,7 +164,7 @@ public final class KidoFx {
 		double flight = Math.max(0.0, travelTicks / 20.0);
 		// charge flash at the hand
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(hand.x, hand.y, hand.z).size(0.4, ball * 1.6).sizeEase(FxMath.OC).life(0.25).curve(0.01, 0.8).color(red).peak(0.9).spawn();
-		FxSound.play(null, "entity.blaze.shoot", hand.x, hand.y, hand.z, FxTune.d("kido.shakkaho.castPitch", 0.8), FxTune.d("kido.shakkaho.castVolume", 0.9));
+		FxSound.play(null, SoundIds.KIDO_SHAKKAHO_CAST, "entity.blaze.shoot", hand.x, hand.y, hand.z, FxTune.d("kido.shakkaho.castPitch", 0.8), FxTune.d("kido.shakkaho.castVolume", 0.9));
 		if (len > 0.3) {
 			// the ball: a train of sprites with staggered births along the line, two per tick of flight
 			int steps = (int) Math.max(3, Math.min(60, Math.round(flight * 40.0)));
@@ -189,7 +190,7 @@ public final class KidoFx {
 				});
 			}
 			if (flight > 0.0) {
-				FxDelayed.after(flight * 0.5, () -> FxSound.play(null, "block.fire.ambient", hand.x + d.x * 0.5, hand.y + d.y * 0.5, hand.z + d.z * 0.5, 1.2, 0.5));
+				FxDelayed.after(flight * 0.5, () -> FxSound.play(null, SoundIds.KIDO_SHAKKAHO_FLIGHT, "block.fire.ambient", hand.x + d.x * 0.5, hand.y + d.y * 0.5, hand.z + d.z * 0.5, 1.2, 0.5));
 			}
 		}
 		FxDelayed.after(flight, () -> explode(w, end, radius, rnd.nextLong()));
@@ -217,7 +218,7 @@ public final class KidoFx {
 			particle(w, ParticleTypes.LARGE_SMOKE, c, (r.nextDouble() - 0.5) * 0.3, 0.05 + r.nextDouble() * 0.1, (r.nextDouble() - 0.5) * 0.3);
 		}
 		particle(w, ParticleTypes.EXPLOSION, c, 0, 0, 0);
-		FxSound.play(null, "entity.generic.explode", c.x, c.y, c.z, FxTune.d("kido.shakkaho.burstPitch", 1.1), FxTune.d("kido.shakkaho.burstVolume", 0.9));
+		FxSound.play(null, SoundIds.KIDO_SHAKKAHO_BURST, "entity.generic.explode", c.x, c.y, c.z, FxTune.d("kido.shakkaho.burstPitch", 1.1), FxTune.d("kido.shakkaho.burstVolume", 0.9));
 	}
 
 	// ------------------------------------------------------------------ Sai (Bakudo 1)
@@ -247,9 +248,9 @@ public final class KidoFx {
 				particle(w, ParticleTypes.ELECTRIC_SPARK, end, (rnd.nextDouble() - 0.5) * 0.3, (rnd.nextDouble() - 0.3) * 0.3, (rnd.nextDouble() - 0.5) * 0.3);
 			}
 		}
-		FxSound.play(null, "block.amethyst_block.resonate", hand.x, hand.y, hand.z, FxTune.d("kido.sai.pitch", 1.6), FxTune.d("kido.sai.volume", 0.8));
+		FxSound.play(null, SoundIds.KIDO_SAI_CAST, "block.amethyst_block.resonate", hand.x, hand.y, hand.z, FxTune.d("kido.sai.pitch", 1.6), FxTune.d("kido.sai.volume", 0.8));
 		if (hit) {
-			FxSound.play(null, "entity.iron_golem.repair", end.x, end.y, end.z, 1.7, 0.5);
+			FxSound.play(null, SoundIds.KIDO_SAI_HIT, "entity.iron_golem.repair", end.x, end.y, end.z, 1.7, 0.5);
 		}
 	}
 }

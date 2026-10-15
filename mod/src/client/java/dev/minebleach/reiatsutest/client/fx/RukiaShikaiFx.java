@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.core.fx.RukiaAim;
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
 import dev.minebleach.reiatsutest.core.fx.ShirafuneTimeline;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
@@ -77,7 +78,7 @@ public final class RukiaShikaiFx {
 		t.lifetime(3.1);
 
 		// 0.0 wind-up: a comet of motes sweeping the ring, 360 degrees in 0.2 s from the caster's yaw
-		t.at(0.0, x -> x.sound("entity.player.attack.sweep", 1.1, 0.7));
+		t.at(0.0, x -> x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_WINDUP, "entity.player.attack.sweep", 1.1, 0.7));
 		int steps = (int) FxMath.clamp(R * d("tsuki.windSteps", 5.0), 20, 48);
 		double windT = d("tsuki.windTime", 0.2);
 		for (int i = 0; i < steps; i++) {
@@ -105,7 +106,7 @@ public final class RukiaShikaiFx {
 			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(c.x, gy + 0.07, c.z).ground().size(R * 0.6 / 0.4375, R * 1.0 / 0.4375).sizeEase(FxMath.OC).life(0.4).curve(0.02, 0.7)
 					.color("#FFFFFF").peak(g(d("tsuki.ringPulse", 0.8))).owner(x).spawn();
 			FxDecals.frost(c.x, c.z, gy, R * 1.05, 0).reveal(d("tsuki.decalReveal", 0.3)).fade(2.3, 0.5).alpha(d("tsuki.decal", 0.9));
-			x.sound("block.amethyst_block.chime", 1.0, 0.7);
+			x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_PILLAR, "block.amethyst_block.chime", 1.0, 0.7);
 		});
 		// 0.5 the pillar: two walls of light (core 0.825 R, outer R), 0 to H in 0.35 s, scrolling up, collapsing at 2.0
 		t.at(0.5, x -> {
@@ -117,8 +118,8 @@ public final class RukiaShikaiFx {
 			// a bright ring at the foot of the pillar
 			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(c.x, gy + 0.08, c.z).ground().size(R / 0.375).life(1.5).curve(0.1, 0.6).color("#EAF8FF").peak(g(d("tsuki.footRing", 0.55))).owner(x).spawn();
 			x.flash(d("tsuki.flash", 0.30), "#EAF8FF", true);
-			x.sound("item.trident.thunder", 1.4, 0.3);
-			x.sound("block.beacon.power_select", 1.2, 0.5);
+			x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_PILLAR, "item.trident.thunder", 1.4, 0.3);
+			x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_PILLAR, "block.beacon.power_select", 1.2, 0.5);
 		});
 		int risers = 12;
 		for (int k = 0; k < risers; k++) {
@@ -154,9 +155,9 @@ public final class RukiaShikaiFx {
 			// a ring of light on the rim, standing for the crust, held until the shatter
 			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(c.x, gy + 0.09, c.z).ground().size(R / 0.4375).life(1.0).curve(0.15, 0.4).color("#DFF3FF").peak(g(d("tsuki.crustRing", 0.55))).owner(x).spawn();
 			vig[0] = x.vignette(ScreenFx.Kind.FROST, d("tsuki.vignette", 0.20), 0.3);
-			x.sound("entity.player.hurt_freeze", 1.0, 0.8);
-			x.sound("block.amethyst_cluster.place", 0.9, 0.6);
-			x.soundAt("block.amethyst_cluster.place", c.add(R * 0.7, 0.5, 0), 1.2, 0.5);
+			x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_CRUST, "entity.player.hurt_freeze", 1.0, 0.8);
+			x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_CRUST, "block.amethyst_cluster.place", 0.9, 0.6);
+			x.soundAt(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_CRUST, "block.amethyst_cluster.place", c.add(R * 0.7, 0.5, 0), 1.2, 0.5);
 			RukiaKit.iceShards(x, r, RukiaKit.areaCount(60, R, 4.0), c.x, gy + 0.2, c.z, R, 0.8, 1.2, 0.0, 60, 0.34);
 		});
 		// 1.5 hold: frost creeps, the sigil pulses at 3 Hz
@@ -184,10 +185,10 @@ public final class RukiaShikaiFx {
 			if (vig[0] != null) {
 				vig[0].release(0.5);
 			}
-			x.soundAt("block.glass.break", c.add(0, 1, 0), 1.0, 1.0);
+			x.soundAt(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_SHATTER, "block.glass.break", c.add(0, 1, 0), 1.0, 1.0);
 		});
-		t.at(2.07, x -> x.sound("block.glass.break", 1.2, 0.9));
-		t.at(2.14, x -> x.sound("block.glass.break", 0.8, 0.8));
+		t.at(2.07, x -> x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_SHATTER, "block.glass.break", 1.2, 0.9));
+		t.at(2.14, x -> x.sound(SoundIds.RUKIA_SHIKAI_TSUKISHIRO_SHATTER, "block.glass.break", 0.8, 0.8));
 		// 2.5 fade: a last drift of motes
 		t.at(2.5, x -> RukiaKit.frostMotes(x, x.rng(600), RukiaKit.areaCount(20, R, 4.0), c.x, gy + 0.3, c.z, R, 1.0, 0.8, 0.5, 20, 0.34, "#DFF3FF", null, 0.8));
 	}
@@ -229,7 +230,7 @@ public final class RukiaShikaiFx {
 		t.at(0.0, x -> {
 			RukiaKit.ring(x, c.x, gy + 0.05, c.z, 2.0, 2.0, 0.5, col("hak.colRing", "#C0D3E7"), 1.0, false);
 			RukiaKit.frostMotes(x, x.rng(10), 30, c.x, gy + 0.1, c.z, 2.0, 0.4, 3.0, 0.3, 16, 0.4, "#EAF8FF", "#CFEFFF", 1.0);
-			x.sound("block.glass.break", 1.2, 0.5);
+			x.sound(SoundIds.RUKIA_SHIKAI_HAKUREN_START, "block.glass.break", 1.2, 0.5);
 		});
 		// 0.3 four punctures on a semicircle of radius 2.5 in front (-60, -20, 20, 60 degrees)
 		double[] offs = {-60, -20, 20, 60};
@@ -247,7 +248,7 @@ public final class RukiaShikaiFx {
 				RukiaKit.frostMotes(x, r, 20, px, py + 0.1, pz, 0.35, 0.3, 5.0, 0.4, 14, 0.38, "#EAF8FF", "#CFEFFF", 1.0);
 				FxMeshPass.Crystal cr = FxMeshPass.crystal(FxMeshes.CRYSTAL_C, px, py - 0.03, pz, dx * 0.3, 1, dz * 0.3, r.nextDouble() * 6.28, d("hak.puncture", 1.9), 0.0);
 				punctures.add(cr);
-				x.soundAt("block.amethyst_cluster.break", new Vec3d(px, py + 0.5, pz), 1.0 + 0.1 * kk, 0.7);
+				x.soundAt(SoundIds.RUKIA_SHIKAI_HAKUREN_SPIKES, "block.amethyst_cluster.break", new Vec3d(px, py + 0.5, pz), 1.0 + 0.1 * kk, 0.7);
 			});
 		}
 		// 0.7 gather at the blade tip
@@ -266,7 +267,7 @@ public final class RukiaShikaiFx {
 				FxParticles.spec(FxParticles.Kind.FROST_MOTE).at(px, py, pz).vel((tip.x - px) / 0.3, (tip.y - py) / 0.3, (tip.z - pz) / 0.3).drag(1.0).life(6).size(0.3)
 						.color("#FFFFFF").seed(i).fade(0.5).owner(x).spawn();
 			}
-			x.sound("block.beacon.power_select", 1.3, 0.6);
+			x.sound(SoundIds.RUKIA_SHIKAI_HAKUREN_FLARE, "block.beacon.power_select", 1.3, 0.6);
 		});
 		// the end of the cast: the owner's look and feet now (live entity, so remote viewers see it too); not loaded = the press values stay
 		double aimAt = RukiaAim.aimSeconds(BalanceConfig.defaults().spec(AbilityId.HAKUREN));
@@ -333,7 +334,7 @@ public final class RukiaShikaiFx {
 					FxParticles.spec(FxParticles.Kind.ICE_SHARD).at(cp[0] + f[0] * along + rg[0] * lat, cp[1] + 0.2 + r.nextDouble() * 1.5, cp[2] + f[1] * along + rg[1] * lat)
 							.vel(f[0] * 2, 2 + r.nextDouble() * 2, f[1] * 2).drag(0.95).gravity(0.6).life(26).size(RukiaKit.size(0.36)).seed(j).spin((r.nextDouble() - 0.5) * 0.4).fade(0.3).owner(x).spawn();
 				}
-				x.soundAt("block.amethyst_cluster.place", new Vec3d(cp[0] + f[0] * dc, cp[1] + 0.5, cp[2] + f[1] * dc), 0.8 + 0.1 * Math.min(kk, 7), 0.6);
+				x.soundAt(SoundIds.RUKIA_SHIKAI_HAKUREN_TRAIL, "block.amethyst_cluster.place", new Vec3d(cp[0] + f[0] * dc, cp[1] + 0.5, cp[2] + f[1] * dc), 0.8 + 0.1 * Math.min(kk, 7), 0.6);
 			});
 		}
 		// the leading edge: three flares standing across the path, running at the step speed
@@ -344,8 +345,8 @@ public final class RukiaShikaiFx {
 						.vel(f[0] * speed, 0, f[1] * speed).delay(0.03 * i).life(life).curve(0.04, 0.35).color(i == 0 ? "#EAF8FF" : "#C0D3E7").peak(g(0.55 - 0.12 * i)).owner(x).spawn();
 			}
 			x.shake(d("hak.shake", 0.5), 0.4);
-			x.sound("entity.breeze.wind_burst", 1.2, 0.8);
-			x.sound("block.powder_snow.break", 0.9, 0.8);
+			x.sound(SoundIds.RUKIA_SHIKAI_HAKUREN_WAVE, "entity.breeze.wind_burst", 1.2, 0.8);
+			x.sound(SoundIds.RUKIA_SHIKAI_HAKUREN_WAVE, "block.powder_snow.break", 0.9, 0.8);
 		});
 		// 1.5 frost on the real blocks
 		t.at(1.5, x -> {
@@ -362,7 +363,7 @@ public final class RukiaShikaiFx {
 					FxGlowBatch.sprite(GlowSprite.STAR6).at(px, cp[1] + 0.4 + r.nextDouble(), pz).size(RukiaKit.size(0.5)).lifeTicks(12).color("#FFFFFF").peak(g(0.85)).twinkle().rot(r.nextDouble() * 6, 1).owner(x).spawn();
 				}
 			}
-			x.sound("entity.player.hurt_freeze", 1.0, 0.6);
+			x.sound(SoundIds.RUKIA_SHIKAI_HAKUREN_FREEZE, "entity.player.hurt_freeze", 1.0, 0.6);
 		});
 		// the crystals shatter as the temporary blocks revert (the server places a step's blocks at 1.0 + 0.1 k and removes them 3 s later)
 		t.at(0.3 + 0.06 * 3 + revert - 0.1, x -> {
@@ -382,7 +383,7 @@ public final class RukiaShikaiFx {
 				double along = step * (kk + 0.5);
 				RukiaKit.frostMotes(x, r, Math.max(4, (int) Math.round(40.0 / steps * wS)), cp[0] + f[0] * along, cp[1] + 0.5, cp[2] + f[1] * along, half, 1.5, 1.0, 2.0, 20, 0.4, "#FFFFFF", "#BFE4FF", 0.9);
 				if (kk % 2 == 0) {
-					x.soundAt("block.glass.break", new Vec3d(cp[0] + f[0] * along, cp[1] + 0.5, cp[2] + f[1] * along), 1.0 + 0.05 * kk, 0.4);
+					x.soundAt(SoundIds.RUKIA_SHIKAI_HAKUREN_SHATTER, "block.glass.break", new Vec3d(cp[0] + f[0] * along, cp[1] + 0.5, cp[2] + f[1] * along), 1.0 + 0.05 * kk, 0.4);
 				}
 			});
 		}
@@ -424,7 +425,7 @@ public final class RukiaShikaiFx {
 						.life(3).size(RukiaKit.size(0.36)).seed(i).color("#FFFFFF").colorTo("#9ED3F0").fade(0.4).owner(x).spawn();
 			}
 			RukiaKit.stars(x, r, GlowSprite.STAR6, 10, tip0.x, tip0.y, tip0.z, 0.6, 0.6, 0.0, 0.0, 0.3, 0.55, "#FFFFFF", 0.9);
-			x.sound("block.amethyst_block.resonate", 1.4, 0.4);
+			x.sound(SoundIds.RUKIA_SHIKAI_SHIRAFUNE_CHARGE, "block.amethyst_block.resonate", 1.4, 0.4);
 		});
 		// the blade of ice grows along the aim in 0.2 s (easeOutExpo), a crystal rides the tip
 		t.at(tl.bladeAt, x -> {
@@ -453,7 +454,7 @@ public final class RukiaShikaiFx {
 						.vel((r.nextDouble() - 0.5) * 1.5, r.nextDouble() * 1.2, (r.nextDouble() - 0.5) * 1.5).drag(0.93).gravity(0.5).life(22).size(RukiaKit.size(0.26)).seed(i).spin(0.2).fade(0.3).owner(x).spawn();
 			}
 			FxGlowBatch.sprite(GlowSprite.GLOW_CORE).at(tip0.x, tip0.y, tip0.z).size(RukiaKit.size(0.6), RukiaKit.size(1.3)).life(0.3).color("#EAF8FF").peak(g(0.8)).owner(x).spawn();
-			x.sound("item.trident.throw", 1.1, 0.8);
+			x.sound(SoundIds.RUKIA_SHIKAI_SHIRAFUNE_THROW, "item.trident.throw", 1.1, 0.8);
 		});
 		t.at(tl.crystalAt, x -> {
 			Vec3d base = end.subtract(bd.multiply(0.85));
@@ -471,10 +472,10 @@ public final class RukiaShikaiFx {
 			RukiaKit.frostMotes(x, r, 40, end.x, end.y, end.z, 0.3, 0.8, 1.5, 4.0, 16, 0.4, "#FFFFFF", "#BFE4FF", 1.0);
 			RukiaKit.stars(x, r, GlowSprite.STAR4, 24, end.x, end.y, end.z, 0.3, 0.6, 1.0, 4.0, 0.3, 0.7, "#FFFFFF", 0.95);
 			x.shake(d("shira.shake", 0.4), 0.2);
-			x.soundAt("entity.player.attack.crit", end, 1.0, 0.9);
-			x.soundAt("block.glass.break", end, 1.3, 0.7);
+			x.soundAt(SoundIds.RUKIA_SHIKAI_SHIRAFUNE_HIT, "entity.player.attack.crit", end, 1.0, 0.9);
+			x.soundAt(SoundIds.RUKIA_SHIKAI_SHIRAFUNE_HIT, "block.glass.break", end, 1.3, 0.7);
 		});
-		t.at(tl.chillAt, x -> x.soundAt("entity.player.hurt_freeze", end, 1.1, 0.6));
+		t.at(tl.chillAt, x -> x.soundAt(SoundIds.RUKIA_SHIKAI_SHIRAFUNE_CHILL, "entity.player.hurt_freeze", end, 1.1, 0.6));
 		// the blade retracts (0.2 s), the tip crystal shatters
 		t.at(tl.retractAt, x -> {
 			Random r = x.rng(95);
@@ -482,7 +483,7 @@ public final class RukiaShikaiFx {
 				FxMeshPass.shatter(tipCrystal[0], (int) d("shira.tipShards", 6), 4.0, r.nextLong());
 			}
 			RukiaKit.iceShards(x, r, 30, end.x, end.y, end.z, 0.3, 3.0, 2.0, 1.5, 26, 0.36);
-			x.soundAt("block.glass.break", end, 1.4, 0.3);
+			x.soundAt(SoundIds.RUKIA_SHIKAI_SHIRAFUNE_RETRACT, "block.glass.break", end, 1.4, 0.3);
 		});
 	}
 

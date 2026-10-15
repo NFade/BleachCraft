@@ -1,9 +1,12 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.AnchorPlan;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
 import dev.minebleach.reiatsutest.core.fx.BladeRowLayout;
+import dev.minebleach.reiatsutest.core.fx.BladeRowPresets;
+import dev.minebleach.reiatsutest.core.fx.BladeSpec;
 import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.HashMap;
@@ -69,10 +72,9 @@ public final class RowsFx {
 		public final double maxDist;
 		/** World scale of every blade (bankai.bladeScale, read when the rows are created and kept for their life; the static buffer depends on it). */
 		public final double bladeScale = bladeScaleSetting();
-		/** Blade width across the lane in blocks (bankai.bladeWidth) and the anisotropic scales of the mesh (local z = width, local x = thickness), relative to {@link #bladeScale}. */
-		public final double bladeWidth = bladeWidthSetting();
-		public final double kz = BladeRowLayout.widthScale(bladeWidth, bladeScale);
-		public final double kx = bladeThickSetting();
+		/** Blade width across the lane in blocks: the mesh width (meta) times {@link #bladeScale}; the mesh is not stretched. */
+		public final double widthFactor = bladeWidthFactorSetting();
+		public final double bladeWidth = BladeSpec.width() * bladeScale * widthFactor;
 		/** Time (seconds from the release) from which the rows are drawn from the static buffer. */
 		public final double settleAt;
 		ScreenFx.Layer grade;
@@ -92,8 +94,6 @@ public final class RowsFx {
 		int vboLightHash;
 		long lastLightCheck;
 		boolean vboValid;
-		/** bankai.bladeCurve the static buffer was built for (a change rebuilds it). */
-		double vboCurve = Double.NaN;
 
 		State(int ownerId, long seed, BladeRowLayout layout, double epoch, double yawDeg, double fx, double fy, double fz, ClientWorld w) {
 			this.ownerId = ownerId;
@@ -206,21 +206,25 @@ public final class RowsFx {
 	}
 
 	/**
-	 * World scale of the bankai blades (fx_override.json {@code bankai.bladeScale}). The mesh is 8 m long (ART_BIBLE B13); r7: default 1.0 = 8 blocks, the
-	 * slab blades of the anime references (3 to 4 person heights plus the curve). Width and thickness have their own keys.
+	 * World scale of the bankai blades: {@code bankai.bladeScale} (default 1.0) times {@code bankai.bladeLength / mesh length}. The mesh is the user's straight blade, 5.5 m
+	 * long (read from the meta by {@link BladeSpecLoader}); default 1.0 = 5.5 blocks, 3 heights of Byakuya as measured on the anime. {@code bankai.bladeLength} (blocks, default
+	 * the mesh length) resizes the whole blade in one number, all three axes alike.
 	 */
 	public static double bladeScaleSetting() {
-		return FxMath.clamp(FxTune.d("bankai.bladeScale", BladeRowLayout.DEFAULT_BLADE_SCALE), 0.2, 2.0);
+		BladeSpecLoader.ensure();
+		double byLength = FxTune.d("bankai.bladeLength", BladeSpec.length()) / BladeSpec.length();
+		double s = FxMath.clamp(FxTune.d("bankai.bladeScale", BladeRowLayout.DEFAULT_BLADE_SCALE), 0.2, 2.0) * FxMath.clamp(byLength, 0.2, 3.0);
+		return FxMath.clamp(s, 0.2, 4.0);
 	}
 
-	/** Width of a blade across the lane in blocks (bankai.bladeWidth, default 1.5; the mesh is 0.55 m wide, so it is stretched anisotropically). */
-	public static double bladeWidthSetting() {
-		return FxMath.clamp(FxTune.d("bankai.bladeWidth", BladeRowLayout.DEFAULT_BLADE_WIDTH), 0.1, 6.0);
+	/** Stretch of the blades across the lane only ({@code bankai.bladeWidth}, default {@link BladeRowLayout#DEFAULT_WIDTH_FACTOR}); thickness and length are not touched. */
+	public static double bladeWidthFactorSetting() {
+		return FxMath.clamp(FxTune.d("bankai.bladeWidth", BladeRowLayout.DEFAULT_WIDTH_FACTOR), 0.5, 3.0);
 	}
 
-	/** Thickness multiplier of the blade (bankai.bladeThick, default 2.0 = 0.28 blocks at bladeScale 1). */
-	public static double bladeThickSetting() {
-		return FxMath.clamp(FxTune.d("bankai.bladeThick", BladeRowLayout.DEFAULT_BLADE_THICK), 0.2, 8.0);
+	/** Preset chosen by {@code bankai.layout} (dense / book / anime / r7 / r9, default book); explicit {@code rows.*} keys still win over it. */
+	public static BladeRowPresets.Preset layoutPreset() {
+		return BladeRowPresets.byKey(FxTune.s("bankai.layout", ""));
 	}
 
 	/** Spacing and corridor width of the rows (fx_override.json {@code rows.scale}, default 0.65; 1.0 = the original 6 block half width, spacing 1.1). */
@@ -229,19 +233,21 @@ public final class RowsFx {
 	}
 
 	/**
-	 * The wall of slab blades of the Byakuya bankai (r7): ONE rank per side, {@code rows.perSide} 10 blades each at {@code rows.halfWidth} 7 blocks from the axis,
-	 * {@code rows.spacing} 1.0 between neighbours (they almost touch: the slab is 0.28 thick, 1.5 wide), from {@code rows.startAhead} -2 (2 blocks BEHIND the feet, r7 user request) further back. The count follows
-	 * the quality tier ({@code bankaiBladeCount} 200 / 100 / 50 = 10 / 5 / 3 per side, the pitch widens for the lower tiers). {@code rows.legacy} 1 brings back the old two rank corridor.
+	 * The wall of slab blades of the Byakuya bankai: ONE rank per side, the numbers of the {@code bankai.layout} preset ({@link BladeRowPresets}: dense / book (default) /
+	 * anime fit the corridor of the anime frame, r7 / r9 are the older layouts). Each can be overridden by {@code rows.perSide}, {@code rows.halfWidth}, {@code rows.spacing},
+	 * {@code rows.startAhead} (negative = behind the feet). The count follows the quality tier ({@code bankaiBladeCount} 200 / 100 / 50 = 100% / 50% / 25% of perSide,
+	 * the pitch widens for the lower tiers). {@code rows.legacy} 1 brings back the old two rank corridor.
 	 */
 	public static BladeRowLayout makeLayout(long seed) {
 		if (FxTune.d("rows.legacy", 0.0) > 0.5) {
 			return BladeRowLayout.of(FxConfig.bankaiBladeCount, seed, rowsScaleSetting());
 		}
-		int high = (int) Math.round(FxTune.d("rows.perSide", BladeRowLayout.DEFAULT_PER_SIDE));
+		BladeRowPresets.Preset pr = layoutPreset();
+		int high = (int) Math.round(FxTune.d("rows.perSide", pr.perSide()));
 		int per = (int) Math.round(high * FxConfig.bankaiBladeCount / 200.0);
 		per = Math.max(3, Math.min(250, per));
-		double pitch = BladeRowLayout.tierPitch(per, high, FxTune.d("rows.spacing", BladeRowLayout.DEFAULT_PITCH));
-		return BladeRowLayout.lane(per, seed, FxTune.d("rows.halfWidth", BladeRowLayout.DEFAULT_HALF_WIDTH), pitch, FxTune.d("rows.startAhead", BladeRowLayout.DEFAULT_START_AHEAD));
+		double pitch = BladeRowLayout.tierPitch(per, high, FxTune.d("rows.spacing", pr.pitch()));
+		return BladeRowLayout.lane(per, seed, FxTune.d("rows.halfWidth", pr.halfWidth()), pitch, FxTune.d("rows.startAhead", pr.startAhead()));
 	}
 
 	/** The rows (fault lines, eruption) start this long after the throw of the sword, which needs about 1.5 s to hang and sink. */
@@ -351,17 +357,17 @@ public final class RowsFx {
 		double contact = swordContact(hiltScale);
 		double hangY = hg + swordHang() + 0.5 * BankaiCurves.HILT_LENGTH * hiltScale;
 		t.at(0.0, x -> {
-			x.soundAt("item.trident.throw", new Vec3d(hx, hangY, hz), 1.4, 0.35);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_DROP, "item.trident.throw", new Vec3d(hx, hangY, hz), 1.4, 0.35);
 			FxGlowBatch.sprite(GlowSprite.STAR4).at(hx, hangY, hz).lifeTicks(8).size(0.9, 0.2).sizeEase(FxMath.IQ).color("#F3E4FF").peak(0.9).owner(x).spawn();
 		});
-		t.at(BankaiCurves.SWORD_HANG_END, x -> x.soundAt("block.amethyst_block.chime", new Vec3d(hx, hangY, hz), 0.7, 0.4));
+		t.at(BankaiCurves.SWORD_HANG_END, x -> x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_HANG, "block.amethyst_block.chime", new Vec3d(hx, hangY, hz), 0.7, 0.4));
 		t.at(contact, x -> {
-			x.soundAt("item.trident.hit_ground", new Vec3d(hx, hg, hz), 0.9, 0.5);
-			x.soundAt("entity.generic.splash", new Vec3d(hx, hg, hz), 1.5, 0.3);
-			x.soundAt("block.bubble_column.whirlpool_inside", new Vec3d(hx, hg, hz), 1.6, 0.3);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_ENTER, "item.trident.hit_ground", new Vec3d(hx, hg, hz), 0.9, 0.5);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_ENTER, "entity.generic.splash", new Vec3d(hx, hg, hz), 1.5, 0.3);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_ENTER, "block.bubble_column.whirlpool_inside", new Vec3d(hx, hg, hz), 1.6, 0.3);
 			splash(x, hx, hg, hz);
 		});
-		t.at(contact + 0.5, x -> x.soundAt("block.bell.use", new Vec3d(hx, hg, hz), 0.5, 0.35));
+		t.at(contact + 0.5, x -> x.soundAt(SoundIds.BYAKUYA_BANKAI_SWORD_RING, "block.bell.use", new Vec3d(hx, hg, hz), 0.5, 0.35));
 		// 0.30 to 0.90: night falls
 		t.at(0.30, x -> {
 			// others: the night is graded by the distance to the NEAREST ROW POINT (standing in the corridor = full night), not to the caster (6.1)
@@ -371,13 +377,13 @@ public final class RowsFx {
 			}
 			st.grade = x.screen ? ScreenFx.grade(FxMath.hex(FxTune.s("bankai.night", NIGHT)), FxTune.d("bankai.nightStrength", 1.0), 0.6, gs).owner(e.casterId()) : null;
 			st.vignette = x.screen ? ScreenFx.vignette(ScreenFx.Kind.DARK, FxTune.d("bankai.vignette", 0.45), 0.6, gs).owner(e.casterId()) : null;
-			x.sound("ambient.cave", 0.8, 0.6);
-			x.sound("block.respawn_anchor.charge", 0.6, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_NIGHT, "ambient.cave", 0.8, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_NIGHT, "block.respawn_anchor.charge", 0.6, 0.6);
 		});
-		t.at(0.60, x -> x.sound("entity.warden.heartbeat", 0.7, 0.5));
+		t.at(0.60, x -> x.sound(SoundIds.BYAKUYA_BANKAI_HEARTBEAT, "entity.warden.heartbeat", 0.7, 0.5));
 		// 0.90: fault lines (anticipation)
 		t.at(0.90 + delay, x -> {
-			x.sound("entity.warden.emerge", 1.4, 0.4);
+			x.sound(SoundIds.BYAKUYA_BANKAI_FAULT, "entity.warden.emerge", 1.4, 0.4);
 			faultLines(x, st);
 		});
 		for (int k = 0; k < 6; k++) {
@@ -386,8 +392,8 @@ public final class RowsFx {
 		}
 		// 1.00: eruption starts
 		t.at(1.00 + delay, x -> {
-			x.sound("item.mace.smash_ground_heavy", 0.6, 0.7);
-			x.sound("entity.ender_dragon.growl", 0.5, 0.25);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ERUPTION, "item.mace.smash_ground_heavy", 0.6, 0.7);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ERUPTION, "entity.ender_dragon.growl", 0.5, 0.25);
 		});
 		for (double ts = 1.2; ts < comp; ts += 0.2) {
 			t.at(ts + delay, x -> x.shake(0.6, 0.25));
@@ -395,8 +401,8 @@ public final class RowsFx {
 		// rows complete
 		t.at(comp + delay, x -> {
 			x.shake(FxTune.d("bankai.completeShake", 1.2), 0.4);
-			x.sound("block.beacon.ambient", 0.6, 0.35);
-			x.sound("block.bell.resonate", 0.6, 0.4);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ROWS_DONE, "block.beacon.ambient", 0.6, 0.35);
+			x.sound(SoundIds.BYAKUYA_BANKAI_ROWS_DONE, "block.bell.resonate", 0.6, 0.4);
 		});
 		// hold: the vignette settles to the playable level
 		t.at(comp + delay + 0.6, x -> {
@@ -576,7 +582,7 @@ public final class RowsFx {
 				if (t > l.completionTime() && FxClock.dt > 0) {
 					if (FxClock.now >= st.nextHeartbeat && st.owner) {
 						st.nextHeartbeat = FxClock.now + 1.5;
-						FxSound.play(null, "entity.warden.heartbeat", st.fx, st.fy + 1, st.fz, 0.7, 0.15);
+						FxSound.play(null, SoundIds.BYAKUYA_BANKAI_HEARTBEAT, "entity.warden.heartbeat", st.fx, st.fy + 1, st.fz, 0.7, 0.15);
 					}
 					if (FxClock.now >= st.nextHaze && !st.phaseBusy()) {
 						st.nextHaze = FxClock.now + 0.1;
@@ -584,7 +590,7 @@ public final class RowsFx {
 					}
 					if (FxClock.now >= st.nextBeacon && cam.distanceTo(new Vec3d(st.fx, st.fy, st.fz)) < 60) {
 						st.nextBeacon = FxClock.now + 3.0;
-						FxSound.play(null, "block.beacon.ambient", st.fx, st.fy + 1, st.fz, 0.6, 0.25);
+						FxSound.play(null, SoundIds.BYAKUYA_BANKAI_ROWS_HUM, "block.beacon.ambient", st.fx, st.fy + 1, st.fz, 0.6, 0.25);
 					}
 					if (FxClock.now >= st.nextRippleLoop) {
 						st.nextRippleLoop = FxClock.now + 4.0;
@@ -629,7 +635,7 @@ public final class RowsFx {
 				}
 			}
 			if (i % 3 == 0) {
-				FxSound.play(null, "block.pointed_dripstone.land", x, g, z, 0.6 + r.nextDouble() * 0.3, 0.4);
+				FxSound.play(null, SoundIds.BYAKUYA_BANKAI_ROWS_DUST, "block.pointed_dripstone.land", x, g, z, 0.6 + r.nextDouble() * 0.3, 0.4);
 			}
 		}
 		if (l.n <= 400 || i % 2 == 0) {

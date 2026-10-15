@@ -206,7 +206,7 @@ public final class UryuBowMotion {
 
 	/** The pose of this frame of a player, or null when it has none (not holding the drawn bow, switched off). */
 	static UryuTpPose.Frame tpFrame(AbstractClientPlayerEntity p) {
-		if (!tpOn()) {
+		if (!tpOn() || UryuBowPose.bowInLeftHand(p)) { // R12: right handed players hold the bow in the left hand and use the draw clip (TpBowLayer)
 			return null;
 		}
 		float td = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);

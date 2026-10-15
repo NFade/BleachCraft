@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.client.model.FpMotion;
 import dev.minebleach.reiatsutest.core.fx.BlockFxMath;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
@@ -165,12 +166,12 @@ public final class BlockFx {
 		// the clash: shield, anvil, golem and chain layered with a little pitch scatter, the grindstone is the scrape
 		double v = FxTune.d("block.sound", 1.0);
 		double ps = 0.9 + r.nextDouble() * 0.2;
-		sound("item.shield.block", at, 1.25 * ps, 0.8 * v);
-		sound("block.anvil.land", at, 1.75 * ps, 0.28 * v);
-		sound("entity.iron_golem.damage", at, 1.55 * ps, 0.5 * v);
-		FxDelayed.after(0.03, () -> sound("block.chain.hit", at, (1.2 + r.nextDouble() * 0.4), 0.55 * v));
-		FxDelayed.after(0.02, () -> sound("block.grindstone.use", at, 1.9 + r.nextDouble() * 0.2, 0.25 * v));
-		FxDelayed.after(0.05, () -> sound("item.trident.hit", at, 1.8 + r.nextDouble() * 0.3, 0.3 * v));
+		sound(SoundIds.GENERAL_BLOCK_HIT, "item.shield.block", at, 1.25 * ps, 0.8 * v);
+		sound(SoundIds.GENERAL_BLOCK_HIT, "block.anvil.land", at, 1.75 * ps, 0.28 * v);
+		sound(SoundIds.GENERAL_BLOCK_HIT, "entity.iron_golem.damage", at, 1.55 * ps, 0.5 * v);
+		FxDelayed.after(0.03, () -> sound(SoundIds.GENERAL_BLOCK_HIT, "block.chain.hit", at, (1.2 + r.nextDouble() * 0.4), 0.55 * v));
+		FxDelayed.after(0.02, () -> sound(SoundIds.GENERAL_BLOCK_HIT, "block.grindstone.use", at, 1.9 + r.nextDouble() * 0.2, 0.25 * v));
+		FxDelayed.after(0.05, () -> sound(SoundIds.GENERAL_BLOCK_HIT, "item.trident.hit", at, 1.8 + r.nextDouble() * 0.3, 0.3 * v));
 	}
 
 	/**
@@ -231,12 +232,12 @@ public final class BlockFx {
 				.rot(r.nextDouble() * 6.28, 0).spawn();
 		double v = FxTune.d("block.sound", 1.0);
 		double ps = 0.92 + r.nextDouble() * 0.16;
-		sound("item.shield.block", at, 1.35 * ps, 0.55 * v);
+		sound(SoundIds.GENERAL_BLOCK_ABILITY, "item.shield.block", at, 1.35 * ps, 0.55 * v);
 		if (blade) {
-			sound("block.anvil.land", at, 1.9 * ps, 0.18 * v);
-			sound("entity.iron_golem.damage", at, 1.7 * ps, 0.3 * v);
+			sound(SoundIds.GENERAL_BLOCK_ABILITY, "block.anvil.land", at, 1.9 * ps, 0.18 * v);
+			sound(SoundIds.GENERAL_BLOCK_ABILITY, "entity.iron_golem.damage", at, 1.7 * ps, 0.3 * v);
 		} else {
-			sound("block.amethyst_block.hit", at, 1.7 * ps, 0.35 * v);
+			sound(SoundIds.GENERAL_BLOCK_ABILITY, "block.amethyst_block.hit", at, 1.7 * ps, 0.35 * v);
 		}
 	}
 
@@ -293,14 +294,14 @@ public final class BlockFx {
 		double v = FxTune.d("parry.sound", 1.0);
 		double pt = FxTune.d("parry.pitch", 1.0);
 		double ps = 0.97 + r.nextDouble() * 0.06;
-		sound("block.amethyst_block.chime", at, Math.min(2.0, 2.0 * pt * ps), 1.0 * v);
-		FxDelayed.after(0.035, () -> sound("block.amethyst_block.chime", at, Math.min(2.0, 1.5 * pt * ps), 0.8 * v));
-		sound("block.bell.use", at, Math.min(2.0, 2.0 * pt), 0.45 * v);
-		sound("item.trident.hit", at, 1.9 * pt * ps, 0.8 * v);
-		sound("item.trident.hit_ground", at, 1.7 * pt, 0.45 * v);
-		sound("entity.player.attack.crit", at, 1.6 * pt, 0.7 * v);
-		sound("item.shield.block", at, 1.7 * pt, 0.5 * v);
-		FxDelayed.after(0.03, () -> sound("entity.iron_golem.damage", at, 1.8 * pt, 0.35 * v));
+		sound(SoundIds.GENERAL_PARRY, "block.amethyst_block.chime", at, Math.min(2.0, 2.0 * pt * ps), 1.0 * v);
+		FxDelayed.after(0.035, () -> sound(SoundIds.GENERAL_PARRY, "block.amethyst_block.chime", at, Math.min(2.0, 1.5 * pt * ps), 0.8 * v));
+		sound(SoundIds.GENERAL_PARRY, "block.bell.use", at, Math.min(2.0, 2.0 * pt), 0.45 * v);
+		sound(SoundIds.GENERAL_PARRY, "item.trident.hit", at, 1.9 * pt * ps, 0.8 * v);
+		sound(SoundIds.GENERAL_PARRY, "item.trident.hit_ground", at, 1.7 * pt, 0.45 * v);
+		sound(SoundIds.GENERAL_PARRY, "entity.player.attack.crit", at, 1.6 * pt, 0.7 * v);
+		sound(SoundIds.GENERAL_PARRY, "item.shield.block", at, 1.7 * pt, 0.5 * v);
+		FxDelayed.after(0.03, () -> sound(SoundIds.GENERAL_PARRY, "entity.iron_golem.damage", at, 1.8 * pt, 0.35 * v));
 	}
 
 	/** An expanding ring standing in the plane perpendicular to the horizontal unit vector {@code n} (it faces the attacker). */
@@ -309,7 +310,7 @@ public final class BlockFx {
 				.peak(peak).delay(delay).spawn();
 	}
 
-	private static void sound(String id, Vec3d at, double pitch, double volume) {
-		FxSound.play(null, id, at.x, at.y, at.z, pitch, volume);
+	private static void sound(String event, String vanilla, Vec3d at, double pitch, double volume) {
+		FxSound.play(null, event, vanilla, at.x, at.y, at.z, pitch, volume);
 	}
 }

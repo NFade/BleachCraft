@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.CondenseMath;
 import dev.minebleach.reiatsutest.core.fx.FxHash;
@@ -376,9 +377,9 @@ public final class HakuteikenFx {
 		t.duck(1.0, 1.5, 0.5);
 		// 0.00 condense: dark world, petals spiral into the hand
 		t.at(0.0, x -> {
-			x.sound("block.beacon.activate", 0.7, 0.8);
-			x.sound("entity.illusioner.cast_spell", 0.6, 0.7);
-			x.sound("block.conduit.activate", 0.8, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_CONDENSE, "block.beacon.activate", 0.7, 0.8);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_CONDENSE, "entity.illusioner.cast_spell", 0.6, 0.7);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_CONDENSE, "block.conduit.activate", 0.8, 0.6);
 			st.vignette = x.vignette(ScreenFx.Kind.DARK, FxTune.d("hak.vignette", 0.60), 0.3);
 			if (st.grade == null) {
 				st.grade = x.grade("#FFFFFF", 1.0, 0.05);
@@ -388,14 +389,14 @@ public final class HakuteikenFx {
 		// 0.50 wings and halo bloom
 		t.at(tm.wingStart, x -> {
 			x.flash(FxTune.d("hak.bloomFlash", 0.40), "#FFFFFF", false);
-			x.sound("entity.ender_dragon.flap", 0.9, 0.9);
-			x.sound("block.bell.use", 1.2, 0.7);
-			x.sound("block.end_portal_frame.fill", 0.6, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_WINGS, "entity.ender_dragon.flap", 0.9, 0.9);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_WINGS, "block.bell.use", 1.2, 0.7);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_WINGS, "block.end_portal_frame.fill", 0.6, 0.6);
 		});
 		// 1.00 blade forms
 		t.at(tm.bladeStart + 0.05, x -> {
-			x.sound("block.amethyst_block.resonate", 1.2, 0.7);
-			x.sound("block.beacon.power_select", 1.5, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_BLADE, "block.amethyst_block.resonate", 1.2, 0.7);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_BLADE, "block.beacon.power_select", 1.5, 0.6);
 		});
 		// 1.50 strike (server line)
 		t.at(tm.strike, x -> strike(x, st));
@@ -403,13 +404,13 @@ public final class HakuteikenFx {
 		t.at(tm.burst, x -> burst(x, st));
 		// 2.50 dissolve
 		t.at(tm.dissolveStart, x -> {
-			x.sound("entity.phantom.flap", 1.2, 0.3);
+			x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_DISSOLVE, "entity.phantom.flap", 1.2, 0.3);
 			if (st.vignette != null) {
 				st.vignette.release(0.5);
 			}
 		});
 		// 3.00 rows re-form
-		t.at(st.cloud.p.rows.reformStart, x -> x.sound("block.amethyst_block.chime", 0.8, 0.4));
+		t.at(st.cloud.p.rows.reformStart, x -> x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_REFORM, "block.amethyst_block.chime", 0.8, 0.4));
 		t.lifetime(tm.life);
 	}
 
@@ -447,9 +448,9 @@ public final class HakuteikenFx {
 		Vec3d hand = new Vec3d(pose.hx, pose.hy, pose.hz);
 		Vec3d d = end.subtract(hand);
 		double length = d.length();
-		x.sound("entity.warden.sonic_boom", 1.2, 1.0);
-		x.sound("item.mace.smash_air", 0.8, 0.8);
-		x.sound("item.trident.thunder", 1.5, 0.4);
+		x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_STRIKE, "entity.warden.sonic_boom", 1.2, 1.0);
+		x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_STRIKE, "item.mace.smash_air", 0.8, 0.8);
+		x.sound(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_STRIKE, "item.trident.thunder", 1.5, 0.4);
 		if (x.screen) {
 			ScreenFx.impactFrame(x.strength);
 			ScreenFx.shake(FxTune.d("hak.strikeShake", 1.2), 0.5, x.strength);
@@ -503,9 +504,9 @@ public final class HakuteikenFx {
 		Random r = x.rng(1800);
 		double q = FxConfig.effectQuality * x.lod;
 		double gy = FxGround.sample(end.x, end.z, end.y);
-		x.soundAt("entity.generic.explode", end, 0.9, 1.0);
-		x.soundAt("block.glass.break", end, 0.6, 0.6);
-		x.soundAt("item.mace.smash_ground_heavy", end, 0.8, 0.8);
+		x.soundAt(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_BURST, "entity.generic.explode", end, 0.9, 1.0);
+		x.soundAt(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_BURST, "block.glass.break", end, 0.6, 0.6);
+		x.soundAt(SoundIds.BYAKUYA_BANKAI_HAKUTEIKEN_BURST, "item.mace.smash_ground_heavy", end, 0.8, 0.8);
 		double s = StormFx.impactStrength(x, end);
 		if (x.screen) {
 			ScreenFx.flashCustom(FxTune.d("hak.burstFlash", 0.80), FxMath.hex("#FFFFFF"), 0.04, 0.03, 0.4, s);

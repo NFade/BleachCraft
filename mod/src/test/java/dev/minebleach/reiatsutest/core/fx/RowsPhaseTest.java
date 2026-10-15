@@ -48,12 +48,12 @@ class RowsPhaseTest {
 	@Test
 	void petalBirthMatchesTheCutAndConsumptionMatchesTheRegrowth() {
 		for (double d : new double[] {0, 12.5, 40}) {
-			for (double y : new double[] {0, 2, 5.3, 8}) {
+			for (double y : new double[] {0, 2, 4.3, BladeSpec.length()}) {
 				double born = S.cutPassesAt(d, y);
-				// at the moment the cut passes y the blade fraction x 8 equals y
-				assertEquals(y, RowsPhase.fraction(S, born, d) * 8.0, 1e-9);
+				// at the moment the cut passes y the blade fraction x the blade length equals y
+				assertEquals(y, RowsPhase.fraction(S, born, d) * BladeSpec.length(), 1e-9);
 				double eaten = S.regrowReaches(d, y);
-				assertEquals(y, RowsPhase.fraction(S, eaten, d) * 8.0, 1e-9);
+				assertEquals(y, RowsPhase.fraction(S, eaten, d) * BladeSpec.length(), 1e-9);
 				assertTrue(eaten > born);
 			}
 		}

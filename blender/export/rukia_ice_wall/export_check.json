@@ -1,0 +1,890 @@
+{
+ "rukia_ice_wall_shaft_a": {
+  "src_verts": 12,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 12,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 12,
+   "vt": 4,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.8743019104003906e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_shaft_a_core": {
+  "src_verts": 12,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 12,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 12,
+   "vt": 4,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_shaft_b": {
+  "src_verts": 18,
+  "src_faces": 12,
+  "src_quads": 12,
+  "imp_verts": 18,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 18,
+   "vt": 4,
+   "vn": 12,
+   "f": 12,
+   "tris": 0,
+   "quads": 12,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.76837158203125e-07,
+  "src_bbox": [
+   [
+    -0.5137,
+    -0.4319,
+    0.0
+   ],
+   [
+    0.515,
+    0.4705,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   1.7,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_shaft_b_core": {
+  "src_verts": 12,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 12,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 12,
+   "vt": 4,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   1.7,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_shaft_c": {
+  "src_verts": 18,
+  "src_faces": 12,
+  "src_quads": 12,
+  "imp_verts": 18,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 18,
+   "vt": 4,
+   "vn": 12,
+   "f": 12,
+   "tris": 0,
+   "quads": 12,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.8743019104003906e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   3.4,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_shaft_c_core": {
+  "src_verts": 12,
+  "src_faces": 6,
+  "src_quads": 6,
+  "imp_verts": 12,
+  "imp_faces": 6,
+  "obj_lines": {
+   "v": 12,
+   "vt": 4,
+   "vn": 6,
+   "f": 6,
+   "tris": 0,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   3.4,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_tip_a": {
+  "src_verts": 25,
+  "src_faces": 24,
+  "src_quads": 18,
+  "imp_verts": 25,
+  "imp_faces": 24,
+  "obj_lines": {
+   "v": 25,
+   "vt": 7,
+   "vn": 24,
+   "f": 24,
+   "tris": 6,
+   "quads": 18,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.980232238769531e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    1.2
+   ]
+  ],
+  "meta_origin": [
+   5.1,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_tip_a_core": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 5,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    0.95
+   ]
+  ],
+  "meta_origin": [
+   5.1,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_tip_b": {
+  "src_verts": 19,
+  "src_faces": 18,
+  "src_quads": 12,
+  "imp_verts": 19,
+  "imp_faces": 18,
+  "obj_lines": {
+   "v": 19,
+   "vt": 7,
+   "vn": 18,
+   "f": 18,
+   "tris": 6,
+   "quads": 12,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.980232238769531e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    0.98
+   ]
+  ],
+  "meta_origin": [
+   6.8,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_tip_b_core": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 5,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    0.72
+   ]
+  ],
+  "meta_origin": [
+   6.8,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_tip_c": {
+  "src_verts": 38,
+  "src_faces": 34,
+  "src_quads": 18,
+  "imp_verts": 38,
+  "imp_faces": 34,
+  "obj_lines": {
+   "v": 38,
+   "vt": 13,
+   "vn": 31,
+   "f": 34,
+   "tris": 16,
+   "quads": 18,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.980232238769531e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    1.12
+   ]
+  ],
+  "meta_origin": [
+   8.5,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_tip_c_core": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 5,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2497,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    0.9
+   ]
+  ],
+  "meta_origin": [
+   8.5,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_crown_a": {
+  "src_verts": 51,
+  "src_faces": 46,
+  "src_quads": 24,
+  "imp_verts": 51,
+  "imp_faces": 46,
+  "obj_lines": {
+   "v": 51,
+   "vt": 13,
+   "vn": 43,
+   "f": 46,
+   "tris": 22,
+   "quads": 24,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.980232238769531e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    1.25
+   ]
+  ],
+  "meta_origin": [
+   10.2,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_crown_a_core": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 5,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    1.0
+   ]
+  ],
+  "meta_origin": [
+   10.2,
+   0.0,
+   0.0
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_crown_b": {
+  "src_verts": 64,
+  "src_faces": 58,
+  "src_quads": 30,
+  "imp_verts": 64,
+  "imp_faces": 58,
+  "obj_lines": {
+   "v": 64,
+   "vt": 13,
+   "vn": 55,
+   "f": 58,
+   "tris": 28,
+   "quads": 30,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.980232238769531e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    1.32
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_crown_b_core": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 5,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    1.05
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_crown_c": {
+  "src_verts": 64,
+  "src_faces": 58,
+  "src_quads": 30,
+  "imp_verts": 64,
+  "imp_faces": 58,
+  "obj_lines": {
+   "v": 64,
+   "vt": 13,
+   "vn": 55,
+   "f": 58,
+   "tris": 28,
+   "quads": 30,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 2.980232238769531e-07,
+  "src_bbox": [
+   [
+    -0.4988,
+    -0.4193,
+    0.0
+   ],
+   [
+    0.5,
+    0.4568,
+    0.64
+   ]
+  ],
+  "meta_origin": [
+   1.7,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_crown_c_core": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 5,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 3.5762786865234375e-07,
+  "src_bbox": [
+   [
+    -0.2494,
+    -0.2097,
+    0.0
+   ],
+   [
+    0.25,
+    0.2284,
+    0.5
+   ]
+  ],
+  "meta_origin": [
+   1.7,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_sat_a": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 7,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.470348358154297e-07,
+  "src_bbox": [
+   [
+    -0.1608,
+    -0.1174,
+    -0.142
+   ],
+   [
+    0.5299,
+    0.1279,
+    0.848
+   ]
+  ],
+  "meta_origin": [
+   3.4,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_sat_b": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 7,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.172325134277344e-07,
+  "src_bbox": [
+   [
+    -0.1132,
+    -0.0755,
+    -0.1079
+   ],
+   [
+    0.5432,
+    0.0822,
+    1.3444
+   ]
+  ],
+  "meta_origin": [
+   5.1,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_sat_c": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 7,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.76837158203125e-07,
+  "src_bbox": [
+   [
+    -0.187,
+    -0.151,
+    -0.1799
+   ],
+   [
+    0.5353,
+    0.1644,
+    0.5945
+   ]
+  ],
+  "meta_origin": [
+   6.8,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_sat_d": {
+  "src_verts": 13,
+  "src_faces": 12,
+  "src_quads": 6,
+  "imp_verts": 13,
+  "imp_faces": 12,
+  "obj_lines": {
+   "v": 13,
+   "vt": 7,
+   "vn": 12,
+   "f": 12,
+   "tris": 6,
+   "quads": 6,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.6193599700927734e-07,
+  "src_bbox": [
+   [
+    -0.2141,
+    -0.1677,
+    -0.1621
+   ],
+   [
+    0.6129,
+    0.1827,
+    1.2029
+   ]
+  ],
+  "meta_origin": [
+   8.5,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_feet_a": {
+  "src_verts": 52,
+  "src_faces": 48,
+  "src_quads": 24,
+  "imp_verts": 52,
+  "imp_faces": 48,
+  "obj_lines": {
+   "v": 52,
+   "vt": 7,
+   "vn": 48,
+   "f": 48,
+   "tris": 24,
+   "quads": 24,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.3213367462158203e-07,
+  "src_bbox": [
+   [
+    -0.8434,
+    -0.7211,
+    -0.1662
+   ],
+   [
+    0.8272,
+    0.6802,
+    0.5014
+   ]
+  ],
+  "meta_origin": [
+   10.2,
+   0.0,
+   -1.9
+  ],
+  "match": true
+ },
+ "rukia_ice_wall_feet_b": {
+  "src_verts": 39,
+  "src_faces": 36,
+  "src_quads": 18,
+  "imp_verts": 39,
+  "imp_faces": 36,
+  "obj_lines": {
+   "v": 39,
+   "vt": 7,
+   "vn": 36,
+   "f": 36,
+   "tris": 18,
+   "quads": 18,
+   "other_f": 0,
+   "bad_keywords": [],
+   "faces_without_vt": 0
+  },
+  "bbox_err_m": 4.917383193969727e-07,
+  "src_bbox": [
+   [
+    -0.7645,
+    -0.8308,
+    -0.1709
+   ],
+   [
+    0.5981,
+    0.7127,
+    0.4925
+   ]
+  ],
+  "meta_origin": [
+   0.0,
+   0.0,
+   -3.8
+  ],
+  "match": true
+ }
+}

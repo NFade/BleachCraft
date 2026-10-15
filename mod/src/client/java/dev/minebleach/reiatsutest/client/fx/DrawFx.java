@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.client.model.DrawEvents;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
@@ -43,14 +44,14 @@ public final class DrawFx {
 			return;
 		}
 		switch (phase) {
-			case DRAW_START -> FxSound.play(null, "item.armor.equip_iron", p.x, p.y + 1.0, p.z, 1.7, 0.30 * lod);
+			case DRAW_START -> FxSound.play(null, SoundIds.GENERAL_DRAW_START, "item.armor.equip_iron", p.x, p.y + 1.0, p.z, 1.7, 0.30 * lod);
 			case DRAW_RELEASE -> {
-				FxSound.play(null, "item.trident.return", p.x, p.y + 1.0, p.z, 1.9, 0.30 * lod);
+				FxSound.play(null, SoundIds.GENERAL_DRAW_RELEASE, "item.trident.return", p.x, p.y + 1.0, p.z, 1.9, 0.30 * lod);
 				glint(entity, local, character, lod, 1.0f);
 			}
-			case SHEATHE_START -> FxSound.play(null, "item.armor.equip_chain", p.x, p.y + 1.0, p.z, 1.3, 0.28 * lod);
+			case SHEATHE_START -> FxSound.play(null, SoundIds.GENERAL_SHEATHE_START, "item.armor.equip_chain", p.x, p.y + 1.0, p.z, 1.3, 0.28 * lod);
 			case SHEATHE_END -> {
-				FxSound.play(null, "item.armor.equip_iron", p.x, p.y + 1.0, p.z, 1.15, 0.34 * lod);
+				FxSound.play(null, SoundIds.GENERAL_SHEATHE_END, "item.armor.equip_iron", p.x, p.y + 1.0, p.z, 1.15, 0.34 * lod);
 				glint(entity, local, character, lod, 0.6f);
 			}
 		}

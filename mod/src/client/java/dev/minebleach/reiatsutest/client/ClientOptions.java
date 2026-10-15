@@ -1,14 +1,12 @@
 package dev.minebleach.reiatsutest.client;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.config.ConfigFileIo;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * Client options file {@code config/reiatsu_test_client.json}: {@code {"show_first_person_hand": true, ..., "voice": {"client": {"enabled": true, "port": 47821}}}}.
@@ -71,7 +69,15 @@ public final class ClientOptions {
 	}
 
 	public static void load() {
-		Path file = FabricLoader.getInstance().getConfigDir().resolve("reiatsu_test_client.json");
+		ClientConfigFile.migrate(); // R11 review fix 8: stamp / migrate the client file before anyone reads it
+		Path file = ClientConfigFile.file();
+		synchronized (ClientConfigFile.lock()) {
+			loadLocked(file);
+		}
+		applyDevProperties();
+	}
+
+	private static void loadLocked(Path file) {
 		try {
 			if (Files.exists(file)) {
 				JsonObject o = JsonParser.parseString(Files.readString(file)).getAsJsonObject();
@@ -91,7 +97,7 @@ public final class ClientOptions {
 				if (!o.has("voice")) {
 					// older file without the voice section: add it with the defaults, keep everything else as it is
 					o.add("voice", voiceDefaults());
-					Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(o) + System.lineSeparator(), StandardCharsets.UTF_8);
+					ConfigFileIo.writeJson(file, o);
 				}
 			} else {
 				JsonObject o = new JsonObject();
@@ -100,11 +106,15 @@ public final class ClientOptions {
 				o.addProperty("draw_animation_seconds", 0.45);
 				o.addProperty("uryu.bowHand", "right");
 				o.add("voice", voiceDefaults());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(o) + System.lineSeparator(), StandardCharsets.UTF_8);
+				ClientConfigFile.stampFresh(o);
+				ConfigFileIo.writeJson(file, o);
 			}
 		} catch (IOException | RuntimeException e) {
 			ReiatsuTest.LOGGER.warn("cannot read {}: {}", file, e.toString());
 		}
+	}
+
+	private static void applyDevProperties() {
 		String mult = System.getProperty("reiatsu.fpScale");
 		if (mult != null) {
 			firstPersonScaleMultiplier = Float.parseFloat(mult);

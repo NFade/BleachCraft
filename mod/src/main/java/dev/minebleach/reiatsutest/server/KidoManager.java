@@ -62,7 +62,12 @@ public final class KidoManager {
 	}
 
 	public static void init() {
-		ConfigReload.register(() -> config = ModConfig.loadKido());
+		ConfigReload.register(() -> {
+			KidoConfig c = ModConfig.loadKido();
+			config = c;
+			// R11 review fix 3: cost, cooldown, gcd and enabled are read by the state machines, not by this class: hand the new numbers to the live ones
+			ZanpakutoManager.refreshKido(c);
+		});
 		ServerLifecycleEvents.SERVER_STARTED.register(srv -> {
 			config = ModConfig.loadKido();
 			BURSTS.clear();

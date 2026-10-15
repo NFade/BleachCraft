@@ -404,8 +404,27 @@ public final class TpPose {
 
 	// ------------------------------------------------------------------ the pose
 
+	/** Smallest item display scale the solver accepts (the maths divides by the scale of the sword frame). */
+	public static final double MIN_ITEM_SCALE = 0.05;
+
+	/** R11 review fix 9: a display scale of 0, negative or NaN (a resource pack) would give NaN poses: it falls back to the reference scale. */
+	static double saneScale(double s) {
+		return Double.isNaN(s) || Double.isInfinite(s) || s < MIN_ITEM_SCALE ? REF_SCALE : s;
+	}
+
+	private static Input sane(Input in) {
+		double ds = saneScale(in.display().scale());
+		double hs = saneScale(in.hip().scale());
+		if (ds == in.display().scale() && hs == in.hip().scale()) {
+			return in;
+		}
+		return new Input(in.p(), in.b(), in.left(), in.thin(), new Hip(in.hip().posPx(), in.hip().dir(), hs),
+				new Display(in.display().rotDeg(), in.display().transBlocks(), ds), in.rig(), in.swordScale());
+	}
+
 	/** Solves one frame. All numbers of the layout come from {@code pr} (defaults inside). */
-	public static Result solve(Input in, Params pr) {
+	public static Result solve(Input input, Params pr) {
+		Input in = sane(input);
 		double p = Math.max(0, Math.min(1, in.p()));
 		double b = Math.max(0, Math.min(1, in.b()));
 		DrawRig rig = in.rig();
@@ -415,7 +434,7 @@ public final class TpPose {
 		double ts = Math.min(1, p / slide);
 		double u = p <= slide ? 0 : smooth((p - slide) / (1 - slide));
 
-		double ks = Math.max(0.1, in.swordScale());
+		double ks = Double.isNaN(in.swordScale()) ? 1.0 : Math.max(0.1, in.swordScale());
 		double ds = in.display().scale() * ks; // effective scale of the sword in the hand, the hold and the block
 		double hs = in.hip().scale() * ks; // effective scale of the scabbard (and of the sword in it)
 		TpMat4 hip = hipFrame(in.hip(), ks);

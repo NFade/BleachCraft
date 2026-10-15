@@ -3,8 +3,8 @@ package dev.minebleach.reiatsutest.client.fx;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.BankaiCurves;
-import dev.minebleach.reiatsutest.core.fx.BladeStraighten;
 import dev.minebleach.reiatsutest.core.fx.BladeRowLayout;
+import dev.minebleach.reiatsutest.core.fx.BladeSpec;
 import dev.minebleach.reiatsutest.core.fx.RowsPhase;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -32,7 +32,7 @@ import org.joml.Matrix4f;
  * Batched giant blades (VFX_STORYBOARD 1.7.3 {@code BankaiBladeRenderer}, {@code GroundHiltRenderer}). Rising, sinking and leaning
  * blades are written on the CPU every frame (full mesh within {@code bladeLodDistance}, LOD beyond, frustum and distance culled); once
  * every blade is in its final pose the whole set is uploaded once into a STATIC {@link VertexBuffer} and drawn with one call
- * (set {@code -Dreiatsu.fx.vbo=false} to compare). Tips glow without a pass: vertices at local y >= 6.85 are lit full bright and
+ * (set {@code -Dreiatsu.fx.vbo=false} to compare). Tips glow without a pass: vertices in the top {@link #tipBand()} of the blade are lit full bright and
  * tinted {@code #F2E9FF}; a glow-core billboard per tip (glow source, drawn after the grade) carries them at any distance. Also draws the
  * ground hilt, the ripples and the crack decals.
  */
@@ -41,23 +41,11 @@ public final class BankaiBladeRenderer {
 	private static final Identifier CRACK = ReiatsuTest.id("textures/fx/crack_ground.png");
 	private static final int WHITE = 0xFFFFFFFF;
 	private static final int TIP = 0xFFF2E9FF;
-	private static final float TIP_Y = 6.85f;
-	/** Local z of the apex of the mesh as exported (the 0.826 m of sori); the shipped apex is this times {@link #curve()} (r8 straightening). */
-	private static final double TIP_Z_EXPORT = -0.826;
-	/** bankai.bladeCurve default: 0 = straight katana slab, 1 = the mesh as exported (a scimitar, 0.83 m of sori, 1.24 m with the width scale). */
-	public static final double DEFAULT_CURVE = 0.2;
 	private static final float[] M = new float[9];
 	/** Normal matrix of the last {@link #basis} call (rotation times the inverse of the anisotropic scale). */
 	private static final float[] NM = new float[9];
 	private static FxMesh blade;
 	private static FxMesh lod;
-	/** The meshes as exported (the straightened ones above are derived from them whenever bankai.bladeCurve changes). */
-	private static FxMesh bladeExport;
-	private static FxMesh lodExport;
-	/** Spine table of the exported full mesh (BladeStraighten.spine); the LOD mesh is sheared with the same table so both share one apex. */
-	private static double[] spine = new double[0];
-	/** Curve the current {@link #blade} and {@link #lod} were built for (NaN before the first build). */
-	private static double builtCurve = Double.NaN;
 	private static FxMesh hilt;
 	private static FxMesh ripple;
 	private static boolean meshesTried;
@@ -96,13 +84,9 @@ public final class BankaiBladeRenderer {
 			return;
 		}
 		meshesTried = true;
-		bladeExport = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade");
-		lodExport = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade_lod");
-		blade = bladeExport;
-		lod = lodExport;
-		if (bladeExport != null) {
-			spine = BladeStraighten.spine(bladeExport.pos);
-		}
+		BladeSpecLoader.ensure(); // (length, apex: from byakuya_bankai_meta.json)
+		blade = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade");
+		lod = FxMesh.load("byakuya_bankai", "byakuya_bankai_blade_lod");
 		hilt = FxMesh.load("byakuya_bankai", "byakuya_bankai_hilt_ground");
 		ripple = FxMesh.load("byakuya_bankai", "byakuya_bankai_ripple");
 		bladeLayer = RenderLayer.getEntityCutoutNoCull(TEXTURE);
@@ -110,36 +94,21 @@ public final class BankaiBladeRenderer {
 		crackLayer = RenderLayer.getEntityTranslucent(CRACK);
 	}
 
-	// ------------------------------------------------------------------------------------------ straightening (r8)
+	// ------------------------------------------------------------------------------------------ mesh size (R11 T13: from the meta, see BladeSpec)
 
-	/** bankai.bladeCurve (0 straight .. 1 as exported), read live. */
-	public static double curve() {
-		return BladeStraighten.clampCurve(FxTune.d("bankai.bladeCurve", DEFAULT_CURVE));
+	/** Height of the glowing top band of the blade in mesh metres (bankai.tipBand, default 0.8). */
+	static double tipBand() {
+		return FxMath.clamp(FxTune.d("bankai.tipBand", BladeSpec.DEFAULT_GLOW_BAND), 0.05, 3.0);
 	}
 
-	/** Local z of the glowing apex of the blade as drawn with the current curve (the tip glow, the cut cap and every tip bound hang on it). */
+	/** Local y from which the mesh vertices glow. */
+	static float tipY() {
+		return (float) BladeSpec.glowY(tipBand());
+	}
+
+	/** Local z of the apex of the blade (the straight mesh: the apex is 0.201 m off the axis, on the edge side; the tip glow and the cut cap hang on it). */
 	static double tipZ() {
-		double ex = spine.length == 0 ? TIP_Z_EXPORT : BladeStraighten.spineAt(spine, bladeExport.maxY);
-		return ex * curve();
-	}
-
-	/** Rebuilds the sheared copies of the full and the LOD mesh when bankai.bladeCurve changed (about 100 vertices: free). Returns true when it did. */
-	private static boolean refreshCurve() {
-		double c = curve();
-		if (bladeExport == null || c == builtCurve) {
-			return false;
-		}
-		builtCurve = c;
-		blade = shear(bladeExport, c);
-		lod = lodExport == null ? null : shear(lodExport, c);
-		return true;
-	}
-
-	private static FxMesh shear(FxMesh m, double c) {
-		if (c >= 1.0) {
-			return m;
-		}
-		return m.reshaped(BladeStraighten.straighten(m.pos, spine, c), BladeStraighten.normals(m.pos, m.nrm, spine, c));
+		return BladeSpec.tipZ();
 	}
 
 	// ------------------------------------------------------------------------------------------ blade pose
@@ -152,15 +121,15 @@ public final class BankaiBladeRenderer {
 			double x = FxMath.clamp(tau / 0.5);
 			double risen = BladeRowLayout.riseOffset(st.endAt - st.epoch - l.start[i]);
 			// sink from where the blade stood at the seal (reverse of the rise, easeInQuad)
-			return st.bladeScale * (risen + (-BladeRowLayout.SINK_DEPTH - risen) * x * x);
+			return st.bladeScale * (risen + (-BladeRowLayout.sinkDepth() - risen) * x * x);
 		}
 		return st.bladeScale * BladeRowLayout.riseOffset(t - l.start[i]);
 	}
 
 	/**
 	 * Basis of blade i with the lean (radians toward the axis) and the scale, row major 3x3 into {@code m}. Mesh axes: local x = thickness (runs ALONG the row, so the
-	 * broad faces look along the lane like the pages of a book, as in the anime references), local y = length, local z = width (ACROSS the lane, the curve bends it
-	 * toward the axis). Local x is scaled by {@code bladeScale * kx}, y by {@code bladeScale}, z by {@code bladeScale * kz} (bankai.bladeThick / bankai.bladeWidth).
+	 * broad faces look along the lane like the pages of a book, as in the anime references), local y = length, local z = width (ACROSS the lane, the lean tilts it
+	 * toward the axis). All three axes are scaled alike by {@code bladeScale}; the width (local z) is stretched on top by {@code bankai.bladeWidth} (R12).
 	 * The normal matrix goes to {@link #NM}.
 	 */
 	static void basis(RowsFx.State st, int i, double leanRad, float[] m) {
@@ -177,29 +146,26 @@ public final class BankaiBladeRenderer {
 		double c = Math.cos(leanRad);
 		double sn = Math.sin(leanRad);
 		float sc = (float) (st.layout.scale[i] * st.bladeScale);
-		float sx = (float) (sc * st.kx);
-		float sz = (float) (sc * st.kz);
-		m[0] = (float) (xX * sx);
+		float wf = (float) st.widthFactor; // local z (width across the lane) only
+		m[0] = (float) (xX * sc);
 		m[1] = (float) (-zX * sn * sc);
-		m[2] = (float) (zX * c * sz);
+		m[2] = (float) (zX * c * sc * wf);
 		m[3] = 0f;
 		m[4] = (float) (c * sc);
-		m[5] = (float) (sn * sz);
-		m[6] = (float) (xZ * sx);
+		m[5] = (float) (sn * sc * wf);
+		m[6] = (float) (xZ * sc);
 		m[7] = (float) (-zZ * sn * sc);
-		m[8] = (float) (zZ * c * sz);
-		// normal matrix: unit rotation columns, column x divided by kx and column z by kz (inverse transpose of a rotation times a diagonal scale)
-		float ix = (float) (1.0 / st.kx);
-		float iz = (float) (1.0 / st.kz);
-		NM[0] = (float) (xX * ix);
+		m[8] = (float) (zZ * c * sc * wf);
+		// normal matrix: the scale is uniform, so it is the unit rotation (inverse transpose of a rotation)
+		NM[0] = (float) xX;
 		NM[1] = (float) (-zX * sn);
-		NM[2] = (float) (zX * c * iz);
+		NM[2] = (float) (zX * c);
 		NM[3] = 0f;
 		NM[4] = (float) c;
-		NM[5] = (float) (sn * iz);
-		NM[6] = (float) (xZ * ix);
+		NM[5] = (float) sn;
+		NM[6] = (float) xZ;
 		NM[7] = (float) (-zZ * sn);
-		NM[8] = (float) (zZ * c * iz);
+		NM[8] = (float) (zZ * c);
 	}
 
 	/** World position of the glowing tip of blade i at row time t. */
@@ -214,9 +180,10 @@ public final class BankaiBladeRenderer {
 		double off = offsetOf(st, i, t);
 		double by = st.ground[i] - 0.5 + off;
 		double tz = tipZ();
-		out[0] = st.bx[i] + (M[1] * BladeRowLayout.BLADE_LENGTH + M[2] * tz) * f;
-		out[1] = by + (M[4] * BladeRowLayout.BLADE_LENGTH + M[5] * tz) * f;
-		out[2] = st.bz[i] + (M[7] * BladeRowLayout.BLADE_LENGTH + M[8] * tz) * f;
+		double len = BladeSpec.length();
+		out[0] = st.bx[i] + (M[1] * len + M[2] * tz) * f;
+		out[1] = by + (M[4] * len + M[5] * tz) * f;
+		out[2] = st.bz[i] + (M[7] * len + M[8] * tz) * f;
 	}
 
 	private static int lightOf(RowsFx.State st, int i) {
@@ -239,8 +206,9 @@ public final class BankaiBladeRenderer {
 		if (blade == null) {
 			return;
 		}
-		refreshCurve();
 		long t0 = System.nanoTime();
+		float tipY = tipY();
+		double len = BladeSpec.length();
 		ClientWorld world = ctx.world();
 		Camera cam = ctx.camera();
 		Vec3d cp = cam.getPos();
@@ -271,14 +239,14 @@ public final class BankaiBladeRenderer {
 				boolean sweep = FxConfig.effectQuality >= 0.4;
 				for (int i = 0; i < l.n; i++) {
 					double off = offsetOf(st, i, t);
-					if (off < -7.6 * st.bladeScale) {
+					if (off < -(len - 0.4) * st.bladeScale) { // (buried: the tip is less than 0.4 above the rest height)
 						continue;
 					}
 					double frac = st.fraction(i);
 					if (frac <= 0.003) {
 						continue;
 					}
-					float cutY = frac >= 0.999 ? Float.MAX_VALUE : (float) (BladeRowLayout.BLADE_LENGTH * frac);
+					float cutY = frac >= 0.999 ? Float.MAX_VALUE : (float) (len * frac);
 					double shiver = shiverOf(st, i);
 					double dx = st.bx[i] - cp.x;
 					double dz = st.bz[i] - cp.z;
@@ -290,11 +258,11 @@ public final class BankaiBladeRenderer {
 					double lean = Math.toRadians(l.leanDeg(t, i));
 					basis(st, i, lean, M);
 					double by = st.ground[i] - 0.5 + off;
-					double tx = st.bx[i] + M[1] * 8.0;
-					double tz = st.bz[i] + M[7] * 8.0;
-					double ty = by + M[4] * 8.0;
+					double tx = st.bx[i] + M[1] * len;
+					double tz = st.bz[i] + M[7] * len;
+					double ty = by + M[4] * len;
 					if (frustum != null) {
-						double r = 0.9 * l.scale[i] * st.bladeScale * Math.max(1.0, Math.max(st.kz, st.kx)); // (the wide slab and its curve)
+						double r = 0.6 * l.scale[i] * st.bladeScale; // (the slab: half width 0.2, the apex 0.2 off the axis)
 						Box box = new Box(Math.min(st.bx[i], tx) - r, Math.min(by, ty) - 0.2, Math.min(st.bz[i], tz) - r, Math.max(st.bx[i], tx) + r, Math.max(by, ty) + 0.2,
 								Math.max(st.bz[i], tz) + r);
 						if (!frustum.isVisible(box)) {
@@ -308,7 +276,7 @@ public final class BankaiBladeRenderer {
 					FxMesh m = d < lodDist || lod == null ? blade : lod;
 					double sx = shiver == 0 ? 0 : shiver * -Math.sin(Math.toRadians(st.yawDeg)); // (along the row = along the normal of the broad face, so the tremble is seen)
 					double sz = shiver == 0 ? 0 : shiver * Math.cos(Math.toRadians(st.yawDeg));
-					m.writeBlade(buf, M, st.bx[i] - cp.x + sx, by - cp.y, st.bz[i] - cp.z + sz, lightOf(st, i), TIP_Y, WHITE, TIP, emissive, NM, cutY);
+					m.writeBlade(buf, M, st.bx[i] - cp.x + sx, by - cp.y, st.bz[i] - cp.z + sz, lightOf(st, i), tipY, WHITE, TIP, emissive, NM, cutY);
 					cpuQuads += m.quads;
 					cpuBlades++;
 				}
@@ -364,12 +332,13 @@ public final class BankaiBladeRenderer {
 		}
 		BufferBuilder b = staticTess.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 		int quads = 0;
+		float tipY = tipY();
 		double t = 1.0e6; // the final pose
 		for (int i = 0; i < l.n; i++) {
 			double lean = Math.toRadians(l.leanDeg(t, i));
 			basis(st, i, lean, M);
 			double by = st.ground[i] - 0.5;
-			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), TIP_Y, WHITE, TIP, 0f, NM);
+			blade.writeBlade(b, M, st.bx[i] - st.fx, by - st.fy, st.bz[i] - st.fz, lightOf(st, i), tipY, WHITE, TIP, 0f, NM);
 			quads += blade.quads;
 		}
 		BuiltBuffer built = b.endNullable();
@@ -383,7 +352,6 @@ public final class BankaiBladeRenderer {
 		}
 		st.vboVertices = quads * 4;
 		st.vboValid = true;
-		st.vboCurve = builtCurve;
 		int h = 0;
 		for (int i = 0; i < l.n; i++) {
 			h = h * 31 + st.light[i];
@@ -583,6 +551,7 @@ public final class BankaiBladeRenderer {
 			return;
 		}
 		double[] tip = new double[3];
+		double len = BladeSpec.length();
 		double glow = FxTune.d("bankai.tipGlow", 0.45);
 		double size = FxTune.d("bankai.tipSize", 1.6);
 		for (RowsFx.State st : states.values()) {
@@ -596,8 +565,9 @@ public final class BankaiBladeRenderer {
 			double edgeMul = FxTune.d("storm.edgeGlow", 0.8);
 			double gs = 0.4 + 0.6 * st.bladeScale; // (glow sprites shrink less than the blade)
 			for (int i = 0; i < l.n; i++) {
-				double off = offsetOf(st, i, t) / st.bladeScale; // (in blade units of the 8 m mesh: the thresholds below are those)
-				if (off < -7.0) {
+				double off = offsetOf(st, i, t) / st.bladeScale; // (in mesh metres; tip height above the rest height = len + off)
+				double tipH = len + off;
+				if (tipH < 1.0) {
 					continue;
 				}
 				double f = st.fraction(i);
@@ -605,7 +575,7 @@ public final class BankaiBladeRenderer {
 					continue;
 				}
 				tipPosition(st, i, t, f, tip);
-				double rise = FxMath.clamp((off + 7.0) / 3.0);
+				double rise = FxMath.clamp((tipH - 1.0) / 3.0);
 				double edge = phased ? RowsPhase.edgeGlow(st.timing, st.phaseTau(), l.dist[i]) : 0;
 				double k = glow * breath * fade * (0.45 + 0.55 * Math.max(lit, rise * 0.6));
 				float cg = (float) (0.91 + 0.09 * over);
@@ -621,7 +591,7 @@ public final class BankaiBladeRenderer {
 			}
 			// the sparkle running up: a faint lilac star at every 4th tip, twinkling
 			for (int i = 0; i < l.n; i += 4) {
-				double off = offsetOf(st, i, t) / st.bladeScale; // (in blade units of the 8 m mesh: the thresholds below are those)
+				double off = offsetOf(st, i, t) / st.bladeScale; // (in mesh metres)
 				double f = st.fraction(i);
 				if (off < -1.0 || st.endAt >= 0 || f < 0.5) {
 					continue;

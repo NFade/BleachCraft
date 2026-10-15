@@ -54,7 +54,9 @@ class BladeRowLayoutTest {
 
 	@Test
 	void riseGoesFromUnderTheGroundThroughASmallOvershoot() {
-		assertEquals(-8.5, BladeRowLayout.riseOffset(0), 1e-9);
+		// R11 T13: the blade is buried by its length plus 0.5 (the old 8 m mesh: 8.5); 5.5 + 0.5 = 6.0
+		assertEquals(-6.0, BladeRowLayout.riseOffset(0), 1e-9);
+		assertEquals(-(BladeSpec.length() + BladeRowLayout.SINK_MARGIN), BladeRowLayout.riseOffset(-1), 1e-9);
 		assertEquals(0.0, BladeRowLayout.riseOffset(BladeRowLayout.RISE_TIME), 1e-9);
 		double max = -9;
 		for (double t = 0; t <= 0.45; t += 0.001) {
@@ -81,7 +83,7 @@ class BladeRowLayoutTest {
 	void leanArrivesAfterCompletionAndStaysSmall() {
 		BladeRowLayout l = BladeRowLayout.of(200, 1);
 		assertEquals(0.0, l.leanDeg(l.completionTime(), 3), 1e-9);
-		assertEquals(3.0, l.leanDeg(l.settledTime() + 1, 0), 0.6);
+		assertEquals(BladeRowLayout.LEAN_DEG, l.leanDeg(l.settledTime() + 1, 0), 0.6);
 	}
 
 	@Test
@@ -134,12 +136,13 @@ class BladeRowLayoutTest {
 		assertEquals(20, l.n);
 		assertEquals(1, l.ranks);
 		double scale = BladeRowLayout.DEFAULT_BLADE_SCALE;
-		double height = BladeRowLayout.BLADE_LENGTH * scale;
-		double width = BladeRowLayout.DEFAULT_BLADE_WIDTH;
-		assertTrue(height >= 7.0 && height <= 9.0, "7 to 9 blocks tall: " + height);
-		assertTrue(width >= 1.2 && width <= 1.8, "1.2 to 1.8 blocks wide: " + width);
-		double gap = BladeRowLayout.gap(BladeRowLayout.DEFAULT_PITCH, scale, BladeRowLayout.DEFAULT_BLADE_THICK);
-		assertTrue(gap > 0 && gap / width >= 0.3 && gap / width <= 0.5, "gap 30 to 50 percent of the width: " + gap / width);
+		double height = BladeRowLayout.height(scale);
+		double width = BladeSpec.width() * scale;
+		// R11 T13: the straight blade of the user at its true size (anime measurement: 5.5 tall, 0.37 wide); the old pins were 7 to 9 tall and 1.2 to 1.8 wide
+		assertEquals(5.5, height, 0.01, "5.5 blocks tall");
+		assertEquals(0.4026, width, 0.01, "about 0.40 blocks wide");
+		double gap = BladeRowLayout.gap(BladeRowLayout.DEFAULT_PITCH, scale);
+		assertEquals(1.0 - 0.1477, gap, 1e-9, "pitch 1.0 minus the 0.1477 thick slab");
 		for (int j = 0; j + 1 < BladeRowLayout.DEFAULT_PER_SIDE; j++) {
 			assertEquals(BladeRowLayout.DEFAULT_PITCH, l.along[j] - l.along[j + 1], 1e-5, "even pitch along the row");
 		}
@@ -149,22 +152,30 @@ class BladeRowLayoutTest {
 	}
 
 	@Test
-	void laneStaysOpenAroundTheCasterEvenAtTheCurvedTips() {
+	void laneStaysOpenAroundTheCasterEvenAtTheTips() {
 		double scale = BladeRowLayout.DEFAULT_BLADE_SCALE;
-		double kz = BladeRowLayout.widthScale(BladeRowLayout.DEFAULT_BLADE_WIDTH, scale);
-		double innerFoot = BladeRowLayout.DEFAULT_HALF_WIDTH - BladeRowLayout.DEFAULT_BLADE_WIDTH / 2;
+		double width = BladeSpec.width() * scale;
+		double innerFoot = BladeRowLayout.DEFAULT_HALF_WIDTH - width / 2;
 		assertTrue(innerFoot >= 6.0, "the inner face of a blade foot is at least 6 blocks from the axis: " + innerFoot);
-		// the mesh curve (0.826 m at the tip, stretched with the width) and the 3 degree lean bend the tip toward the axis
-		double tipAcross = BladeRowLayout.DEFAULT_HALF_WIDTH - 0.826 * scale * kz - BladeRowLayout.BLADE_LENGTH * scale * Math.sin(Math.toRadians(BladeRowLayout.LEAN_DEG + 0.5));
-		assertTrue(tipAcross >= 3.5, "the lane at the tips is at least 7 blocks wide: " + 2 * tipAcross);
+		// the mesh is straight now (R11 T13): only the apex bevel (0.201 m off the axis of the blade) and the 3 degree lean move the tip toward the axis
+		double tipAcross = BladeRowLayout.DEFAULT_HALF_WIDTH - Math.abs(BladeSpec.tipZ()) * scale - BladeRowLayout.height(scale) * Math.sin(Math.toRadians(BladeRowLayout.LEAN_DEG + 0.5));
+		assertTrue(tipAcross >= 6.0, "the lane at the tips is at least 12 blocks wide: " + 2 * tipAcross);
 		assertTrue(tipAcross < BladeRowLayout.DEFAULT_HALF_WIDTH, "the tips lean inward");
 	}
 
 	@Test
-	void widthScaleGivesTheAskedWidth() {
-		assertEquals(1.5, BladeRowLayout.MESH_WIDTH * 1.0 * BladeRowLayout.widthScale(1.5, 1.0), 1e-9);
-		assertEquals(1.5, BladeRowLayout.MESH_WIDTH * 0.5 * BladeRowLayout.widthScale(1.5, 0.5), 1e-9, "independent of the uniform scale");
-		assertEquals(0.28, BladeRowLayout.MESH_THICK * BladeRowLayout.DEFAULT_BLADE_SCALE * BladeRowLayout.DEFAULT_BLADE_THICK, 1e-9);
+	void r9LayoutIsOnlyConstantsTheDefaultsStayAsTheyWere() {
+		// R11 T13: the default layout (start, pitch, count) is NOT changed by the new blade; the R9 numbers exist for bankai.layout = r9 only
+		assertEquals(-2.0, BladeRowLayout.DEFAULT_START_AHEAD, 0);
+		assertEquals(1.0, BladeRowLayout.DEFAULT_PITCH, 0);
+		assertEquals(10, BladeRowLayout.DEFAULT_PER_SIDE);
+		assertEquals(7.0, BladeRowLayout.DEFAULT_HALF_WIDTH, 0);
+		BladeRowLayout r9 = BladeRowLayout.lane(BladeRowLayout.R9_PER_SIDE, 1, BladeRowLayout.R9_HALF_WIDTH, BladeRowLayout.R9_PITCH, BladeRowLayout.R9_START_AHEAD);
+		assertEquals(24, r9.n);
+		assertEquals(-1.0, r9.along[0], 1e-5, "first blade 1 block behind the feet");
+		assertEquals(-1.0 - 2.0 * 11, r9.along[11], 1e-5, "pitch 2.0, 12 per side");
+		assertEquals(3.7, r9.corridorHalfWidth(), 1e-9);
+		assertEquals("r9", BladeRowLayout.LAYOUT_R9);
 	}
 
 	@Test

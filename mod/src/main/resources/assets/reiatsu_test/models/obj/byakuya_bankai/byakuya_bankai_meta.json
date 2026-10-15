@@ -5,8 +5,8 @@
   "empties": {
     "tip": [
       0.0,
-      0.825996,
-      8.0
+      0.200997,
+      5.5
     ]
   },
   "objects": {
@@ -55,5 +55,19 @@
       0.3,
       4.2
     ]
+  },
+  "blade": {
+    "length": 5.5,
+    "width": 0.4026,
+    "thickness": 0.1477,
+    "tip": [
+      0.0,
+      0.200997,
+      5.5
+    ],
+    "source": "user model Plane normalised by blender/scripts/build_byakuya_bankai_blade_v2.py (R11 T13)",
+    "straight": true,
+    "edge": "-Y",
+    "spine": "+Y"
   }
 }

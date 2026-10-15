@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.fx.RukiaFxParams;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.ArrayList;
@@ -57,8 +58,8 @@ public final class RukiaBankaiFx {
 				}
 			}
 			vig[0] = x.vignette(ScreenFx.Kind.FROST, 0.25, 0.1);
-			x.sound("block.beacon.power_select", 1.6, 0.6);
-			x.sound("block.amethyst_block.resonate", 0.5, 0.8);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_GATHER, "block.beacon.power_select", 1.6, 0.6);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_GATHER, "block.amethyst_block.resonate", 0.5, 0.8);
 		});
 		// 0.12 detonation: the white pillar (core r 0.9, outer r 2.2), shock ring, sparks, flash
 		t.at(0.12, x -> {
@@ -86,9 +87,9 @@ public final class RukiaBankaiFx {
 			RukiaKit.iceShards(x, r, 30, pos.x, gy + 0.8, pos.z, 0.8, 8.0, 4.0, 0.5, 22, d("rb.shardSize", 0.30));
 			x.flash(d("rb.flash", 1.00), "#FFFFFF", false);
 			x.shake(d("rb.shake", 1.0), 0.45);
-			x.sound("block.end_portal.spawn", 1.2, 1.0);
-			x.sound("entity.warden.sonic_boom", 1.6, 0.5);
-			x.sound("block.glass.break", 0.6, 0.8);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_BURST, "block.end_portal.spawn", 1.2, 1.0);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_BURST, "entity.warden.sonic_boom", 1.6, 0.5);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_BURST, "block.glass.break", 0.6, 0.8);
 		});
 		// 0.30 the mist cap at y + 18, the mist column and the snow spiral around the pillar
 		t.at(0.30, x -> {
@@ -108,11 +109,11 @@ public final class RukiaBankaiFx {
 				FxGlowBatch.sprite(GlowSprite.MIST).at(pos.x + Math.cos(a) * rad, gy + r.nextDouble() * 9.0, pos.z + Math.sin(a) * rad).axisY().size(2.5).vel(0, 0.4, 0).life(1.5)
 						.curve(0.2, 0.6).color("#EAF8FF").peak(d("rb.mist", 0.12)).owner(x).spawn();
 			}
-			x.sound("block.powder_snow.break", 0.8, 0.9);
-			x.sound("item.elytra.flying", 1.4, 0.3);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FLOWER, "block.powder_snow.break", 0.8, 0.9);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FLOWER, "item.elytra.flying", 1.4, 0.3);
 		});
-		t.at(0.38, x -> x.sound("block.powder_snow.break", 0.9, 0.9));
-		t.at(0.46, x -> x.sound("block.powder_snow.break", 1.0, 0.9));
+		t.at(0.38, x -> x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FLOWER, "block.powder_snow.break", 0.9, 0.9));
+		t.at(0.46, x -> x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FLOWER, "block.powder_snow.break", 1.0, 0.9));
 		for (int k = 0; k < 60; k++) {
 			final int kk = k;
 			t.at(0.30 + 0.016 * k, x -> {
@@ -126,17 +127,17 @@ public final class RukiaBankaiFx {
 		t.at(0.60, x -> {
 			Random r = x.rng(4);
 			RukiaKit.iceShards(x, r, 24, pos.x, gy + 0.1, pos.z, 1.5, 1.8, 3.0, 0.8, 26, 0.38);
-			x.sound("block.amethyst_block.chime", 1.0, 1.0);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FREEZE, "block.amethyst_block.chime", 1.0, 1.0);
 		});
 		for (int i = 0; i < 6; i++) {
 			final int ii = i;
-			t.at(0.60 + 0.06 * i, x -> x.sound("block.amethyst_cluster.place", 0.9 + 0.08 * ii, 0.7));
+			t.at(0.60 + 0.06 * i, x -> x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FREEZE, "block.amethyst_cluster.place", 0.9 + 0.08 * ii, 0.7));
 		}
-		t.at(1.15, x -> x.sound("block.amethyst_block.chime", 1.15, 1.0));
-		t.at(1.5, x -> x.sound("block.amethyst_block.chime", 1.3, 1.0));
+		t.at(1.15, x -> x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FREEZE, "block.amethyst_block.chime", 1.15, 1.0));
+		t.at(1.5, x -> x.sound(SoundIds.RUKIA_BANKAI_RELEASE_FREEZE, "block.amethyst_block.chime", 1.3, 1.0));
 		t.at(0.9, x -> {
-			x.sound("item.armor.equip_elytra", 1.5, 0.5);
-			x.sound("entity.phantom.flap", 1.6, 0.3);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_WINGS, "item.armor.equip_elytra", 1.5, 0.5);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_WINGS, "entity.phantom.flap", 1.6, 0.3);
 		});
 		// 1.20 the pillar narrows and lifts away, the snow falls out of it
 		for (int k = 0; k < 8; k++) {
@@ -156,10 +157,10 @@ public final class RukiaBankaiFx {
 				}
 			});
 		}
-		t.at(1.2, x -> x.sound("block.beacon.ambient", 1.5, 0.4));
+		t.at(1.2, x -> x.sound(SoundIds.RUKIA_BANKAI_RELEASE_AMBIENT, "block.beacon.ambient", 1.5, 0.4));
 		// 2.00 settle: the passive owns everything from here
 		t.at(2.0, x -> {
-			x.sound("block.amethyst_block.resonate", 0.6, 0.3);
+			x.sound(SoundIds.RUKIA_BANKAI_RELEASE_SETTLE, "block.amethyst_block.resonate", 0.6, 0.3);
 			if (vig[0] != null) {
 				vig[0].release(1.0);
 			}
@@ -167,7 +168,7 @@ public final class RukiaBankaiFx {
 		// title card sound for the owner (the card is the HUD's)
 		t.at(0.12, x -> {
 			if (x.localCaster) {
-				x.sound("block.bell.use", 1.5, 0.4);
+				x.sound(SoundIds.GENERAL_TITLE_CARD, "block.bell.use", 1.5, 0.4);
 			}
 		});
 		FxTimelines.start(t);

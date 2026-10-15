@@ -53,11 +53,6 @@ public final class FxMesh {
 		this.centreV = (float) (sv / (quads * 4));
 	}
 
-	/** A copy with other positions and normals (same quads and UVs), for the runtime reshaping of a loaded mesh (the r8 blade straightening). */
-	public FxMesh reshaped(float[] newPos, float[] newNrm) {
-		return new FxMesh(name, quads, newPos, uv, newNrm);
-	}
-
 	/** The mesh of {@code object} in the folder {@code model}, or null when the file is missing (the caller falls back). */
 	public static synchronized FxMesh load(String model, String object) {
 		String key = model + "/" + object;

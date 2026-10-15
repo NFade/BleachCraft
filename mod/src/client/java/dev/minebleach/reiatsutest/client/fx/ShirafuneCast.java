@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.fx.ShirafuneTimeline;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.BalanceConfig;
@@ -62,8 +63,8 @@ public final class ShirafuneCast {
 			vignette = ScreenFx.vignette(ScreenFx.Kind.FROST, vg, secs * 0.8, 1.0);
 		}
 		double v = FxTune.d("shira.castSound", 1.0);
-		FxSound.play(null, "block.amethyst_block.resonate", me.getX(), me.getY() + 1.0, me.getZ(), 1.2, 0.5 * v);
-		FxDelayed.after(secs * 0.55, () -> FxSound.play(null, "block.amethyst_cluster.hit", me.getX(), me.getY() + 1.0, me.getZ(), 1.6, 0.35 * v));
+		FxSound.play(null, SoundIds.RUKIA_SHIKAI_SHIRAFUNE_CAST, "block.amethyst_block.resonate", me.getX(), me.getY() + 1.0, me.getZ(), 1.2, 0.5 * v);
+		FxDelayed.after(secs * 0.55, () -> FxSound.play(null, SoundIds.RUKIA_SHIKAI_SHIRAFUNE_CAST, "block.amethyst_cluster.hit", me.getX(), me.getY() + 1.0, me.getZ(), 1.6, 0.35 * v));
 		FxTimelines.start(t);
 	}
 

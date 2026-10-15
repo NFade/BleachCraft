@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.fx.CageVisual;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.Random;
@@ -72,8 +73,8 @@ final class CageFx {
 						.vel((center.x - hand.x) / travel + (r.nextDouble() - 0.5) * 1.5, (center.y - hand.y) / travel + (r.nextDouble() - 0.5) * 1.5, (center.z - hand.z) / travel + (r.nextDouble() - 0.5) * 1.5)
 						.drag(1.0).life((int) (travel * 20)).size(RukiaKit.size(0.22)).color(PETAL).colorTo(PINK).seed(i).spin((r.nextDouble() - 0.5) * 0.4).fade(0.3).owner(x).spawn();
 			}
-			x.soundAt("block.pink_petals.break", center, 1.1, 0.7);
-			x.soundAt("block.amethyst_block.resonate", center, 1.4, 0.4);
+			x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_CAST, "block.pink_petals.break", center, 1.1, 0.7);
+			x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_CAST, "block.amethyst_block.resonate", center, 1.4, 0.4);
 		});
 		for (int w = 0; w < 3; w++) {
 			final int wave = w;
@@ -100,8 +101,8 @@ final class CageFx {
 				FxParticles.spec(FxParticles.Kind.PETAL).at(center.x + d.x * R, center.y + d.y * R, center.z + d.z * R).vel(d.x * 2.0, d.y * 2.0 + 0.5, d.z * 2.0).drag(0.94).life(26 + r.nextInt(10))
 						.size(RukiaKit.size(0.24)).color(PETAL).colorTo(LILAC).seed(i).spin((r.nextDouble() - 0.5) * 0.5).fade(0.4).owner(x).spawn();
 			}
-			x.soundAt("block.pink_petals.break", center, 0.8, 0.6);
-			x.soundAt("block.amethyst_block.break", center, 1.3, 0.5);
+			x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_END, "block.pink_petals.break", center, 0.8, 0.6);
+			x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_END, "block.amethyst_block.break", center, 1.3, 0.5);
 		});
 		FxTimelines.start(t);
 	}
@@ -154,7 +155,7 @@ final class CageFx {
 		}
 		// the marker of the centre, held until the first pulse hits
 		FxGlowBatch.sprite(GlowSprite.GLOW_CORE).at(c.x, c.y, c.z).size(RukiaKit.size(0.5), RukiaKit.size(0.9)).life(life).curve(0.15, 0.1).color(HOT).peak(RukiaKit.glow(0.7)).twinkle().owner(x).spawn();
-		x.soundAt("block.amethyst_cluster.place", c, 0.9, 0.7);
+		x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_TELEGRAPH, "block.amethyst_cluster.place", c, 0.9, 0.7);
 	}
 
 	/** One wave of petals from the rim of the area (1.3 R) that fly into the centre and arrive {@code arrival} seconds after the wave starts. */
@@ -198,9 +199,9 @@ final class CageFx {
 	/** The warning tick before a pulse: a rising tick and a ring that shrinks from 1.35 times the ground ring onto it, landing with the pulse. */
 	private static void warn(EffectTimeline x, Vec3d c, double groundR, double gy, int k, int pulses, double lead) {
 		boolean finalOne = k == pulses - 1;
-		x.soundAt("block.amethyst_cluster.hit", c, 0.9 + 0.1 * k, 0.55);
+		x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_WARN, "block.amethyst_cluster.hit", c, 0.9 + 0.1 * k, 0.55);
 		if (finalOne) {
-			x.soundAt("block.beacon.power_select", c, 1.7, 0.45);
+			x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_WARN, "block.beacon.power_select", c, 1.7, 0.45);
 		}
 		double life = Math.max(0.05, lead);
 		FxGlowBatch.sprite(GlowSprite.RING_THIN).at(c.x, gy + 0.07, c.z).ground().size(groundR * 1.35 / 0.4375, groundR / 0.4375).sizeEase(FxMath.IQ).life(life).curve(0.02, 0.3).color(PINK)
@@ -244,13 +245,13 @@ final class CageFx {
 		x.shake(FxTune.d("cage.shake", 0.28) * sc * (k == 0 ? 1.2 : 1.0), 0.18 + 0.1 * (sc - 1.0));
 		// audio: boom + shock (the explosion), the chime (the pitch rises with every step), petals; the last one is bigger and ends on a bell
 		double b = FxTune.d("cage.boom", 1.0);
-		x.soundAt("entity.generic.explode", c, (finalOne ? 1.1 : 1.6) - 0.04 * k, 0.4 * sc * b);
-		x.soundAt("entity.firework_rocket.blast", c, 0.9, 0.6 * Math.min(1.5, sc) * b);
-		x.soundAt("block.amethyst_block.chime", c, 1.0 + 0.1 * k, 0.8 * b);
-		x.soundAt("block.pink_petals.break", c, 1.2, 0.5 * b);
+		x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_PULSE, "entity.generic.explode", c, (finalOne ? 1.1 : 1.6) - 0.04 * k, 0.4 * sc * b);
+		x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_PULSE, "entity.firework_rocket.blast", c, 0.9, 0.6 * Math.min(1.5, sc) * b);
+		x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_PULSE, "block.amethyst_block.chime", c, 1.0 + 0.1 * k, 0.8 * b);
+		x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_PULSE, "block.pink_petals.break", c, 1.2, 0.5 * b);
 		if (finalOne) {
-			x.soundAt("entity.firework_rocket.large_blast", c, 0.85, 0.8 * b);
-			x.soundAt("block.bell.use", c, 1.3, 0.5 * b);
+			x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_PULSE, "entity.firework_rocket.large_blast", c, 0.85, 0.8 * b);
+			x.soundAt(SoundIds.BYAKUYA_SHIKAI_CAGE_PULSE, "block.bell.use", c, 1.3, 0.5 * b);
 		}
 	}
 }

@@ -20,5 +20,6 @@ public final class ModNetworking {
 		PayloadTypeRegistry.playS2C().register(EntityFxS2C.ID, EntityFxS2C.CODEC);
 		PayloadTypeRegistry.playS2C().register(VoiceFeedbackS2C.ID, VoiceFeedbackS2C.CODEC);
 		PayloadTypeRegistry.playS2C().register(UryuArrowsS2C.ID, UryuArrowsS2C.CODEC);
+		PayloadTypeRegistry.playS2C().register(SoundCueS2C.ID, SoundCueS2C.CODEC); // R11 T12
 	}
 }

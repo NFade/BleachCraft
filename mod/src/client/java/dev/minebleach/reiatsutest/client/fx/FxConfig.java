@@ -1,6 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
-import com.google.gson.GsonBuilder;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -138,9 +138,17 @@ public final class FxConfig {
 	}
 
 	public static void load() {
+		// R11 review fix 8: the whole read-add-write cycle holds the lock of the client file (ClientOptions and TpConfig write the same file)
+		synchronized (dev.minebleach.reiatsutest.client.ClientConfigFile.lock()) {
+			loadLocked();
+		}
+	}
+
+	private static void loadLocked() {
 		Path file = file();
 		JsonObject root = new JsonObject();
 		boolean writable = true;
+		boolean fresh = !Files.isRegularFile(file);
 		try {
 			if (Files.isRegularFile(file)) {
 				JsonElement el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
@@ -170,9 +178,10 @@ public final class FxConfig {
 		apply(root);
 		if (added && writable) {
 			try {
-				Files.createDirectories(file.getParent());
-				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(root) + System.lineSeparator(),
-						StandardCharsets.UTF_8);
+				if (fresh) {
+					dev.minebleach.reiatsutest.client.ClientConfigFile.stampFresh(root);
+				}
+				dev.minebleach.reiatsutest.core.config.ConfigFileIo.writeJson(file, root);
 			} catch (IOException e) {
 				ReiatsuTest.LOGGER.warn("[fxconfig] could not write {}: {}", file, e.toString());
 			}

@@ -119,6 +119,7 @@ Source tags used below: **[RS]** research/rukia_sealed_shikai.md, **[RB]** resea
 | byakuya_shikai | hilt / petal-blade / shard | 2000 / 20 / 12 |
 | rukia_bankai | sword / ribbon segment / each crystal / ice shell / costume set | 3000 / 12 / 60 / 120 / 3500 |
 | byakuya_bankai | giant blade (instanced) / blade LOD / ground hilt / Hakuteiken set / Senkei sword | 300 / 24 / 1500 / 900 / 150 |
+| rukia_ice_wall (R11, block model, one cell per wall block, design/results/r11_ice_crystals.md) | each OBJ object / shell + core of one piece / one block with 2 satellites and feet / whole 9 x 5 x 2 wall | 96 / 120 / 280 / 12000 (as built: 88 / 106 / 144 / 6742) |
 
 ---
 

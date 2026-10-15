@@ -25,14 +25,17 @@ public class ReiatsuTestClient implements ClientModInitializer {
 				dev.minebleach.reiatsutest.registry.ModBlocks.FROST_LEAVES, dev.minebleach.reiatsutest.registry.ModBlocks.FROST_SPRIG);
 		net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap.INSTANCE.putBlock(dev.minebleach.reiatsutest.registry.ModBlocks.FROST_FILM,
 				net.minecraft.client.render.RenderLayer.getTranslucent());
-		// the ice wall of the Rukia bankai (R11 T5): a translucent full block
+		// the ice wall of the Rukia bankai (R11 T5): the block is a full collider, its crystal model (IceWallCrystalPlugin) is translucent
 		net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap.INSTANCE.putBlock(dev.minebleach.reiatsutest.registry.ModBlocks.ICE_WALL,
 				net.minecraft.client.render.RenderLayer.getTranslucent());
 		FxClient.init();
 		DevWindowPlacement.init();
 		ObjModelPlugin.register();
+		// R11: the ice wall block is drawn as a crystal cluster (OBJ pieces from Blender, chosen per block position); the JSON cube is the fallback
+		dev.minebleach.reiatsutest.client.model.IceWallCrystalPlugin.register();
 		dev.minebleach.reiatsutest.client.model.ScabbardFeature.register();
 		dev.minebleach.reiatsutest.client.model.TpPoseLayer.register();
+		dev.minebleach.reiatsutest.client.model.TpBowLayer.register();
 		dev.minebleach.reiatsutest.client.model.FpMotion.init();
 		ClientNet.register();
 		BcGrassSwing.init();

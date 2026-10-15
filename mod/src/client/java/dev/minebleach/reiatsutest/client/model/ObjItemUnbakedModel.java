@@ -157,6 +157,15 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 			}
 		}
 
+		ItemManifest.ObjectDef pinkDef = man.objects.get("byakuya_sealed_drawn_pink");
+		if (pinkDef != null) {
+			List<String> pinkObjs = List.of("byakuya_sealed_drawn_pink");
+			states.pinkSword = buildBase(mb, pinkObjs, sprite, cutout, translucent, NO_SHIFT, quadCount);
+			states.pinkSwordGlow = buildGlow(mb, pinkObjs, sprite, glow, NO_SHIFT, quadCount);
+			states.pinkSwordFade = buildBase(mb, pinkObjs, sprite, translucent, translucent, NO_SHIFT, quadCount);
+			states.pinkSwordSprite = sprite.apply(pinkDef.diffuse());
+		}
+
 		if (man.objects.containsKey("uryu_arrow") && man.objects.containsKey("uryu_bow_string") && man.objects.containsKey("uryu_bow")) {
 			states.bow = buildBow(mb, sprite, cutout, translucent, glow, quadCount); // Uryu: the drawn bow with the pulled string and the nocked arrow
 		}
@@ -402,6 +411,12 @@ public final class ObjItemUnbakedModel implements UnbakedModel {
 		float bladeLen;
 		/** The drawn blade cut into small fragments for the shikai dissolve; null when the blade axis is unknown. */
 		BladeShards shards;
+		/** The drawn sword with the pink texture and its glow (R12: the sword that the petals build), the sprite of the pink texture for its fragments; null when the item has no such object. */
+		Mesh pinkSword;
+		Mesh pinkSwordGlow;
+		/** The pink sword as a translucent mesh: it fades out over the steel when the pink of the shikai blade goes. */
+		Mesh pinkSwordFade;
+		Sprite pinkSwordSprite;
 		/** Uryu's bow with the pulled string and the nocked arrow (items with those three objects), null otherwise. */
 		BowMeshes bow;
 	}

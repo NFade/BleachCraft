@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.FxHash;
 import dev.minebleach.reiatsutest.core.fx.RowsPhase;
@@ -302,28 +303,28 @@ public final class StormFx {
 		double cut0 = st.storm.p.rows.cutStart;
 		// 0.00 command: tips overdrive (BankaiBladeRenderer), blades shiver
 		t.at(0.0, x -> {
-			x.sound("block.amethyst_block.resonate", 0.9, 0.8);
-			x.sound("entity.illusioner.prepare_mirror", 1.2, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_COMMAND, "block.amethyst_block.resonate", 0.9, 0.8);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_COMMAND, "entity.illusioner.prepare_mirror", 1.2, 0.6);
 		});
 		// 0.30 burning dissolve: petals emerge at the cut
 		t.at(cut0, x -> {
 			x.flash(FxTune.d("storm.flashStart", 0.15), "#F3E4FF", false);
-			x.sound("entity.phantom.flap", 0.8, 0.3);
-			x.sound("block.amethyst_block.break", 1.4, 0.3);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_DISSOLVE, "entity.phantom.flap", 0.8, 0.3);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_DISSOLVE, "block.amethyst_block.break", 1.4, 0.3);
 		});
 		for (int k = 0; k < 6; k++) {
 			final int kk = k;
-			t.at(cut0 + 0.07 * k, x -> x.sound("block.pink_petals.break", 0.8 + 0.3 * x.rng(kk).nextDouble(), 0.7));
+			t.at(cut0 + 0.07 * k, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_PETALS, "block.pink_petals.break", 0.8 + 0.3 * x.rng(kk).nextDouble(), 0.7));
 		}
 		// 0.80 storm (server tornado 0.8 to 1.5)
 		t.at(0.80, x -> {
-			x.sound("item.elytra.flying", 0.9, 0.35);
-			x.sound("entity.breeze.whirl", 0.8, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_STORM, "item.elytra.flying", 0.9, 0.35);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_STORM, "entity.breeze.whirl", 0.8, 0.6);
 			st.vignette = x.vignette(ScreenFx.Kind.DARK, FxTune.d("storm.vignette", 0.10), 0.4);
 		});
-		t.at(1.20, x -> x.sound("entity.breeze.whirl", 0.8, 0.6));
-		t.at(1.80, x -> x.sound("item.elytra.flying", 0.9, 0.35));
-		t.at(2.80, x -> x.sound("item.elytra.flying", 0.9, 0.35));
+		t.at(1.20, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_STORM, "entity.breeze.whirl", 0.8, 0.6));
+		t.at(1.80, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_STORM, "item.elytra.flying", 0.9, 0.35));
+		t.at(2.80, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_STORM, "item.elytra.flying", 0.9, 0.35));
 		for (int k = 0; k < 4; k++) {
 			t.at(0.8 + 0.2 * k, x -> {
 				if (x.localCaster) {
@@ -334,9 +335,9 @@ public final class StormFx {
 		// 1.50 directed attack: the stream peels off the front of the tornado
 		t.at(FxTune.d("storm.launchStart", 1.5), x -> {
 			x.shake(FxTune.d("storm.attackShake", 0.6), 0.3);
-			x.sound("entity.breeze.wind_burst", 0.7, 1.0);
-			x.sound("item.trident.riptide_3", 1.3, 0.6);
-			x.sound("entity.wind_charge.wind_burst", 0.8, 0.5);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_ATTACK, "entity.breeze.wind_burst", 0.7, 1.0);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_ATTACK, "item.trident.riptide_3", 1.3, 0.6);
+			x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_ATTACK, "entity.wind_charge.wind_burst", 0.8, 0.5);
 			if (x.screen && x.strength > 0.25) {
 				float[] sp = screenPoint(MinecraftClient.getInstance(), aim);
 				ScreenFx.speedLines(FxTune.d("storm.speedLines", 0.25) * x.strength, 0.3, sp[0], sp[1]);
@@ -345,14 +346,14 @@ public final class StormFx {
 		// 2.00 envelop: the sphere contracts around the aim, the core glow grows
 		for (int k = 0; k < 4; k++) {
 			final int kk = k;
-			t.at(2.0 + 0.1 * k, x -> x.sound("entity.player.attack.sweep", 1.0 + 0.1 * kk, 0.6));
-			t.at(2.0 + 0.12 * k, x -> x.sound("block.pink_petals.break", 1.0 + 0.4 * x.rng(10 + kk).nextDouble(), 0.5));
+			t.at(2.0 + 0.1 * k, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_ENVELOP, "entity.player.attack.sweep", 1.0 + 0.1 * kk, 0.6));
+			t.at(2.0 + 0.12 * k, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_ENVELOP_PETALS, "block.pink_petals.break", 1.0 + 0.4 * x.rng(10 + kk).nextDouble(), 0.5));
 		}
 		// 2.50 impact (server 12 HP)
 		t.at(imp, x -> impact(x, st, aim));
 		// 3.00 to 4.50 return
 		for (int k = 0; k < 4; k++) {
-			t.at(st.storm.p.returnStart + 0.3 * k, x -> x.sound("block.pink_petals.step", 0.9, 0.5));
+			t.at(st.storm.p.returnStart + 0.3 * k, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_RETURN, "block.pink_petals.step", 0.9, 0.5));
 		}
 		t.at(st.storm.p.returnStart, x -> {
 			if (st.vignette != null) {
@@ -360,8 +361,8 @@ public final class StormFx {
 			}
 		});
 		// 4.50 to 5.70 re-form
-		t.at(st.storm.p.rows.reformStart, x -> x.sound("block.amethyst_block.chime", 0.8, 0.4));
-		t.at(st.storm.p.rows.reformStart + 0.7, x -> x.sound("block.beacon.power_select", 0.9, 0.4));
+		t.at(st.storm.p.rows.reformStart, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_REFORM, "block.amethyst_block.chime", 0.8, 0.4));
+		t.at(st.storm.p.rows.reformStart + 0.7, x -> x.sound(SoundIds.BYAKUYA_BANKAI_SCATTER_REFORM_END, "block.beacon.power_select", 0.9, 0.4));
 		t.lifetime(st.life);
 	}
 
@@ -371,10 +372,10 @@ public final class StormFx {
 		Random r = x.rng(900);
 		double q = FxConfig.effectQuality * x.lod;
 		double gy = FxGround.sample(aim.x, aim.z, aim.y);
-		x.soundAt("entity.generic.explode", aim, 1.1, 0.9);
-		x.soundAt("item.mace.smash_ground_heavy", aim, 1.2, 0.6);
+		x.soundAt(SoundIds.BYAKUYA_BANKAI_SCATTER_IMPACT, "entity.generic.explode", aim, 1.1, 0.9);
+		x.soundAt(SoundIds.BYAKUYA_BANKAI_SCATTER_IMPACT, "item.mace.smash_ground_heavy", aim, 1.2, 0.6);
 		for (int k = 0; k < 3; k++) {
-			x.soundAt("block.pink_petals.break", aim, 0.7 + 0.1 * k, 0.7);
+			x.soundAt(SoundIds.BYAKUYA_BANKAI_SCATTER_IMPACT_PETALS, "block.pink_petals.break", aim, 0.7 + 0.1 * k, 0.7);
 		}
 		double s = impactStrength(x, aim);
 		if (x.screen) {

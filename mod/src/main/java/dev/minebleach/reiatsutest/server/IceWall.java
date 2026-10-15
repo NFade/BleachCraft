@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.server;
 
 import dev.minebleach.reiatsutest.ModConfig;
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.state.AbilityParams;
 import dev.minebleach.reiatsutest.core.world.IceWallConfig;
 import dev.minebleach.reiatsutest.core.world.IceWallLayout;
@@ -28,8 +29,6 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -160,7 +159,7 @@ public final class IceWall {
 		ReiatsuTest.LOGGER.info(LOG + "{} wall at ({}, {}, {}) normal {} sign {} base {}{} layers {} cells {} hp {} life {} ticks", w.ownerName, plan.centerX(),
 				plan.baseY(), plan.centerZ(), plan.normalX() ? "X" : "Z", plan.sign(), plan.baseY(), plan.grounded() ? "" : " (no ground, at the aimed height)",
 				plan.layers(), plan.cells().size(), cfg.hp(), cfg.lifeTicks());
-		world.playSound(null, center.x, plan.baseY(), center.z, SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.2F, 0.6F);
+		ModSound.play(world, SoundIds.RUKIA_BANKAI_ICE_WALL_START, center.x, plan.baseY(), center.z, "block.amethyst_block.chime", 1.2F, 0.6F);
 		growUntil(p.getServer(), w, now);
 	}
 
@@ -246,7 +245,7 @@ public final class IceWall {
 		if (placedHere > 0) {
 			w.world.spawnParticles(ParticleTypes.SNOWFLAKE, w.center.x, y + 0.5, w.center.z, Math.min(40, placedHere * 2), w.cfg.width() * 0.4, 0.2,
 					w.cfg.width() * 0.4, 0.02);
-			w.world.playSound(null, w.center.x, y + 0.5, w.center.z, SoundEvents.BLOCK_AMETHYST_CLUSTER_PLACE, SoundCategory.PLAYERS, 0.7F, 0.8F + 0.12F * layer);
+			ModSound.play(w.world, SoundIds.RUKIA_BANKAI_ICE_WALL_LAYER, w.center.x, y + 0.5, w.center.z, "block.amethyst_cluster.place", 0.7F, 0.8F + 0.12F * layer);
 		}
 	}
 
@@ -296,7 +295,7 @@ public final class IceWall {
 			removeLayer(srv, w, layer, shatter);
 		}
 		if (shatter && blocks > 0) {
-			w.world.playSound(null, w.center.x, w.center.y, w.center.z, SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.PLAYERS, 1.4F, 0.7F);
+			ModSound.play(w.world, SoundIds.RUKIA_BANKAI_ICE_WALL_BREAK, w.center.x, w.center.y, w.center.z, "block.glass.break", 1.4F, 0.7F);
 		}
 		ReiatsuTest.LOGGER.info(LOG + "{} wall ended ({}): {} blocks taken down, {} cells skipped, strength left {}", w.ownerName, why, blocks, w.skipped,
 				String.format(java.util.Locale.ROOT, "%.1f", w.hp));
@@ -356,7 +355,7 @@ public final class IceWall {
 		hit.hp -= damage;
 		ReiatsuTest.LOGGER.info(LOG + "{}'s wall took {} from {}: strength {} of {}", hit.ownerName, String.format(java.util.Locale.ROOT, "%.1f", damage), by,
 				String.format(java.util.Locale.ROOT, "%.1f", Math.max(0.0, hit.hp)), String.format(java.util.Locale.ROOT, "%.1f", hit.cfg.hp()));
-		world.playSound(null, point.x, point.y, point.z, SoundEvents.BLOCK_GLASS_HIT, SoundCategory.PLAYERS, 1.0F, 0.9F);
+		ModSound.play(world, SoundIds.RUKIA_BANKAI_ICE_WALL_HIT, point.x, point.y, point.z, "block.glass.hit", 1.0F, 0.9F);
 		if (hit.hp <= 0.0) {
 			release(hit, "broken by " + by, true);
 		}

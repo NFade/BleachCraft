@@ -1,0 +1,1330 @@
+{
+  "general.draw.start": {
+    "sounds": [
+      {
+        "name": "anime/general/draw_start_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.draw.release": {
+    "sounds": [
+      {
+        "name": "anime/general/draw_release_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.sheathe.start": {
+    "sounds": [
+      {
+        "name": "anime/general/sheathe_start_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.sheathe.end": {
+    "sounds": [
+      {
+        "name": "anime/general/sheathe_end_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.sword.swing": {
+    "sounds": [
+      {
+        "name": "anime/general/sword_swing_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.sword.hit_flesh": {
+    "sounds": [
+      {
+        "name": "anime/general/sword_hit_flesh_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.sword.hit_block": {
+    "sounds": [
+      {
+        "name": "anime/general/sword_hit_block_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.block.hit": {
+    "sounds": [
+      {
+        "name": "anime/general/block_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.block.ability": {
+    "sounds": [
+      {
+        "name": "anime/general/block_ability_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.parry": {
+    "sounds": [
+      {
+        "name": "anime/general/parry_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.hurt": {
+    "sounds": [
+      {
+        "name": "anime/general/hurt_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.death": {
+    "sounds": [
+      {
+        "name": "anime/general/death_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.seal.collapse": {
+    "sounds": [
+      {
+        "name": "anime/general/seal_collapse_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.bankai.end": {
+    "sounds": [
+      {
+        "name": "anime/general/bankai_end_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.title_card": {
+    "sounds": [
+      {
+        "name": "anime/general/title_card_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.shunpo.start": {
+    "sounds": [
+      {
+        "name": "anime/general/shunpo_start_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.shunpo.arrive": {
+    "sounds": [
+      {
+        "name": "anime/general/shunpo_arrive_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shunpo.accent": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shunpo_accent_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shunpo.accent": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shunpo_accent_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.pressure.release": {
+    "sounds": [
+      {
+        "name": "anime/general/pressure_release_1",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "general.bankai.ready": {
+    "sounds": [
+      {
+        "name": "anime/general/bankai_ready_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "general.bankai.timer_tick": {
+    "sounds": [
+      {
+        "name": "anime/general/bankai_timer_tick_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "general.ability.ready": {
+    "sounds": [
+      {
+        "name": "anime/general/ability_ready_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "general.reiatsu.empty": {
+    "sounds": [
+      {
+        "name": "anime/general/reiatsu_empty_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "general.rage.empty": {
+    "sounds": [
+      {
+        "name": "anime/general/rage_empty_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "general.ability.cooldown": {
+    "sounds": [
+      {
+        "name": "anime/general/ability_cooldown_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "general.rage.gain": {
+    "sounds": [
+      {
+        "name": "anime/general/rage_gain_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.reiatsu.restored": {
+    "sounds": [
+      {
+        "name": "anime/general/reiatsu_restored_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "general.terrain.break": {
+    "sounds": [
+      {
+        "name": "anime/general/terrain_break_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "ui.voice_toast": {
+    "sounds": [
+      {
+        "name": "anime/ui/voice_toast_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "ui.deny.shikai_time": {
+    "sounds": [
+      {
+        "name": "anime/ui/deny_shikai_time_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "ui.deny.blocked": {
+    "sounds": [
+      {
+        "name": "anime/ui/deny_blocked_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "ui.deny.state": {
+    "sounds": [
+      {
+        "name": "anime/ui/deny_state_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "ui.deny.item": {
+    "sounds": [
+      {
+        "name": "anime/ui/deny_item_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "ui.action_denied": {
+    "sounds": [
+      {
+        "name": "anime/ui/action_denied_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "ui.book_page": {
+    "sounds": [
+      {
+        "name": "anime/ui/book_page_1",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "byakuya.shikai.pink_hold": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_pink_hold_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.release_flash": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_release_flash_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.release_blast": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_release_blast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.swarm_release": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_swarm_release_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.swarm_flutter": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_swarm_flutter_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.swarm_hum": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_swarm_hum_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.attack_start": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_attack_start_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.attack_hit": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_attack_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.attack_petals": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_attack_petals_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.barrier_start": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_barrier_start_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.barrier_end": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_barrier_end_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.barrier_hit": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_barrier_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.cage_cast": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_cage_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.cage_telegraph": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_cage_telegraph_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.cage_warn": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_cage_warn_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.cage_pulse": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_cage_pulse_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.shikai.cage_end": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/shikai_cage_end_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.aura": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_aura_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.sword_drop": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_sword_drop_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.sword_hang": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_sword_hang_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.sword_enter": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_sword_enter_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.sword_ring": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_sword_ring_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.night": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_night_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.heartbeat": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_heartbeat_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.fault": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_fault_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.eruption": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_eruption_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.rows_done": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_rows_done_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.rows_hum": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_rows_hum_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.rows_dust": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_rows_dust_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_command": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_command_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_dissolve": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_dissolve_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_petals": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_petals_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_storm": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_storm_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_attack": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_attack_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_envelop": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_envelop_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_envelop_petals": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_envelop_petals_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_return": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_return_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_reform": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_reform_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_reform_end": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_reform_end_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_impact": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_impact_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.scatter_impact_petals": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_scatter_impact_petals_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.hakuteiken_condense": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_hakuteiken_condense_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.hakuteiken_wings": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_hakuteiken_wings_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.hakuteiken_blade": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_hakuteiken_blade_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.hakuteiken_dissolve": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_hakuteiken_dissolve_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.hakuteiken_reform": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_hakuteiken_reform_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "byakuya.bankai.hakuteiken_strike": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_hakuteiken_strike_1",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "byakuya.bankai.hakuteiken_burst": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_hakuteiken_burst_1",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "byakuya.bankai.senkei": {
+    "sounds": [
+      {
+        "name": "anime/byakuya/bankai_senkei_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.release_flash": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_release_flash_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.release_blast": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_release_blast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.release_ring": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_release_ring_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.aura": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_aura_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.tsukishiro_windup": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_tsukishiro_windup_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.tsukishiro_pillar": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_tsukishiro_pillar_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.tsukishiro_crust": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_tsukishiro_crust_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.tsukishiro_shatter": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_tsukishiro_shatter_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.hakuren_start": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_hakuren_start_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.hakuren_spikes": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_hakuren_spikes_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.hakuren_flare": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_hakuren_flare_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.hakuren_trail": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_hakuren_trail_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.hakuren_wave": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_hakuren_wave_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.hakuren_freeze": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_hakuren_freeze_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.hakuren_shatter": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_hakuren_shatter_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.shirafune_cast": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_shirafune_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.shirafune_charge": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_shirafune_charge_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.shirafune_throw": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_shirafune_throw_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.shirafune_hit": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_shirafune_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.shirafune_chill": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_shirafune_chill_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.shikai.shirafune_retract": {
+    "sounds": [
+      {
+        "name": "anime/rukia/shikai_shirafune_retract_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_flash": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_flash_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_blast": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_blast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_gather": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_gather_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_burst": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_burst_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_flower": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_flower_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_freeze": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_freeze_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_wings": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_wings_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_ambient": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_ambient_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.release_settle": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_release_settle_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.aura": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_aura_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.hum": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_hum_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.snow_step": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_snow_step_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.glint": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_glint_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.mob_frost": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_mob_frost_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.field_front": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_field_front_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.field_chime": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_field_chime_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.field_crackle": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_field_crackle_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.field_crystal": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_field_crystal_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.field_thaw": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_field_thaw_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.field_thaw_crackle": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_field_thaw_crackle_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.encase": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_encase_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.encase_break": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_encase_break_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.ice_wall_gather": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_ice_wall_gather_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.ice_wall_release": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_ice_wall_release_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.ice_wall_rise": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_ice_wall_rise_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.ice_wall_start": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_ice_wall_start_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.ice_wall_layer": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_ice_wall_layer_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.ice_wall_hit": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_ice_wall_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "rukia.bankai.ice_wall_break": {
+    "sounds": [
+      {
+        "name": "anime/rukia/bankai_ice_wall_break_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.shikai.release": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_release_1",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "gin.shikai.ikorose_cast": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_ikorose_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.shikai.hyapponzashi_windup": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_hyapponzashi_windup_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.shikai.snake_hook_cast": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_snake_hook_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.shikai.snake_hook_throw": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_snake_hook_throw_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.shikai.snake_hook_hit": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_snake_hook_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.shikai.strike": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_strike_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.shikai.strike_hit": {
+    "sounds": [
+      {
+        "name": "anime/gin/shikai_strike_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.bankai.release": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_release_1",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "gin.bankai.butou_renjin_cast": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_butou_renjin_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.bankai.butou_renjin_sweep": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_butou_renjin_sweep_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.bankai.korose_cast": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_korose_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.bankai.korose_channel": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_korose_channel_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.bankai.korose_dissolve": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_korose_dissolve_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.bankai.korose_interrupt": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_korose_interrupt_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "gin.bankai.hakufuku": {
+    "sounds": [
+      {
+        "name": "anime/gin/bankai_hakufuku_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.shikai.release": {
+    "sounds": [
+      {
+        "name": "anime/uryu/shikai_release_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.shikai.heilig_pfeil": {
+    "sounds": [
+      {
+        "name": "anime/uryu/shikai_heilig_pfeil_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.shikai.sprenger": {
+    "sounds": [
+      {
+        "name": "anime/uryu/shikai_sprenger_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.shikai.hirenkyaku": {
+    "sounds": [
+      {
+        "name": "anime/uryu/shikai_hirenkyaku_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.bankai.release": {
+    "sounds": [
+      {
+        "name": "anime/uryu/bankai_release_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.bankai.licht_regen": {
+    "sounds": [
+      {
+        "name": "anime/uryu/bankai_licht_regen_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.bankai.homing_volley": {
+    "sounds": [
+      {
+        "name": "anime/uryu/bankai_homing_volley_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "uryu.bankai.sternenstaub": {
+    "sounds": [
+      {
+        "name": "anime/uryu/bankai_sternenstaub_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "kido.byakurai.cast": {
+    "sounds": [
+      {
+        "name": "anime/kido/byakurai_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "kido.byakurai.hit": {
+    "sounds": [
+      {
+        "name": "anime/kido/byakurai_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "kido.shakkaho.cast": {
+    "sounds": [
+      {
+        "name": "anime/kido/shakkaho_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "kido.shakkaho.flight": {
+    "sounds": [
+      {
+        "name": "anime/kido/shakkaho_flight_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "kido.shakkaho.burst": {
+    "sounds": [
+      {
+        "name": "anime/kido/shakkaho_burst_1",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "kido.sai.cast": {
+    "sounds": [
+      {
+        "name": "anime/kido/sai_cast_1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "kido.sai.hit": {
+    "sounds": [
+      {
+        "name": "anime/kido/sai_hit_1",
+        "attenuation_distance": 32
+      }
+    ]
+  }
+}

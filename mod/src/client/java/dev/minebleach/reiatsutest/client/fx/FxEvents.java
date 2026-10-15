@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import net.minecraft.client.MinecraftClient;
@@ -100,7 +101,7 @@ public final class FxEvents {
 				double hold = FxTune.d("release.pinkTime", 0.4);
 				ReleaseHold.start(e.casterId(), hold);
 				ShikaiDissolve.start(e.casterId(), hold); // plan G-glow: the blade dissolves into petals after the pink hold
-				FxSound.play(null, "block.amethyst_block.resonate", e.x(), e.y() + 1.1, e.z(), 1.7, 0.35);
+				FxSound.play(null, SoundIds.BYAKUYA_SHIKAI_PINK_HOLD, "block.amethyst_block.resonate", e.x(), e.y() + 1.1, e.z(), 1.7, 0.35);
 				FxDelayed.after(hold, () -> ReleaseFx.play(e));
 				// the swarm launches from the hand at the end of the hold; release.swarmDelay (0 by default) moves its start later into the
 				// dissolve, so that the dissolve petals (ShikaiDissolve) are already in the air when the swarm comes (they blend into its orbit)

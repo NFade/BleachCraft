@@ -179,6 +179,34 @@ class KidoCastTest {
 		assertTrue(kido(off, KidoId.BYAKURAI).ok(), "null means the defaults");
 	}
 
+	/** R11 review fix 3: {@code /reiatsu reload} hands a new config to a machine that already exists; the next cast uses the new cost, cooldown, gap and switch. */
+	@Test
+	void aConfigSetOnALiveMachineChangesTheNextCast() {
+		Fx f = new Fx();
+		assertTrue(kido(f, KidoId.BYAKURAI).ok());
+		assertEquals(900, f.sm.reiatsu().value(), "default cost 10.0");
+		assertEquals(100, f.sm.kidoCooldownRemaining(KidoId.BYAKURAI));
+		EnumMap<KidoId, KidoSpec> m = new EnumMap<>(KidoId.class);
+		KidoConfig d = KidoConfig.defaults();
+		for (KidoId k : KidoId.values()) {
+			m.put(k, d.spec(k));
+		}
+		m.put(KidoId.SHAKKAHO, d.spec(KidoId.SHAKKAHO).withCost(300).withCooldown(20));
+		m.put(KidoId.SAI, d.spec(KidoId.SAI).withEnabled(false));
+		f.sm.setKidoConfig(new KidoConfig(true, 0, m)); // what ZanpakutoManager.refreshKido does for every session
+		assertEquals(RejectReason.GCD, kido(f, KidoId.SHAKKAHO).reason(), "the gap that was started by the first cast still runs (10 ticks of the old config)");
+		f.adv(10);
+		int before = f.sm.reiatsu().value();
+		TransitionResult r = kido(f, KidoId.SHAKKAHO);
+		assertTrue(r.ok(), "after that gap");
+		assertEquals(before - 300, f.sm.reiatsu().value(), "new cost 30.0 instead of 20.0");
+		assertEquals(20, f.sm.kidoCooldownRemaining(KidoId.SHAKKAHO), "new cooldown");
+		assertEquals(RejectReason.NOT_IN_STATE, kido(f, KidoId.SAI).reason(), "the switch of a spell");
+		assertTrue(kido(f, KidoId.SHAKKAHO).reason() == RejectReason.ON_COOLDOWN, "no gap any more (gcd 0), only the cooldown of the spell");
+		f.adv(20);
+		assertTrue(kido(f, KidoId.SHAKKAHO).ok(), "after the new, shorter cooldown");
+	}
+
 	@Test
 	void aKidoCastKeepsTheShikaiAlive() {
 		Fx f = new Fx();

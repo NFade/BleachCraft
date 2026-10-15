@@ -138,6 +138,7 @@ public final class ZanpakutoManager {
 		GinManager.init(); // Gin: sliver registry, recast, cover (design/GIN.md)
 		AbilityTerrain.init(); // R11 T9: block destruction of Byakuya's abilities (config section terrain)
 		IceWall.init(); // R11 T5: the Rukia ice wall (config section rukia.iceWall)
+		TempBlocks.init(); // R11 review fix 6: orphan sweep of ice_wall blocks on chunk load
 		MECH = ModConfig.loadMech();
 		ConfigReload.register(() -> {
 			MECH = ModConfig.loadMech();
@@ -151,6 +152,13 @@ public final class ZanpakutoManager {
 		for (java.util.Map.Entry<java.util.UUID, Session> e : SESSIONS.entrySet()) {
 			java.util.UUID id = e.getKey();
 			e.getValue().sm.setRage(cfg, () -> RageManager.valueOf(id));
+		}
+	}
+
+	/** R11 review fix 3: live reload of the kido numbers (cost, cooldown, gap, switches) into the state machines of the online players. */
+	static void refreshKido(dev.minebleach.reiatsutest.core.kido.KidoConfig cfg) {
+		for (Session s : SESSIONS.values()) {
+			s.sm.setKidoConfig(cfg);
 		}
 	}
 

@@ -4,6 +4,7 @@ import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.registry.data.CooldownData;
 import dev.minebleach.reiatsutest.registry.data.MomentumData;
 import dev.minebleach.reiatsutest.registry.data.RageData;
+import dev.minebleach.reiatsutest.registry.data.RageTuningData;
 import dev.minebleach.reiatsutest.registry.data.ReiatsuData;
 import dev.minebleach.reiatsutest.registry.data.ZanpakutoData;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -37,6 +38,12 @@ public final class ModAttachments {
 			ReiatsuTest.id("rage"),
 			b -> b.initializer(() -> RageData.EMPTY)
 					.syncWith(RageData.PACKET_CODEC, AttachmentSyncPredicate.targetOnly()));
+
+	/** Rage costs and the minimum shikai time of the server config for the HUD (R11 review fix 4), owner only, not persistent. */
+	public static final AttachmentType<RageTuningData> RAGE_TUNING = AttachmentRegistry.create(
+			ReiatsuTest.id("rage_tuning"),
+			b -> b.initializer(() -> RageTuningData.DEFAULTS)
+					.syncWith(RageTuningData.PACKET_CODEC, AttachmentSyncPredicate.targetOnly()));
 
 	/** Frost stacks of Rukia (R11 T6), owner only, not persistent. */
 	public static final AttachmentType<MomentumData> MOMENTUM = AttachmentRegistry.create(

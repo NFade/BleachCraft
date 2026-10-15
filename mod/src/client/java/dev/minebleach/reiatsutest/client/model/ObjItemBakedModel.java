@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.model;
 
+import dev.minebleach.reiatsutest.client.fx.PetalBladeFx;
 import dev.minebleach.reiatsutest.client.fx.ShikaiDissolve;
 import dev.minebleach.reiatsutest.client.fx.FxTune;
 import dev.minebleach.reiatsutest.client.fx.UryuBowFx;
@@ -63,7 +64,8 @@ public final class ObjItemBakedModel implements BakedModel {
 	/** True if the stack's state draws something in hand (bankai Byakuya draws nothing, so no arm either). */
 	public boolean drawsInHand(ItemStack stack) {
 		ReleaseState state = stack.getOrDefault(ModComponents.RELEASE_STATE, ReleaseState.SEALED);
-		return !states.byState[state.ordinal()].handEmpty;
+		// R12: while the petals have built the bankai sword in the hand of the local player, the arm holds it like a sword
+		return !states.byState[state.ordinal()].handEmpty || state == ReleaseState.BANKAI && states.shards != null && PetalBladeFx.localFormed();
 	}
 
 	@Override
@@ -121,6 +123,15 @@ public final class ObjItemBakedModel implements BakedModel {
 					stats(t0);
 					return;
 				}
+			}
+		}
+		if ((state == ReleaseState.SHIKAI || state == ReleaseState.BANKAI) && states.shards != null && states.bladeBase != null && isHandMode(mode)) {
+			// R12: a strike or a block builds the sword out of petals (the release dissolve played backwards), it holds and falls apart again
+			LivingEntity fe = DrawTracker.renderEntity();
+			if (fe != null && fe.getMainHandStack() == stack && PetalBladeFx.frame(fe.getId(), state == ReleaseState.BANKAI, FORM_FRAME)) {
+				emitSwordForm(states, state == ReleaseState.BANKAI, FORM_FRAME, context);
+				stats(t0);
+				return;
 			}
 		}
 		if (states.saya != null && isHandMode(mode)) {
@@ -312,11 +323,11 @@ public final class ObjItemBakedModel implements BakedModel {
 		QuadEmitter em = context.getEmitter();
 		float td = net.minecraft.client.MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);
 		double pull = dev.minebleach.reiatsutest.core.uryu.BowDraw.powerAt(archer.getItemUseTime() + td);
-		final float back = PULL_START + PULL_TRAVEL * (float) pull;
+		final float back = dev.minebleach.reiatsutest.core.uryu.BowDraw.nockBack(pull);
 		b.bow.outputTo(em);
 		outputGlow(b.bowGlow, context, glowK);
 		// the arrow: the OBJ arrow lies along +Y from its tail; turn it onto +Z ((x, y, z) -> (x, -z, y) after centring) and put the tail on the nock
-		final float nockZ = 0.395f - back;
+		final float nockZ = dev.minebleach.reiatsutest.core.uryu.BowDraw.STRING_Z - back;
 		// first person: the arrow lies on the arrow rest at the side of the bow (model x), clear of the bow fist, aimed at the crosshair (tunables uryu.fp.arrow*)
 		net.minecraft.client.render.model.json.ModelTransformationMode tm = context.itemTransformationMode();
 		boolean fpv = tm == net.minecraft.client.render.model.json.ModelTransformationMode.FIRST_PERSON_RIGHT_HAND
@@ -488,6 +499,22 @@ public final class ObjItemBakedModel implements BakedModel {
 		em.emit();
 	}
 
+	/** One fragment with another sprite (the pink texture of the sword): the uv are the normalised ones of the fragment, so they map onto the same place of the pink texture. */
+	private static void emitFragmentSprite(QuadEmitter em, ObjItemUnbakedModel.BladeShards sh, Sprite sprite, int k, float[] p12, int argb,
+			net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial material) {
+		for (int c = 0; c < 4; c++) {
+			em.pos(c, p12[c * 3], p12[c * 3 + 1], p12[c * 3 + 2]);
+			em.uv(c, sh.uv[k * 8 + c * 2], sh.uv[k * 8 + c * 2 + 1]);
+			em.normal(c, sh.nrm[k * 12 + c * 3], sh.nrm[k * 12 + c * 3 + 1], sh.nrm[k * 12 + c * 3 + 2]);
+			em.color(c, argb);
+		}
+		em.material(material);
+		em.cullFace(null);
+		em.nominalFace(null);
+		em.spriteBake(sprite, MutableQuadView.BAKE_NORMALIZED);
+		em.emit();
+	}
+
 	/** The stack of translucent shells around the fragments that are still on the blade ({@code det} null: all of them), emissive, pink to white. */
 	private static void emitBloomLayers(ObjItemUnbakedModel.BakedStates st, ShikaiDissolve.Look lk, float[] det, RenderContext context) {
 		ObjItemUnbakedModel.BladeShards sh = st.shards;
@@ -502,6 +529,9 @@ public final class ObjItemBakedModel implements BakedModel {
 			int argb = ShikaiDissolve.glowArgb(BLOOM_WHITE[layer], alpha);
 			float off = (float) (BLOOM_OFF[layer] * width);
 			for (int k = 0; k < sh.n; k++) {
+				if (sh.s[k] < 0.03f) {
+					continue; // the guard: its fragments came out as flat bars
+				}
 				if (det != null && el >= det[k]) {
 					continue;
 				}
@@ -515,7 +545,7 @@ public final class ObjItemBakedModel implements BakedModel {
 
 	/** The glow around the whole blade during the pink hold. */
 	private static void emitBloom(ObjItemUnbakedModel.BakedStates st, ShikaiDissolve.Look lk, RenderContext context) {
-		emitBloomLayers(st, lk, null, context);
+		emitBloomAuto(st, lk, null, context);
 	}
 
 	/**
@@ -560,8 +590,15 @@ public final class ObjItemBakedModel implements BakedModel {
 			System.arraycopy(sh.pos, k * 12, FRAG, 0, 12);
 			emitFragment(em, sh, k, FRAG, solid, sh.solid[k]);
 		}
-		emitBloomLayers(st, lk, det, context);
-		// the fragments in flight
+		emitBloomAuto(st, lk, det, context);
+		emitShardFlight(st, lk, det, context, false);
+	}
+
+	/** The fragments of the blade that are in flight (the part of the film between leaving the blade and being gone), shared by the dissolve and the build up. */
+	private static void emitShardFlight(ObjItemUnbakedModel.BakedStates st, ShikaiDissolve.Look lk, float[] det, RenderContext context, boolean flat) {
+		QuadEmitter em = context.getEmitter();
+		ObjItemUnbakedModel.BladeShards sh = st.shards;
+		double el = Math.max(0, lk.el);
 		float[] dir = st.bladeDir;
 		double dx = dir[0];
 		double dy = dir[1];
@@ -615,8 +652,199 @@ public final class ObjItemBakedModel implements BakedModel {
 			}
 			double heat = DissolveSwirl.heat(tau, 0.15);
 			double alpha = 1.0 - smooth(0.35, 1.0, u);
-			emitFragment(em, sh, k, FRAG, ShikaiDissolve.glowArgb(0.25 + 0.6 * heat, alpha), sh.material);
+			if (flat && st.pinkSwordSprite != null) {
+				emitFragmentSprite(em, sh, st.pinkSwordSprite, k, FRAG, ((int) (255 * Math.min(1.0, 0.25 + 0.75 * alpha)) << 24) | 0x00FFFFFF, sh.material);
+			} else {
+				emitFragment(em, sh, k, FRAG, ShikaiDissolve.glowArgb(0.25 + 0.6 * heat, alpha), sh.material);
+			}
 		}
+	}
+
+	private static final PetalBladeFx.Frame FORM_FRAME = new PetalBladeFx.Frame();
+	private static final ShikaiDissolve.Look FORM_LOOK = new ShikaiDissolve.Look();
+
+	/** Colour multiplier from white (the normal sword) to {@code tint} by {@code k} (ARGB, alpha 255). */
+	private static int lerpTint(int tint, double k) {
+		double kk = Math.max(0, Math.min(1, k));
+		int r = (int) (255 + (((tint >> 16) & 255) - 255) * kk);
+		int g = (int) (255 + (((tint >> 8) & 255) - 255) * kk);
+		int b = (int) (255 + ((tint & 255) - 255) * kk);
+		return 0xFF000000 | (r << 16) | (g << 8) | b;
+	}
+
+	/** The glow of the release hold and dissolve (and of the build up and break up of the petal sword): the release layers, without the guard (see {@link #emitBloomLayers}). */
+	private static void emitBloomAuto(ObjItemUnbakedModel.BakedStates st, ShikaiDissolve.Look lk, float[] det, RenderContext context) {
+		emitBloomLayers(st, lk, det, context);
+	}
+
+	/** Position of the centre of a quad along the blade axis: 0 at the saya mouth, 1 at the tip, below 0 on the hilt and the guard. */
+	private static double quadS(MutableQuadView q, float[] base, float[] dir, float len) {
+		Vector3f v = new Vector3f();
+		double sum = 0;
+		for (int c = 0; c < 4; c++) {
+			q.copyPos(c, v);
+			sum += DissolveMath.along(v.x, v.y, v.z, base[0], base[1], base[2], dir[0], dir[1], dir[2], len);
+		}
+		return sum / 4;
+	}
+
+	/**
+	 * R12: the sword that the petals build in the hand. The film is the release dissolve ({@link #emitShardDissolve}) played at {@code el = total * (1 - form)}: while the
+	 * form rises the fragments fly in and join the blade, while it falls the blade breaks into fragments. The pink sword is a real part of the item: the same mesh with its own
+	 * pink texture and emissive mask ({@code byakuya_sealed_drawn_pink}), drawn like every other model of the mod; its fragments use the same pink texture. When the pink fades
+	 * (shikai, {@code pink} 1 to 0) the blade goes back to the steel, tinted until the pink is gone. Shikai: the hilt is always there, only the blade is built; bankai
+	 * ({@code full}): the hilt and the guard are built too (the hilt part of the pink sword appears from a third of the film), and the pink stays.
+	 */
+	private static void emitSwordForm(ObjItemUnbakedModel.BakedStates st, boolean full, PetalBladeFx.Frame fr, RenderContext context) {
+		QuadEmitter em = context.getEmitter();
+		ObjItemUnbakedModel.BladeShards sh = st.shards;
+		ShikaiDissolve.Look lk = FORM_LOOK;
+		double dur = Math.max(0.05, FxTune.d("release.dissolveTime", 0.85));
+		double el = Math.max(0, fr.total * (1.0 - fr.form));
+		lk.el = el;
+		lk.dur = dur;
+		lk.p = Math.min(1.0, el / dur);
+		lk.hold = 1.0;
+		lk.level = 1.0;
+		lk.tipFirst = ShikaiDissolve.tipFirst();
+		lk.seed = 0x5EEDL;
+		lk.shardLife = Math.max(0.05, FxTune.d("release.shardLife", 0.28));
+		ShikaiDissolve.fillFlight(lk);
+		lk.bloom = FxTune.d("release.dissolveGlow", 0.45) * FxTune.d("release.glowBloom", 1.0);
+		lk.shards = true;
+		ObjItemUnbakedModel.StateMeshes bare = st.byState[ReleaseState.SEALED.ordinal()];
+		int pinkBlade = ShikaiDissolve.bladeTint();
+		double pink = fr.pink;
+		float[] base = st.bladeBase;
+		float[] dir = st.bladeDir;
+		float len = st.bladeLen;
+		final boolean pinkTex = st.pinkSword != null && st.pinkSwordSprite != null;
+		final boolean held = fr.form >= 1.0;
+		// the pink texture is used while the sword is pink; below 0.3 the steel takes over, tinted by what is left of the pink
+		final boolean pinkLook = pinkTex && pink > 0.3;
+		// the hilt (and, in the bankai, the guard)
+		if (full) {
+			if (!held && fr.form > 0.35 || held && !pinkLook) {
+				final boolean usePink = pinkLook;
+				final int hiltTint = lerpTint(pinkBlade, pink * 0.85);
+				context.pushTransform(q -> {
+					if (quadS(q, base, dir, len) >= 0) {
+						return false; // the blade is the fragments, or the blade mesh below
+					}
+					if (!usePink) {
+						for (int c = 0; c < 4; c++) {
+							q.color(c, mulColor(q.color(c), hiltTint));
+						}
+					}
+					return true;
+				});
+				if (usePink) {
+					st.pinkSword.outputTo(em);
+					if (st.pinkSwordGlow != null) {
+						st.pinkSwordGlow.outputTo(em);
+					}
+				} else {
+					bare.handBase.outputTo(em);
+				}
+				context.popTransform();
+			}
+		} else {
+			final int hiltTint = lerpTint(pinkBlade, pink * 0.85);
+			context.pushTransform(q -> {
+				for (int c = 0; c < 4; c++) {
+					q.color(c, mulColor(q.color(c), hiltTint));
+				}
+				return true;
+			});
+			ObjItemUnbakedModel.StateMeshes shikai = st.byState[ReleaseState.SHIKAI.ordinal()];
+			shikai.handBase.outputTo(em);
+			if (shikai.handGlow != null) {
+				shikai.handGlow.outputTo(em);
+			}
+			context.popTransform();
+		}
+		if (held) {
+			// the finished sword. Pink complete: the pink sword (cutout) with its glow. Pink going: the steel blade tinted by the pink that is left, and over it the translucent pink
+			// sword and its glow fading out with the pink, so the pink turns into the normal blade smoothly. No pink: the steel blade.
+			if (pinkTex && pink >= 0.999) {
+				context.pushTransform(q -> full || quadS(q, base, dir, len) >= 0);
+				st.pinkSword.outputTo(em);
+				if (st.pinkSwordGlow != null) {
+					st.pinkSwordGlow.outputTo(em);
+				}
+				context.popTransform();
+			} else {
+				final int heldTint = lerpTint(ShikaiDissolve.bladeGlowTint(0.55), pink);
+				context.pushTransform(q -> {
+					if (quadS(q, base, dir, len) < 0) {
+						return false;
+					}
+					for (int c = 0; c < 4; c++) {
+						q.color(c, mulColor(q.color(c), heldTint));
+					}
+					return true;
+				});
+				bare.handBase.outputTo(em);
+				context.popTransform();
+				if (pinkTex && st.pinkSwordFade != null && pink > 0.01) {
+					final int fadeA = (int) (255 * pink);
+					context.pushTransform(q -> {
+						if (!full && quadS(q, base, dir, len) < 0) {
+							return false;
+						}
+						for (int c = 0; c < 4; c++) {
+							q.color(c, (fadeA << 24) | (q.color(c) & 0x00FFFFFF));
+						}
+						return true;
+					});
+					st.pinkSwordFade.outputTo(em);
+					context.popTransform();
+					if (st.pinkSwordGlow != null) {
+						context.pushTransform(q -> {
+							if (!full && quadS(q, base, dir, len) < 0) {
+								return false;
+							}
+							for (int c = 0; c < 4; c++) {
+								int old = q.color(c);
+								q.color(c, ((int) (((old >>> 24) & 255) * pink) << 24) | (old & 0x00FFFFFF));
+							}
+							return true;
+						});
+						st.pinkSwordGlow.outputTo(em);
+						context.popTransform();
+					}
+				}
+			}
+			return;
+		}
+		if (detScratch.length < sh.n) {
+			detScratch = new float[sh.n];
+		}
+		float[] det = detScratch;
+		for (int k = 0; k < sh.n; k++) {
+			det[k] = (float) (lk.dur * DissolveMath.detachProgress(sh.s[k], lk.tipFirst));
+		}
+		// the blade that is there: the pink texture (the film is pink), or the tinted steel
+		double white = 0.5 * Math.sin(Math.PI * Math.min(1.0, Math.max(0.0, lk.p / 0.55)));
+		int solid = lerpTint(ShikaiDissolve.bladeGlowTint(white), pink);
+		for (int k = 0; k < sh.n; k++) {
+			if (el >= det[k]) {
+				continue;
+			}
+			System.arraycopy(sh.pos, k * 12, FRAG, 0, 12);
+			if (pinkLook) {
+				emitFragmentSprite(em, sh, st.pinkSwordSprite, k, FRAG, 0xFFFFFFFF, sh.solid[k]);
+			} else {
+				emitFragment(em, sh, k, FRAG, solid, sh.solid[k]);
+			}
+		}
+		if (pink > 0.02) {
+			double keepBloom = lk.bloom;
+			lk.bloom = keepBloom * pink;
+			emitBloomAuto(st, lk, det, context);
+			lk.bloom = keepBloom;
+		}
+		emitShardFlight(st, lk, det, context, pinkLook);
 	}
 
 	/**

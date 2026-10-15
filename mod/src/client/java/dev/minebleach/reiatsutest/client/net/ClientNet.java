@@ -6,6 +6,7 @@ import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.client.hud.HudModel;
 import dev.minebleach.reiatsutest.client.hud.ReiatsuHud;
 import dev.minebleach.reiatsutest.core.kido.KidoId;
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.state.AbilityId;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.CharacterWording;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 
 /** Client networking: sends requests, shows feedback for answers, hands effect events to the placeholder renderer. */
@@ -50,6 +50,10 @@ public final class ClientNet {
 			dev.minebleach.reiatsutest.client.fx.FxEvents.onEffectEvent(mcl, payload);
 			dev.minebleach.reiatsutest.client.model.FpCast.onEffectEvent(mcl, payload); // hand and sword gesture of the ability (FP_ABILITY_ANIMS)
 		});
+		// R11 T12: a sound the server wants played (ice wall, parry fallback): the clip of the event if installed, else the vanilla sound the server names
+		ClientPlayNetworking.registerGlobalReceiver(dev.minebleach.reiatsutest.net.SoundCueS2C.ID,
+				(payload, ctx) -> dev.minebleach.reiatsutest.client.fx.FxSound.play(null, payload.event(), payload.fallback(), payload.x(), payload.y(), payload.z(),
+						payload.pitch(), payload.volume()));
 		ClientPlayNetworking.registerGlobalReceiver(dev.minebleach.reiatsutest.net.SwarmHeadS2C.ID,
 				(payload, ctx) -> dev.minebleach.reiatsutest.client.fx.SwarmFx.onHead(payload));
 		ClientPlayNetworking.registerGlobalReceiver(dev.minebleach.reiatsutest.net.UryuArrowsS2C.ID,
@@ -175,7 +179,7 @@ public final class ClientNet {
 		}
 		if (key != null) {
 			client.inGameHud.setOverlayMessage(Text.translatable(key), false);
-			client.getSoundManager().play(net.minecraft.client.sound.PositionedSoundInstance.master(SoundEvents.BLOCK_NOTE_BLOCK_BASS, 0.7F));
+			dev.minebleach.reiatsutest.client.fx.FxSound.ui(SoundIds.UI_ACTION_DENIED, "block.note_block.bass", 0.7, 0.25);
 		}
 		if (code == ResultCode.DENIED_REIATSU) {
 			ReiatsuHud.flashBar();

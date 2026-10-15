@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -197,11 +198,17 @@ public final class EffectTimeline {
 
 	// ------------------------------------------------------------------------------------------ sound
 
-	public void sound(String id, double pitch, double volume) {
-		FxSound.play(this, id, pos.x, pos.y + 1.0, pos.z, pitch, volume);
+	/** R11 T12: the sound EVENT of this moment ({@link SoundIds}) and the vanilla sound it falls back to (see {@link FxSound}). */
+	public void sound(String event, String vanilla, double pitch, double volume) {
+		FxSound.play(this, event, vanilla, pos.x, pos.y + 1.0, pos.z, pitch, volume);
 	}
 
-	public void soundAt(String id, Vec3d at, double pitch, double volume) {
-		FxSound.play(this, id, at.x, at.y, at.z, pitch, volume);
+	/** A plain vanilla sound without an event id (the Uryu cue tables); the event version above is the routed one (R11 T12). */
+	public void sound(String vanilla, double pitch, double volume) {
+		FxSound.play(this, vanilla, pos.x, pos.y + 1.0, pos.z, pitch, volume);
+	}
+
+	public void soundAt(String event, String vanilla, Vec3d at, double pitch, double volume) {
+		FxSound.play(this, event, vanilla, at.x, at.y, at.z, pitch, volume);
 	}
 }

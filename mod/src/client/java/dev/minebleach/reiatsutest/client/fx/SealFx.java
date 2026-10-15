@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
 import java.util.Random;
@@ -35,15 +36,15 @@ public final class SealFx {
 			}
 			collapse(x, rukia, tint, ringTint, end);
 			if (end) {
-				x.sound("block.beacon.deactivate", 0.6, 0.7);
-				x.sound("block.bell.resonate", 0.8, 0.5);
-				x.sound("block.respawn_anchor.deplete", 0.9, 0.5);
+				x.sound(SoundIds.GENERAL_BANKAI_END, "block.beacon.deactivate", 0.6, 0.7);
+				x.sound(SoundIds.GENERAL_BANKAI_END, "block.bell.resonate", 0.8, 0.5);
+				x.sound(SoundIds.GENERAL_BANKAI_END, "block.respawn_anchor.deplete", 0.9, 0.5);
 				x.shake(0.35, 0.3);
 				x.flash(0.18, "#FF8A7A", true);
 			} else {
-				x.sound("block.beacon.deactivate", 1.0, 0.7);
+				x.sound(SoundIds.GENERAL_SEAL_COLLAPSE, "block.beacon.deactivate", 1.0, 0.7);
 				if (!rukia) {
-					x.sound("item.trident.return", 0.8, 0.6);
+					x.sound(SoundIds.GENERAL_SEAL_COLLAPSE, "item.trident.return", 0.8, 0.6);
 				}
 			}
 		});

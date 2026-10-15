@@ -1,5 +1,6 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.sound.SoundIds;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.gin.GinFxModes;
 import dev.minebleach.reiatsutest.core.gin.GinParams;
@@ -144,7 +145,7 @@ public final class GinFx {
 			double a = r.nextDouble() * Math.PI * 2;
 			particle(w, ParticleTypes.END_ROD, feet.add(Math.cos(a) * 0.6, 0.2 + r.nextDouble() * 1.4, Math.sin(a) * 0.6), Math.cos(a) * 0.06, 0.02, Math.sin(a) * 0.06);
 		}
-		FxSound.play(null, "item.trident.return", feet.x, feet.y + 1, feet.z, bankai ? 0.6 : 1.5, 0.7);
+		FxSound.play(null, bankai ? SoundIds.GIN_BANKAI_RELEASE : SoundIds.GIN_SHIKAI_RELEASE, "item.trident.return", feet.x, feet.y + 1, feet.z, bankai ? 0.6 : 1.5, 0.7);
 	}
 
 	/** The event of the key press: the pose, the wind-up and the sound. The geometry of a strike comes with its own event. */
@@ -157,15 +158,15 @@ public final class GinFx {
 		}
 		Vec3d hand = hand(eye, dir.normalize());
 		switch (id) {
-			case 62, 64, 66 -> FxSound.play(null, "item.trident.throw", hand.x, hand.y, hand.z, 2.0, 0.5);
+			case 62, 64, 66 -> FxSound.play(null, id == 62 ? SoundIds.GIN_SHIKAI_IKOROSE_CAST : id == 64 ? SoundIds.GIN_SHIKAI_SNAKE_HOOK_CAST : SoundIds.GIN_BANKAI_KOROSE_CAST, "item.trident.throw", hand.x, hand.y, hand.z, 2.0, 0.5);
 			case 63 -> {
 				// 1.0 s wind-up: a glow grows at the hand
 				double windup = BalanceConfig.defaults().spec(AbilityId.HYAPPONZASHI).phaseOffsets().get(1) / 20.0;
 				FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(hand.x, hand.y, hand.z).size(0.2, FxTune.d("gin.windupGlow", 1.4)).sizeEase(FxMath.IQ).life(windup).curve(0.05, 0.2)
 						.color("#DFF1FF").peak(0.8).spawn();
-				FxSound.play(null, "block.beacon.activate", hand.x, hand.y, hand.z, 2.0, 0.4);
+				FxSound.play(null, SoundIds.GIN_SHIKAI_HYAPPONZASHI_WINDUP, "block.beacon.activate", hand.x, hand.y, hand.z, 2.0, 0.4);
 			}
-			case 65 -> FxSound.play(null, "block.amethyst_block.resonate", hand.x, hand.y, hand.z, 1.9, 0.5);
+			case 65 -> FxSound.play(null, SoundIds.GIN_BANKAI_BUTOU_RENJIN_CAST, "block.amethyst_block.resonate", hand.x, hand.y, hand.z, 1.9, 0.5);
 			case 67 -> hakufuku(w, e, feet);
 			default -> { }
 		}
@@ -176,7 +177,7 @@ public final class GinFx {
 		HIDDEN.put(e.casterId(), System.currentTimeMillis() + ms);
 		// the only visible part of the hiding: a short pale shimmer that fades before he vanishes
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(feet.x, feet.y + 1.0, feet.z).size(1.6, 0.4).life(0.3).curve(0.01, 0.9).color("#E8F4FF").peak(0.5).spawn();
-		FxSound.play(null, "block.amethyst_block.chime", feet.x, feet.y + 1, feet.z, 2.0, 0.3);
+		FxSound.play(null, SoundIds.GIN_BANKAI_HAKUFUKU, "block.amethyst_block.chime", feet.x, feet.y + 1, feet.z, 2.0, 0.3);
 	}
 
 	// ------------------------------------------------------------------ strikes
@@ -193,7 +194,7 @@ public final class GinFx {
 		if (!quiet) {
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(hand.x, hand.y, hand.z).size(0.5, FxTune.d("gin.handFlash", 1.2)).sizeEase(FxMath.OC).life(0.18).curve(0.01, 0.8)
 					.color("#FFFFFF").peak(0.9).spawn();
-			FxSound.play(null, "entity.player.attack.sweep", hand.x, hand.y, hand.z, 1.8 + 0.03 * index, 0.5);
+			FxSound.play(null, SoundIds.GIN_SHIKAI_STRIKE, "entity.player.attack.sweep", hand.x, hand.y, hand.z, 1.8 + 0.03 * index, 0.5);
 		}
 		if (hit) {
 			FxGlowBatch.sprite(GlowSprite.STAR4).at(end.x, end.y, end.z).size(0.3, FxTune.d("gin.hitStar", 1.5)).sizeEase(FxMath.OC).life(0.2).curve(0.01, 0.8)
@@ -203,7 +204,7 @@ public final class GinFx {
 			for (int i = 0; i < n; i++) {
 				particle(w, ParticleTypes.ELECTRIC_SPARK, end, (r.nextDouble() - 0.5) * 0.4, (r.nextDouble() - 0.3) * 0.3, (r.nextDouble() - 0.5) * 0.4);
 			}
-			FxSound.play(null, "entity.player.attack.crit", end.x, end.y, end.z, 1.6, 0.5);
+			FxSound.play(null, SoundIds.GIN_SHIKAI_STRIKE_HIT, "entity.player.attack.crit", end.x, end.y, end.z, 1.6, 0.5);
 		}
 	}
 
@@ -230,7 +231,7 @@ public final class GinFx {
 				Vec3d tip = hand.add(d.multiply(radius));
 				FxDelayed.after(delay, () -> {
 					particle(w, ParticleTypes.END_ROD, tip, 0, 0.01, 0);
-					FxSound.play(null, "entity.player.attack.sweep", tip.x, tip.y, tip.z, 1.3, 0.25);
+					FxSound.play(null, SoundIds.GIN_BANKAI_BUTOU_RENJIN_SWEEP, "entity.player.attack.sweep", tip.x, tip.y, tip.z, 1.3, 0.25);
 				});
 			}
 		}
@@ -244,10 +245,10 @@ public final class GinFx {
 		Vec3d hand = hand(eye, dir);
 		String color = FxTune.s("gin.color", "#BFE4FF");
 		line(hand, anchor, 0.1, hit ? Math.max(0, ticks / 20.0 - 0.1) : 0.0, 0.15, 0.07, 0.3, color);
-		FxSound.play(null, "entity.fishing_bobber.throw", hand.x, hand.y, hand.z, 1.5, 0.5);
+		FxSound.play(null, SoundIds.GIN_SHIKAI_SNAKE_HOOK_THROW, "entity.fishing_bobber.throw", hand.x, hand.y, hand.z, 1.5, 0.5);
 		if (hit) {
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(anchor.x, anchor.y, anchor.z).size(0.4, 1.2).sizeEase(FxMath.OC).life(0.3).curve(0.01, 0.8).color("#FFFFFF").peak(0.8).spawn();
-			FxSound.play(null, "block.chain.hit", anchor.x, anchor.y, anchor.z, 1.4, 0.6);
+			FxSound.play(null, SoundIds.GIN_SHIKAI_SNAKE_HOOK_HIT, "block.chain.hit", anchor.x, anchor.y, anchor.z, 1.4, 0.6);
 		}
 	}
 
@@ -258,7 +259,7 @@ public final class GinFx {
 		double seconds = Math.max(0.2, pr[1] / 20.0);
 		Vec3d hand = eye.add(0, 0.5, 0);
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(hand.x, hand.y, hand.z).size(0.3, 1.0).sizeEase(FxMath.OC).life(seconds).curve(0.1, 0.3).color("#FFFFFF").peak(0.7).spawn();
-		FxSound.play(null, "block.beacon.power_select", hand.x, hand.y, hand.z, 2.0, 0.5);
+		FxSound.play(null, SoundIds.GIN_BANKAI_KOROSE_CHANNEL, "block.beacon.power_select", hand.x, hand.y, hand.z, 2.0, 0.5);
 		int steps = (int) Math.max(2, Math.round(seconds * 10 * q()));
 		Random r = new Random(e.seed());
 		for (int k = 0; k < steps; k++) {
@@ -293,13 +294,13 @@ public final class GinFx {
 			particle(w, i % 2 == 0 ? ParticleTypes.WHITE_ASH : ParticleTypes.POOF, c.add((r.nextDouble() - 0.5) * 0.6, (r.nextDouble() - 0.5) * 1.2, (r.nextDouble() - 0.5) * 0.6),
 					Math.cos(a) * sp, 0.02 + r.nextDouble() * 0.05, Math.sin(a) * sp);
 		}
-		FxSound.play(null, "block.amethyst_cluster.break", c.x, c.y, c.z, 0.7, 0.9);
-		FxSound.play(null, "entity.generic.extinguish_fire", c.x, c.y, c.z, 0.6, 0.6);
+		FxSound.play(null, SoundIds.GIN_BANKAI_KOROSE_DISSOLVE, "block.amethyst_cluster.break", c.x, c.y, c.z, 0.7, 0.9);
+		FxSound.play(null, SoundIds.GIN_BANKAI_KOROSE_DISSOLVE, "entity.generic.extinguish_fire", c.x, c.y, c.z, 0.6, 0.6);
 	}
 
 	private static void interrupt(ClientWorld w, EffectEventS2C e, Vec3d eye) {
 		FxGlowBatch.sprite(GlowSprite.STAR4).at(eye.x, eye.y - 0.4, eye.z).size(0.3, 1.2).sizeEase(FxMath.OC).life(0.2).curve(0.01, 0.8).color("#FFFFFF").peak(0.6).spawn();
-		FxSound.play(null, "block.glass.break", eye.x, eye.y, eye.z, 1.6, 0.4);
+		FxSound.play(null, SoundIds.GIN_BANKAI_KOROSE_INTERRUPT, "block.glass.break", eye.x, eye.y, eye.z, 1.6, 0.4);
 	}
 
 	/** Owner only: {mode, ticks} + target. Starts (or renews) the glow on the carrier. */

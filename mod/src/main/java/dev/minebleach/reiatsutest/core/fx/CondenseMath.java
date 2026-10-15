@@ -62,7 +62,7 @@ public final class CondenseMath {
 		}
 
 		public double slotHeight(int j) {
-			return RowsPhase.BLADE_LENGTH * (1.0 - (double) (j % perBlade) / perBlade);
+			return BladeSpec.length() * (1.0 - (double) (j % perBlade) / perBlade);
 		}
 
 		public double birthTime(int j) {
