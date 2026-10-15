@@ -8,7 +8,7 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
  *
  * <p>Rules:
  * <ul>
- * <li>One air jump per air time. Landing (or entering water, a ladder, elytra flight, a vehicle, creative flight ...) resets everything.</li>
+ * <li>Up to {@link #MAX_AIR_JUMPS} air jumps per air time. Landing (or entering water, a ladder, elytra flight, a vehicle, creative flight ...) resets everything.</li>
  * <li>The jump key must be PRESSED anew in the air (a rising edge): a key that is simply held from the ground jump never fires, the
  *     player has to release it and press it again. Walking off a ledge without jumping also gives ONE air jump on the next press.</li>
  * <li>At least {@link #MIN_AIR_TICKS} client ticks after leaving the ground; a press earlier than that is ignored (not buffered).</li>
@@ -20,14 +20,16 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 public final class DoubleJump {
 	/** The air jump may fire from the third tick in the air on. */
 	public static final int MIN_AIR_TICKS = 3;
+	/** Air jumps per air time (user request 2026-10-15: three, in every state). */
+	public static final int MAX_AIR_JUMPS = 3;
 
 	private int airTicks;
-	private boolean used;
+	private int used;
 	private boolean prevKeyDown;
 
-	/** True for the states that have the double jump: SHIKAI and BANKAI (not SEALED, not BASE, not unknown). */
+	/** True for every state (user request 2026-10-15: the jumps work always, sealed or not, any character). */
 	public static boolean allowedState(ZanpakutoState state) {
-		return state == ZanpakutoState.SHIKAI || state == ZanpakutoState.BANKAI;
+		return true;
 	}
 
 	/**
@@ -44,23 +46,23 @@ public final class DoubleJump {
 		prevKeyDown = jumpKeyDown;
 		if (onGround || blocked) {
 			airTicks = 0;
-			used = false;
+			used = 0;
 			return false;
 		}
 		if (airTicks < Integer.MAX_VALUE) {
 			airTicks++;
 		}
-		if (!pressed || used || !allowed || airTicks < MIN_AIR_TICKS) {
+		if (!pressed || used >= MAX_AIR_JUMPS || !allowed || airTicks < MIN_AIR_TICKS) {
 			return false;
 		}
-		used = true;
+		used++;
 		return true;
 	}
 
 	/** Forgets the air time (feature switched off, a screen opened). The key edge is kept so a held key stays no press. */
 	public void reset() {
 		airTicks = 0;
-		used = false;
+		used = 0;
 	}
 
 	/** Like {@link #reset()} but also forgets the key, for a new player object. */
@@ -73,7 +75,11 @@ public final class DoubleJump {
 		return airTicks;
 	}
 
-	public boolean airJumpUsed() {
+	public int airJumpsUsed() {
 		return used;
+	}
+
+	public boolean airJumpUsed() {
+		return used > 0;
 	}
 }

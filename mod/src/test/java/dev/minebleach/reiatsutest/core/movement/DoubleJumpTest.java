@@ -19,12 +19,12 @@ class DoubleJumpTest {
 	}
 
 	@Test
-	void allowedOnlyInShikaiAndBankai() {
-		assertFalse(DoubleJump.allowedState(ZanpakutoState.SEALED));
-		assertFalse(DoubleJump.allowedState(ZanpakutoState.BASE));
+	void allowedInEveryState() {
+		assertTrue(DoubleJump.allowedState(ZanpakutoState.SEALED));
+		assertTrue(DoubleJump.allowedState(ZanpakutoState.BASE));
 		assertTrue(DoubleJump.allowedState(ZanpakutoState.SHIKAI));
 		assertTrue(DoubleJump.allowedState(ZanpakutoState.BANKAI));
-		assertFalse(DoubleJump.allowedState(null));
+		assertTrue(DoubleJump.allowedState(null));
 	}
 
 	@Test
@@ -48,13 +48,16 @@ class DoubleJumpTest {
 	}
 
 	@Test
-	void onlyOneAirJumpPerAirTime() {
+	void threeAirJumpsPerAirTime() {
 		DoubleJump j = new DoubleJump();
 		j.tick(GROUND, false, false, true);
 		airUp(j, 4);
-		assertTrue(j.tick(AIR, true, false, true));
-		assertFalse(j.tick(AIR, false, false, true));
-		assertFalse(j.tick(AIR, true, false, true)); // a third press in the same air time
+		for (int n = 1; n <= DoubleJump.MAX_AIR_JUMPS; n++) {
+			assertTrue(j.tick(AIR, true, false, true), "air jump " + n);
+			assertFalse(j.tick(AIR, false, false, true));
+		}
+		assertEquals(3, j.airJumpsUsed());
+		assertFalse(j.tick(AIR, true, false, true)); // the fourth press in the same air time does nothing
 		assertFalse(j.tick(AIR, false, false, true));
 		assertFalse(j.tick(AIR, true, false, true));
 	}
@@ -87,7 +90,7 @@ class DoubleJumpTest {
 		airUp(j, 10); // walked off, never pressed jump
 		assertTrue(j.tick(AIR, true, false, true));
 		assertFalse(j.tick(AIR, false, false, true));
-		assertFalse(j.tick(AIR, true, false, true));
+		assertTrue(j.tick(AIR, true, false, true)); // the second of three
 	}
 
 	@Test

@@ -43,8 +43,8 @@ public final class UryuDrawLight {
 	public static final double PULL_START = 0.04;
 	public static final double PULL_TRAVEL = 0.26;
 	/** Display scale of the bow in the hand (third person and first person). */
-	public static final double SCALE_THIRD = 1.4;
-	public static final double SCALE_FIRST = 1.8;
+	public static final double SCALE_THIRD = 1.8;
+	public static final double SCALE_FIRST = 2.3;
 
 	// ---- sounds and the owner's field of view
 	public static final String CHIME = "block.amethyst_block.chime";

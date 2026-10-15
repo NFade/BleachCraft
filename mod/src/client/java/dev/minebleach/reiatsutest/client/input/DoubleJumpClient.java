@@ -66,7 +66,7 @@ public final class DoubleJumpClient {
 		}
 		// the synced state of the LOCAL player; an attachment that cannot be read this frame means not allowed
 		ZanpakutoData z = p.getAttached(ModAttachments.ZANPAKUTO);
-		boolean allowed = z != null && DoubleJump.allowedState(z.zanpakutoState()) && client.currentScreen == null;
+		boolean allowed = DoubleJump.allowedState(z == null ? null : z.zanpakutoState()) && client.currentScreen == null;
 		boolean blocked = p.isTouchingWater() || p.isSubmergedInWater() || p.isInLava() || p.isClimbing() || p.isFallFlying()
 				|| p.hasVehicle() || p.getAbilities().flying || p.isSpectator() || p.isSleeping() || !p.isAlive();
 		boolean key = client.currentScreen == null && client.options.jumpKey.isPressed();
