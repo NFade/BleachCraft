@@ -225,6 +225,33 @@ class SeeleFxMathTest {
 	}
 
 	@Test
+	void arcsAreFinerOnHighAndTheOverlappedRibbonKeepsItsBrightness() {
+		assertEquals(2, SeeleFxMath.subdivision(2));
+		assertEquals(1, SeeleFxMath.subdivision(1));
+		assertEquals(1, SeeleFxMath.subdivision(0));
+		assertEquals(24, SeeleFxMath.segments(2) * SeeleFxMath.subdivision(2));
+		assertEquals(4, SeeleFxMath.ribbonOverlap(2));
+		assertEquals(3, SeeleFxMath.ribbonOverlap(1));
+		assertEquals(0, SeeleFxMath.windowStart(2, 3), "the first streaks start at the first point");
+		assertEquals(0, SeeleFxMath.windowStart(3, 3));
+		assertEquals(5, SeeleFxMath.windowStart(8, 3));
+		assertEquals(4, SeeleFxMath.windowStart(5, 0), "an overlap below 1 is one segment");
+		assertEquals(1.0, SeeleFxMath.ribbonGain(1), 1e-12, "a single streak keeps full strength");
+		for (int o = 2; o <= 6; o++) {
+			assertTrue(SeeleFxMath.ribbonGain(o) < SeeleFxMath.ribbonGain(o - 1), "more overlap, less per streak");
+			// the sum of the ramps of the overlapping streaks stays close to one
+			assertEquals(1.0, SeeleFxMath.ribbonGain(o) * o * 0.59, 1e-9);
+		}
+		assertEquals(3, SeeleFxMath.tierCount(6, 0), "Low halves");
+		assertEquals(4, SeeleFxMath.tierCount(8, 0));
+		assertEquals(4, SeeleFxMath.tierCount(7, 0), "odd counts round up");
+		assertEquals(12, SeeleFxMath.tierCount(12, 1));
+		assertEquals(12, SeeleFxMath.tierCount(12, 2));
+		assertEquals(0.29, SeeleFxMath.AFTERIMAGE_STEP, 0.01);
+		assertEquals(UryuBalance.SEELE_LUNGE_SPEED * 20.0 * SeeleFxMath.AFTERIMAGE_GAP, SeeleFxMath.AFTERIMAGE_STEP, 0.01, "a copy appears where the runner just was");
+	}
+
+	@Test
 	void theCrescentEchoAppearsAtTheEndOfTheSweepAndFadesIn025Seconds() {
 		assertEquals(0.0, SeeleFxMath.echoAlpha(0), 0);
 		assertEquals(0.0, SeeleFxMath.echoAlpha(0.5 * SeeleFxMath.SWEEP), 0);

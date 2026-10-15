@@ -131,6 +131,7 @@ public final class UryuSeeleFx {
 		double born;
 		Identifier texture;
 		boolean slim;
+		boolean local;
 	}
 
 	private static final List<Combo> COMBOS = new ArrayList<>();
@@ -279,7 +280,13 @@ public final class UryuSeeleFx {
 	/** t = 0: strips, dashes, the platform disc, the afterimages, the sounds and the FOV kick. */
 	private static void runVisuals(ClientWorld w, Combo c, EffectTimeline t, Vec3d feet, Vec3d flat) {
 		double len = SeeleFxMath.lungeLength();
+		// first person: the head strip would run through the middle of the screen and the dashes fly in the face: only the low ones, to the sides
+		boolean fp = c.local && !FxClient.forceRemote() && MinecraftClient.getInstance().options.getPerspective().isFirstPerson();
+		int tier = tier();
 		for (int i = 0; i < SeeleFxMath.LUNGE_HEIGHTS.length; i++) {
+			if (fp && i == SeeleFxMath.LUNGE_HEIGHTS.length - 1) {
+				continue;
+			}
 			double y = feet.y + SeeleFxMath.LUNGE_HEIGHTS[i];
 			final double fl = len;
 			FxShapes.Strip body = FxShapes.strip(feet.x, y, feet.z, flat.x, 0, flat.z, 0).length(a -> fl * FxMath.oc(a / 0.12)).width(a -> 0.24 * (1.0 - 0.5 * FxMath.clamp(a / 0.25)));
@@ -289,10 +296,16 @@ public final class UryuSeeleFx {
 		}
 		Random r = t.rng(740);
 		// the dash stream behind the runner
-		for (int i = 0; i < SeeleFxMath.LUNGE_DASHES; i++) {
-			double f = (double) i / SeeleFxMath.LUNGE_DASHES * len;
+		int dashes = SeeleFxMath.tierCount(SeeleFxMath.LUNGE_DASHES, tier);
+		for (int i = 0; i < dashes; i++) {
+			double f = (double) i / dashes * len;
 			double side = (r.nextDouble() - 0.5) * 0.5;
-			Vec3d p = feet.add(flat.x * f - flat.z * side, 0.3 + r.nextDouble() * 1.3, flat.z * f + flat.x * side);
+			double h = 0.3 + r.nextDouble() * 1.3;
+			if (fp) {
+				side = (i % 2 == 0 ? 1 : -1) * (0.35 + r.nextDouble() * 0.4);
+				h = 0.2 + r.nextDouble() * 0.8;
+			}
+			Vec3d p = feet.add(flat.x * f - flat.z * side, h, flat.z * f + flat.x * side);
 			FxGlowBatch.sprite(GlowSprite.DASH).at(p.x, p.y, p.z).vel(-flat.x * 7.0, 0.2, -flat.z * 7.0).drag(0.9).streak().streakTime(0.04).size(0.55).delay(f / len * 0.1)
 					.life(0.2).curve(0.01, 0.6).color(i % 3 == 0 ? UryuPalette.Q1 : UryuPalette.Q2).peak(0.75 * glow()).owner(t).lod(c.lod).spawn();
 		}
@@ -300,7 +313,7 @@ public final class UryuSeeleFx {
 		FxGlowBatch.sprite(GlowSprite.PLATFORM_DISC).at(feet.x, feet.y + 0.04, feet.z).ground().rot(Math.atan2(flat.z, flat.x), 0).size(SeeleFxMath.DISC_SIZE)
 				.life(SeeleFxMath.DISC_LIFE).curve(0.03, 0.6).color(UryuPalette.Q2).peak(0.8 * glow()).owner(t).lod(c.lod).spawn();
 		Vec3d hip = feet.add(0, 0.9, 0);
-		for (int i = 0; i < SeeleFxMath.START_DASHES; i++) {
+		for (int i = 0; i < SeeleFxMath.tierCount(SeeleFxMath.START_DASHES, tier); i++) {
 			double a = r.nextDouble() * Math.PI * 2;
 			double up = (r.nextDouble() - 0.5) * 1.2;
 			Vec3d from = hip.add(Math.cos(a) * 1.1, up, Math.sin(a) * 1.1);
@@ -334,6 +347,7 @@ public final class UryuSeeleFx {
 			im.born = FxClock.now + i * SeeleFxMath.AFTERIMAGE_GAP;
 			im.texture = skin.texture();
 			im.slim = skin.model() == SkinTextures.Model.SLIM;
+			im.local = c.local;
 			IMAGES.add(im);
 		}
 		while (IMAGES.size() > 12) {
@@ -523,7 +537,7 @@ public final class UryuSeeleFx {
 		}
 		cues(t, SeeleFxMath.hitCues(index), p);
 		SeeleFxMath.Screen sc = SeeleFxMath.screen(index);
-		if (sc.hitstopMs() > 0 && t != null && !t.isEnded() && !FxConfig.reduceMotion) {
+		if (sc.hitstopMs() > 0 && t != null && !t.isEnded() && !FxConfig.reduceMotion && !FxConfig.photosensitiveSafe) {
 			t.hitstop(sc.hitstopMs());
 		}
 	}
@@ -722,10 +736,13 @@ public final class UryuSeeleFx {
 			return;
 		}
 		double keep = Math.min(1.0, c.len * 2.0);
-		e.streak(GlowSprite.STREAK, c.tip.x, c.tip.y, c.tip.z, c.hilt.x, c.hilt.y, c.hilt.z, 0.30, q3[0], q3[1], q3[2], 0.7 * keep * g);
-		e.streak(GlowSprite.STREAK, c.tip.x, c.tip.y, c.tip.z, c.hilt.x, c.hilt.y, c.hilt.z, 0.07, q0[0], q0[1], q0[2], 0.95 * keep * g);
+		// first person: the blade passes close to the camera, its glow strip is clipped like the ribbons
+		Vec3d mid = c.hilt.add(c.tip).multiply(0.5);
+		double wb = clip(e, mid, 0.30, c.fp);
+		e.streak(GlowSprite.STREAK, c.tip.x, c.tip.y, c.tip.z, c.hilt.x, c.hilt.y, c.hilt.z, wb, q3[0], q3[1], q3[2], 0.7 * keep * g);
+		e.streak(GlowSprite.STREAK, c.tip.x, c.tip.y, c.tip.z, c.hilt.x, c.hilt.y, c.hilt.z, Math.min(0.07, wb), q0[0], q0[1], q0[2], 0.95 * keep * g);
 		e.sprite(GlowSprite.GLOW_SOFT, c.tip.x, c.tip.y, c.tip.z, 0.9 * Math.min(1.0, c.len * 1.5), 0, q2[0], q2[1], q2[2], 0.6 * keep * g);
-		double tw = 0.75 + 0.25 * Math.sin(now * 40.0);
+		double tw = FxConfig.reduceMotion || FxConfig.photosensitiveSafe ? 0.85 : 0.75 + 0.25 * Math.sin(now * 40.0); // the glint flickers (Reduce Motion: steady)
 		e.sprite(GlowSprite.STAR4, c.tip.x, c.tip.y, c.tip.z, 0.5 * Math.min(1.0, c.len * 1.5), now * 3.0, q0[0], q0[1], q0[2], 0.8 * tw * keep * g);
 		e.sprite(GlowSprite.GLOW_SOFT, c.hilt.x, c.hilt.y, c.hilt.z, 0.32, 0, q2[0], q2[1], q2[2], 0.45 * keep * g);
 	}
@@ -739,7 +756,10 @@ public final class UryuSeeleFx {
 		float[] q1 = UryuPalette.FQ1;
 		float[] q2 = UryuPalette.FQ2;
 		float[] q3 = UryuPalette.FQ3;
-		int n = SeeleFxMath.segments(tier());
+		int tier = tier();
+		int n = SeeleFxMath.segments(tier) * SeeleFxMath.subdivision(tier);
+		int ov = SeeleFxMath.ribbonOverlap(tier);
+		double gain = SeeleFxMath.ribbonGain(ov);
 		lastSegments = n;
 		double p = SeeleFxMath.progress(age);
 		double rIn = SeeleFxMath.innerRadius(bladeScale());
@@ -747,40 +767,38 @@ public final class UryuSeeleFx {
 		double wMax = s.profile.widthMax();
 		Vec3d pivot = c.pivot;
 		boolean fp = c.fp;
-		// blade tip ribbon (inner) and the crescent wave (outer), both along the swept part of the arc
-		Vec3d prevIn = null;
-		Vec3d prevOut = null;
-		double prevInA = 0;
-		double prevOutA = 0;
+		// the points of the blade tip ribbon (inner) and of the crescent wave (outer), along the swept part of the arc
+		Vec3d[] in = new Vec3d[n + 1];
+		Vec3d[] out = new Vec3d[n + 1];
+		double[] aIn = new double[n + 1];
+		double[] aOut = new double[n + 1];
 		for (int k = 0; k <= n; k++) {
 			double u = p * k / n;
 			double since = age - SeeleFxMath.passTime(u);
-			V3 dk = s.frame.dir(u);
-			Vec3d dirK = vec(dk);
-			Vec3d in = pivot.add(dirK.multiply(rIn));
-			Vec3d out = pivot.add(dirK.multiply(SeeleFxMath.outerRadius(since, rIn, rOut)));
-			double aIn = SeeleFxMath.innerAlpha(since);
-			double aOut = SeeleFxMath.outerAlpha(since);
-			if (k > 0) {
-				double f = (double) k / n;
-				double a1 = 0.5 * (aIn + prevInA);
-				if (a1 > 0.004) {
-					double w1 = clip(e, in, SeeleFxMath.trailWidth(f, 0.30), fp);
-					e.streak(GlowSprite.LINE, in.x, in.y, in.z, prevIn.x, prevIn.y, prevIn.z, w1, q2[0], q2[1], q2[2], 0.75 * a1 * g);
-					e.streak(GlowSprite.LINE, in.x, in.y, in.z, prevIn.x, prevIn.y, prevIn.z, w1 * 0.3, q0[0], q0[1], q0[2], 0.9 * a1 * g);
-				}
-				double a2 = 0.5 * (aOut + prevOutA);
-				if (a2 > 0.004) {
-					double w2 = clip(e, out, SeeleFxMath.trailWidth(f, wMax), fp);
-					e.streak(GlowSprite.STREAK, out.x, out.y, out.z, prevOut.x, prevOut.y, prevOut.z, w2, q3[0], q3[1], q3[2], 0.8 * a2 * g);
-					e.streak(GlowSprite.LINE, out.x, out.y, out.z, prevOut.x, prevOut.y, prevOut.z, clip(e, out, SeeleFxMath.coreWidth(f) * s.profile.crescentScale(), fp), q1[0], q1[1], q1[2],
-							0.85 * a2 * g);
-				}
+			Vec3d dirK = vec(s.frame.dir(u));
+			in[k] = pivot.add(dirK.multiply(rIn));
+			out[k] = pivot.add(dirK.multiply(SeeleFxMath.outerRadius(since, rIn, rOut)));
+			aIn[k] = SeeleFxMath.innerAlpha(since);
+			aOut[k] = SeeleFxMath.outerAlpha(since);
+		}
+		for (int k = 1; k <= n; k++) {
+			double f = (double) k / n;
+			double a1 = 0.5 * (aIn[k] + aIn[k - 1]);
+			if (a1 > 0.004) {
+				double w1 = clip(e, in[k], SeeleFxMath.trailWidth(f, 0.30), fp);
+				e.streak(GlowSprite.LINE, in[k].x, in[k].y, in[k].z, in[k - 1].x, in[k - 1].y, in[k - 1].z, w1, q2[0], q2[1], q2[2], 0.75 * a1 * g);
+				e.streak(GlowSprite.LINE, in[k].x, in[k].y, in[k].z, in[k - 1].x, in[k - 1].y, in[k - 1].z, w1 * 0.3, q0[0], q0[1], q0[2], 0.9 * a1 * g);
 			}
-			prevIn = in;
-			prevOut = out;
-			prevInA = aIn;
-			prevOutA = aOut;
+			double a2 = 0.5 * (aOut[k] + aOut[k - 1]);
+			if (a2 > 0.004) {
+				// the body of the crescent: streaks that reach back over several points, so their ramps add up to an even band
+				int j = SeeleFxMath.windowStart(k, ov);
+				double ab = 0.7 * aOut[k] + 0.3 * aOut[j];
+				double w2 = clip(e, out[k], SeeleFxMath.trailWidth(f, wMax), fp);
+				e.streak(GlowSprite.STREAK, out[k].x, out[k].y, out[k].z, out[j].x, out[j].y, out[j].z, w2, q3[0], q3[1], q3[2], 0.8 * ab * gain * g);
+				e.streak(GlowSprite.LINE, out[k].x, out[k].y, out[k].z, out[k - 1].x, out[k - 1].y, out[k - 1].z,
+						clip(e, out[k], SeeleFxMath.coreWidth(f) * s.profile.crescentScale(), fp), q1[0], q1[1], q1[2], 0.85 * a2 * g);
+			}
 		}
 		// the head of the stroke: a bright glow where the blade is
 		if (age < SeeleFxMath.SWEEP + 0.05) {
@@ -872,7 +890,13 @@ public final class UryuSeeleFx {
 		MatrixStack ms = ctx.matrixStack();
 		float ascale = (float) FxMath.clamp(FxTune.d("shunpo.afterimageScale", 0.9375), 0.25, 2.0);
 		int rgb = FxMath.packRgb(UryuPalette.FQ3);
+		MinecraftClient mc = MinecraftClient.getInstance();
+		boolean fp = mc.options.getPerspective().isFirstPerson() && !FxClient.forceRemote();
+		double minSq = SeeleFxMath.AFTERIMAGE_FP_MIN_DIST * SeeleFxMath.AFTERIMAGE_FP_MIN_DIST;
 		for (Image im : IMAGES) {
+			if (fp && im.local && (im.x - cam.x) * (im.x - cam.x) + (im.z - cam.z) * (im.z - cam.z) < minSq) {
+				continue; // the owner does not look at a ghost of himself standing in his face
+			}
 			double t = (now - im.born) / SeeleFxMath.AFTERIMAGE_LIFE;
 			if (t < 0 || t >= 1.0) {
 				continue;

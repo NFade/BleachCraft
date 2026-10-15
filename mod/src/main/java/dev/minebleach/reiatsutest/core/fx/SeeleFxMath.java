@@ -60,7 +60,10 @@ public final class SeeleFxMath {
 	public static final int LUNGE_DASHES = 12;
 	public static final int START_DASHES = 8;
 	public static final double AFTERIMAGE_GAP = 0.04;
-	public static final double AFTERIMAGE_STEP = 0.45;
+	/** The copies stand where the runner was when each appeared: the lunge speed (0.36 per tick = 7.2 m/s) times {@link #AFTERIMAGE_GAP}, so none pops up in front of him. */
+	public static final double AFTERIMAGE_STEP = 0.29;
+	/** First person: copies closer than this to the camera are not drawn (the owner would see a ghost body in his face). */
+	public static final double AFTERIMAGE_FP_MIN_DIST = 1.6;
 	public static final double AFTERIMAGE_ALPHA = 0.35;
 	public static final double AFTERIMAGE_LIFE = 0.30;
 	public static final double DISC_SIZE = 1.8;
@@ -237,6 +240,34 @@ public final class SeeleFxMath {
 	/** Number of segments of an arc: tier 0 (LOW) 6, 1 (MEDIUM) 9, 2 (HIGH) 12 (2.9: 12, tier Low 6). */
 	public static int segments(int tier) {
 		return tier <= 0 ? 6 : tier == 1 ? 9 : 12;
+	}
+
+	/** Dashes and flakes of a tier: Low halves the counts (the storyboard: dashes x0.5), the others keep them. */
+	public static int tierCount(int count, int tier) {
+		return tier <= 0 ? (count + 1) / 2 : count;
+	}
+
+	/** Tier 2 (HIGH) draws every arc segment twice as fine, so the crescents are curves and not polygons. */
+	public static int subdivision(int tier) {
+		return tier >= 2 ? 2 : 1;
+	}
+
+	/**
+	 * The outer wave is drawn as streaks (dim tail, bright head): one streak per segment would show a saw tooth, so every streak reaches back over
+	 * this many segments and the ramps add up to an even band (3 on tiers Low and Medium, 4 on HIGH where the segments are finer).
+	 */
+	public static int ribbonOverlap(int tier) {
+		return tier >= 2 ? 4 : 3;
+	}
+
+	/** Index of the tail point of the streak that ends at point {@code k}. */
+	public static int windowStart(int k, int overlap) {
+		return Math.max(0, k - Math.max(1, overlap));
+	}
+
+	/** Intensity factor of one streak of an overlapped ribbon: the ramp of a streak averages about 0.59, {@code overlap} of them lie on every point. */
+	public static double ribbonGain(int overlap) {
+		return 1.0 / Math.max(1.0, Math.max(1, overlap) * 0.59);
 	}
 
 	/** Width of the ribbon at fraction {@code f} (0 tail, 1 head): tapering to a point at the tail. */
