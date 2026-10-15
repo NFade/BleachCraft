@@ -55,6 +55,9 @@ public final class UryuFx {
 		UryuSprengerFx.init();
 		UryuSeeleFx.init();
 		UryuWingFx.init();
+		UryuRainFx.init();
+		UryuShunpoFx.init();
+		UryuStarFx.init();
 		WorldRenderEvents.START.register(ctx -> frame());
 		FxGlowBatch.addSource(UryuFx::emitGlow);
 	}
@@ -96,6 +99,7 @@ public final class UryuFx {
 			case 74 -> UryuSeeleFx.lunge(w, e);
 			case 75 -> UryuWingFx.barrage(e);
 			case 76 -> UryuRainFx.rainSquare(e);
+			case 77 -> UryuStarFx.release(e);
 			case 78 -> {
 				float[] p = e.params();
 				if (p.length >= 5) {
@@ -176,6 +180,12 @@ public final class UryuFx {
 	public static void shunpoReishi(Vec3d start, Vec3d delta) {
 		init();
 		UryuAuraFx.shunpoReishi(start, delta);
+	}
+
+	/** The Quincy shunpo of storyboard 2.15 (Hirenkyaku): platform ellipses, flechette strips, dashes, an arrival ring and flakes. */
+	public static void shunpoHirenkyaku(Vec3d start, Vec3d delta) {
+		init();
+		UryuShunpoFx.play(start, delta);
 	}
 
 	// ------------------------------------------------------------------ per frame

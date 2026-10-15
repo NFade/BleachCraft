@@ -121,4 +121,23 @@ class UryuArrowLookTest {
 		assertEquals(0.25, UryuArrowLook.SCAR_RADIUS, EPS);
 		assertEquals(0.6, UryuArrowLook.SCAR_LIFE, EPS);
 	}
+
+	@Test
+	void theZArrowHasWingFlakesAndItsOwnCues() {
+		for (double[] d : new double[][] {{0, 0, 1}, {1, 0, 0}, {0, 1, 0}, {0.6, 0.0, 0.8}}) {
+			double[] a = UryuArrowLook.wingFlake(d[0], d[1], d[2], 1);
+			double[] b = UryuArrowLook.wingFlake(d[0], d[1], d[2], -1);
+			assertEquals(0.0, a[0] * d[0] + a[1] * d[1] + a[2] * d[2], 1e-9, "the flake plane holds the shaft");
+			assertEquals(1.0, Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]), 1e-9);
+			assertEquals(0.0, a[3] * d[0] + a[4] * d[1] + a[5] * d[2], 1e-9, "the flake sits sideways of the shaft");
+			assertEquals(-1.0, a[3] * b[3] + a[4] * b[4] + a[5] * b[5], 1e-9, "the two flakes sit on opposite sides");
+			assertEquals(Math.cos(Math.toRadians(50.0)), a[0] * b[0] + a[1] * b[1] + a[2] * b[2], 1e-9, "25 deg each way");
+		}
+		assertEquals(10, UryuArrowLook.muzzleDashes(UryuArrowLook.Z));
+		assertEquals(6, UryuArrowLook.muzzleDashes(UryuArrowLook.BASIC));
+		assertEquals(4.0, UryuArrowLook.hitRingTo(UryuArrowLook.Z), EPS);
+		assertEquals("block.amethyst_block.resonate", UryuArrowLook.muzzleCues(UryuArrowLook.Z, 0.5).get(1).id());
+		assertEquals(UryuArrowLook.hitCues(1, true).size() + 2, UryuArrowLook.hitCues(UryuArrowLook.Z, 1, true).size());
+		assertEquals(UryuArrowLook.hitCues(1, true).size(), UryuArrowLook.hitCues(UryuArrowLook.BASIC, 1, true).size());
+	}
 }

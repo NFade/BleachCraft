@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.client.ClientOptions;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
+import dev.minebleach.reiatsutest.client.fx.FxTune;
 import dev.minebleach.reiatsutest.core.combat.CastGesture;
 import dev.minebleach.reiatsutest.core.combat.CastGestures;
 import dev.minebleach.reiatsutest.core.combat.FpEase;
@@ -66,6 +67,8 @@ public final class UryuBowMotion {
 	private static final Map<Integer, St> STATES = new HashMap<>();
 	private static final Map<String, UryuPoseTrack> TRACKS = new HashMap<>();
 	private static boolean warnedHand;
+	/** Relaxed free hand at rest ({@code L} row layout px, py, pz, arx, ary, arz): low at the lower left, the forearm coming up from below the picture. */
+	private static final float[] IDLE_L = {-0.78f, 0.07f, 0.05f, 5f, 0f, 0f};
 
 	private UryuBowMotion() {
 	}
@@ -333,6 +336,7 @@ public final class UryuBowMotion {
 		if (st == null) {
 			return;
 		}
+		boolean idleHand = candidate && FxTune.d("uryu.fp.idleHand", 1.0) > 0.5;
 		long nanos = System.nanoTime();
 		double now = nanos / 1.0e9;
 		String run = FpCast.runId(player.getId());
@@ -341,11 +345,24 @@ public final class UryuBowMotion {
 		float dt = st.presenceNanos == 0L ? 0f : Math.min(0.1f, (nanos - st.presenceNanos) / 1.0e9f);
 		st.presenceNanos = nanos;
 		st.presence = UryuStringHand.presence(st.presence, want, dt);
-		if (st.presence <= 0.002f || gs == null) {
+		if (!idleHand && (st.presence <= 0.002f || gs == null)) {
 			return;
 		}
 		int side = player.getMainArm() == Arm.LEFT ? -1 : 1;
-		UryuStringHand.Placement pl = UryuStringHand.placement(side, gs.l(), equip, st.presence);
+		// the relaxed free hand at rest hangs at the lower left; the draw rows take over with the presence of the string hand (it keeps its way in while drawing)
+		float w = gs == null ? 0f : st.presence;
+		float[] row = new float[6];
+		float[] gl = gs == null ? null : gs.l();
+		for (int i = 0; i < 6; i++) {
+			row[i] = IDLE_L[i] + ((gl == null ? IDLE_L[i] : gl[i]) - IDLE_L[i]) * w;
+		}
+		double[] hold = UryuFpHold.shift(side);
+		float pres = idleHand ? 1f : st.presence;
+		UryuStringHand.Placement pl0 = UryuStringHand.placement(side, row, equip, pres);
+		// the free hand follows the shift of the bow hand (a bit more across, the nock is near the face)
+		double follow = FxTune.d("uryu.fp.stringFollowX", 0.3);
+		UryuStringHand.Placement pl = new UryuStringHand.Placement(pl0.baseX(), pl0.baseY(), pl0.baseZ(), pl0.dx() + (hold[0] * follow + side * FxTune.d("uryu.fp.stringDx", -0.7)) * w,
+				pl0.dy() + (hold[1] + FxTune.d("uryu.fp.stringDy", -0.1)) * w, pl0.dz() + (hold[2] + FxTune.d("uryu.fp.stringDz", -0.35)) * w, pl0.rotDeg());
 		double[] r = pl.rotDeg();
 		m.push();
 		m.translate(pl.baseX(), pl.baseY(), pl.baseZ());

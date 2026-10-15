@@ -317,6 +317,13 @@ public final class ObjItemBakedModel implements BakedModel {
 		outputGlow(b.bowGlow, context, glowK);
 		// the arrow: the OBJ arrow lies along +Y from its tail; turn it onto +Z ((x, y, z) -> (x, -z, y) after centring) and put the tail on the nock
 		final float nockZ = 0.395f - back;
+		// first person: the arrow lies on the arrow rest at the side of the bow (model x), clear of the bow fist, aimed at the crosshair (tunables uryu.fp.arrow*)
+		net.minecraft.client.render.model.json.ModelTransformationMode tm = context.itemTransformationMode();
+		boolean fpv = tm == net.minecraft.client.render.model.json.ModelTransformationMode.FIRST_PERSON_RIGHT_HAND
+				|| tm == net.minecraft.client.render.model.json.ModelTransformationMode.FIRST_PERSON_LEFT_HAND;
+		final float arrowX = fpv ? (float) FxTune.d("uryu.fp.arrowX", 0.14) : 0f;
+		final float arrowUp = fpv ? (float) FxTune.d("uryu.fp.arrowUp", 0.05) : ARROW_REST_UP;
+		final float arrowTan = fpv ? (float) Math.tan(Math.toRadians(FxTune.d("uryu.fp.arrowYaw", 0.0))) : 0f;
 		context.pushTransform(q -> {
 			Vector3f v = new Vector3f();
 			for (int c = 0; c < 4; c++) {
@@ -324,7 +331,8 @@ public final class ObjItemBakedModel implements BakedModel {
 				float x = v.x - 0.5f;
 				float y = v.y - 0.5f;
 				float z = v.z - 0.5f;
-				q.pos(c, 0.5f + x, ARROW_REST_UP + 0.5f - z, nockZ - ARROW_TAIL_GAP + y);
+				float az = nockZ - ARROW_TAIL_GAP + y;
+					q.pos(c, 0.5f + x + arrowX + (az - nockZ) * arrowTan, arrowUp + 0.5f - z, az);
 				if (q.hasNormal(c)) {
 					q.copyNormal(c, v);
 					q.normal(c, v.x, -v.z, v.y);

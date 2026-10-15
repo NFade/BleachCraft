@@ -99,8 +99,88 @@ public final class UryuFxStats {
 		return UryuWingFx.ends;
 	}
 
+	/** Wing barrage (U-FX 8): tip fires seen, dashes of the flare, cross sprites emitted. */
+	public static int wingTipFires() {
+		return UryuWingFx.tipFires;
+	}
+
+	public static int wingBarrageDashes() {
+		return UryuWingFx.barrageDashes;
+	}
+
+	public static int wingCrossSprites() {
+		return UryuWingFx.crossSprites;
+	}
+
+	/** Licht Regen (U-FX 9): outline quads, sky card quads, landings seen, splashes drawn, puffs, glitter and haze specks. */
+	public static int rainOutlineQuads() {
+		return UryuRainFx.outlineQuads;
+	}
+
+	public static int rainCardQuads() {
+		return UryuRainFx.cardQuads;
+	}
+
+	public static int rainLandings() {
+		return UryuRainFx.landings;
+	}
+
+	public static int rainSplashes() {
+		return UryuRainFx.splashes;
+	}
+
+	public static int rainSpecks() {
+		return UryuRainFx.specks;
+	}
+
 	/** Releases (effect 71) seen. */
 	public static int wingReleases() {
 		return UryuWingFx.releases;
+	}
+
+	public static int starCasts() {
+		return UryuStarFx.casts;
+	}
+
+	public static int starLaunches() {
+		return UryuStarFx.launches;
+	}
+
+	public static int starFlakeQuads() {
+		return UryuStarFx.flakeQuads;
+	}
+
+	public static int starBeamQuads() {
+		return UryuStarFx.beamQuads;
+	}
+
+	public static int starRings() {
+		return UryuStarFx.rings;
+	}
+
+	public static int starSpecks() {
+		return UryuStarFx.specks;
+	}
+
+	public static int starBursts() {
+		return UryuStarFx.bursts;
+	}
+
+	public static int shunpoDashes() {
+		return UryuShunpoFx.dashes;
+	}
+
+	public static int shunpoDiscs() {
+		return UryuShunpoFx.discsSpawned;
+	}
+
+	/** Harness: drops the Quincy shunpo platforms in flight. */
+	public static void clearShunpo() {
+		UryuShunpoFx.clear();
+	}
+
+	/** Harness: drops the Sternenstaub casts in flight. */
+	public static void clearStar() {
+		UryuStarFx.clear();
 	}
 }

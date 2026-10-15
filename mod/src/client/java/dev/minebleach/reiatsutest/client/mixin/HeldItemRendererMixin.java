@@ -56,6 +56,9 @@ public abstract class HeldItemRendererMixin {
 		dev.minebleach.reiatsutest.client.model.HeldPose.poll();
 		// BC5b: strike, block stance and parry recoil move the whole hand (arm and sword) as one rigid body, before the arm is drawn
 		reiatsu$fpMoved = false;
+		// Uryu: natural first person hold of the bow (the hand and the bow as one body, below the strike / draw motion)
+		reiatsu$holdPushed = mode.isFirstPerson() && entity == client.player
+				&& dev.minebleach.reiatsutest.client.model.UryuFpHold.push(client.player, stack, leftHanded, matrices);
 		if (mode.isFirstPerson() && stack.getItem() instanceof ZanpakutoItem && entity == client.player) {
 			reiatsu$fpMoved = dev.minebleach.reiatsutest.client.model.FpMotion.push(client.player, stack, mode, leftHanded, matrices);
 		}
@@ -99,6 +102,9 @@ public abstract class HeldItemRendererMixin {
 
 	@org.spongepowered.asm.mixin.Unique
 	private boolean reiatsu$fpMoved;
+
+	@org.spongepowered.asm.mixin.Unique
+	private boolean reiatsu$holdPushed;
 
 	@org.spongepowered.asm.mixin.Unique
 	private boolean reiatsu$lifted;
@@ -147,6 +153,10 @@ public abstract class HeldItemRendererMixin {
 		if (reiatsu$fpMoved) {
 			matrices.pop();
 			reiatsu$fpMoved = false;
+		}
+		if (reiatsu$holdPushed) {
+			matrices.pop();
+			reiatsu$holdPushed = false;
 		}
 		DrawTracker.endRender();
 	}

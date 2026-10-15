@@ -177,6 +177,9 @@ public final class AuraFx {
 			if (!released || !pl.isAlive() || pl.isSpectator()) {
 				continue;
 			}
+			if (a.character == CharacterId.URYU) {
+				continue; // Uryu has his own aura (UryuAuraFx); the common wisps and motes are the lilac Byakuya look, which showed as pink pillars around him
+			}
 			double d = cam.distanceTo(pl.getPos());
 			double lod = FxMath.lod(d);
 			if (lod <= 0) {

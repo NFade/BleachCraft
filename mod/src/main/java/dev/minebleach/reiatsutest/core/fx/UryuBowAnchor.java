@@ -18,8 +18,8 @@ public final class UryuBowAnchor {
 	public static final double SHOULDER_SIDE = 0.31;
 	public static final double SHOULDER_UP = 1.38;
 	public static final double ARM = 0.70;
-	public static final double FP_RIGHT = 0.30;
-	public static final double FP_UP = -0.28;
+	public static final double FP_RIGHT = 0.24;
+	public static final double FP_UP = -0.24;
 	public static final double FP_FWD = 0.55;
 	/** First person: the nock never goes closer than this to the camera plane (the full draw would put it behind the near plane). */
 	public static final double FP_NOCK_MIN_FWD = 0.32;

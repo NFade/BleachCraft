@@ -1,5 +1,7 @@
 package dev.minebleach.reiatsutest.client.fx;
 
+import dev.minebleach.reiatsutest.core.fx.UryuArrowLook;
+import dev.minebleach.reiatsutest.core.fx.UryuBowForm;
 import dev.minebleach.reiatsutest.core.fx.UryuVollstTiming;
 import dev.minebleach.reiatsutest.core.fx.UryuWingMath;
 import dev.minebleach.reiatsutest.core.swarm.V3;
@@ -38,7 +40,18 @@ final class UryuWingFx {
 		int caster;
 		double born;
 		double life;
+		double x;
+		double y;
+		double z;
+		boolean ended;
 	}
+
+	/** A lock-on line of a tip fire: from the tip along the arrow, fading in 0.1 s. */
+	private record Lock(double born, double x, double y, double z, double ux, double uy, double uz) {
+	}
+
+	private static final List<Lock> LOCKS = new ArrayList<>();
+	private static final Map<Integer, Double> LAST_FIRE_SOUND = new HashMap<>();
 
 	private static final List<Wing> WINGS = new ArrayList<>();
 	/** FX time of the release event of a caster (t = 0 of the table), dropped when his bankai ends. */
@@ -54,6 +67,9 @@ final class UryuWingFx {
 	static int lastGlowSprites;
 	static int specks;
 	static int tipStars;
+	static int tipFires;
+	static int barrageDashes;
+	static int crossSprites;
 
 	private UryuWingFx() {
 	}
@@ -66,6 +82,8 @@ final class UryuWingFx {
 		EVENT_AT.clear();
 		ENDED_AT.clear();
 		WINGS.clear();
+		LOCKS.clear();
+		LAST_FIRE_SOUND.clear();
 		UryuWingRenderer.clear();
 	}
 
@@ -463,10 +481,103 @@ final class UryuWingFx {
 		wing.caster = e.casterId();
 		wing.born = FxClock.now;
 		wing.life = seconds;
+		Entity caster = MinecraftClient.getInstance().world == null ? null : MinecraftClient.getInstance().world.getEntityById(e.casterId());
+		Vec3d at = caster != null ? caster.getPos() : new Vec3d(e.x(), e.y(), e.z());
+		wing.x = at.x;
+		wing.y = at.y;
+		wing.z = at.z;
 		WINGS.add(wing);
 		UryuWingRenderer.spread(e.casterId(), seconds);
-		FxSound.play(null, "entity.phantom.flap", e.x(), e.y() + 1.5, e.z(), 1.7, 0.9);
-		FxSound.play(null, "block.amethyst_block.resonate", e.x(), e.y() + 1.5, e.z(), 1.8, 0.8);
+		boolean rm = FxConfig.reduceMotion || FxConfig.photosensitiveSafe;
+		FxSound.play(null, "entity.ender_dragon.flap", at.x, at.y + 1.5, at.z, 1.7, 0.7);
+		FxSound.play(null, "block.amethyst_block.resonate", at.x, at.y + 1.5, at.z, 1.6, 0.6);
+		// 24 dashes fly radially out of the four tips as the wings flare open
+		Vec3d[] tips = tipsOf(e.casterId(), at, caster);
+		if (tips != null) {
+			int per = count(6);
+			for (int s = 0; s < tips.length; s++) {
+				Vec3d tp = tips[s];
+				double rx = tp.x - at.x;
+				double rz = tp.z - at.z;
+				double rl = Math.max(1.0E-3, Math.sqrt(rx * rx + rz * rz));
+				for (int i = 0; i < per; i++) {
+					double a = RNG.nextDouble() * 0.9 - 0.45;
+					double sp = (rm ? 3.0 : 6.0) * (0.7 + 0.6 * RNG.nextDouble());
+					double dx = (rx / rl) * Math.cos(a) - (rz / rl) * Math.sin(a);
+					double dz = (rz / rl) * Math.cos(a) + (rx / rl) * Math.sin(a);
+					double dy = (RNG.nextDouble() - 0.5) * 0.7;
+					barrageDashes++;
+					FxGlowBatch.sprite(GlowSprite.DASH).at(tp.x, tp.y, tp.z).vel(dx * sp, dy * sp, dz * sp).streak().streakTime(0.05).size(0.4).life(0.25).curve(0.005, 0.6)
+							.color((s + i) % 2 == 0 ? UryuPalette.Q1 : UryuPalette.Q2).peak(0.9).spawn();
+				}
+			}
+		}
+		if (!rm && MinecraftClient.getInstance().player != null && MinecraftClient.getInstance().player.getId() == e.casterId()) {
+			ScreenFx.shake(0.3, 0.2, 1.0);
+		}
+	}
+
+	/** The four tips of a caster: the visible mesh wing tips, else the rule positions of the placeholder (null without any body). */
+	private static Vec3d[] tipsOf(int id, Vec3d feet, Entity caster) {
+		Vec3d[] tips = UryuWingRenderer.wingTips(id, 1.0f);
+		if (tips != null || !(caster instanceof LivingEntity le)) {
+			return tips;
+		}
+		tips = new Vec3d[UryuBalance.WING_SLOTS];
+		for (int s = 0; s < tips.length; s++) {
+			V3 v = WingBarrage.tip(s, le.bodyYaw, new V3(feet.x, feet.y, feet.z));
+			tips[s] = new Vec3d(v.x(), v.y(), v.z());
+		}
+		return tips;
+	}
+
+	/** The nearest player in the BANKAI state within 4 blocks of a first arrow position: the one whose wing fired. */
+	private static net.minecraft.entity.player.PlayerEntity casterNear(double x, double y, double z) {
+		MinecraftClient mc = MinecraftClient.getInstance();
+		if (mc.world == null) {
+			return null;
+		}
+		net.minecraft.entity.player.PlayerEntity best = null;
+		double bd = 16.0;
+		for (AbstractClientPlayerEntity p : mc.world.getPlayers()) {
+			if (!UryuQuincyFeature.state(p.getId()).bankai()) {
+				continue;
+			}
+			double d = p.squaredDistanceTo(x, y, z);
+			if (d <= bd) {
+				bd = d;
+				best = p;
+			}
+		}
+		return best;
+	}
+
+	/**
+	 * The tip fire (2.12) at the first sighting of a wing arrow at {@code (x, y, z)} flying along {@code u} (unit): a star and a ring at the tip, the wings
+	 * flare, a thin line to the target for 0.1 s and the volley sounds (at most one set per caster every 0.2 s). Reduce Motion: no spin, no lock-on line.
+	 */
+	static void tipFire(double x, double y, double z, Vec3d u) {
+		tipFires++;
+		boolean rm = FxConfig.reduceMotion || FxConfig.photosensitiveSafe;
+		net.minecraft.entity.player.PlayerEntity caster = casterNear(x, y, z);
+		if (caster != null) {
+			UryuWingRenderer.volley(caster.getId());
+		}
+		FxGlowBatch.sprite(GlowSprite.STAR4).at(x, y, z).size(UryuArrowLook.WING_STAR * 0.5, UryuArrowLook.WING_STAR).sizeEase(FxMath.OE).life(UryuArrowLook.MUZZLE_STAR_LIFE)
+				.curve(0.005, 0.7).color(UryuPalette.Q0).peak(1.0).rot(RNG.nextDouble() * 3.0, rm ? 0.0 : 1.5).spawn();
+		FxGlowBatch.sprite(GlowSprite.RING_THIN).at(x, y, z).plane(u.x, u.y, u.z).size(UryuArrowLook.WING_RING_FROM, UryuArrowLook.WING_RING_TO).sizeEase(FxMath.OC)
+				.life(UryuArrowLook.WING_RING_LIFE).curve(0.01, 0.7).color(UryuPalette.Q1).peak(0.8).spawn();
+		if (!rm && FxConfig.fxTier != FxConfig.TierSetting.LOW) {
+			LOCKS.add(new Lock(FxClock.now, x, y, z, u.x, u.y, u.z));
+		}
+		int id = caster == null ? -1 : caster.getId();
+		Double last = LAST_FIRE_SOUND.get(id);
+		if (last == null || FxClock.now - last >= UryuArrowLook.WING_SOUND_GAP || FxClock.now < last) {
+			LAST_FIRE_SOUND.put(id, FxClock.now);
+			for (UryuBowForm.Cue c : UryuArrowLook.wingFireCues()) {
+				FxSound.play(null, c.id(), x, y, z, c.pitch(), c.volume());
+			}
+		}
 	}
 
 	// ------------------------------------------------------------------------------------------ glow
@@ -477,18 +588,51 @@ final class UryuWingFx {
 			return;
 		}
 		stateGlow(e, mc, now);
-		WINGS.removeIf(w -> now - w.born > w.life + 0.4);
+		for (Wing w : WINGS) {
+			if (!w.ended && now - w.born > w.life) {
+				w.ended = true; // 6.0 s: the wings relax
+				FxSound.play(null, "entity.phantom.flap", w.x, w.y + 1.5, w.z, 1.2, 0.4);
+			}
+		}
+		WINGS.removeIf(w -> now - w.born > w.life + UryuWingMath.CROSS_FADE);
+		LOCKS.removeIf(l -> now - l.born() > UryuArrowLook.WING_LOCK_LIFE);
 		float td = mc.getRenderTickCounter().getTickDelta(false);
+		for (Lock l : LOCKS) {
+			double k = 1.0 - (now - l.born()) / UryuArrowLook.WING_LOCK_LIFE;
+			double len = UryuArrowLook.WING_LOCK_LENGTH;
+			e.streak(GlowSprite.LINE, l.x(), l.y(), l.z(), l.x() + l.ux() * len, l.y() + l.uy() * len, l.z() + l.uz() * len, 0.05, UryuPalette.FQ1[0], UryuPalette.FQ1[1],
+					UryuPalette.FQ1[2], 0.8 * k);
+		}
 		for (Wing w : WINGS) {
 			Entity en = mc.world.getEntityById(w.caster);
 			if (!(en instanceof LivingEntity le) || !le.isAlive()) {
 				continue;
 			}
+			barrageCross(e, w, le, td, now);
 			if (UryuQuincyFeature.state(w.caster).bankai()) {
 				continue; // the mesh wings are there: the placeholder streaks are only for a caster that has none
 			}
 			wing(e, w, le, td, now);
 		}
+	}
+
+	/** The Zeichen cross behind the back for the whole barrage: a vertical plane facing the way the caster looks, turning slowly (2.12). */
+	private static void barrageCross(FxGlowBatch.Emitter e, Wing w, LivingEntity le, float td, double now) {
+		double age = now - w.born;
+		double level = UryuWingMath.crossLevel(age, w.life) * Math.max(0.0, FxConfig.emissiveMultiplier);
+		if (level < 0.004) {
+			return;
+		}
+		boolean rm = FxConfig.reduceMotion || FxConfig.photosensitiveSafe;
+		double yaw = Math.toRadians(le.prevBodyYaw + (le.bodyYaw - le.prevBodyYaw) * td);
+		double fx = -Math.sin(yaw);
+		double fz = Math.cos(yaw);
+		double px = le.prevX + (le.getX() - le.prevX) * td - fx * UryuWingMath.CROSS_BACK;
+		double py = le.prevY + (le.getY() - le.prevY) * td + UryuWingMath.CROSS_HEIGHT;
+		double pz = le.prevZ + (le.getZ() - le.prevZ) * td - fz * UryuWingMath.CROSS_BACK;
+		float[] q1 = UryuPalette.FQ1;
+		crossSprites++;
+		e.plane(GlowSprite.ZEICHEN_CROSS, px, py, pz, UryuWingMath.CROSS_SIZE, fx, 0.0, fz, UryuWingMath.crossAngle(age, rm), q1[0], q1[1], q1[2], level);
 	}
 
 	/** The chest emblem and the faint body light of every bankai player in view (not for the camera owner in first person). */

@@ -94,6 +94,15 @@ public final class UryuArrowRenderer {
 		return ARROWS.size();
 	}
 
+	/** Harness: the extrapolated head of the first live arrow, or null. */
+	public static Vec3d debugHead() {
+		for (Arrow a : ARROWS.values()) {
+			double[] h = headOf(a, Math.min(1.5, (FxClock.now - a.arrivedS) * 20.0));
+			return new Vec3d(h[0], h[1], h[2]);
+		}
+		return null;
+	}
+
 	public static void clear() {
 		ARROWS.clear();
 		ENDED.clear();
@@ -125,6 +134,9 @@ public final class UryuArrowRenderer {
 				ENDED.addLast(new Ended(g.x, g.y, g.z, g.vx, g.vy, g.vz, g.focus, g.kind, g.own, now));
 				while (ENDED.size() > 24) {
 					ENDED.pollFirst();
+				}
+				if (g.kind == UryuArrowLook.RAIN && g.vy < -0.05) {
+					UryuRainFx.landing(g.x, g.y, g.z, g.vx, g.vy, g.vz); // Licht Regen: a needle that ended low in a rain square splashes (2.13)
 				}
 				it.remove();
 			}
@@ -187,7 +199,14 @@ public final class UryuArrowRenderer {
 	/** The first sighting of an arrow: who shot it and the muzzle. */
 	private static void launch(Arrow a) {
 		Vec3d v = new Vec3d(a.vx, a.vy, a.vz);
-		if (v.lengthSquared() < 1.0E-6 || !UryuArrowLook.hasMuzzle(a.kind)) {
+		if (v.lengthSquared() < 1.0E-6) {
+			return;
+		}
+		if (a.kind == UryuArrowLook.WING) {
+			UryuWingFx.tipFire(a.x, a.y, a.z, v.normalize()); // the wing arrows come from the tips: their own fire, no bow muzzle
+			return;
+		}
+		if (!UryuArrowLook.hasMuzzle(a.kind)) {
 			return;
 		}
 		PlayerEntity shooter = UryuArrowFx.shooterNear(a.x, a.y, a.z);
@@ -270,7 +289,7 @@ public final class UryuArrowRenderer {
 		}
 		int level = UryuArrowLook.hitLevel(kind, focus);
 		boolean floor = type == UryuArrowsS2C.IMPACT_BLOCK && vy < -0.05 && UryuArrowLook.floorHit(y);
-		UryuArrowFx.hit(x, y, z, type, level, floor, own);
+		UryuArrowFx.hit(x, y, z, type, level, floor, own, kind);
 	}
 
 	private static double sq(double dx, double dy, double dz) {
@@ -354,6 +373,13 @@ public final class UryuArrowRenderer {
 			boolean z = a.kind == UryuArrowLook.Z;
 			boolean rain = a.kind == UryuArrowLook.RAIN;
 			double pulse = rm ? 0.92 : 0.85 + 0.15 * Math.sin(sec * 17.0 + a.x);
+			if (rain) {
+				// 2.13: a needle streak along the velocity (2.2 long, 0.1 wide, Q2 0.7) with a twinkling star4 head, no mesh and no trail
+				double[] rt = {h[0] - dx * 2.2, h[1] - dy * 2.2, h[2] - dz * 2.2};
+				glow(e, e.streak(GlowSprite.NEEDLE, h[0], h[1], h[2], rt[0], rt[1], rt[2], 0.1, UryuPalette.FQ2[0], UryuPalette.FQ2[1], UryuPalette.FQ2[2], 0.7 * pulse));
+				glow(e, e.sprite(GlowSprite.STAR4, h[0], h[1], h[2], 0.3, rm ? 0.0 : sec * 0.8 + a.x, 1f, 1f, 1f, (rm ? 0.8 : 0.7 + 0.3 * Math.sin(sec * 23.0 + a.z)) * pulse));
+				continue;
+			}
 			// (2) the glow strip along the shaft: Q3 with a white core, a pinpoint and a star at the head
 			double len = UryuArrowLook.streakLength(a.p) * (rain ? 0.6 : 1.0);
 			double[] tail = {h[0] - dx * len, h[1] - dy * len, h[2] - dz * len};
@@ -366,6 +392,16 @@ public final class UryuArrowRenderer {
 					UryuArrowLook.HEAD_ALPHA * pulse));
 			if (!rain && (z || a.focus >= 2)) {
 				glow(e, e.sprite(GlowSprite.STAR4, h[0], h[1], h[2], (z ? 0.8 : 0.45) * pulse, rm ? 0.0 : sec * 0.8, 1f, 1f, 1f, z || a.focus >= 3 ? 0.95 : 0.7));
+			}
+			if (z) {
+				// two wing flakes in the tail, angled 25 deg to the shaft, one turn per second (2.6): the arrow looks like a feathered dart
+				for (int side = -1; side <= 1; side += 2) {
+					double[] wf = UryuArrowLook.wingFlake(dx, dy, dz, side);
+					double bk = UryuArrowLook.WING_FLAKE_BEHIND;
+					double sd = UryuArrowLook.WING_FLAKE_SIDE;
+					glow(e, e.plane(GlowSprite.FLAKE, h[0] - dx * bk + wf[3] * sd, h[1] - dy * bk + wf[4] * sd, h[2] - dz * bk + wf[5] * sd, UryuArrowLook.WING_FLAKE_SIZE,
+							wf[0], wf[1], wf[2], rm ? 0.0 : sec * Math.PI * 2.0 * side, UryuPalette.FQ2[0], UryuPalette.FQ2[1], UryuPalette.FQ2[2], 0.6 * pulse));
+				}
 			}
 			// (3) the trail: the head, then the last positions; each piece dimmer and thinner
 			double[] prev = h;

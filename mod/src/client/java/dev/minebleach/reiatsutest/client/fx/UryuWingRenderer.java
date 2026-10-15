@@ -1,6 +1,7 @@
 package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
+import dev.minebleach.reiatsutest.core.fx.HakuteikenFirstPerson;
 import dev.minebleach.reiatsutest.core.fx.UryuVollstTiming;
 import dev.minebleach.reiatsutest.core.fx.UryuWingMath;
 import java.util.HashMap;
@@ -354,6 +355,21 @@ public final class UryuWingRenderer {
 			// the player renderer lowers a sneaking player by 0.125 (getPositionOffset): the rig below is measured from the real feet
 			base.translate(0f, 0.125f, 0f);
 		}
+		fpOn = false;
+		var cam = mc.gameRenderer.getCamera();
+		if (FxConfig.uryuFpGuard && cam.isReady() && !cam.isThirdPerson() && cam.getFocusedEntity() == pl) {
+			// first person guard (as the Hakuteiken wings): the rig yaw is limited to uryu.fpYawMax of the view, pushed back uryu.fpBack, faded by view depth
+			boolean gentle = FxConfig.reduceMotion || FxConfig.photosensitiveSafe;
+			double bodyYaw = Math.toRadians(pl.prevBodyYaw + (pl.bodyYaw - pl.prevBodyYaw) * c.tickDelta());
+			double camYaw = Math.toRadians(cam.getYaw());
+			double lim = HakuteikenFirstPerson.limitYaw(bodyYaw, camYaw, HakuteikenFirstPerson.yawLimit(FxTune.d("uryu.fpYawMax", HakuteikenFirstPerson.YAW_MAX_DEG), gentle));
+			base.rotateLocalY((float) (bodyYaw - lim));
+			base.translate(0f, 0f, (float) -Math.max(0.0, FxTune.d("uryu.fpBack", HakuteikenFirstPerson.BACK)));
+			HakuteikenFirstPerson.forward(camYaw, Math.toRadians(cam.getPitch()), FP_FWD);
+			fpClear = FxTune.d("uryu.fpClear", HakuteikenFirstPerson.CLEAR);
+			fpFull = FxTune.d("uryu.fpFull", HakuteikenFirstPerson.FULL) * (gentle ? 1.3 : 1.0);
+			fpOn = true;
+		}
 		Matrix3f nbase = base.normal(new Matrix3f());
 		m.pop();
 		double bandFade = ending ? 1.0 - Math.max(0.0, s.endedAge()) / UryuVollstTiming.BANDS_FADE_OUT : 1.0;
@@ -434,9 +450,18 @@ public final class UryuWingRenderer {
 		}
 	}
 
+	private static boolean fpOn;
+	private static double fpClear = 0.8;
+	private static double fpFull = 3.0;
+	private static final double[] FP_FWD = new double[3];
+
 	private static void put(VertexConsumer vc, Matrix4f m, Matrix3f nm, double x, double y, double z, int color, float u, float v, float nx, float ny, float nz) {
 		m.transformPosition((float) x, (float) y, (float) z, P);
 		nm.transform(nx, ny, nz, N);
+		if (fpOn) {
+			double k = HakuteikenFirstPerson.fade(HakuteikenFirstPerson.depth(P.x, P.y, P.z, 0, 0, 0, FP_FWD), fpClear, fpFull);
+			color = (color & 0xFFFFFF) | ((int) ((color >>> 24) * k) << 24);
+		}
 		vc.vertex(P.x, P.y, P.z).color(color).texture(u, v).overlay(OverlayTexture.DEFAULT_UV).light(LIGHT).normal(N.x, N.y, N.z);
 	}
 

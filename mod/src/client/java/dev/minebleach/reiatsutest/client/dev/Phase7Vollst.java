@@ -110,7 +110,7 @@ final class Phase7Vollst {
 		mc.options.sneakKey.setPressed(false);
 		mc.options.setPerspective(Perspective.FIRST_PERSON);
 		mc.options.hudHidden = false;
-		cmd("time set noon", "reiatsu state sealed uryu");
+		cmd("time set noon", "reiatsu dev ragefree false", "reiatsu state sealed uryu");
 	}
 
 	private static void hookFrames() {
@@ -149,7 +149,7 @@ final class Phase7Vollst {
 			mc.options.setPerspective(view);
 			cmd(String.format(Locale.ROOT, "tp @s 0.5 -60 0.5 %.1f 8", yaw), "time set " + (night ? "midnight" : "noon"), "item replace entity @s hotbar.0 with reiatsu_test:uryu_cross");
 			Phase6Harness.selectSlot(0);
-			cmd("reiatsu cooldowns clear", "reiatsu state " + state + " uryu", "reiatsu full");
+			cmd("reiatsu cooldowns clear", "reiatsu state " + state + " uryu", "reiatsu dev ragefree true", "reiatsu full"); // ragefree: the real G key needs Rage otherwise (DENIED_RAGE)
 		});
 	}
 
@@ -161,15 +161,28 @@ final class Phase7Vollst {
 	private static void releaseShot(String view, Perspective persp, float yaw, int ms, boolean night, boolean rm) {
 		String name = shotName(view, night, rm, ms);
 		scene(name, "shikai", night, persp, yaw, 36);
+		if (persp == Perspective.FIRST_PERSON) {
+			step(name + " (hud)", 1, () -> mc.options.hudHidden = false); // vanilla draws no first person hands with the HUD hidden
+		}
+		final boolean late = ms >= 3000;
 		final int[] before = new int[3];
 		step(name + " (arm)", 2, () -> {
 			FxConfig.reduceMotion = rm;
-			FxTimelines.setFreezeAt(ms);
+			// the release timeline is over before ~3 s: a later moment freezes by the absolute FX clock instead (see the steps below)
+			FxTimelines.setFreezeAt(late ? -1 : ms);
 			before[0] = UryuWingRenderer.passes;
 			before[1] = UryuWingRenderer.firstPersonBracers;
 			before[2] = FxParticles.live();
 		});
 		step(name + " (bankai G)", 1, () -> Phase6Harness.press(ReiatsuKeys.BANKAI));
+		if (late) {
+			// wait for the release event (wing clock >= 0), then freeze the FX clock where the wing clock reads ms
+			stepUntil(name + " (release seen)", 1, 20 * 6, () -> { }, () -> {
+				double c = UryuWingRenderer.wingClock(mc.player.getId());
+				return c >= 0 && c < ms / 1000.0 - 0.3;
+			});
+			step(name + " (freeze in)", 1, () -> FxClock.freezeIn(ms / 1000.0 - UryuWingRenderer.wingClock(mc.player.getId())));
+		}
 		stepUntil(name + " (frozen)", 2, 20 * 14, () -> { }, () -> FxClock.frozen);
 		step(name + " (shot)", 3, () -> {
 			Phase7Uryu.shot7(name);
@@ -198,6 +211,7 @@ final class Phase7Vollst {
 			}
 		});
 		step(name + " (release clock)", 2, () -> {
+			mc.options.hudHidden = true;
 			FxClock.unfreeze();
 			FxTimelines.setFreezeAt(-1);
 			FxConfig.reduceMotion = false;

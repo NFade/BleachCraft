@@ -428,4 +428,20 @@ class UryuWingMathTest {
 		}
 		assertFalse(pts.isEmpty());
 	}
+
+	@Test
+	void barrageCrossRisesHoldsAndFades() {
+		assertEquals(0.0, UryuWingMath.crossLevel(-0.1, 6.0), 1e-12);
+		assertEquals(0.0, UryuWingMath.crossLevel(0.0, 6.0), 1e-12);
+		assertEquals(UryuWingMath.CROSS_ALPHA, UryuWingMath.crossLevel(3.0, 6.0), 1e-12);
+		assertEquals(UryuWingMath.CROSS_ALPHA, UryuWingMath.crossLevel(6.0, 6.0), 1e-12);
+		assertTrue(UryuWingMath.crossLevel(6.2, 6.0) < UryuWingMath.CROSS_ALPHA && UryuWingMath.crossLevel(6.2, 6.0) > 0.0);
+		assertEquals(0.0, UryuWingMath.crossLevel(6.0 + UryuWingMath.CROSS_FADE + 0.01, 6.0), 1e-12);
+	}
+
+	@Test
+	void barrageCrossTurnsOneTenthRevPerSecondAndStopsUnderReduceMotion() {
+		assertEquals(2.0 * Math.PI * 0.1 * 5.0, UryuWingMath.crossAngle(5.0, false), 1e-9);
+		assertEquals(0.0, UryuWingMath.crossAngle(5.0, true), 0.0);
+	}
 }

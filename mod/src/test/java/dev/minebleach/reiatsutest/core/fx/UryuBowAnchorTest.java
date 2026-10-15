@@ -52,9 +52,9 @@ class UryuBowAnchorTest {
 	void firstPersonGripIsInCameraSpace() {
 		double[] cam = {1, 70, 2};
 		double[] g = UryuBowAnchor.firstGrip(cam, new double[] {1, 0, 0}, new double[] {0, 1, 0}, new double[] {0, 0, 1}, 1);
-		assertEquals(1 + 0.30, g[0], EPS);
-		assertEquals(70 - 0.28, g[1], EPS);
-		assertEquals(2 + 0.55, g[2], EPS);
+		assertEquals(1 + UryuBowAnchor.FP_RIGHT, g[0], EPS);
+		assertEquals(70 + UryuBowAnchor.FP_UP, g[1], EPS);
+		assertEquals(2 + UryuBowAnchor.FP_FWD, g[2], EPS);
 	}
 
 	@Test

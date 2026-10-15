@@ -55,6 +55,14 @@ final class Phase7Bow {
 	private static final String ZOMBIE = "summon minecraft:zombie %.1f -60 %.1f {NoAI:1b,Silent:1b,PersistenceRequired:1b,Rotation:[180f,0f],"
 			+ "Health:200f,Attributes:[{id:\"minecraft:generic.max_health\",base:200}]}";
 	private static int nextArrowId = 9100;
+	/** The scene p7_08_z flies the arrows as kind Z (URYU_VFX_STORYBOARD 2.6). */
+	private static boolean zKind;
+	private static int muzzles0;
+	private static int hits0;
+	/** The Z arrow flies 30 deg away from the camera axis (the camera is behind the player): straight ahead it hides behind the player's head. */
+	private static final double[] Z_DIR = {0.5, 0.12, 0.86};
+	/** Where the Z arrow hits in the hit scene (the zombie's chest). */
+	private static final double[] Z_HIT = {2.5, -58.9, 7.0};
 	private static final List<Double> FRAME_MS = new ArrayList<>();
 	private static boolean recording;
 	private static long lastFrameNanos;
@@ -73,6 +81,9 @@ final class Phase7Bow {
 		}
 		if (wants("uryu_arrow")) {
 			arrow();
+		}
+		if (wants("uryu_z")) {
+			zArrow();
 		}
 		if (wants("uryu_arrow_live")) {
 			arrowLive();
@@ -223,7 +234,7 @@ final class Phase7Bow {
 	private static void flight(int focus, double[] from, double[] dir, int lastTick, int impactType, boolean ground) {
 		final int id = nextArrowId++;
 		final double v = UryuArrowLook.launchSpeed(1.0, focus);
-		final int kind = UryuArrowLook.BASIC;
+		final int kind = zKind ? UryuArrowLook.Z : UryuArrowLook.BASIC;
 		for (int k = 0; k <= lastTick; k++) {
 			final int step = k;
 			FxDelayed.after(k * 0.05, () -> {
@@ -249,11 +260,21 @@ final class Phase7Bow {
 			FxGlowBatch.clear();
 			FxParticles.clearAll();
 			focusPacket(focus);
+			muzzles0 = dev.minebleach.reiatsutest.client.fx.UryuFxStats.muzzles();
+			hits0 = dev.minebleach.reiatsutest.client.fx.UryuFxStats.hits();
 			double[] eye = {mc.player.getX(), mc.player.getEyeY() - 0.1, mc.player.getZ() + 0.6};
-			if (hit) {
+			if (zKind && hit) {
+				// aimed at the zombie's chest: the start is pulled back so that the arrow stands on it exactly at tick 3
+				double[] d = {Z_HIT[0] - eye[0], Z_HIT[1] - eye[1], Z_HIT[2] - eye[2]};
+				double len = Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+				double[] u = {d[0] / len, d[1] / len, d[2] / len};
+				double back = UryuArrowLook.launchSpeed(1.0, focus) * 3;
+				double[] from = {Z_HIT[0] - u[0] * back, Z_HIT[1] - u[1] * back, Z_HIT[2] - u[2] * back};
+				flight(focus, from, u, 3, dev.minebleach.reiatsutest.net.UryuArrowsS2C.IMPACT_ENTITY, false);
+			} else if (hit) {
 				flight(focus, eye, new double[] {0, 0, 1}, 4, dev.minebleach.reiatsutest.net.UryuArrowsS2C.IMPACT_ENTITY, false);
 			} else {
-				flight(focus, eye, new double[] {0, 0, 1}, 20, -1, false);
+				flight(focus, eye, zKind ? Z_DIR : new double[] {0, 0, 1}, 20, -1, false);
 			}
 			FxClock.freezeIn(ms / 1000.0);
 		});
@@ -267,8 +288,33 @@ final class Phase7Bow {
 				cCheck(name + ": the arrow is live and drawn (" + UryuArrowRenderer.live() + " / " + UryuArrowRenderer.lastDrawn + ")",
 						() -> UryuArrowRenderer.live() == 1 && UryuArrowRenderer.lastDrawn == 1 ? null : "live " + UryuArrowRenderer.live() + " drawn " + UryuArrowRenderer.lastDrawn);
 			}
+			if (zKind) {
+				cCheck(name + ": the Z muzzle was played", () -> dev.minebleach.reiatsutest.client.fx.UryuFxStats.muzzles() > muzzles0 ? null : "no muzzle");
+				if (hit) {
+					cCheck(name + ": the Z hit was played", () -> dev.minebleach.reiatsutest.client.fx.UryuFxStats.hits() > hits0 ? null : "no hit");
+				} else {
+					cCheck(name + ": the Z arrow is in the frame and not behind the player", () -> zVisible(ms >= 300));
+				}
+			}
 		});
 		step(name + " (release)", 2, FxClock::unfreeze);
+	}
+
+	/** Harness: null when the head of the live arrow is within 30 deg of the camera axis (and, if {@code apart}, 7 deg away from the player's body), else why not. */
+	private static String zVisible(boolean apart) {
+		net.minecraft.util.math.Vec3d head = UryuArrowRenderer.debugHead();
+		if (head == null) {
+			return "no live arrow";
+		}
+		net.minecraft.client.render.Camera cam = mc.gameRenderer.getCamera();
+		net.minecraft.util.math.Vec3d to = head.subtract(cam.getPos()).normalize();
+		double off = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, to.dotProduct(net.minecraft.util.math.Vec3d.fromPolar(cam.getPitch(), cam.getYaw()))))));
+		if (off > 30.0) {
+			return String.format(Locale.ROOT, "the arrow is %.1f deg off the camera axis (out of the frame)", off);
+		}
+		net.minecraft.util.math.Vec3d body = mc.player.getPos().add(0, 1.0, 0).subtract(cam.getPos()).normalize();
+		double sep = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, to.dotProduct(body)))));
+		return !apart || sep >= 7.0 ? null : String.format(Locale.ROOT, "the arrow is only %.1f deg from the player's body (hidden)", sep);
 	}
 
 	private static void arrow() {
@@ -305,6 +351,23 @@ final class Phase7Bow {
 		step("hit block (shot)", 3, () -> Phase7Uryu.shot7("02_hit_block"));
 		step("hit block (release)", 2, FxClock::unfreeze);
 		cleanup("arrow");
+	}
+
+	/** U-FX 8: the Z arrow of the shikai (2.6): flight shots p7_08_z_t{50,300}_{noon,midnight}, the hit p7_08_z_hit (an entity, level + 1 ring) and p7_08_z_hit_block. */
+	private static void zArrow() {
+		step("z: kind Z", 1, () -> zKind = true);
+		for (boolean night : new boolean[] {false, true}) {
+			scene("z arrow" + (night ? " night" : ""), "back", night);
+			String tag = night ? "midnight" : "noon";
+			for (int ms : new int[] {50, 300}) {
+				arrowShot("08_z_t" + ms + "_" + tag, ms, 0, false);
+			}
+		}
+		scene("z hit", "back", false);
+		step("z hit: zombie", 6, () -> cmd(String.format(Locale.ROOT, ZOMBIE, Z_HIT[0], Z_HIT[2])));
+		arrowShot("08_z_hit", 230, 0, true);
+		step("z: reset", 1, () -> zKind = false);
+		cleanup("z arrow");
 	}
 
 	private static void arrowLive() {

@@ -66,6 +66,17 @@ public final class UryuArrowLook {
 	public static final double MUZZLE_RING_TO_Z = 2.0;
 	public static final double MUZZLE_RING_LIFE = 0.15;
 	public static final int MUZZLE_DASHES = 6;
+	/** The Z arrow (2.6): ten muzzle dashes, a spinning zeichen_cross at the nock, two wing flakes in the tail, a bigger and longer hit ring. */
+	public static final int MUZZLE_DASHES_Z = 10;
+	public static final double ZEICHEN_SIZE = 0.7;
+	public static final double ZEICHEN_LIFE = 0.2;
+	public static final double WING_FLAKE_SIZE = 0.5;
+	public static final double WING_FLAKE_ANGLE_DEG = 25.0;
+	public static final double WING_FLAKE_BEHIND = 0.9;
+	public static final double WING_FLAKE_SIDE = 0.22;
+	public static final double HIT_RING_FROM_Z = 0.6;
+	public static final double HIT_RING_TO_Z = 4.0;
+	public static final double HIT_RING_LIFE_Z = 0.35;
 	public static final double MUZZLE_DASH_SPEED = 10.0;
 	public static final double MUZZLE_DASH_LIFE = 0.15;
 	public static final double MUZZLE_SHOT_PITCH_BASE = 1.6;
@@ -109,6 +120,91 @@ public final class UryuArrowLook {
 	public static final String WHOOSH_ID = "entity.phantom.flap";
 
 	/** The muzzle: the thin shot (pitch 1.6 + 0.4 p, volume 0.5) and a chime (1.8, 0.3). */
+	public static int muzzleDashes(int kind) {
+		return kind == Z ? MUZZLE_DASHES_Z : MUZZLE_DASHES;
+	}
+
+	public static double hitRingFrom(int kind) {
+		return kind == Z ? HIT_RING_FROM_Z : HIT_RING_FROM;
+	}
+
+	public static double hitRingTo(int kind) {
+		return kind == Z ? HIT_RING_TO_Z : HIT_RING_TO;
+	}
+
+	public static double hitRingLife(int kind) {
+		return kind == Z ? HIT_RING_LIFE_Z : HIT_RING_LIFE;
+	}
+
+	/**
+	 * One wing flake of the Z arrow for a flight direction {@code (dx, dy, dz)} (unit) and {@code side} +1 or -1: {@code {nx, ny, nz, sx, sy, sz}} = the plane normal of the flake
+	 * (perpendicular to the shaft, so the flake plane holds the shaft, tilted {@link #WING_FLAKE_ANGLE_DEG} out of the vertical-ish plane) and the unit sideways direction
+	 * (shaft x up) the flake sits on.
+	 */
+	public static double[] wingFlake(double dx, double dy, double dz, int side) {
+		double ux = 0.0;
+		double uy = 1.0;
+		double uz = 0.0;
+		if (Math.abs(dy) > 0.98) {
+			ux = 1.0;
+			uy = 0.0;
+		}
+		double dot = dx * ux + dy * uy + dz * uz;
+		ux -= dx * dot;
+		uy -= dy * dot;
+		uz -= dz * dot;
+		double ul = Math.sqrt(ux * ux + uy * uy + uz * uz);
+		ux /= ul;
+		uy /= ul;
+		uz /= ul;
+		double sg = side < 0 ? -1.0 : 1.0;
+		double sx = (dy * uz - dz * uy) * sg;
+		double sy = (dz * ux - dx * uz) * sg;
+		double sz = (dx * uy - dy * ux) * sg;
+		double a = Math.toRadians(WING_FLAKE_ANGLE_DEG);
+		double c = Math.cos(a);
+		double sn = Math.sin(a);
+		return new double[] {ux * c + sx * sn, uy * c + sy * sn, uz * c + sz * sn, sx, sy, sz};
+	}
+
+	/** The muzzle sounds of a kind: the Z arrow adds the amethyst resonance under a crossbow shot (2.6). */
+	public static java.util.List<UryuBowForm.Cue> muzzleCues(int kind, double p) {
+		if (kind == Z) {
+			return java.util.List.of(new UryuBowForm.Cue(0.0, "item.crossbow.shoot", 1.4, 0.6), new UryuBowForm.Cue(0.0, "block.amethyst_block.resonate", 1.5, 0.5));
+		}
+		return muzzleCues(p);
+	}
+
+	/** The tip fire of a wing arrow (2.12): the star, the ring (0.12 s), the lock-on line (0.1 s) and the volley sounds. */
+	public static final double WING_STAR = 0.7;
+	public static final double WING_RING_FROM = 0.2;
+	public static final double WING_RING_TO = 0.9;
+	public static final double WING_RING_LIFE = 0.12;
+	public static final double WING_LOCK_LIFE = 0.1;
+	public static final double WING_LOCK_LENGTH = 9.0;
+	public static final double WING_HIT_RAYS = 0.7;
+	/** Seconds between two sound cues of the volleys of one caster (four slots fire 0.1 s apart in a cycle). */
+	public static final double WING_SOUND_GAP = 0.2;
+
+	public static java.util.List<UryuBowForm.Cue> wingFireCues() {
+		return java.util.List.of(new UryuBowForm.Cue(0.0, "entity.arrow.shoot", 2.0, 0.3), new UryuBowForm.Cue(0.0, "entity.firework_rocket.twinkle", 1.6, 0.2));
+	}
+
+	/** The hit sounds of a kind: the Z arrow adds an amethyst break and a soft explosion (2.6), the wing arrow a single high amethyst hit (2.12). */
+	public static java.util.List<UryuBowForm.Cue> hitCues(int kind, int level, boolean entityHit) {
+		if (kind == WING) {
+			return java.util.List.of(new UryuBowForm.Cue(0.0, "block.amethyst_block.hit", 2.0, 0.3));
+		}
+		java.util.List<UryuBowForm.Cue> base = hitCues(level, entityHit);
+		if (kind != Z || !entityHit) {
+			return base;
+		}
+		java.util.List<UryuBowForm.Cue> out = new java.util.ArrayList<>(base);
+		out.add(new UryuBowForm.Cue(0.0, "block.amethyst_block.break", 1.5, 0.5));
+		out.add(new UryuBowForm.Cue(0.0, "entity.generic.explode", 2.0, 0.2));
+		return out;
+	}
+
 	public static java.util.List<UryuBowForm.Cue> muzzleCues(double p) {
 		return java.util.List.of(new UryuBowForm.Cue(0.0, "entity.arrow.shoot", muzzleShotPitch(p), MUZZLE_SHOT_VOLUME),
 				new UryuBowForm.Cue(0.0, "block.amethyst_block.chime", 1.8, 0.3));

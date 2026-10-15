@@ -111,6 +111,32 @@ public final class UryuWingMath {
 		return x < 0.22 ? x / 0.22 : 1.0 - smooth((x - 0.22) / 0.78);
 	}
 
+	// ------------------------------------------------------------------------------------------ the barrage cross (2.12)
+
+	/** The Zeichen cross behind the back during the barrage: size, peak alpha, blocks behind the feet position, height, turns per second. */
+	public static final double CROSS_SIZE = 3.2;
+	public static final double CROSS_ALPHA = 0.2;
+	public static final double CROSS_BACK = 0.9;
+	public static final double CROSS_HEIGHT = 1.4;
+	public static final double CROSS_REV_PER_S = 0.1;
+	public static final double CROSS_RISE = 0.2;
+	public static final double CROSS_FADE = 0.4;
+
+	/** The brightness of the cross (0..{@link #CROSS_ALPHA}) {@code age} seconds after the cast of a barrage that lasts {@code life} seconds. */
+	public static double crossLevel(double age, double life) {
+		if (age < 0.0 || age > life + CROSS_FADE) {
+			return 0.0;
+		}
+		double in = smooth(clamp01(age / CROSS_RISE));
+		double out = age > life ? 1.0 - smooth(clamp01((age - life) / CROSS_FADE)) : 1.0;
+		return CROSS_ALPHA * in * out;
+	}
+
+	/** The turn of the cross in radians; none under Reduce Motion. */
+	public static double crossAngle(double age, boolean reduceMotion) {
+		return reduceMotion ? 0.0 : Math.max(0.0, age) * CROSS_REV_PER_S * 2.0 * Math.PI;
+	}
+
 	// ------------------------------------------------------------------------------------------ placing a mesh point
 
 	/**

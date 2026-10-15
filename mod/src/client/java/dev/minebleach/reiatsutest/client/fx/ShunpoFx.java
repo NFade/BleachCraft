@@ -59,6 +59,7 @@ public final class ShunpoFx {
 		Identifier texture;
 		boolean slim;
 		int rgb;
+		float alpha0 = ALPHA0;
 	}
 
 	private static final List<Image> LIVE = new ArrayList<>();
@@ -130,15 +131,17 @@ public final class ShunpoFx {
 		double horiz = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
 		float yaw = horiz > 0.01 ? (float) Math.toDegrees(Math.atan2(-delta.x, delta.z)) : casterYaw;
 		float pitch = dist > 0.01 ? (float) Math.toDegrees(-Math.asin(Math.max(-1, Math.min(1, delta.y / dist)))) : 0f;
-		int n = FxConfig.reduceMotion ? 4 : 5;
+		boolean newUryu = uryu && !FxConfig.uryuShunpoOld;
+		int n = newUryu ? dev.minebleach.reiatsutest.core.fx.UryuShunpoMath.imageCount(FxConfig.uryuAfterimages, FxConfig.reduceMotion || FxConfig.photosensitiveSafe)
+				: FxConfig.reduceMotion ? 4 : 5;
 		lastImageCount = 0;
 		if (texture != null && dist > 0.5) {
 			Random rnd = new Random(e.seed());
 			double now = FxClock.now;
-			int rgb = byakuya ? 0xFFD6E4 : uryu ? 0xA9D8F5 : 0xC8E6FF;
+			int rgb = byakuya ? 0xFFD6E4 : newUryu ? 0x4FC8FF : uryu ? 0xA9D8F5 : 0xC8E6FF;
 			for (int i = 0; i < n; i++) {
 				Image im = new Image();
-				double f = (double) i / n; // the first copy stands where the player was, the last one just before the arrival
+				double f = newUryu ? (n > 1 ? (double) i / (n - 1) * 0.8 : 0.0) : (double) i / n; // the first copy stands where the player was, the last one just before the arrival
 				im.x = start.x + delta.x * f;
 				im.y = start.y + delta.y * f;
 				im.z = start.z + delta.z * f;
@@ -146,7 +149,10 @@ public final class ShunpoFx {
 				im.lean = 18f + 6f * rnd.nextFloat();
 				im.headPitch = pitch;
 				im.stride = (i % 2 == 0 ? 1f : -1f) * (0.55f + 0.25f * rnd.nextFloat());
-				im.born = now + i * STAGGER;
+				im.born = now + i * (newUryu ? dev.minebleach.reiatsutest.core.fx.UryuShunpoMath.AFTERIMAGE_STAGGER : STAGGER);
+				if (newUryu) {
+					im.alpha0 = dev.minebleach.reiatsutest.core.fx.UryuShunpoMath.AFTERIMAGE_ALPHA;
+				}
 				im.texture = texture;
 				im.slim = isSlim;
 				im.rgb = rgb;
@@ -160,10 +166,12 @@ public final class ShunpoFx {
 		int steps = (int) Math.max(4, Math.round(dist * 2.0));
 		int before = 0;
 		ParticleEffect main = byakuya ? ParticleTypes.CHERRY_LEAVES : uryu ? ParticleTypes.END_ROD : ParticleTypes.SNOWFLAKE;
-		if (uryu) {
-			UryuFx.shunpoReishi(start, delta); // Quincy flavour: a blue Reishi trail and a Reishi platform disc under the feet
+		if (uryu && FxConfig.uryuShunpoOld) {
+			UryuFx.shunpoReishi(start, delta); // the old Quincy flavour (uryu.shunpoOld): a blue Reishi trail and a Reishi platform disc
+		} else if (uryu) {
+			UryuFx.shunpoHirenkyaku(start, delta); // storyboard 2.15: platforms, flechette strips, dashes, ring and flakes
 		}
-		for (int i = 0; i <= steps; i++) {
+		for (int i = 0; !newUryu && i <= steps; i++) {
 			double f = (double) i / steps;
 			double px = start.x + delta.x * f;
 			double py = start.y + delta.y * f + 0.9;
@@ -188,8 +196,10 @@ public final class ShunpoFx {
 
 		// ---- sound: a sweep at the start, a softer one at the arrival, plus a character accent
 		FxSound.play(null, "entity.player.attack.sweep", start.x, start.y + 1.0, start.z, 1.6, 0.7);
-		FxSound.play(null, byakuya ? "block.cherry_leaves.break" : "block.amethyst_block.chime", start.x, start.y + 1.0, start.z,
-				byakuya ? 0.9 : 1.8, 0.6);
+		if (!newUryu) { // the Quincy look plays its own flap and chimes
+			FxSound.play(null, byakuya ? "block.cherry_leaves.break" : "block.amethyst_block.chime", start.x, start.y + 1.0, start.z,
+					byakuya ? 0.9 : 1.8, 0.6);
+		}
 		FxSound.play(null, "entity.player.attack.sweep", start.x + delta.x, start.y + delta.y + 1.0, start.z + delta.z, 1.9, 0.4);
 	}
 
@@ -259,7 +269,7 @@ public final class ShunpoFx {
 			if (t < 0) {
 				continue;
 			}
-			float alpha = ALPHA0 * (float) Math.pow(1.0 - t, 1.4);
+			float alpha = im.alpha0 * (float) Math.pow(1.0 - t, 1.4);
 			if (alpha < 0.01f) {
 				continue;
 			}

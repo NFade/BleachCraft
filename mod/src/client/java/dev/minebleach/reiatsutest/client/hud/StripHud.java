@@ -30,15 +30,26 @@ final class StripHud {
 			case ICE_WALL -> 12; // second row of 4 after the 12 cells of round 5 (gen_hud_textures.py: 4 x 4 cells)
 			case CAGE -> 13;
 			// Gin and Uryu: no own icons yet, existing cells as placeholders
-			case IKOROSE, HEILIG_PFEIL -> 2;
+			case IKOROSE -> 2;
 			case HYAPPONZASHI -> 1;
 			case SNAKE_HOOK, BUTOU_RENJIN -> 12;
-			case KOROSE, STERNENSTAUB -> 7;
+			case KOROSE -> 7;
 			case HAKUFUKU -> 5;
-			case SPRENGER -> 0;
-			case SEELE_SCHNEIDER -> 4;
-			case WING_BARRAGE -> 6;
-			case LICHT_REGEN -> 8;
+			// Uryu abilities have own icons in uryu_ability_icons.png (uryuIconIndex); these cells are never drawn for them
+			case HEILIG_PFEIL, SPRENGER, SEELE_SCHNEIDER, WING_BARRAGE, LICHT_REGEN, STERNENSTAUB -> 2;
+		};
+	}
+
+	/** Cell of the 6 x 1 sheet {@code uryu_ability_icons.png}, or -1 for abilities of other characters. */
+	static int uryuIconIndex(AbilityId a) {
+		return switch (a) {
+			case HEILIG_PFEIL -> 0;
+			case SPRENGER -> 1;
+			case SEELE_SCHNEIDER -> 2;
+			case WING_BARRAGE -> 3;
+			case LICHT_REGEN -> 4;
+			case STERNENSTAUB -> 5;
+			default -> -1;
 		};
 	}
 
@@ -141,7 +152,12 @@ final class StripHud {
 			case DISABLED -> 0.35f;
 			default -> 1f;
 		};
-		g.sprite(ABILITY_ICONS, 64, 64, 3, 3, (ii % 4) * 16, (ii / 4) * 16, 16, 16, new float[] {ib, ib, ib}, alpha);
+		int ui = uryuIconIndex(s.ability);
+		if (ui >= 0) {
+			g.sprite(URYU_ABILITY_ICONS, 96, 16, 3, 3, ui * 16, 0, 16, 16, new float[] {ib, ib, ib}, alpha);
+		} else {
+			g.sprite(ABILITY_ICONS, 64, 64, 3, 3, (ii % 4) * 16, (ii / 4) * 16, 16, 16, new float[] {ib, ib, ib}, alpha);
+		}
 		if (s.state == HudModel.SlotState.COOLING && s.totalTicks > 0) {
 			int f = Math.max(1, Math.min(24, (int) Math.ceil(24.0 * s.remainingTicks / s.totalTicks)));
 			g.sprite(COOLDOWN_SWEEP, 120, 80, 1, 1, ((f - 1) % 6) * 20, ((f - 1) / 6) * 20, 20, 20, WHITE, alpha);

@@ -17,4 +17,10 @@ Rules (MASTER_PROMPT.md section 3, set again by the user on 2026-10-15): stages 
 | S9 | U-FX 3: shunpo Quincy look, bankai end/seal | sonnet | 3 | TODO |
 | S10 | Merge poses, full build, harness run `runPhase7`, review screenshots with the references, fix list | orchestrator + haiku (contact sheets) | 8 | TODO |
 | S11 | U-FX 12: polish (tiers, Reduce Motion, sounds, FPS) | sonnet | 5 | TODO |
+| T1 | U-FX 7 wings: Vollständig release and wings (weight in S6a) | sonnet | - | CODE DONE, NOT COMMITTED: build green, unit tests pass, game NOT run (note uryu_ufx7.md) |
+| T2 | U-FX 8 Z arrow, storyboard 2.6 (weight in S6b) | sonnet | - | CODE DONE, NOT COMMITTED: build green, unit tests pass, game NOT run (note uryu_ufx7.md) |
+| T3 | U-FX 8 wing barrage, storyboard 2.12 (weight in S6b) | sonnet | - | CODE DONE, NOT COMMITTED: build green, unit tests pass, game NOT run (note uryu_ufx7.md) |
+| T4 | U-FX 9 Licht Regen, storyboard 2.13 (weight in S7) | sonnet | - | CODE DONE, NOT COMMITTED: build green, unit tests pass, game NOT run (note uryu_ufx7.md) |
+| T5 | U-FX 10 Sternenstaub, storyboard 2.14 (weight in S8) | sonnet | - | CODE DONE, NOT COMMITTED: build green, unit tests pass, game NOT run (note uryu_ufx7.md) |
+| T6 | U-FX 3 shunpo and bankai end, storyboard 2.15 and 2.16 (weight in S9) | sonnet | - | CODE DONE, NOT COMMITTED: build green, unit tests pass, game NOT run (note uryu_ufx7.md) |
 After every stage: build green, a short haiku-written results note (design/results/uryu_<stage>.md) with the manual checklist, a commit, this table updated, a message to the user with the percentage (sum of the weights of DONE stages).

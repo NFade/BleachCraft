@@ -62,7 +62,12 @@ final class UryuArrowFx {
 				.size(UryuArrowLook.MUZZLE_RING_FROM, UryuArrowLook.muzzleRingSize(kind)).sizeEase(FxMath.OC).life(UryuArrowLook.MUZZLE_RING_LIFE).curve(0.01, 0.7)
 				.color(UryuPalette.Q1).peak(0.8).spawn();
 		Random r = new Random(Double.doubleToLongBits(x * 31 + z));
-		for (int i = 0; i < UryuArrowLook.MUZZLE_DASHES; i++) {
+		if (kind == UryuArrowLook.Z) {
+			// the Zeichen cross at the nock spins into the arrow (2.6)
+			FxGlowBatch.sprite(GlowSprite.ZEICHEN_CROSS).at(sx, sy, sz).plane(u.x, u.y, u.z).size(UryuArrowLook.ZEICHEN_SIZE).life(UryuArrowLook.ZEICHEN_LIFE).curve(0.01, 0.7)
+					.color(UryuPalette.Q1).peak(0.8).rot(0.0, 8.0).spawn();
+		}
+		for (int i = 0; i < UryuArrowLook.muzzleDashes(kind); i++) {
 			double sp = UryuArrowLook.MUZZLE_DASH_SPEED * (0.8 + 0.4 * r.nextDouble());
 			double jx = (r.nextDouble() - 0.5) * 0.18;
 			double jy = (r.nextDouble() - 0.5) * 0.18;
@@ -71,7 +76,7 @@ final class UryuArrowFx {
 					.life(UryuArrowLook.MUZZLE_DASH_LIFE).curve(0.005, 0.6).color(i % 2 == 0 ? UryuPalette.Q1 : UryuPalette.Q2).peak(0.9).spawn();
 		}
 		double vol = own || shooter == null ? 1.0 : UryuBowForm.REMOTE_VOLUME;
-		for (UryuBowForm.Cue c : UryuArrowLook.muzzleCues(p)) {
+		for (UryuBowForm.Cue c : UryuArrowLook.muzzleCues(kind, p)) {
 			FxSound.play(null, c.id(), x, y, z, c.pitch(), c.volume() * vol);
 		}
 		if (shooter != null) {
@@ -93,7 +98,7 @@ final class UryuArrowFx {
 	 * The hit. {@code level} = the Focus level the hit is drawn at ({@link UryuArrowLook#hitLevel}), {@code type} entity or block,
 	 * {@code floor} true when a block hit struck a floor (the scar lies on it), {@code own} when the local player shot the arrow.
 	 */
-	static void hit(double x, double y, double z, int type, int level, boolean floor, boolean own) {
+	static void hit(double x, double y, double z, int type, int level, boolean floor, boolean own, int kind) {
 		hits++;
 		boolean entity = type == UryuArrowsS2C.IMPACT_ENTITY;
 		Random r = new Random(Double.doubleToLongBits(x + y * 7 + z * 13));
@@ -101,7 +106,7 @@ final class UryuArrowFx {
 		FxGlowBatch.sprite(GlowSprite.STAR4).at(x, y, z).size(star * 0.4, star).sizeEase(FxMath.OE).life(UryuArrowLook.HIT_STAR_LIFE).curve(0.005, 0.7).color(UryuPalette.Q0)
 				.peak(1.0).rot(r.nextDouble() * 3, 1.2).spawn();
 		if (entity) {
-			double rays = UryuArrowLook.hitRaysSize(level);
+			double rays = kind == UryuArrowLook.WING ? UryuArrowLook.WING_HIT_RAYS : UryuArrowLook.hitRaysSize(level);
 			FxGlowBatch.sprite(GlowSprite.BURST_RAYS).at(x, y, z).size(rays * 0.5, rays).sizeEase(FxMath.OE).life(UryuArrowLook.HIT_RAYS_LIFE).curve(0.005, 0.7)
 					.color(UryuPalette.Q1).peak(0.9).rot(r.nextDouble() * Math.PI * 2, 0.0).spawn();
 			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(x, y, z).size(1.6 + 0.4 * level).life(0.22).curve(0.01, 0.8).color(UryuPalette.Q3).peak(0.55).spawn();
@@ -117,9 +122,9 @@ final class UryuArrowFx {
 		for (int i = 0; i < flakes; i++) {
 			spark(x, y, z, r);
 		}
-		if (entity && UryuArrowLook.hitRing(level)) {
-			FxGlowBatch.Spec ring = FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(x, y + (floor ? 0.06 : 0), z).size(UryuArrowLook.HIT_RING_FROM, UryuArrowLook.HIT_RING_TO)
-					.sizeEase(FxMath.OC).life(UryuArrowLook.HIT_RING_LIFE).curve(0.01, 0.75).color(UryuPalette.Q2).peak(0.7);
+		if (entity && kind != UryuArrowLook.WING && UryuArrowLook.hitRing(level)) {
+			FxGlowBatch.Spec ring = FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(x, y + (floor ? 0.06 : 0), z).size(UryuArrowLook.hitRingFrom(kind), UryuArrowLook.hitRingTo(kind))
+					.sizeEase(FxMath.OC).life(UryuArrowLook.hitRingLife(kind)).curve(0.01, 0.75).color(UryuPalette.Q2).peak(0.7);
 			if (floor) {
 				ring.ground();
 			}
@@ -131,7 +136,7 @@ final class UryuArrowFx {
 		if (!entity && floor && FxConfig.decals) {
 			FxDecals.create(FxDecals.BURST_SCAR, x, z, y, UryuArrowLook.SCAR_RADIUS, 0.0).reveal(0.05).alpha(0.8).tint("#FFFFFF").fade(0.2, UryuArrowLook.SCAR_LIFE - 0.2);
 		}
-		for (UryuBowForm.Cue c : UryuArrowLook.hitCues(level, entity)) {
+		for (UryuBowForm.Cue c : UryuArrowLook.hitCues(kind, level, entity)) {
 			FxSound.play(null, c.id(), x, y, z, c.pitch(), c.volume());
 		}
 	}

@@ -42,7 +42,7 @@ final class Phase7Uryu {
 		if (wants("uryu_blut")) {
 			Phase7Blut.steps(); // U-FX 6: the Blut Arterie release and the vein overlay (p7_06_blut_*)
 		}
-		if (wants("uryu_bow") || wants("uryu_draw") || wants("uryu_arrow") || wants("uryu_arrow_live") || wants("uryu_focus") || wants("uryu_f12")) {
+		if (wants("uryu_bow") || wants("uryu_draw") || wants("uryu_arrow") || wants("uryu_arrow_live") || wants("uryu_z") || wants("uryu_focus") || wants("uryu_f12")) {
 			Phase7Bow.steps(); // U-FX 2: bow forming, draw light, arrow, hit and Focus feedback (p7_02_*)
 		}
 		if (wants("uryu_sprenger") || wants("uryu_sprenger_live") || wants("uryu_sprenger_f16")) {
@@ -53,6 +53,21 @@ final class Phase7Uryu {
 		}
 		if (wants("uryu_vollst") || wants("uryu_vollst_rm") || wants("uryu_wings") || wants("uryu_vollst_end") || wants("uryu_vollst_f13")) {
 			Phase7Vollst.steps(); // U-FX 7: the Quincy: Vollstaendig release and the bankai state (p7_07_vollst_*)
+		}
+		if (wants("uryu_barrage") || wants("uryu_barrage_rm")) {
+			Phase7Barrage.steps(); // U-FX 8: the wing barrage (p7_08_barrage_*)
+		}
+		if (wants("uryu_rain") || wants("uryu_rain_rm")) {
+			Phase7Rain.steps(); // U-FX 9: Licht Regen (p7_09_rain_*)
+		}
+		if (wants("uryu_fpbow")) {
+			Phase7FpBow.steps(); // first person bow hold with the HUD shown (p7_12_fpbow_*)
+		}
+		if (wants("uryu_star") || wants("uryu_star_rm")) {
+			Phase7Star.steps(); // U-FX 10: Sternenstaub (p7_10_star_*)
+		}
+		if (wants("uryu_shunpo") || wants("uryu_shunpo_rm")) {
+			Phase7Shunpo.steps(); // T6: the Quincy shunpo (p7_11_shunpo_*)
 		}
 	}
 
