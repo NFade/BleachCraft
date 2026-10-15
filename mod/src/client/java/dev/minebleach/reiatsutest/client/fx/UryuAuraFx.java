@@ -1,9 +1,5 @@
 package dev.minebleach.reiatsutest.client.fx;
 
-import java.util.HashMap;
-import java.util.Map;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.Vec3d;
 
 /**
@@ -13,9 +9,6 @@ import net.minecraft.util.math.Vec3d;
  * shunpo, unchanged. Called by {@link UryuFx}.
  */
 final class UryuAuraFx {
-	/** Stacks of Focus of OTHER Uryu players (entity id to 1..3), from the FOCUS packets that carry a caster id (S-U2). */
-	private static final Map<Integer, Integer> OTHERS = new HashMap<>();
-
 	private UryuAuraFx() {
 	}
 
@@ -44,6 +37,12 @@ final class UryuAuraFx {
 	/** Per frame: the Focus state of players that are gone (or all of it without a world) is dropped. */
 	static void frame() {
 		UryuFocusFx.cleanup();
+		UryuFocusFx.frame(FxClock.now);
+	}
+
+	/** The glow layers of the Focus feedback (rings, flakes, glyphs), emitted into the batch of the frame. */
+	static void emitGlow(FxGlowBatch.Emitter e, double now) {
+		UryuFocusFx.emitGlow(e, now);
 	}
 
 	/** The Uryu shunpo: a blue Reishi trail along the path and a Reishi platform disc under the feet at the start and the arrival. */

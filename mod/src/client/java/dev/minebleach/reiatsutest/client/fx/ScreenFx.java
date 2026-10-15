@@ -348,15 +348,22 @@ public final class ScreenFx {
 	/** FOV addition in degrees for the current frame (SHUNPO RUSH); 0 when not running. Read by the getFov mixin for the world camera. */
 	public static double fovKickDeg() {
 		if (rushFov <= 0) {
-			return 0;
+			return fovBias;
 		}
 		double t = FxClock.now - rushStart;
 		if (t < 0 || t >= rushDur) {
-			return 0;
+			return fovBias;
 		}
 		double rise = Math.min(0.06, rushDur * 0.25);
 		double k = t < rise ? t / rise : 1.0 - FxMath.ios((t - rise) / (rushDur - rise));
-		return rushFov * k;
+		return rushFov * k + fovBias;
+	}
+
+	/** A steady FOV offset in degrees (Uryu's full draw narrows the view by 1.5), added to the kick; set by the owner of the effect each frame, 0 = none. */
+	private static volatile double fovBias;
+
+	public static void setFovBias(double degrees) {
+		fovBias = degrees;
 	}
 
 	// ------------------------------------------------------------------------------------------------ shake hook

@@ -42,6 +42,9 @@ final class Phase7Uryu {
 		if (wants("uryu_blut")) {
 			Phase7Blut.steps(); // U-FX 6: the Blut Arterie release and the vein overlay (p7_06_blut_*)
 		}
+		if (wants("uryu_bow") || wants("uryu_draw") || wants("uryu_arrow") || wants("uryu_arrow_live") || wants("uryu_focus") || wants("uryu_f12")) {
+			Phase7Bow.steps(); // U-FX 2: bow forming, draw light, arrow, hit and Focus feedback (p7_02_*)
+		}
 		if (wants("uryu_seele") || wants("uryu_seele_live")) {
 			Phase7Seele.steps(); // U-FX 5: the Seele Schneider combo (p7_05_seele_*)
 		}

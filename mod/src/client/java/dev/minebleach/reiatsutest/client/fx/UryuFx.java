@@ -39,6 +39,11 @@ public final class UryuFx {
 	private UryuFx() {
 	}
 
+	/** Initialises the shells (idempotent): called by {@link FxClient} at client start and by every entry point. */
+	public static void ensureInit() {
+		init();
+	}
+
 	private static void init() {
 		if (inited) {
 			return;
@@ -178,12 +183,15 @@ public final class UryuFx {
 	private static void frame() {
 		double now = FxClock.now;
 		UryuAuraFx.frame();
+		UryuBowFx.frame(now);
 		UryuSeeleFx.frame(now);
 		UryuSprengerFx.frame(now);
 	}
 
 	private static void emitGlow(FxGlowBatch.Emitter e) {
 		double now = FxClock.now;
+		UryuBowFx.emitGlow(e, now);
+		UryuAuraFx.emitGlow(e, now);
 		UryuSprengerFx.emitGlow(e, now);
 		UryuSeeleFx.emitGlow(e, now);
 		UryuWingFx.emitGlow(e, now);

@@ -105,7 +105,55 @@ public final class UryuArrowLook {
 	/** An arrow whose first position is within this many blocks of the local eye counts as the local player's (the flash is for the shooter). */
 	public static final double OWN_ARROW_DISTANCE = 6.0;
 
+	// ---- sounds (vanilla ids; the cue time is 0 = the event)
+	public static final String WHOOSH_ID = "entity.phantom.flap";
+
+	/** The muzzle: the thin shot (pitch 1.6 + 0.4 p, volume 0.5) and a chime (1.8, 0.3). */
+	public static java.util.List<UryuBowForm.Cue> muzzleCues(double p) {
+		return java.util.List.of(new UryuBowForm.Cue(0.0, "entity.arrow.shoot", muzzleShotPitch(p), MUZZLE_SHOT_VOLUME),
+				new UryuBowForm.Cue(0.0, "block.amethyst_block.chime", 1.8, 0.3));
+	}
+
+	/** The hit sounds of an entity hit at a Focus level (Focus 3 adds the glass break) and of a block hit. */
+	public static java.util.List<UryuBowForm.Cue> hitCues(int level, boolean entityHit) {
+		if (!entityHit) {
+			return java.util.List.of(new UryuBowForm.Cue(0.0, "block.amethyst_block.hit", 1.9, 0.3));
+		}
+		java.util.List<UryuBowForm.Cue> out = new java.util.ArrayList<>();
+		out.add(new UryuBowForm.Cue(0.0, "block.amethyst_block.hit", 1.6, 0.6));
+		out.add(new UryuBowForm.Cue(0.0, "entity.arrow.hit", 1.8, 0.35));
+		if (level >= 3) {
+			out.add(new UryuBowForm.Cue(0.0, "block.amethyst_block.break", 1.4, 0.4));
+		}
+		return out;
+	}
+
 	private UryuArrowLook() {
+	}
+
+	/**
+	 * Spawn points of the flake sparks along a stretch of flight: one every {@code spacing} blocks. {@code travelled} is the distance flown since the
+	 * last spark (carried over by the caller), {@code step} the distance of this tick; returns the fractions (0..1) of the step at which a spark sits
+	 * and the new carry. Closed form, so a fast arrow does not skip sparks and a slow one does not clump them.
+	 */
+	public static double[] sparkFractions(double carry, double step, double spacing) {
+		if (spacing <= 0 || step <= 1.0E-9) {
+			return new double[] {carry + Math.max(0.0, step)};
+		}
+		java.util.List<Double> f = new java.util.ArrayList<>();
+		double d = carry + step;
+		double at = spacing - carry;
+		while (at <= step + 1.0E-9) {
+			f.add(Math.min(1.0, at / step));
+			at += spacing;
+		}
+		d = d - spacing * f.size();
+		double[] out = new double[f.size() + 1];
+		for (int i = 0; i < f.size(); i++) {
+			out[i] = f.get(i);
+		}
+		out[f.size()] = Math.max(0.0, d);
+		return out;
 	}
 
 	/**

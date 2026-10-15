@@ -97,6 +97,27 @@ public final class UryuBowForm {
 	public static final int REVERSE_DASHES = 16;
 	public static final double REVERSE_DASH_LIFE = 0.25;
 
+	// ---- sounds (storyboard 2.1: vanilla ids, confirmed in U-FX 0)
+	/** One sound of the forming: time in seconds from the start, vanilla id, pitch, volume (the owner's; other players hear {@link #REMOTE_VOLUME} times it). */
+	public record Cue(double t, String id, double pitch, double volume) {
+	}
+
+	/** The sounds of the forming, in time order (the unit test pins ids, ordering and levels). */
+	public static final java.util.List<Cue> CUES = java.util.List.of(
+			new Cue(0.00, "block.amethyst_block.resonate", 1.6, 0.35),
+			new Cue(T_WHEEL, "block.beacon.power_select", 1.9, 0.40),
+			new Cue(T_LIMBS, "entity.illusioner.cast_spell", 1.8, 0.30),
+			new Cue(T_SOLID, "block.amethyst_block.chime", 1.4, 0.45),
+			new Cue(T_STRING, "entity.arrow.shoot", 2.0, 0.15));
+	/** The reverse (J again): one quiet resonance. */
+	public static final Cue REVERSE_CUE = new Cue(0.0, "block.amethyst_block.resonate", 1.2, 0.25);
+	/** Other tracking players: everything except sounds at this share (the storyboard: volume x0.6). */
+	public static final double REMOTE_VOLUME = 0.6;
+	/** Glow of players who are not the owner: x0.6. */
+	public static final double REMOTE_GLOW = 0.6;
+	/** Tracking range of the effect in blocks. */
+	public static final double RANGE = 48.0;
+
 	private UryuBowForm() {
 	}
 

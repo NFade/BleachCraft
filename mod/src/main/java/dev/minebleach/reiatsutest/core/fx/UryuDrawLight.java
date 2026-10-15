@@ -46,7 +46,38 @@ public final class UryuDrawLight {
 	public static final double SCALE_THIRD = 1.4;
 	public static final double SCALE_FIRST = 1.8;
 
+	// ---- sounds and the owner's field of view
+	public static final String CHIME = "block.amethyst_block.chime";
+	/** p 0.5 (the tips light): chime pitch 1.3 volume 0.2. */
+	public static final double HALF_PITCH = 1.3;
+	public static final double HALF_VOLUME = 0.2;
+	/** Full draw ping: chime pitch 1.7 volume 0.35. */
+	public static final double FULL_PITCH = 1.7;
+	public static final double FULL_VOLUME = 0.35;
+	/** The owner's FOV narrows by 1.5 degrees while the bow is fully drawn (over 0.35 s, none with reduce motion). */
+	public static final double FOV_DEG = -1.5;
+	public static final double FOV_TIME = 0.35;
+	/** Recoil of the owner's view at the shot (pitch up 0.4 degrees for 0.1 s). */
+	public static final double RECOIL_DEG = 0.4;
+	public static final double RECOIL_TIME = 0.10;
+	/** Dashes of the Reishi flow: the cap per frame (a long frame must not spawn a burst). */
+	public static final int DASH_MAX_PER_FRAME = 4;
+
 	private UryuDrawLight() {
+	}
+
+	/** Target of the FOV bias for a draw power: {@link #FOV_DEG} at full draw, 0 below or with reduce motion. */
+	public static double fovTarget(double p, boolean reduceMotion) {
+		return !reduceMotion && fullDraw(p) ? FOV_DEG : 0.0;
+	}
+
+	/** Moves the FOV bias towards its target at the speed that covers {@link #FOV_DEG} in {@link #FOV_TIME} (the mean slope of the storyboard's ease). */
+	public static double fovStep(double current, double target, double dt) {
+		double step = Math.abs(FOV_DEG) / FOV_TIME * Math.max(0.0, dt);
+		if (current < target) {
+			return Math.min(target, current + step);
+		}
+		return Math.max(target, current - step);
 	}
 
 	/** The power of a draw held for {@code ticks} (partial ticks allowed): the vanilla curve. */
