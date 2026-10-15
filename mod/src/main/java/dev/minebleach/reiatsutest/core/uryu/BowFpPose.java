@@ -29,7 +29,7 @@ public record BowFpPose(boolean enabled, float[] grip, float scale, float yaw, f
 	 * pose, {@code grip}/{@code rot}/{@code left.rot} the pose at full draw.
 	 */
 	public static final float[] IDLE_GRIP = {-0.45f, -0.84f, -1.10f};
-	public static final float[] IDLE_ROT = {30f, 0f, -32f}; // R13: lowered, the bow leans to the RIGHT
+	public static final float[] IDLE_ROT = {30f, 0f, -46f}; // R13: lowered, the bow leans to the RIGHT
 	public static final float[] IDLE_LEFT_ROT = {0f, 0f, -80f};
 
 	/** A bow placement: grip, the Euler turn (yaw, pitch, roll degrees) and the turn of the bow forearm. */
@@ -57,7 +57,7 @@ public record BowFpPose(boolean enabled, float[] grip, float scale, float yaw, f
 	}
 
 	/** Grip (model centre) of the bow: left of the centre and low, a little farther from the camera (R13: was -0.42, -0.42, -1.30), so the bow stands in the left third, the limbs span the view and both fists stay apart. */
-	public static final float[] GRIP = {0.18f, -0.42f, -1.35f}; // R13 (user references: Skyrim, Mordhau): at full draw the bow body stands right of the crosshair, the sight stays open, the arrow points to the crosshair
+	public static final float[] GRIP = {0.18f, -0.30f, -1.35f}; // R13 (user references: Skyrim, Mordhau): at full draw the bow body stands right of the crosshair, the sight stays open, the arrow points to the crosshair
 	/** Blocks per model unit: the bow model is 1.1 long, so 1.5 makes it 1.65 blocks, about 55 percent of the screen height at that depth. */
 	public static final float SCALE = 1.2f; // R13: was 1.5
 	/**
@@ -69,10 +69,10 @@ public record BowFpPose(boolean enabled, float[] grip, float scale, float yaw, f
 	public static final float PITCH = 5f;
 	public static final float ROLL = -12f; // R13: the bow leans, its top to the right
 	/** Bow hand fist from the grip: a little farther from the camera than the bow, so the bow is drawn in front of the fist. */
-	public static final float[] LEFT_OFF = {0f, 0f, -0.10f};
+	public static final float[] LEFT_OFF = {0f, -0.14f, -0.10f}; // R13 (user): the bow fist lower along the bow, so it does not cover the arrow and the pattern
 	public static final float[] LEFT_ROT = {0f, 0f, -62f}; // R13: the bow forearm comes in from the lower LEFT corner and points to the right (Z turn about the fist, negative = clockwise) // R13: the bow forearm comes from the lower left
 	/** Draw hand fist from the nock: a little behind the arrow, so the nocked arrow is drawn in front of the fingers. */
-	public static final float[] RIGHT_OFF = {0.22f, -0.12f, -0.06f}; // R13: was 0.03, 0, -0.10: the draw fist stays right of the bow fist
+	public static final float[] RIGHT_OFF = {0.45f, -0.62f, 0.0f}; // R13: was 0.03, 0, -0.10: the draw fist stays right of the bow fist
 	/** The draw forearm fans out to the lower right (Z turn about the fist). */
 	public static final float[] RIGHT_ROT = {0f, 0f, 20f};
 	/** Seconds for the draw hand to travel from the resting (vanilla empty hand) place to the string, and back after the shot. */
@@ -86,10 +86,64 @@ public record BowFpPose(boolean enabled, float[] grip, float scale, float yaw, f
 		return of(FpParams.DEFAULTS);
 	}
 
+	/** R13 (user): the arrow looks exactly at the shot point: distance in blocks of the point on the view axis the arrow is aimed at (key {@code bow.aim}, 0 = fixed {@link #YAW}/{@link #PITCH}). */
+	public static final float AIM_DISTANCE = 8f;
+	private static final float[] NO_ROT = new float[3];
+
+	/**
+	 * The turn (yaw, pitch degrees, for the given roll) that points the arrow axis from {@code grip} (camera frame, x right, y up, -z forward) at the point
+	 * {@code (0, 0, -distance)} on the view axis, the crosshair. The shot leaves along the look direction, so the arrow of the drawn bow points at where it will land.
+	 */
+	public static float[] aimAngles(float[] grip, float rollDeg, float distance) {
+		double dx = -grip[0];
+		double dy = -grip[1];
+		double dz = -distance - grip[2];
+		double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (len < 1.0E-6) {
+			return new float[] {YAW, PITCH};
+		}
+		dx /= len;
+		dy /= len;
+		// undo the roll (the last turn of the chain): rotate the wanted direction back about the view axis
+		double r = Math.toRadians(rollDeg);
+		double ux = dx * Math.cos(r) + dy * Math.sin(r);
+		double uy = -dx * Math.sin(r) + dy * Math.cos(r);
+		double sinYaw = Math.max(-1.0, Math.min(1.0, -ux));
+		double cosYaw = Math.sqrt(1.0 - sinYaw * sinYaw);
+		double sinPitch = cosYaw < 1.0E-9 ? 0.0 : Math.max(-1.0, Math.min(1.0, uy / cosYaw));
+		return new float[] {(float) Math.toDegrees(Math.asin(sinYaw)), (float) Math.toDegrees(Math.asin(sinPitch))};
+	}
+
+	/** Direction of the arrow (tip side) in the camera frame for the turn the first person pose applies (roll about the view axis after pitch after yaw). */
+	public static float[] arrowDirection(float yawDeg, float pitchDeg, float rollDeg) {
+		double y = Math.toRadians(yawDeg);
+		double pt = Math.toRadians(pitchDeg);
+		double r = Math.toRadians(rollDeg);
+		double x = -Math.sin(y);
+		double yy = 0.0;
+		double z = -Math.cos(y);
+		double y2 = yy * Math.cos(pt) - z * Math.sin(pt);
+		double z2 = yy * Math.sin(pt) + z * Math.cos(pt);
+		double x3 = x * Math.cos(r) - y2 * Math.sin(r);
+		double y3 = x * Math.sin(r) + y2 * Math.cos(r);
+		return new float[] {(float) x3, (float) y3, (float) z2};
+	}
+
 	/** The numbers of {@code p} ({@code fp_bow} section of the dev override) with the shipped defaults for everything not given. */
 	public static BowFpPose of(FpParams p) {
-		float[] rot = p.vec("bow.rot", new float[] {YAW, PITCH, ROLL});
-		return new BowFpPose(p.num("bow.enabled", 1f) > 0.5f, p.vec("bow.grip", GRIP), p.num("bow.scale", SCALE), rot[0], rot[1], rot[2],
+		float[] gripNow = p.vec("bow.grip", GRIP);
+		float[] given = p.vec("bow.rot", NO_ROT);
+		float aim = p.num("bow.aim", AIM_DISTANCE);
+		float[] rot;
+		if (given != NO_ROT) {
+			rot = given; // a hand written turn wins
+		} else if (aim > 0.5f) {
+			float[] a = aimAngles(gripNow, ROLL, aim);
+			rot = new float[] {a[0], a[1], ROLL};
+		} else {
+			rot = new float[] {YAW, PITCH, ROLL};
+		}
+		return new BowFpPose(p.num("bow.enabled", 1f) > 0.5f, gripNow, p.num("bow.scale", SCALE), rot[0], rot[1], rot[2],
 				p.vec("bow.left.off", LEFT_OFF), p.vec("bow.left.rot", LEFT_ROT), p.vec("bow.right.off", RIGHT_OFF),
 				p.vec("bow.right.rot", RIGHT_ROT), Math.max(0.01f, p.num("bow.ready.in", READY_IN)),
 				Math.max(0.01f, p.num("bow.ready.out", READY_OUT)), Math.max(0.01f, p.num("bow.snap", SNAP)), p.vec("bow.idle.grip", IDLE_GRIP), p.vec("bow.idle.rot", IDLE_ROT), p.vec("bow.idle.left.rot", IDLE_LEFT_ROT));

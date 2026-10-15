@@ -16,8 +16,9 @@ class BowFpPoseTest {
 		assertTrue(p.enabled());
 		assertArrayEquals(BowFpPose.GRIP, p.grip());
 		assertEquals(BowFpPose.SCALE, p.scale());
-		assertEquals(BowFpPose.YAW, p.yaw());
-		assertEquals(BowFpPose.PITCH, p.pitch());
+		float[] aimed = BowFpPose.aimAngles(BowFpPose.GRIP, BowFpPose.ROLL, BowFpPose.AIM_DISTANCE);
+		assertEquals(aimed[0], p.yaw(), 1e-5f, "R13: the default turn is the one that points the arrow at the crosshair");
+		assertEquals(aimed[1], p.pitch(), 1e-5f);
 		assertEquals(BowFpPose.ROLL, p.roll());
 		assertArrayEquals(BowFpPose.RIGHT_ROT, p.rightRot());
 	}
@@ -26,10 +27,52 @@ class BowFpPoseTest {
 	void theBowStandsInFrontOfTheCameraRightOfTheCrosshairAndBelowIt() {
 		float[] g = BowFpPose.defaults().grip();
 		assertTrue(g[0] > 0f, "R13: the bow body is right of the crosshair, the sight stays open");
-		assertTrue(g[1] < -0.3f, "R13: held low, the crosshair is free");
+		assertTrue(g[1] < -0.2f, "R13: held low, the crosshair is free");
 		assertTrue(g[2] < -0.5f, "in front of the camera");
 		assertTrue(BowFpPose.defaults().scale() > 0.5f);
 		assertTrue(BowFpPose.defaults().yaw() > 0f && BowFpPose.defaults().yaw() < 25f, "the arrow points back to the crosshair, not out to the side");
+	}
+
+	@Test
+	void theDrawnArrowPointsExactlyAtTheCrosshair() {
+		BowFpPose p = BowFpPose.defaults();
+		float[] d = BowFpPose.arrowDirection(p.yaw(), p.pitch(), p.roll());
+		float[] g = p.grip();
+		// walk from the grip along the arrow: at the distance of the aim point the line passes through the view axis
+		float t = (-BowFpPose.AIM_DISTANCE - g[2]) / d[2];
+		assertEquals(0f, g[0] + d[0] * t, 1e-3f, "x at the aim point");
+		assertEquals(0f, g[1] + d[1] * t, 1e-3f, "y at the aim point");
+		assertTrue(d[2] < -0.99f, "the arrow points away from the camera");
+	}
+
+	@Test
+	void aimAnglesInvertTheArrowDirectionForAnyRollAndGrip() {
+		float[][] grips = {{0.18f, -0.30f, -1.35f}, {-0.4f, 0.2f, -1.0f}, {0f, 0f, -1.5f}};
+		for (float[] g : grips) {
+			for (float roll : new float[] {-30f, 0f, 20f}) {
+				float[] a = BowFpPose.aimAngles(g, roll, 6f);
+				float[] d = BowFpPose.arrowDirection(a[0], a[1], roll);
+				float t = (-6f - g[2]) / d[2];
+				assertEquals(0f, g[0] + d[0] * t, 2e-3f);
+				assertEquals(0f, g[1] + d[1] * t, 2e-3f);
+			}
+		}
+	}
+
+	@Test
+	void aTurnWrittenByHandWinsOverTheAim() {
+		FpParams hand = new FpParams() {
+			@Override
+			public float num(String key, float def) {
+				return def;
+			}
+
+			@Override
+			public float[] vec(String key, float[] def) {
+				return key.equals("bow.rot") ? new float[] {40f, 5f, 0f} : def;
+			}
+		};
+		assertEquals(40f, BowFpPose.of(hand).yaw(), 1e-6f);
 	}
 
 	@Test

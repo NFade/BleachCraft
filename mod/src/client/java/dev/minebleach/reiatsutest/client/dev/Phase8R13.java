@@ -24,7 +24,7 @@ final class Phase8R13 {
 	}
 
 	static boolean wantsAny() {
-		return wants("r13_pose") || wants("r13_byakuya") || wants("r13_tp") || wants("r13_tpvar") || wants("r13_front") || wants("r13_fpvar") || wants("r13_byaktp");
+		return wants("r13_pose") || wants("r13_byakuya") || wants("r13_tp") || wants("r13_tpvar") || wants("r13_front") || wants("r13_fpvar") || wants("r13_byaktp") || wants("r13_strafe") || wants("r13_aimpitch");
 	}
 
 	static void steps() {
@@ -39,6 +39,39 @@ final class Phase8R13 {
 		if (wants("r13_tp")) {
 			drawSet("back");
 			drawSet("front");
+		}
+		if (wants("r13_strafe")) {
+			for (int i = 0; i < 2; i++) {
+				final int align = i; // 0 = the old behaviour (body follows the walk), 1 = the body follows the look
+				final String n = "strafe_a" + align;
+				scene(n, "back", "base", "uryu", "uryu_cross");
+				step(n + " apply", 1, () -> {
+					dev.minebleach.reiatsutest.client.fx.FxTune.override("uryu.tp.alignBody", align);
+					mc.options.useKey.setPressed(true);
+				});
+				stepUntil(n + " drawn", 1, 20 * 6, () -> { }, () -> mc.player.isUsingItem() && mc.player.getItemUseTime() >= 26);
+				step(n + " strafe", 1, () -> mc.options.leftKey.setPressed(true));
+				step(n + " walking", 14, () -> { });
+				step(n + " shot", 1, () -> shot(n));
+				step(n + " stop", 1, () -> {
+					mc.options.leftKey.setPressed(false);
+					mc.options.useKey.setPressed(false);
+					dev.minebleach.reiatsutest.client.fx.FxTune.unset("uryu.tp.alignBody");
+				});
+				step(n + " rest", 20, () -> { });
+			}
+		}
+		if (wants("r13_aimpitch")) {
+			for (int pitch : new int[] {-35, 35}) {
+				final String n = "pitch" + (pitch < 0 ? "up" : "down");
+				scene(n, "back", "base", "uryu", "uryu_cross");
+				step(n + " turn", 3, () -> cmd("tp @s 0.5 -60 0.5 0 " + pitch));
+				step(n + " hold", 1, () -> mc.options.useKey.setPressed(true));
+				stepUntil(n + " drawn", 1, 20 * 6, () -> { }, () -> mc.player.isUsingItem() && mc.player.getItemUseTime() >= 28);
+				step(n + " shot", 2, () -> shot(n));
+				step(n + " release", 1, () -> mc.options.useKey.setPressed(false));
+				step(n + " rest", 20, () -> { });
+			}
 		}
 		if (wants("r13_fpvar")) {
 			fpVariants();
@@ -118,7 +151,6 @@ final class Phase8R13 {
 	/** Dev: variants of the first person bow numbers written into pose_override.json (section fp_bow, hot reload), p100 and the release of each. */
 	private static final String[] FP_VARS = {
 			"{}",
-			"{\"fp_bow\":{\"idle\":{\"rot\":[15,0,-40]}}}",
 	};
 
 	private static void fpVariants() {

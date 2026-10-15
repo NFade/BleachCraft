@@ -143,7 +143,9 @@ public final class TpBowLayer implements IAnimation {
 		if (type == TransformType.ROTATION) {
 			// R13 (user): the string hand points a little towards the middle of the body, so it looks as if it pulls the string and does not just pass beside it
 			float in = "rightArm".equals(modelName) ? (float) Math.toRadians(FxTune.d("uryu.tp.drawArmYaw", DRAW_ARM_YAW_DEG)) * (float) state.drawWeight() : 0f;
-			return new Vec3f(v.getX(), v.getY() + turn + in, v.getZ());
+			// R13: both arms follow the look pitch like the vanilla bow pose (arm pitch -90 degrees plus the head pitch), so the bow points where the archer looks up or down
+			float pitch = arm ? (float) Math.toRadians(player.getPitch(tickDelta)) * (float) FxTune.d("uryu.tp.armPitch", 1.0) * (float) state.drawWeight() : 0f;
+			return new Vec3f(v.getX() + pitch, v.getY() + turn + in, v.getZ());
 		}
 		if (arm && type == TransformType.POSITION) {
 			double[] r = BowStance.rotateXZ(v.getX(), v.getZ(), turn);
