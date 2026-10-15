@@ -15,7 +15,7 @@ import net.minecraft.util.math.Vec3d;
 
 /**
  * The Sprenger bind visual (URYU_VFX_STORYBOARD 2.8, U-FX 4): the entities the server says are ROOTED (S-U3 packets BIND and END, see
- * {@link UryuSprengerFx#onBind}) get, from the bind moment (0.8 s) until the explosion, a damage break or a cancel, a Zeichen under the feet,
+ * {@link UryuSprengerFx#onBind}) get, from the bind moment (0.8 s) until the explosion, a damage break or a cancel, a Quincy cross sigil under the feet (the cross of the pendant, never the pentagram: that belongs to the explosion),
  * three rings around the legs and five chains that run from the dagger beads to the chest (the three nearest entities in full, the others
  * only the sigil), plus a quiet resonating sound for the two nearest. The END reason picks the ending ({@link BindFxPlan#endLook}): damage
  * snaps the chains and shatters the rings, the explosion and a cancel fade everything. Everything is a per frame glow source (closed form of
@@ -294,7 +294,7 @@ final class UryuBindFx {
 		double sig = ramp * sigFade;
 		if (sig > 0.004) {
 			double size = BindFxPlan.sigilSize(b.width);
-			e.ground(GlowSprite.ZEICHEN_STAR, b.x, b.y + 0.06, b.z, size, size, Math.PI + BindFxPlan.sigilRotation(age, rm), Q1[0], Q1[1], Q1[2],
+			e.ground(GlowSprite.ZEICHEN_CROSS, b.x, b.y + 0.06, b.z, size, size, Math.PI + BindFxPlan.sigilRotation(age, rm), Q1[0], Q1[1], Q1[2],
 					BindFxPlan.SIGIL_PEAK * BindFxPlan.sigilFlicker(age, rm) * sig);
 		}
 		if (!full) {

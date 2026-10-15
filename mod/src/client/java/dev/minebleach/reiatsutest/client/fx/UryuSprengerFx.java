@@ -152,6 +152,18 @@ final class UryuSprengerFx {
 		return out;
 	}
 
+	/** Harness: forgets every pentagon, root and dagger (the next scenario starts clean). */
+	static void reset() {
+		PENTAGONS.clear();
+		UryuBindFx.clear();
+		UryuSeeleRenderer.clear();
+		trapsSeen = 0;
+		burstsSeen = 0;
+		cancels = 0;
+		lastCurtains = 0;
+		UryuBindFx.bindsSeen = 0;
+	}
+
 	/** Pentagons alive (harness). */
 	static int count() {
 		return PENTAGONS.size();
@@ -438,7 +450,7 @@ final class UryuSprengerFx {
 		Random rd = new Random(pg.seed + 5);
 		for (int i = 0; i < 5; i++) {
 			UryuSeeleRenderer.Seele s = pg.seeles[i];
-			double hy = s != null ? s.y - UryuSeeleRenderer.lift(s, now) : pg.cy + SprengerFxPlan.HILT_HEIGHT;
+			double hy = s != null ? s.y + UryuSeeleRenderer.lift(s, now) : pg.cy + SprengerFxPlan.HILT_HEIGHT;
 			for (int k = 0; k < 4; k++) {
 				double a = rd.nextDouble() * Math.PI * 2;
 				double sp = 2.0 + rd.nextDouble() * 3.0;
@@ -514,6 +526,12 @@ final class UryuSprengerFx {
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(cx, cy + 0.1, cz).ground().size(SprengerFxPlan.FLOOR_SIZE * k * 1.2).life(0.5).curve(0.01, 0.7).color(coreCol).peak(0.9).owner(x).spawn();
 		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(cx, cy + 1.2, cz).size(r * 3.0 * 0.8, r * 3.0).life(0.4).curve(0.01, 0.7).color(UryuPalette.Q0).peak(1.0).owner(x).spawn();
 		FxGlowBatch.sprite(GlowSprite.STAR6).at(cx, cy + 1.0, cz).size(r * 2.0, r * 0.4).life(0.25).curve(0.01, 0.7).color(UryuPalette.Q0).peak(1.0).rot(0.3, 1.5).owner(x).spawn();
+		if (early) {
+			// early detonation (a fully focused arrow touched the figure): the core burns white, a diamond star sits where the arrow went in, a second thin shock ring runs ahead
+			FxGlowBatch.sprite(GlowSprite.DIAMOND_STAR).at(cx, cy + 1.4, cz).size(r * 1.8, r * 0.5).life(0.3).curve(0.01, 0.7).color(UryuPalette.Q0).peak(1.0).rot(0.0, 0.6).owner(x).spawn();
+			FxGlowBatch.sprite(GlowSprite.RING_THIN).at(cx, cy + 0.14, cz).ground().size(0.2, SprengerFxPlan.shockRingSize(r) * 1.15 / 0.875).sizeEase(FxMath.OC).life(0.3)
+					.curve(0.01, 0.7).color(UryuPalette.Q0).peak(0.9).owner(x).spawn();
+		}
 		// the Zeichen flare (the pentagram with a ring at each point, apex towards -z like the figure) and its five ray streaks
 		FxGlowBatch.sprite(GlowSprite.ZEICHEN_STAR).at(cx, cy + 0.14, cz).ground().size(SprengerFxPlan.flareSize(r, early)).life(SprengerFxPlan.FLARE_LIFE).curve(0.02, 0.9)
 				.rot(Math.PI, reduced() ? 0.0 : SprengerFxPlan.FLARE_TURNS * Math.PI * 2).color(UryuPalette.Q1).peak(SprengerFxPlan.FLARE_PEAK).owner(x).spawn();
@@ -666,21 +684,22 @@ final class UryuSprengerFx {
 			if (p.exploded >= 0) {
 				double since = now - p.exploded - FxTimelines.held(p.exSlot);
 				double fade = SprengerFxPlan.fadeOut(since - SprengerFxPlan.SHATTER_AT, SprengerFxPlan.EDGE_FADE);
-				if (fade > 0.004) {
+				double blast = SprengerFxPlan.edgeBlast(since) * (p.early ? 1.3 : 1.0);
+				if (fade > 0.004 || blast > 0.004) {
 					double a = Math.max(0.0, p.exploded - p.born);
-					figure(e, p, now, a, SprengerFxPlan.edgeIntensity(a, p.life, rm) * fade, fade, false, 0.0, rm);
+					figure(e, p, now, a, SprengerFxPlan.edgeIntensity(a, p.life, rm) * fade, fade, false, 0.0, blast, rm);
 				}
 			} else if (p.cancelled >= 0) {
 				double c = now - p.cancelled;
 				double a = Math.max(0.0, p.cancelled - p.born);
 				double fade = SprengerFxPlan.fadeOut(c, SprengerFxPlan.CANCEL_FADE);
 				if (fade > 0.004) {
-					figure(e, p, now, a, SprengerFxPlan.edgeIntensity(a, p.life, rm) * fade, fade, true, SprengerFxPlan.sinkDepth(c), rm);
+					figure(e, p, now, a, SprengerFxPlan.edgeIntensity(a, p.life, rm) * fade, fade, true, SprengerFxPlan.sinkDepth(c), 0.0, rm);
 				}
 			} else {
 				double a = now - p.born;
 				double dim = SprengerFxPlan.dim(a);
-				figure(e, p, now, a, SprengerFxPlan.edgeIntensity(a, p.life, rm) * dim, dim, true, 0.0, rm);
+				figure(e, p, now, a, SprengerFxPlan.edgeIntensity(a, p.life, rm) * dim, dim, true, 0.0, 0.0, rm);
 			}
 		}
 		UryuBindFx.emit(e, now);
@@ -688,9 +707,10 @@ final class UryuSprengerFx {
 
 	/**
 	 * One pentagon at figure time {@code a}: {@code inten} is the brightness of the lines, {@code fade} the brightness of the rest, {@code daggers}
-	 * says whether the daggers still stand (their glow cards and fall streaks), {@code sink} how far they have sunk.
+	 * says whether the daggers still stand (their glow cards and fall streaks), {@code sink} how far they have sunk, {@code blast} the white
+	 * flash of the edges, spokes and corners at the explosion ({@link SprengerFxPlan#edgeBlast}).
 	 */
-	private static void figure(FxGlowBatch.Emitter e, Pentagon p, double now, double a, double inten, double fade, boolean daggers, double sink, boolean rm) {
+	private static void figure(FxGlowBatch.Emitter e, Pentagon p, double now, double a, double inten, double fade, boolean daggers, double sink, double blast, boolean rm) {
 		double k = p.r / SprengerFxPlan.REFERENCE_RADIUS;
 		double y = p.cy + 0.09;
 		double lineW = tune("spr.edgeWidth", 0.5);
@@ -701,11 +721,17 @@ final class UryuSprengerFx {
 			double pulse01 = 0.8 + 0.2 * (SprengerFxPlan.pulse(a, p.life, rm) - 0.65) / 0.35;
 			e.ground(GlowSprite.GLOW_SOFT, p.cx, p.cy + 0.05, p.cz, SprengerFxPlan.FLOOR_SIZE * k, SprengerFxPlan.FLOOR_SIZE * k, 0.0, Q8[0], Q8[1], Q8[2], fill * pulse01 * fade);
 		}
-		// the hub Zeichen at the bind: a flare that is gone after 0.4 s (the star belongs to the explosion)
-		double hub = SprengerFxPlan.hubFlare(a);
+		// the bind: a six-point flare at the hub and a ring wave that runs out to the daggers (NEVER the Zeichen: the star belongs to the explosion)
+		double hub = daggers ? SprengerFxPlan.hubFlare(a) : 0.0; // an exploded figure holds its last pose: no frozen flash
 		if (hub > 0.004) {
-			double s = SprengerFxPlan.HUB_SIZE * k;
-			e.ground(GlowSprite.ZEICHEN_STAR, p.cx, y + 0.02, p.cz, s, s, Math.PI, Q1[0], Q1[1], Q1[2], hub * fade);
+			e.sprite(GlowSprite.GLOW_CORE, p.cx, y + 0.3, p.cz, 2.2 * k, 0.0, Q0[0], Q0[1], Q0[2], 0.8 * hub * fade);
+			e.sprite(GlowSprite.STAR6, p.cx, y + 0.3, p.cz, 2.6 * k, rm ? 0.0 : a * 3.0, Q1[0], Q1[1], Q1[2], 1.3 * hub * fade);
+		}
+		double wave = daggers ? SprengerFxPlan.bindWave(a) : 0.0;
+		if (wave > 0.004) {
+			double wr = SprengerFxPlan.bindWaveRadius(a, p.r);
+			e.ground(GlowSprite.RING_THIN, p.cx, y + 0.03, p.cz, wr / 0.4375, wr / 0.4375, 0.0, Q1[0], Q1[1], Q1[2], wave * fade);
+			e.ground(GlowSprite.RING_SOFT, p.cx, y + 0.02, p.cz, wr / 0.375, wr / 0.375, 0.0, Q2[0], Q2[1], Q2[2], 0.45 * wave * fade);
 		}
 		// daggers: the falling streak and the glow card at the hilt
 		if (daggers) {
@@ -750,6 +776,9 @@ final class UryuSprengerFx {
 				double hz = p.cz + uz * len;
 				e.streak(GlowSprite.FLECHETTE_TRAIL, hx, y, hz, p.cx, y, p.cz, lineW * 1.1, c7[0], c7[1], c7[2], 0.85 * inten);
 				e.streak(GlowSprite.LINE, hx, y + 0.01, hz, p.cx, y + 0.01, p.cz, lineW * 0.4, Q0[0], Q0[1], Q0[2], 0.8 * inten);
+				if (blast > 0.004) {
+					e.streak(GlowSprite.LINE, hx, y + 0.02, hz, p.cx, y + 0.02, p.cz, lineW * 2.6, Q0[0], Q0[1], Q0[2], 0.9 * blast);
+				}
 				if (!arrived) {
 					e.sprite(GlowSprite.GLOW_CORE, hx, y + 0.08, hz, 0.4, 0.0, Q1[0], Q1[1], Q1[2], 0.9 * fade);
 				} else {
@@ -774,6 +803,13 @@ final class UryuSprengerFx {
 			e.streak(GlowSprite.LINE, hx, y, hz, p.px[i], y, p.pz[i], lineW * 2.2, Q3[0], Q3[1], Q3[2], 0.28 * inten);
 			e.streak(GlowSprite.LINE, hx, y, hz, p.px[i], y, p.pz[i], lineW, c7[0], c7[1], c7[2], 0.95 * inten);
 			e.streak(GlowSprite.LINE, hx, y + 0.01, hz, p.px[i], y + 0.01, p.pz[i], lineW * 0.4, Q0[0], Q0[1], Q0[2], 0.9 * inten);
+			// the same edge as a flat band on the floor: it reads from above, where the camera facing lines are only a hairline
+			double ex = hx - p.px[i];
+			double ez = hz - p.pz[i];
+			e.ground(GlowSprite.LINE, (hx + p.px[i]) * 0.5, y - 0.01, (hz + p.pz[i]) * 0.5, Math.hypot(ex, ez), lineW * 2.0, Math.atan2(ez, ex), Q3[0], Q3[1], Q3[2], 0.3 * inten);
+			if (blast > 0.004) {
+				e.streak(GlowSprite.LINE, hx, y + 0.02, hz, p.px[i], y + 0.02, p.pz[i], lineW * 2.6, Q0[0], Q0[1], Q0[2], 0.9 * blast);
+			}
 			if (prog < 1.0) {
 				double dx = (p.px[j] - p.px[i]) / SprengerFxPlan.edgeLength(p.r);
 				double dz = (p.pz[j] - p.pz[i]) / SprengerFxPlan.edgeLength(p.r);
@@ -785,6 +821,11 @@ final class UryuSprengerFx {
 		for (int i = 0; i < 5; i++) {
 			if (SprengerFxPlan.edgeProgress(i, a) >= 1.0 || SprengerFxPlan.edgeProgress((i + 4) % 5, a) >= 1.0) {
 				e.sprite(GlowSprite.GLOW_CORE, p.px[i], y + 0.1, p.pz[i], 0.3, 0.0, Q1[0], Q1[1], Q1[2], 0.8 * inten);
+				if (blast > 0.004) {
+					// the dagger of this corner bursts
+					e.sprite(GlowSprite.STAR4, p.px[i], y + 0.9, p.pz[i], 1.6 * k, a * 0.5, Q0[0], Q0[1], Q0[2], 0.95 * blast);
+					e.sprite(GlowSprite.GLOW_SOFT, p.px[i], y + 0.9, p.pz[i], 2.2 * k, 0.0, Q2[0], Q2[1], Q2[2], 0.6 * blast);
+				}
 			}
 		}
 	}

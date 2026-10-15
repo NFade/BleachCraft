@@ -55,10 +55,16 @@ public final class SprengerFxPlan {
 	public static final int RUNE_BANDS = 3;
 	public static final double RUNE_SPEED = 0.6;
 	public static final double RUNE_HEIGHT = 0.5;
-	/** The hub Zeichen that flares at the bind: diameter in blocks of the reference pentagon (the ring of the sprite lies on the daggers), peak, life. */
+	/** The hub flash at the bind (a six-point flare, no Zeichen): diameter of the reference pentagon's ring wave, peak, life. */
 	public static final double HUB_SIZE = 6.4;
 	public static final double HUB_PEAK = 0.7;
 	public static final double HUB_LIFE = 0.4;
+	/** The ring wave of the bind (hub to just past the daggers): reach as a share of r, time, peak brightness. */
+	public static final double WAVE_REACH = 1.15;
+	public static final double WAVE_TIME = 0.25;
+	public static final double WAVE_PEAK = 0.8;
+	/** The edges flash white for this long at the explosion. */
+	public static final double EDGE_BLAST_TIME = 0.15;
 	/** The charge column: it grows over {@link #CHARGE_TIME} from the bind to the anticipation. */
 	public static final double CHARGE_TIME = 0.95;
 	public static final double CHARGE_HEIGHT = 4.0;
@@ -310,10 +316,32 @@ public final class SprengerFxPlan {
 		return Math.sin(Math.PI * clamp(phase, 0.0, 1.0));
 	}
 
-	/** Brightness of the hub Zeichen that flares at the bind (gone after 0.4 s: the star stays off until the explosion). */
+	/**
+	 * Brightness of the hub flash at the bind (a six-point flare and a ring wave, NEVER the Zeichen pentagram: canon correction of U-FX 4, the
+	 * Zeichen belongs to the explosion). Gone after 0.4 s.
+	 */
 	public static double hubFlare(double t) {
 		double x = (t - BIND_AT) / HUB_LIFE;
 		return x < 0.0 || x > 1.0 ? 0.0 : HUB_PEAK * (1.0 - x) * (1.0 - x);
+	}
+
+	/** Radius of the ring wave that runs from the hub to the daggers at the bind: 0 at 0.8 s, 1.15 r after {@link #WAVE_TIME} (easeOutCubic). */
+	public static double bindWaveRadius(double t, double r) {
+		return WAVE_REACH * r * oc((t - BIND_AT) / WAVE_TIME);
+	}
+
+	/** Brightness of the bind ring wave: 0 before the bind and after the wave, bright while it runs out. */
+	public static double bindWave(double t) {
+		double x = (t - BIND_AT) / WAVE_TIME;
+		return x < 0.0 || x > 1.0 ? 0.0 : WAVE_PEAK * (1.0 - x);
+	}
+
+	/** White flash of the five edges at the explosion ({@code since} = seconds since the burst): 1 at once, 0 after {@link #EDGE_BLAST_TIME}. */
+	public static double edgeBlast(double since) {
+		if (since < 0.0) {
+			return 0.0;
+		}
+		return clamp(1.0 - since / EDGE_BLAST_TIME, 0.0, 1.0);
 	}
 
 	// ------------------------------------------------------------------ the charge column

@@ -123,13 +123,34 @@ class SprengerFxPlanTest {
 	}
 
 	@Test
-	void theHubStarOnlyFlaresAtTheBindAndIsGoneAfterFourTenths() {
-		assertEquals(0.0, SprengerFxPlan.hubFlare(0.5), 1e-9, "no star while the outline draws");
+	void theHubFlashOnlyFlaresAtTheBindAndIsGoneAfterFourTenths() {
+		assertEquals(0.0, SprengerFxPlan.hubFlare(0.5), 1e-9, "no flash while the outline draws");
 		assertEquals(0.0, SprengerFxPlan.hubFlare(0.79), 1e-9);
 		assertEquals(0.7, SprengerFxPlan.hubFlare(0.80), 1e-9);
 		assertTrue(SprengerFxPlan.hubFlare(1.0) < 0.2);
 		assertEquals(0.0, SprengerFxPlan.hubFlare(1.21), 1e-9);
-		assertEquals(0.0, SprengerFxPlan.hubFlare(1.6), 1e-9, "nothing of the star during the charge: it belongs to the explosion");
+		assertEquals(0.0, SprengerFxPlan.hubFlare(1.6), 1e-9, "nothing of the flash during the charge");
+	}
+
+	@Test
+	void theBindWaveRunsFromTheHubPastTheDaggersInAQuarterSecond() {
+		assertEquals(0.0, SprengerFxPlan.bindWave(0.79), 1e-9);
+		assertEquals(0.0, SprengerFxPlan.bindWaveRadius(0.79, R), 1e-9);
+		assertEquals(SprengerFxPlan.WAVE_PEAK, SprengerFxPlan.bindWave(0.80), 1e-9);
+		assertEquals(0.0, SprengerFxPlan.bindWave(0.80 + SprengerFxPlan.WAVE_TIME + 0.01), 1e-9);
+		assertEquals(1.15 * R, SprengerFxPlan.bindWaveRadius(0.80 + SprengerFxPlan.WAVE_TIME, R), 1e-9, "just past the daggers");
+		assertTrue(SprengerFxPlan.bindWaveRadius(0.85, R) > SprengerFxPlan.bindWaveRadius(0.82, R), "grows");
+		assertTrue(SprengerFxPlan.bindWave(0.9) < SprengerFxPlan.bindWave(0.82), "fades while it runs");
+		assertEquals(2.0 * SprengerFxPlan.bindWaveRadius(1.0, 1.5), SprengerFxPlan.bindWaveRadius(1.0, 3.0), 1e-9, "scales with the radius");
+	}
+
+	@Test
+	void theEdgesBlastWhiteAtTheExplosionForAFifteenthOfASecond() {
+		assertEquals(0.0, SprengerFxPlan.edgeBlast(-0.01), 1e-9);
+		assertEquals(1.0, SprengerFxPlan.edgeBlast(0.0), 1e-9);
+		assertEquals(0.5, SprengerFxPlan.edgeBlast(SprengerFxPlan.EDGE_BLAST_TIME / 2.0), 1e-9);
+		assertEquals(0.0, SprengerFxPlan.edgeBlast(0.2), 1e-9);
+		assertTrue(SprengerFxPlan.EDGE_BLAST_TIME <= SprengerFxPlan.SHATTER_AT + 1e-9, "the blast is over before the curtains shatter");
 	}
 
 	@Test

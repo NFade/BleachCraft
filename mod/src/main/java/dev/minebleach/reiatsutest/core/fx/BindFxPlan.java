@@ -3,7 +3,7 @@ package dev.minebleach.reiatsutest.core.fx;
 import dev.minebleach.reiatsutest.core.uryu.BindEnd;
 
 /**
- * The numbers of the Sprenger bind visual (URYU_VFX_STORYBOARD 2.8): per rooted entity a Zeichen under the feet, three rings around the legs
+ * The numbers of the Sprenger bind visual (URYU_VFX_STORYBOARD 2.8): per rooted entity a Quincy cross sigil under the feet (not the pentagram: the Zeichen star is the explosion's), three rings around the legs
  * and five chains from the dagger beads to the chest, from the bind moment (0.8 s) until the explosion, a damage break or a cancel. Pure
  * data and functions; {@code UryuBindFx} draws them and {@code BindFxPlanTest} pins them.
  */

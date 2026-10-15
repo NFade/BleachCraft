@@ -45,6 +45,9 @@ final class Phase7Uryu {
 		if (wants("uryu_bow") || wants("uryu_draw") || wants("uryu_arrow") || wants("uryu_arrow_live") || wants("uryu_focus") || wants("uryu_f12")) {
 			Phase7Bow.steps(); // U-FX 2: bow forming, draw light, arrow, hit and Focus feedback (p7_02_*)
 		}
+		if (wants("uryu_sprenger") || wants("uryu_sprenger_live") || wants("uryu_sprenger_f16")) {
+			Phase7Sprenger.steps(); // U-FX 4: the Sprenger pentagon and the bind visual (p7_04_sprenger_*)
+		}
 		if (wants("uryu_seele") || wants("uryu_seele_live")) {
 			Phase7Seele.steps(); // U-FX 5: the Seele Schneider combo (p7_05_seele_*)
 		}
