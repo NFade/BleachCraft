@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.SwarmMath;
+import dev.minebleach.reiatsutest.core.fx.SwarmView;
 import java.util.Arrays;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -18,6 +19,7 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.LightType;
 
@@ -38,6 +40,16 @@ public final class PetalSwarmRenderer {
 	private static final double[] OUT2 = new double[3];
 	private static float[] sortTmp = new float[0];
 	private static float[] d2 = new float[0];
+	/** R12 view gates (numbers from fx_override.json {@code swarm.*}, see {@link SwarmView}). */
+	private static final SwarmView.Fp FPV = new SwarmView.Fp();
+	private static final SwarmView.Tp TPV = new SwarmView.Tp();
+	/** Smoothed motion of the local camera 0..1 (walking and turning), and the camera of the last frame. */
+	private static double activity;
+	private static double lastYawDeg = Double.NaN;
+	private static double lastPitchDeg;
+	private static Vec3d lastCam;
+	/** Harness: activity of the last frame. */
+	public static double lastActivity;
 
 	/** Stats for the harness. */
 	public static double lastMs;
@@ -158,11 +170,10 @@ public final class PetalSwarmRenderer {
 		boolean anyFp = false;
 		double now = FxClock.now;
 		// first person of the owner: the swarm orbits around the camera, so the petals near the lens are removed (all inside fpClear, then thinned and shrunk up to fpFade)
-		double fpClear = FxTune.d("swarm.fpClear", 1.5);
-		double fpFade = FxTune.d("swarm.fpFade", 5.0);
-		double fpKeep = FxTune.d("swarm.fpKeep", 0.12);
-		double fpSize = FxTune.d("swarm.fpSize", 0.35);
-		double fpGlowMin = FxTune.d("swarm.fpGlowMin", 0.15);
+		tuneView();
+		updateActivity(ctx, cp);
+		SwarmView.Fp fpv = FPV;
+		SwarmView.Tp tpv = TPV;
 		double petalScale = FxTune.d("swarm.petalScale", 1.8);
 		boolean ribbonOn = FxTune.d("swarm.ribbon", 1.0) > 0.5;
 		if (ribbonOn) {
@@ -221,6 +232,18 @@ public final class PetalSwarmRenderer {
 				prev.velocity(st.vx, st.vy, st.vz);
 			}
 			double blend = prev != null ? SwarmMath.blendWeight(t - mode.t0) : 1.0;
+			// R12: the resting swarm is gated (first person: walking and turning; third person: fewer petals, clear of the sword while the owner strikes)
+			boolean idleKind = mode.kind == SwarmMath.Kind.IDLE;
+			double idleW = idleKind ? blend : 0.0;
+			boolean tpIdle = !fp && ribbon && idleKind;
+			double strike = idleKind && !fp ? PetalBladeFx.swingStrength(st.ownerId) : 0.0;
+			double spitch = owner != null ? Math.toRadians(Math.max(-45f, Math.min(45f, owner.getPitch(td)))) : 0;
+			double sfx = -Math.sin(st.yaw) * Math.cos(spitch);
+			double sfy = -Math.sin(spitch);
+			double sfz = Math.cos(st.yaw) * Math.cos(spitch);
+			double shx = feet.x;
+			double shy = feet.y + 1.3;
+			double shz = feet.z;
 			int n = st.n;
 			if (d2.length < n) {
 				d2 = new float[n];
@@ -267,6 +290,9 @@ public final class PetalSwarmRenderer {
 				if (x * fwx + y * fwy + z * fwz < -0.5) {
 					continue;
 				}
+				if (tpIdle && !SwarmView.tpKeep(i, tpv)) {
+					continue;
+				}
 				double sc = SwarmMath.scale(st.slots, i, t, mode) * shrink;
 				if (ribbon) {
 					sc *= SwarmMath.ribbonScale(st.slots, i, t, mode);
@@ -274,22 +300,27 @@ public final class PetalSwarmRenderer {
 				if (sc <= 0.001) {
 					continue;
 				}
+				double swordK = 1.0;
+				if (strike > 0.001) {
+					swordK = SwarmView.swordClear(x + cp.x - shx, y + cp.y - shy, z + cp.z - shz, sfx, sfy, sfz, strike, tpv);
+					sc *= swordK;
+					if (sc <= 0.001) {
+						continue;
+					}
+				}
 				if (fp) {
 					double distNow = Math.sqrt(dist2);
-					if (distNow < fpClear) {
+					double scOld = SwarmView.fpScale(i, distNow, fpv, false, 0);
+					double scIdle = idleW > 0 ? SwarmView.fpScale(i, distNow, fpv, true, activity) : scOld;
+					double k = scOld + (scIdle - scOld) * idleW;
+					if (k <= 0.001) {
 						fpCulled++;
 						continue;
 					}
-					double a = FxMath.smoothstep(fpClear, fpFade, distNow);
-					double hash = (i * 0.6180339887498949) % 1.0;
-					if (hash > fpKeep + (1.0 - fpKeep) * a) {
-						fpCulled++;
-						continue;
-					}
-					sc *= fpSize + (1.0 - fpSize) * a;
+					sc *= k;
 					fpNearest = Math.min(fpNearest, distNow);
 				}
-				double size = petalScale * sc * (mode.kind == SwarmMath.Kind.BARRIER ? 1.25 : 1.0) * (0.8 + 0.4 * st.slots.tumblePhase[i] / 6.2832);
+				double size = petalScale * sc * (tpIdle ? tpv.size : 1.0) * (mode.kind == SwarmMath.Kind.BARRIER ? 1.25 : 1.0) * (0.8 + 0.4 * st.slots.tumblePhase[i] / 6.2832);
 				double ang = st.slots.tumblePhase[i] + st.slots.tumbleRate[i] * now;
 				rot(st.slots.tx[i], st.slots.ty[i], st.slots.tz[i], ang, M);
 				// local axes: U (long) = column 1, V (width) = column 0, normal = column 2
@@ -355,10 +386,21 @@ public final class PetalSwarmRenderer {
 				petalsDrawn++;
 				// glow items: sparkle on the strong glints, streaks behind fast petals
 				// glow falls off smoothly for the owner's first person: weak next to the lens, full from about 1.5 x fpFade on
-					float fade = fp ? (float) (fpGlowMin + (1.0 - fpGlowMin) * FxMath.smoothstep(fpClear, fpFade * 1.5, dl)) : 1f;
-				if (glint > 0.55 && glints < 220 && dl < 40) {
+					float fade;
+					if (fp) {
+						double go = SwarmView.fpGlow(dl, fpv, false, 0);
+						double gi = SwarmView.fpGlow(dl, fpv, true, activity);
+						fade = (float) (go + (gi - go) * idleW);
+					} else if (tpIdle) {
+						fade = (float) (SwarmView.tpGlow(tpv) * swordK);
+					} else {
+						fade = (float) swordK;
+					}
+				// the white star glints flash whenever the view turns or the owner walks: in the owner's first person the resting swarm gets them only with swarm.fpGlint
+				float gl = fp ? (float) (fade * (1.0 + (fpv.glint - 1.0) * idleW)) : fade;
+				if (glint > 0.55 && glints < 220 && dl < 40 && gl > 0.01f) {
 					glints++;
-					addItem(0, x, y, z, 0, 0, 0, (float) glint, fade);
+					addItem(0, x, y, z, 0, 0, 0, (float) glint, gl);
 				}
 				if (streakStride > 0 && i % streakStride == 0 && dl < 24) {
 					SwarmMath.position(st.slots, i, Math.max(0, t - 0.02), mode, st.yaw, OUT2);
@@ -394,24 +436,82 @@ public final class PetalSwarmRenderer {
 		frames++;
 	}
 
-	/** Reads the third person ribbon numbers from fx_override.json (swarm.rb*), defaults = the shipped look. */
+	/** Reads the view gates from fx_override.json ({@code swarm.fp*}, {@code swarm.tp*}, {@code swarm.sword*}), defaults = the shipped numbers of {@link SwarmView}. */
+	private static void tuneView() {
+		SwarmView.Fp f = FPV;
+		f.clear = FxTune.d("swarm.fpClear", 1.5);
+		f.fade = FxTune.d("swarm.fpFade", 5.0);
+		f.keep = FxTune.d("swarm.fpKeep", 0.12);
+		f.size = FxTune.d("swarm.fpSize", 0.35);
+		f.glowMin = FxTune.d("swarm.fpGlowMin", 0.15);
+		f.idleClear = FxTune.d("swarm.fpIdleClear", 0.0);
+		f.idleEdge = FxTune.d("swarm.fpIdleEdge", 0.0);
+		f.idleDensity = FxTune.d("swarm.fpIdleDensity", 1.0);
+		f.idleGlow = FxTune.d("swarm.fpIdleGlow", 0.25);
+		f.glint = FxTune.d("swarm.fpGlint", 0.0);
+		f.moveClear = FxTune.d("swarm.fpMoveClear", 0.0);
+		f.moveCut = FxTune.d("swarm.fpMoveCut", 0.0);
+		f.moveGlowCut = FxTune.d("swarm.fpMoveGlowCut", 1.0);
+		SwarmView.Tp t = TPV;
+		t.keep = FxTune.d("swarm.tpKeep", 0.5);
+		t.glow = FxTune.d("swarm.tpGlow", 0.4);
+		t.swordClear = FxTune.d("swarm.swordClear", 1.1);
+		t.swordReach = FxTune.d("swarm.swordReach", 2.2);
+		t.size = FxTune.d("swarm.tpSize", 0.6);
+	}
+
+	/**
+	 * Motion of the local camera for the first person gate: the larger of the walking speed over {@code swarm.moveSpeedRef} (blocks per second) and the turn rate
+	 * over {@code swarm.moveTurnRef} (degrees per second), smoothed (fast up {@code swarm.moveUp}, slow down {@code swarm.moveDown}). {@code swarm.moveGate} 0 turns it off.
+	 */
+	private static void updateActivity(WorldRenderContext ctx, Vec3d cp) {
+		double yaw = ctx.camera().getYaw();
+		double pitch = ctx.camera().getPitch();
+		double dt = FxClock.dt;
+		if (Double.isNaN(lastYawDeg) || lastCam == null) {
+			lastYawDeg = yaw;
+			lastPitchDeg = pitch;
+			lastCam = cp;
+			activity = 0;
+			return;
+		}
+		if (dt < 1e-4 || FxClock.frozen) {
+			return;
+		}
+		double dy = Math.abs(MathHelper.wrapDegrees(yaw - lastYawDeg));
+		double dp = Math.abs(pitch - lastPitchDeg);
+		double sp = Math.hypot(cp.x - lastCam.x, cp.z - lastCam.z) / dt;
+		if (sp > 14.0) {
+			sp = 0; // a teleport, not a walk
+		}
+		double turn = (dy + dp) / dt;
+		lastYawDeg = yaw;
+		lastPitchDeg = pitch;
+		lastCam = cp;
+		double target = FxTune.d("swarm.moveGate", 1.0) > 0.5
+				? SwarmView.activity(sp, turn, FxTune.d("swarm.moveSpeedRef", 4.3), FxTune.d("swarm.moveTurnRef", 90.0)) : 0.0;
+		activity = SwarmView.smoothActivity(activity, target, dt, FxTune.d("swarm.moveUp", 12.0), FxTune.d("swarm.moveDown", 3.0));
+		lastActivity = activity;
+	}
+
+	/** Reads the third person loop numbers (figure eight / Moebius ribbons) from fx_override.json (swarm.rb*), defaults = the shipped look. */
 	private static void tuneRibbon() {
 		SwarmMath.RibbonParams p = SwarmMath.RIBBON;
-		p.streams = Math.max(1, (int) FxTune.d("swarm.rbStreams", 5));
-		p.turns = FxTune.d("swarm.rbTurns", 1.5);
+		p.streams = Math.max(1, (int) FxTune.d("swarm.rbStreams", 3));
 		p.hMid = FxTune.d("swarm.rbHMid", 1.1);
-		p.rangeMin = FxTune.d("swarm.rbRangeMin", 1.3);
-		p.rangeMax = FxTune.d("swarm.rbRangeMax", 2.3);
-		p.rBody = FxTune.d("swarm.rbRBody", 0.85);
-		p.rEnd = FxTune.d("swarm.rbREnd", 1.55);
-		p.flow = FxTune.d("swarm.rbFlow", 0.22);
-		p.flowVar = FxTune.d("swarm.rbFlowVar", 0.45);
+		p.radius = FxTune.d("swarm.rbRadius", 0.95);
+		p.radiusVar = FxTune.d("swarm.rbRadiusVar", 0.10);
+		p.amp = FxTune.d("swarm.rbAmp", 0.55);
+		p.tilt = FxTune.d("swarm.rbTilt", 0.40);
 		p.spin = FxTune.d("swarm.rbSpin", 0.10);
-		p.sigmaV = FxTune.d("swarm.rbSigmaV", 0.22);
-		p.sigmaR = FxTune.d("swarm.rbSigmaR", 0.07);
+		p.band = FxTune.d("swarm.rbBand", 0.14);
+		p.thick = FxTune.d("swarm.rbThick", 0.04);
+		p.twist = FxTune.d("swarm.rbTwist", 0.5);
+		p.flow = FxTune.d("swarm.rbFlow", 0.18);
+		p.flowVar = FxTune.d("swarm.rbFlowVar", 0.45);
 		p.lag = FxTune.d("swarm.rbLag", 0.35);
-		p.sizeMin = FxTune.d("swarm.rbSizeMin", 0.6);
-		p.sizeMax = FxTune.d("swarm.rbSizeMax", 1.5);
+		p.sizeMin = FxTune.d("swarm.rbSizeMin", 0.8);
+		p.sizeMax = FxTune.d("swarm.rbSizeMax", 1.7);
 	}
 
 	/** Smoothed owner velocity from the interpolated feet (the ribbon ends trail behind a moving owner). */

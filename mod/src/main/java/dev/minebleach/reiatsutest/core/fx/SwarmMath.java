@@ -226,34 +226,33 @@ public final class SwarmMath {
 		out[2] = Math.sin(ang) * r + nz;
 	}
 
-	// ------------------------------------------------------------------------------------------ third person ribbons (vfx2)
+	// ------------------------------------------------------------------------------------------ third person loops (vfx2, R12: figure eight / Moebius)
 
-	/** Numbers of the third person petal ribbons (the client tunes them from fx_override.json {@code swarm.rb*}). */
+	/** Numbers of the third person petal loops (the client tunes them from fx_override.json {@code swarm.rb*}). */
 	public static final class RibbonParams {
-		/** Number of ribbons that wrap the body. */
-		public int streams = 5;
-		/** Windings around the body along one ribbon. */
-		public double turns = 1.5;
-		/** Height of the middle of the ribbons and how far a ribbon climbs or falls from its start to its end. */
+		/** Number of loops that weave around the body. */
+		public int streams = 3;
+		/** Height of the centre of the loops, radius of a loop around the body, how far the radius differs between loops (fraction). */
 		public double hMid = 1.1;
-		public double rangeMin = 1.3;
-		public double rangeMax = 2.3;
-		/** Radius at the waist of the ribbon and at its two ends (the ribbon flares out and trails off there). */
-		public double rBody = 0.85;
-		public double rEnd = 1.55;
-		/** Flow along the ribbon in ribbons per second, and the spread of the speed between petals (0.45 = from 55 to 145 percent). */
-		public double flow = 0.22;
-		public double flowVar = 0.45;
-		/** Turn of the whole pattern in revolutions per second. */
+		public double radius = 0.95;
+		public double radiusVar = 0.10;
+		/** Vertical amplitude of the weave: the loop rises and falls twice per turn, which makes the figure eight seen from the side. */
+		public double amp = 0.55;
+		/** Tilt of the loop plane in radians (alternating sign between loops, so the loops cross each other) and the turn of the whole pattern in revolutions per second. */
+		public double tilt = 0.40;
 		public double spin = 0.10;
-		/** Thickness of the band: vertical and radial sigma at the waist (half of it at the ends). */
-		public double sigmaV = 0.22;
-		public double sigmaR = 0.07;
-		/** Seconds that the ribbon ends lag behind a moving owner. */
+		/** Half width and thickness of the band of petals; the band turns by {@link #twist} turns per loop (0.5 = a Moebius strip). */
+		public double band = 0.14;
+		public double thick = 0.04;
+		public double twist = 0.5;
+		/** Flow along the loop in loops per second, and the spread of the speed between petals (0.45 = from 55 to 145 percent). */
+		public double flow = 0.18;
+		public double flowVar = 0.45;
+		/** Seconds that the lobes lag behind a moving owner. */
 		public double lag = 0.35;
 		/** Size of a petal as a multiple of the base size, per petal from min to max. */
-		public double sizeMin = 0.6;
-		public double sizeMax = 1.5;
+		public double sizeMin = 0.8;
+		public double sizeMax = 1.7;
 	}
 
 	public static final RibbonParams RIBBON = new RibbonParams();
@@ -265,55 +264,55 @@ public final class SwarmMath {
 		return x - Math.floor(x);
 	}
 
-	/** 0 at the two ends of a ribbon, 1 in the middle. */
-	private static double ribbonEnv(double s01) {
-		return Math.sin(Math.PI * s01);
-	}
-
 	/**
-	 * Resting swarm in the third person: petal i flows along one of {@code streams} spiral ribbons that start low (or high), wrap the body one and a half times,
-	 * pass close to the waist and trail off again, in a band a few centimetres thick. Pure function of (seed, i, t), feet relative.
+	 * Resting swarm in the third person: petal i flows along one of {@code streams} closed loops that go around the body and rise and fall twice per turn
+	 * (a figure eight seen from the side). The petals sit in a flat band whose width turns by half a turn per loop, so it reads as a Moebius ribbon. The loops are
+	 * tilted against each other and the whole pattern turns slowly. Pure function of (seed, i, t), feet relative.
 	 */
 	public static void ribbonIdle(Slots s, int i, double t, double[] out) {
 		RibbonParams p = RIBBON;
 		int k = i % Math.max(1, p.streams);
 		double s01 = ribbonPhase(s, i, t);
-		double env = ribbonEnv(s01);
 		long sd = s.seed;
-		double th0 = 2 * Math.PI * k / Math.max(1, p.streams) + 0.3 * FxHash.signed(sd, k, 91);
-		double turns = p.turns * (1.0 + 0.18 * FxHash.signed(sd, k, 92));
-		double range = p.rangeMin + (p.rangeMax - p.rangeMin) * FxHash.unit(sd, k, 93);
-		double dirV = (k & 1) == 0 ? 1.0 : -1.0;
-		double ang = th0 + 2 * Math.PI * (turns * s01 + p.spin * t);
-		double h = p.hMid + dirV * (s01 - 0.5) * range + 0.10 * FxHash.signed(sd, k, 94) + 0.07 * Math.sin(2 * Math.PI * (2.0 * s01) + th0);
-		double r = (p.rBody + (p.rEnd - p.rBody) * (1.0 - Math.pow(env, 0.8))) * (1.0 + 0.07 * FxHash.signed(sd, k, 95));
-		double rr = r + s.g1[i] * p.sigmaR * (0.5 + 0.5 * env);
-		double hh = h + s.g2[i] * p.sigmaV * (0.5 + 0.5 * env);
-		out[0] = Math.cos(ang) * rr;
-		out[1] = Math.max(0.03, hh);
-		out[2] = Math.sin(ang) * rr;
+		double u = 2 * Math.PI * (s01 + k / (double) Math.max(1, p.streams) * 0.5);
+		double r = p.radius * (1.0 + p.radiusVar * FxHash.signed(sd, k, 95));
+		// the loop in its own frame: a circle with a vertical weave of twice the frequency
+		double cx = Math.cos(u) * r;
+		double cz = Math.sin(u) * r;
+		double cy = Math.sin(2 * u + k) * p.amp;
+		// the band: across the loop in the plane of (outward, up), turned by the twist
+		double psi = 2 * Math.PI * p.twist * (u / (2 * Math.PI)) + k * 1.3;
+		double w = s.g1[i] * p.band * 0.5;
+		double th = s.g2[i] * p.thick * 0.5;
+		double ox = Math.cos(u) * (Math.cos(psi) * w) + Math.cos(u) * th;
+		double oz = Math.sin(u) * (Math.cos(psi) * w) + Math.sin(u) * th;
+		double oy = Math.sin(psi) * w;
+		double x = cx + ox;
+		double y = cy + oy;
+		double z = cz + oz;
+		// tilt the loop about the x axis (alternating sign), then turn the pattern about the vertical axis
+		double a = ((k & 1) == 0 ? 1.0 : -1.0) * p.tilt * (1.0 + 0.25 * FxHash.signed(sd, k, 91));
+		double ca = Math.cos(a);
+		double sa = Math.sin(a);
+		double y2 = y * ca - z * sa;
+		double z2 = y * sa + z * ca;
+		double ang = 2 * Math.PI * (p.spin * t) + k * 2 * Math.PI / Math.max(1, p.streams) + 0.4 * FxHash.signed(sd, k, 92);
+		double cb = Math.cos(ang);
+		double sb = Math.sin(ang);
+		out[0] = x * cb - z2 * sb;
+		out[1] = Math.max(0.03, p.hMid + y2);
+		out[2] = x * sb + z2 * cb;
 	}
 
-	/** Weight 0..1 of the lag behind a moving owner: 1 at the ribbon ends, 0 in the middle. */
+	/** Weight 0..1 of the lag behind a moving owner: 1 on the two lobes of the figure eight, 0 where the loop crosses. */
 	private static double ribbonTrail(Slots s, int i, double t) {
-		double env = ribbonEnv(ribbonPhase(s, i, t));
-		return Math.pow(1.0 - env, 1.5);
+		return 0.5 + 0.5 * Math.cos(4 * Math.PI * ribbonPhase(s, i, t));
 	}
 
-	/**
-	 * Size factor of petal i in the ribbon: a fixed size per petal (small and large ones) and, at rest, shrinking to nothing where the ribbon starts and ends so
-	 * petals do not pop in or out. The mode decides whether the petal sits on its ribbon (petals in flight keep their size).
-	 */
+	/** Size factor of petal i in the loops: a fixed size per petal (small and large ones). The loops are closed, so nothing shrinks at an end. */
 	public static double ribbonScale(Slots s, int i, double t, Mode m) {
 		RibbonParams p = RIBBON;
-		double sizeVar = p.sizeMin + (p.sizeMax - p.sizeMin) * s.uh[i];
-		boolean resting = m.kind == Kind.IDLE || (m.kind == Kind.ATTACK && !s.ribbon(i));
-		if (!resting) {
-			return sizeVar;
-		}
-		double env = Math.pow(ribbonEnv(ribbonPhase(s, i, t)), 0.6);
-		double w = m.kind == Kind.IDLE ? smooth(0, 0.6, t - m.t0) : 1.0;
-		return sizeVar * lerp(1.0, env, w);
+		return p.sizeMin + (p.sizeMax - p.sizeMin) * s.uh[i];
 	}
 
 	/** The resting position of petal i: the third person ribbons when {@code m.ribbonIdle}, else the classic orbit (first person of the owner). */

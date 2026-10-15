@@ -179,7 +179,7 @@ class SwarmMathTest {
 	}
 
 	@Test
-	void ribbonPetalsHaveDifferentSizesAndShrinkAtTheEnds() {
+	void ribbonPetalsHaveDifferentSizes() {
 		Slots s = new Slots(5, 300);
 		Mode m = new Mode(Kind.IDLE, 0);
 		m.ribbonIdle = true;
@@ -190,8 +190,54 @@ class SwarmMathTest {
 			min = Math.min(min, v);
 			max = Math.max(max, v);
 		}
-		assertTrue(max > 2.0 * min, "size variation " + min + " .. " + max);
-		assertTrue(min < 0.45, "petals at the ends are small");
+		assertTrue(max > 1.8 * min, "size variation " + min + " .. " + max);
+		assertTrue(min > 0.5, "the loops are closed: nothing shrinks to zero at an end");
+	}
+
+	@Test
+	void theLoopsAreClosedFigureEightsThatWeaveAroundTheBody() {
+		Slots s = new Slots(21, 30);
+		double dt = 1.0 / 60;
+		for (int i = 0; i < 6; i++) {
+			// along one loop the height crosses the middle of the loop at least four times (two weaves = a figure eight seen from the side)
+			int crossings = 0;
+			double prevSign = 0;
+			double minR = 9;
+			double maxR = 0;
+			for (double t = 0; t < 12.0; t += dt) {
+				double[] p = new double[3];
+				SwarmMath.ribbonIdle(s, i, t, p);
+				double sign = Math.signum(p[1] - SwarmMath.RIBBON.hMid);
+				if (prevSign != 0 && sign != 0 && sign != prevSign) {
+					crossings++;
+				}
+				if (sign != 0) {
+					prevSign = sign;
+				}
+				double r = Math.hypot(p[0], p[2]);
+				minR = Math.min(minR, r);
+				maxR = Math.max(maxR, r);
+			}
+			assertTrue(crossings >= 4, "petal " + i + " crosses the middle height " + crossings + " times");
+			// it goes AROUND the body: never through the axis (a cylinder would be a constant radius, a figure eight through the body would pass r = 0)
+			assertTrue(minR > 0.45, "petal " + i + " stays off the body: " + minR);
+			assertTrue(maxR < 1.7, "petal " + i + " stays close: " + maxR);
+		}
+	}
+
+	@Test
+	void theLoopRadiusIsNotConstantLikeACylinder() {
+		Slots s = new Slots(33, 300);
+		double min = 9;
+		double max = 0;
+		double[] p = new double[3];
+		for (int i = 0; i < 300; i++) {
+			SwarmMath.ribbonIdle(s, i, 3.0, p);
+			double r = Math.hypot(p[0], p[2]);
+			min = Math.min(min, r);
+			max = Math.max(max, r);
+		}
+		assertTrue(max - min > 0.25, "the tilted loops make the radius vary with the height: " + min + " .. " + max);
 	}
 
 	@Test

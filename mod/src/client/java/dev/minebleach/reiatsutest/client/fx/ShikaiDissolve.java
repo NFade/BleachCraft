@@ -177,7 +177,21 @@ public final class ShikaiDissolve {
 
 	/** True while the world part of an effect of this caster is alive (the item render then hands over its pose). */
 	public static boolean wantsPose(int entityId) {
-		return RUNS.containsKey(entityId);
+		return RUNS.containsKey(entityId) || PetalBladeFx.wantsPose(entityId);
+	}
+
+	/**
+	 * World positions of the root (saya mouth) and the tip of the blade of this player in the last frame, from the pose the hand item render handed over; false when there
+	 * is no fresh pose. {@code cam} and {@code camRot} are the camera of the frame (third person poses carry the inverse camera rotation).
+	 */
+	public static boolean worldBlade(int id, Vec3d cam, Quaternionf camRot, double[] rootOut, double[] tipOut) {
+		Pose po = POSES.get(id);
+		if (po == null || po.base == null || System.nanoTime() - po.nanos > POSE_FRESH_NANOS) {
+			return false;
+		}
+		toWorld(po, po.base[0], po.base[1], po.base[2], cam, camRot, rootOut);
+		toWorld(po, po.base[0] + po.dir[0] * po.len, po.base[1] + po.dir[1] * po.len, po.base[2] + po.dir[2] * po.len, cam, camRot, tipOut);
+		return true;
 	}
 
 	/** True when the world part has a fresh pose of this caster's sword (the old guessed glow of {@link ReleaseHold} then stays off). */
@@ -312,7 +326,8 @@ public final class ShikaiDissolve {
 		return l;
 	}
 
-	private static void fillFlight(Look l) {
+	/** Fills the flight numbers of a look from the keys ({@code release.spiral}, {@code spiralRadius}, {@code petalLift}, {@code petalLife}). */
+	public static void fillFlight(Look l) {
 		double m = FxConfig.reduceMotion ? 0.6 : 1.0;
 		l.spiral = FxTune.d("release.spiral", 1.0) * m;
 		l.radius = FxTune.d("release.spiralRadius", 0.7);
@@ -340,10 +355,40 @@ public final class ShikaiDissolve {
 		p.shardS = shardS;
 	}
 
+	/** Factor of the first person hand pose for the world fov ({@code fx.handFovFix} 0 turns it off, {@code fx.handFov} sets the fov, 0 = the option). */
+	private static double handFovScale() {
+		if (FxTune.d("fx.handFovFix", 1.0) < 0.5) {
+			return 1.0;
+		}
+		double fov = FxTune.d("fx.handFov", 0.0);
+		if (fov > 1.0) {
+			return dev.minebleach.reiatsutest.core.fx.HandFov.scale(fov);
+		}
+		if (worldTanHalfFov > 0) {
+			return dev.minebleach.reiatsutest.core.fx.HandFov.scaleFromTan(worldTanHalfFov); // the fov of the frame, sprint included
+		}
+		return dev.minebleach.reiatsutest.core.fx.HandFov.scale(MinecraftClient.getInstance().options.getFov().getValue());
+	}
+
+	/** tan(fov / 2) of the world pass of the current frame (from its projection matrix), 0 before the first frame. */
+	private static double worldTanHalfFov;
+
 	private static void toWorld(Pose po, double x, double y, double z, Vec3d cam, Quaternionf camRot, double[] out) {
 		po.m.transformPosition((float) x, (float) y, (float) z, TMP);
 		if (!po.fp) {
 			camRot.transform(TMP);
+		} else {
+			// the hand pass uses a fixed fov of 70, the world the fov of the options: scale the offset across the view so that the world effect sits on the drawn sword (HandFov)
+			double k = handFovScale();
+			if (Math.abs(k - 1.0) > 1.0e-3) {
+				Vector3f r = camRot.transform(new Vector3f(1, 0, 0));
+				Vector3f u = camRot.transform(new Vector3f(0, 1, 0));
+				Vector3f f = camRot.transform(new Vector3f(0, 0, -1));
+				float dx = TMP.dot(r);
+				float dy = TMP.dot(u);
+				float dz = TMP.dot(f);
+				TMP.set(r.mul((float) (dx * k)).add(u.mul((float) (dy * k))).add(f.mul(dz)));
+			}
 		}
 		out[0] = cam.x + TMP.x;
 		out[1] = cam.y + TMP.y;
@@ -426,6 +471,10 @@ public final class ShikaiDissolve {
 	}
 
 	private static void draw(WorldRenderContext ctx) {
+		float m11 = ctx.projectionMatrix() == null ? 0f : ctx.projectionMatrix().m11();
+		if (m11 > 0.05f) {
+			worldTanHalfFov = 1.0 / m11;
+		}
 		if (RUNS.isEmpty()) {
 			lastPetals = 0;
 			return;
@@ -813,6 +862,12 @@ public final class ShikaiDissolve {
 			boolean fp = r.fpOwner;
 			double fpK = fp ? fpScale : 1.0;
 			if (fp && FxTune.d("release.dissolveFpWorld", 1.0) < 0.5) {
+				continue;
+			}
+			// R12: in the owner's first person the glow along the blade, at the hilt and the flashes on the front are placed in the world from the captured hand pose; the hand pass
+			// moves with the view bobbing (running) and the hurt tilt, so they slid off the blade. The glow of the blade in the hand is made of shells of the item model
+			// (ObjItemBakedModel#emitBloomLayers), which always sit on it: release.fpPoseGlow 1 brings the old world glow back.
+			if (fp && FxTune.d("release.fpPoseGlow", 0.0) < 0.5) {
 				continue;
 			}
 			// ---- blade halo, beam, hilt

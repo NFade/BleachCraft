@@ -192,6 +192,7 @@ public final class SwarmFx {
 		SwarmMath.Mode m = new SwarmMath.Mode(SwarmMath.Kind.ATTACK, t).aim(aimWorld.x - feet.x, aimWorld.y - feet.y, aimWorld.z - feet.z);
 		st.setMode(m);
 		attacks++;
+		PetalBladeFx.dispel(e.casterId()); // R12: an ability lets the petal sword go at once
 		EffectTimeline tl = FxTimelines.create(30, e.seed(), pos, new Vec3d(e.dx(), e.dy(), e.dz()), e.params(), e.casterId(), FxClient.forceRemote());
 		tl.at(0.0, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_ATTACK_START, "entity.player.attack.sweep", 0.9, 0.8));
 		tl.at(0.2, x -> {
@@ -319,6 +320,7 @@ public final class SwarmFx {
 		}
 		st.setMode(new SwarmMath.Mode(SwarmMath.Kind.BARRIER, st.time()));
 		barriers++;
+		PetalBladeFx.dispel(e.casterId()); // R12: an ability lets the petal sword go at once
 		EffectTimeline tl = FxTimelines.create(31, e.seed(), pos, new Vec3d(e.dx(), e.dy(), e.dz()), e.params(), e.casterId(), FxClient.forceRemote());
 		tl.at(0.0, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_BARRIER_START, "block.beacon.power_select", 1.1, 0.6));
 		tl.at(0.3, x -> x.sound(SoundIds.BYAKUYA_SHIKAI_BARRIER_START, "item.shield.block", 0.8, 0.7));

@@ -245,6 +245,9 @@ public final class AuraFx {
 		double now = FxClock.now;
 		int made = 0;
 		int cap = 120;
+		// R12: in the owner's first person everything of the aura that is born around the body is born around the lens: the glints, motes and glow discs flash white
+		// when the player walks into them (forward or back) or turns; each kind is scaled by aura.firstPerson* (default 0)
+		boolean fp = pl == MinecraftClient.getInstance().player && MinecraftClient.getInstance().options.getPerspective().isFirstPerson();
 		// the wisps are alpha sprites: at night they would bury the body, in daylight they are what carries the aura, so they follow the sky light
 		double day = FxMath.clamp((MinecraftClient.getInstance().world.getSkyBrightness(1.0f) - 0.2) / 0.8);
 		double wispMul = FxMath.lerp(tune("nightWisp", 0.55), 1.0, day);
@@ -280,6 +283,9 @@ public final class AuraFx {
 		// ------------------------------------------------------------------ glittering motes (alpha sprites: they read in daylight)
 		double moteRate = rukia ? (bankai ? 8 : 12) : (bankai ? 10 : 8);
 		n = count(moteRate);
+		if (fp) {
+			n = (int) (n * tune("firstPersonMote", 0.0));
+		}
 		for (int i = 0; i < n && a.live.size() < cap && clientTotal + made < 400; i++) {
 			double ang = RNG.nextDouble() * Math.PI * 2;
 			double rad = 0.5 + RNG.nextDouble() * (bankai ? 0.9 : 0.6);
@@ -302,10 +308,13 @@ public final class AuraFx {
 		double glow = tune("glow", 1.0);
 		// body glow: two soft discs one above the other (a tall column glow without hard edges, kept above the ground)
 		double bodyS = bankai ? 1.7 : 1.35;
-		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(feet.x, feet.y + 0.75, feet.z).axisY().size(bodyS).lifeTicks(12).curve(0.12, 0.6).color(halo)
-				.peak((bankai ? 0.30 : 0.26) * glow * (1.0 + 0.3 * day)).lod(lod).spawn();
-		FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(feet.x, feet.y + 1.55, feet.z).axisY().size(bodyS * 0.9).lifeTicks(12).curve(0.12, 0.6).color(halo)
-				.peak((bankai ? 0.26 : 0.22) * glow * (1.0 + 0.3 * day)).lod(lod).spawn();
+		double bodyK = fp ? tune("firstPersonBody", 0.0) : 1.0;
+		if (bodyK > 0.001) {
+			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(feet.x, feet.y + 0.75, feet.z).axisY().size(bodyS).lifeTicks(12).curve(0.12, 0.6).color(halo)
+					.peak((bankai ? 0.30 : 0.26) * glow * (1.0 + 0.3 * day) * bodyK).lod(lod).spawn();
+			FxGlowBatch.sprite(GlowSprite.GLOW_SOFT).at(feet.x, feet.y + 1.55, feet.z).axisY().size(bodyS * 0.9).lifeTicks(12).curve(0.12, 0.6).color(halo)
+					.peak((bankai ? 0.26 : 0.22) * glow * (1.0 + 0.3 * day) * bodyK).lod(lod).spawn();
+		}
 		if (!(!rukia && bankai) && tickCounter >= a.nextRingTick && !(rukia && bankai && stillness(a) < 0.5)) {
 			a.nextRingTick = tickCounter + (bankai ? 28 : 24);
 			FxGlowBatch.sprite(GlowSprite.RING_SOFT).at(feet.x, feet.y + 0.05, feet.z).ground().size(1.6, bankai ? 5.4 : 4.2).sizeEase(FxMath.OC).life(0.9)
@@ -338,12 +347,15 @@ public final class AuraFx {
 		} else if (rukia) {
 			made += rukiaBankaiExtras(a, feet, lod, now, cap, clientTotal + made, fx, fz, glow);
 		} else if (!bankai) {
-			// Byakuya shikai: lilac star glints and rising glow petals
-			if (RNG.nextDouble() < 0.6) {
+			// Byakuya shikai: lilac star glints and rising glow petals (not in the owner's first person: they are born around the lens)
+			if (!fp && RNG.nextDouble() < 0.6 || fp && RNG.nextDouble() < 0.6 * tune("firstPersonGlint", 0.0)) {
 				FxGlowBatch.sprite(GlowSprite.STAR4).at(feet.x + (RNG.nextDouble() - 0.5) * 1.2, feet.y + 0.4 + RNG.nextDouble() * 1.6, feet.z + (RNG.nextDouble() - 0.5) * 1.2)
 						.lifeTicks(9).size(0.3 + RNG.nextDouble() * 0.3).color("#F3E4FF").peak(0.85).twinkle().rot(RNG.nextDouble() * 6.28, 1.0).lod(lod).spawn();
 			}
 			n = count(3);
+			if (fp) {
+				n = (int) (n * tune("firstPersonPetal", 0.0));
+			}
 			for (int i = 0; i < n; i++) {
 				double ang = RNG.nextDouble() * Math.PI * 2;
 				double rad = 0.5 + RNG.nextDouble() * 0.5;
