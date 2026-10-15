@@ -22,6 +22,8 @@ public final class UryuBowFlow {
 	public static final double FADE_OUT = 0.15;
 	/** A draw shorter than this many ticks is cancelled, not released (no release animation). */
 	public static final double MIN_RELEASE_TICKS = 1.0;
+	/** A cast start event this many seconds old makes the event of the same ability not restart its animation. */
+	public static final double CAST_START_WINDOW = 3.0;
 
 	private final ToIntFunction<String> endTicks;
 	private Phase phase = Phase.OFF;
@@ -35,6 +37,8 @@ public final class UryuBowFlow {
 	private double last = Double.NaN;
 	private boolean wasUsing;
 	private double useTicks;
+	private String castAnim;
+	private double castAt;
 
 	/** @param endTicks end tick of an animation by name (the track's {@code endTick}); 0 for an unknown name ends it at once */
 	public UryuBowFlow(ToIntFunction<String> endTicks) {
@@ -153,5 +157,47 @@ public final class UryuBowFlow {
 			return;
 		}
 		switchTo(Phase.ABILITY, animName, startTick, now);
+	}
+
+	/**
+	 * An effect event of an Uryu ability for this player. {@code castStart}: the cast start event (the key press of Licht Regen and Sternenstaub, effect 78),
+	 * which starts the animation from its first tick; the ability event itself then does not restart that animation when it comes within
+	 * {@link #CAST_START_WINDOW} seconds (the animation already runs since the key press); without a cast start (an old server, or an ability that has none)
+	 * the animation starts at the tick {@link UryuAnims.Meta#startTick()}, a few ticks before the release.
+	 *
+	 * @return true when the animation was (re)started
+	 */
+	public boolean onAbility(UryuAnims.Meta m, boolean castStart, double now) {
+		if (m == null) {
+			return false;
+		}
+		if (castStart) {
+			castAnim = m.anim();
+			castAt = now;
+			trigger(m.anim(), 0, now);
+			return true;
+		}
+		if (m.anim().equals(castAnim) && now - castAt < CAST_START_WINDOW) {
+			castAnim = null;
+			return false;
+		}
+		trigger(m.anim(), m.startTick(), now);
+		return true;
+	}
+
+	/**
+	 * Progress 0..1 of the raise or the draw before the effect event of an ability that has a cast start (Licht Regen, Sternenstaub: the animation runs since
+	 * the key press and the first person gesture of the ability only starts at the event), or -1 when the flow is not in that phase.
+	 */
+	public double preEvent(double now) {
+		if (phase != Phase.ABILITY) {
+			return -1.0;
+		}
+		UryuAnims.Meta m = UryuAnims.meta(anim);
+		if (m == null || m.startTick() <= 0 || m.eventTick() <= 0) {
+			return -1.0;
+		}
+		double t = tick(now);
+		return t >= m.eventTick() ? -1.0 : Math.max(0.0, t / m.eventTick());
 	}
 }

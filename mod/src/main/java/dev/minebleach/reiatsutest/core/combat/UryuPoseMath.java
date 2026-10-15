@@ -171,4 +171,21 @@ public final class UryuPoseMath {
 			default -> part;
 		};
 	}
+
+	/** Frequency of the breathing of the idle hold in Hz (storyboard 3.2). */
+	public static final double BREATH_HZ = 0.22;
+	/** Hand rise of the first person breathing in blocks and its roll in degrees at full strength (storyboard 3.2). */
+	public static final double BREATH_RISE = 0.004;
+	public static final double BREATH_ROLL = 0.8;
+
+	/** Strength of the breathing: the configured factor, halved for Reduce Motion / photosensitive safe mode. */
+	public static double breathScale(boolean reduceMotion, double configured) {
+		return reduceMotion ? 0.5 * configured : configured;
+	}
+
+	/** The {@code R} row (px, py, pz, rx, ry, rz) of the first person breathing at {@code now} seconds: the hand rises and falls 0.004 blocks and rolls 0.8 degrees at 0.22 Hz. */
+	public static float[] breathRow(double now, double scale) {
+		float s = (float) (Math.sin(2.0 * Math.PI * BREATH_HZ * now) * scale);
+		return new float[] {0f, (float) (BREATH_RISE * s), 0f, 0f, 0f, (float) (BREATH_ROLL * s)};
+	}
 }

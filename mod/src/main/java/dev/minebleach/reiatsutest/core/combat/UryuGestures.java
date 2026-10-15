@@ -47,6 +47,17 @@ public final class UryuGestures {
 		return g != null && !g.keys('L').isEmpty();
 	}
 
+	/** The first person gesture the pull state machine samples for an animation of {@link UryuAnims} ({@link #DRAW} for the draw, {@link #RELEASE} for the release), or null. */
+	public static String rowId(String anim) {
+		return UryuAnims.DRAW.equals(anim) ? DRAW : UryuAnims.RELEASE.equals(anim) ? RELEASE : null;
+	}
+
+	/** Time in seconds into the rows of {@link #rowId} for an animation tick ({@link #DRAW} holds at its last row for as long as the key is held). */
+	public static float rowTime(String anim, double tick, double dur) {
+		float t = (float) (tick / UryuBowFlow.TPS);
+		return UryuAnims.DRAW.equals(anim) ? (float) Math.min(t, dur) : t;
+	}
+
 	static void addTo(Map<String, CastGesture> m) {
 		put(m, draw());
 		put(m, release(RELEASE));

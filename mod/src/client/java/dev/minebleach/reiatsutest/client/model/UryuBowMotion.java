@@ -6,12 +6,14 @@ import dev.minebleach.reiatsutest.client.ClientOptions;
 import dev.minebleach.reiatsutest.client.fx.FxConfig;
 import dev.minebleach.reiatsutest.core.combat.CastGesture;
 import dev.minebleach.reiatsutest.core.combat.CastGestures;
+import dev.minebleach.reiatsutest.core.combat.FpEase;
 import dev.minebleach.reiatsutest.core.combat.TpMat4;
 import dev.minebleach.reiatsutest.core.combat.UryuAnims;
 import dev.minebleach.reiatsutest.core.combat.UryuBowFlow;
 import dev.minebleach.reiatsutest.core.combat.UryuGestures;
 import dev.minebleach.reiatsutest.core.combat.UryuPoseMath;
 import dev.minebleach.reiatsutest.core.combat.UryuPoseTrack;
+import dev.minebleach.reiatsutest.core.combat.UryuStringHand;
 import dev.minebleach.reiatsutest.core.combat.UryuTpPose;
 import dev.minebleach.reiatsutest.core.state.EffectIds;
 import dev.minebleach.reiatsutest.net.EffectEventS2C;
@@ -51,21 +53,12 @@ import org.joml.Quaternionf;
  */
 public final class UryuBowMotion {
 	private static final float RAD = (float) (Math.PI / 180.0);
-	private static final float FIST_X = 0.134f;
-	private static final float FIST_Y = -0.018f;
-	private static final float FIST_Z = -0.316f;
-	/** Turn of the string arm about its fist (degrees, right hander layout): it comes in from the lower left like the free hand of the two handed hold. */
-	private static final float[] STRING_ARM_TURN = {-15f, -30f, -35f};
-	/** A cast start (effect 78) this many seconds old makes the ability event of the same ability not restart its animation. */
-	private static final double CAST_START_WINDOW = 3.0;
 
 	private static final class St {
 		final UryuBowFlow flow = new UryuBowFlow(UryuBowMotion::endTick);
 		long nanos;
 		UryuTpPose.Frame frame;
 		float lookPitchDeg;
-		String castAnim;
-		double castAt;
 		float presence;
 		long presenceNanos;
 	}
@@ -202,7 +195,7 @@ public final class UryuBowMotion {
 		}
 		boolean rm = FxConfig.reduceMotion || FxConfig.photosensitiveSafe;
 		st.frame = new UryuTpPose.Frame(cur, prev, f.xfade(now), f.weight(), mirror, Math.toRadians(st.lookPitchDeg), now,
-				rm ? 0.5 * num("breath", 1f) : num("breath", 1f), !rm);
+				UryuPoseMath.breathScale(rm, num("breath", 1f)), !rm);
 		return st;
 	}
 
@@ -261,18 +254,7 @@ public final class UryuBowMotion {
 				return;
 			}
 			float td = mc.getRenderTickCounter().getTickDelta(false);
-			St st = update(player, td);
-			double now = nowSeconds();
-			if (castStart) {
-				st.castAnim = m.anim();
-				st.castAt = now;
-				st.flow.trigger(m.anim(), 0, now);
-			} else if (m.anim().equals(st.castAnim) && now - st.castAt < CAST_START_WINDOW) {
-				// the animation runs since the key press: the event of the release changes nothing
-				st.castAnim = null;
-			} else {
-				st.flow.trigger(m.anim(), m.startTick(), now);
-			}
+			update(player, td).flow.onAbility(m, castStart, nowSeconds());
 		} catch (RuntimeException ex) {
 			ReiatsuTest.LOGGER.warn("[uryupose] event failed: {}", ex.toString());
 		}
@@ -280,47 +262,13 @@ public final class UryuBowMotion {
 
 	// ------------------------------------------------------------------ first person
 
-	private static CastGesture.Sample sampleGesture(String anim, double tick) {
-		String id = UryuAnims.DRAW.equals(anim) ? UryuGestures.DRAW : UryuAnims.RELEASE.equals(anim) ? UryuGestures.RELEASE : null;
-		if (id == null) {
-			return null;
-		}
-		CastGesture g = FpCast.gesture(id);
-		if (g == null) {
-			return null;
-		}
-		float t = (float) (tick / UryuBowFlow.TPS);
-		if (UryuAnims.DRAW.equals(anim)) {
-			t = Math.min(t, g.dur());
-			return g.sample(t, t);
-		}
-		return g.sampleReal(t);
-	}
-
-	/**
-	 * Progress 0..1 of the raise or the draw before the effect event of Licht Regen and Sternenstaub (their animation runs since the cast start event, the key press,
-	 * and their first person gesture only starts at the release event), or -1 when the flow is not in that phase.
-	 */
-	private static double preEvent(UryuBowFlow f, double now) {
-		if (f.phase() != UryuBowFlow.Phase.ABILITY) {
-			return -1.0;
-		}
-		UryuAnims.Meta m = UryuAnims.meta(f.anim());
-		if (m == null || m.startTick() <= 0 || m.eventTick() <= 0) {
-			return -1.0;
-		}
-		double t = f.tick(now);
-		return t >= m.eventTick() ? -1.0 : Math.max(0.0, t / m.eventTick());
-	}
-
-	/** The quiet breath of the idle hold: the hand rises and falls 0.004 blocks and rolls 0.8 degrees at 0.22 Hz (storyboard 3.2), scaled by the breath factor of the frame. */
+	/** The quiet breath of the idle hold ({@link UryuPoseMath#breathRow}), scaled by the breath factor of the frame. */
 	private static CastGesture.Sample breath(St st, double now) {
 		double b = st.frame == null ? 0.0 : st.frame.breath();
 		if (b <= 0.0) {
 			return null;
 		}
-		float s = (float) (Math.sin(2.0 * Math.PI * 0.22 * now) * b);
-		return new CastGesture.Sample(new float[] {0f, 0.004f * s, 0f, 0f, 0f, 0.8f * s}, new float[CastGesture.L_DIM], new float[CastGesture.C_DIM],
+		return new CastGesture.Sample(UryuPoseMath.breathRow(now, b), new float[CastGesture.L_DIM], new float[CastGesture.C_DIM],
 				new float[CastGesture.T_DIM], new float[CastGesture.T_DIM], (float) st.flow.weight(), 0f);
 	}
 
@@ -330,28 +278,21 @@ public final class UryuBowMotion {
 		}
 		UryuBowFlow f = st.flow;
 		if (f.phase() == UryuBowFlow.Phase.ABILITY && anim.equals(f.anim())) {
-			double k = preEvent(f, now);
+			double k = f.preEvent(now);
 			UryuAnims.Meta m = UryuAnims.meta(anim);
 			CastGesture g = m == null || k < 0.0 ? null : FpCast.gesture(m.gesture());
 			if (g != null) {
 				// the pose the gesture starts from (its first rows: bow raised, string hand back) is reached by the event
-				return CastGesture.Sample.fade(g.sample(0f, 0f), dev.minebleach.reiatsutest.core.combat.FpEase.smooth((float) k));
+				return CastGesture.Sample.fade(g.sample(0f, 0f), FpEase.smooth((float) k));
 			}
 		}
-		String id = UryuAnims.DRAW.equals(anim) ? UryuGestures.DRAW : UryuAnims.RELEASE.equals(anim) ? UryuGestures.RELEASE : null;
-		if (id == null) {
-			return null;
-		}
-		CastGesture g = FpCast.gesture(id);
+		String id = UryuGestures.rowId(anim);
+		CastGesture g = id == null ? null : FpCast.gesture(id);
 		if (g == null) {
 			return null;
 		}
-		float t = (float) (tick / UryuBowFlow.TPS);
-		if (UryuAnims.DRAW.equals(anim)) {
-			t = Math.min(t, g.dur());
-			return g.sample(t, t);
-		}
-		return g.sampleReal(t);
+		float t = UryuGestures.rowTime(anim, tick, g.dur());
+		return UryuAnims.DRAW.equals(anim) ? g.sample(t, t) : g.sampleReal(t);
 	}
 
 	/**
@@ -389,43 +330,30 @@ public final class UryuBowMotion {
 		boolean candidate = ClientOptions.showFirstPersonHand && fpOn() && !player.isInvisible() && !player.isUsingSpyglass()
 				&& shown == player.getMainHandStack() && UryuCrossItem.isBow(shown);
 		St st = STATES.get(player.getId());
-		long now = System.nanoTime();
-		boolean want = false;
-		if (candidate && gs != null && st != null) {
-			UryuBowFlow.Phase ph = st.flow.phase();
-			String run = FpCast.runId(player.getId());
-			want = ph == UryuBowFlow.Phase.DRAW || ph == UryuBowFlow.Phase.RELEASE && st.flow.tick(now / 1.0e9) < 14.0
-					|| preEvent(st.flow, now / 1.0e9) >= 0.0 || run != null && UryuGestures.hasStringHand(run);
-		}
 		if (st == null) {
 			return;
 		}
-		float dt = st.presenceNanos == 0L ? 0f : Math.min(0.1f, (now - st.presenceNanos) / 1.0e9f);
-		st.presenceNanos = now;
-		st.presence = want ? Math.min(1f, st.presence + dt / 0.18f) : Math.max(0f, st.presence - dt / 0.22f);
+		long nanos = System.nanoTime();
+		double now = nanos / 1.0e9;
+		String run = FpCast.runId(player.getId());
+		boolean want = UryuStringHand.wanted(candidate, gs != null, st.flow.phase(), st.flow.tick(now), st.flow.preEvent(now),
+				run != null && UryuGestures.hasStringHand(run));
+		float dt = st.presenceNanos == 0L ? 0f : Math.min(0.1f, (nanos - st.presenceNanos) / 1.0e9f);
+		st.presenceNanos = nanos;
+		st.presence = UryuStringHand.presence(st.presence, want, dt);
 		if (st.presence <= 0.002f || gs == null) {
 			return;
 		}
-		MinecraftClient mc = MinecraftClient.getInstance();
-		boolean left = player.getMainArm() == Arm.LEFT;
-		int i = left ? -1 : 1;
-		float[] gl = gs.l();
-		float eqY = -0.6f * (1f - Math.max(0f, Math.min(1f, equip)));
-		float e = dev.minebleach.reiatsutest.core.combat.FpEase.smooth(st.presence);
-		// absolute (camera frame of the hand code): the main hand frame plus the row, the place of the empty fist of the other hand, the way in from below
-		org.joml.Vector3f target = new org.joml.Vector3f(i * 0.56f + i * gl[0], -0.52f + eqY + gl[1], -0.72f + gl[2]);
-		org.joml.Vector3f rest = new org.joml.Vector3f(-i * (0.56f + FIST_X), -0.52f + eqY + FIST_Y, -0.72f + FIST_Z);
-		org.joml.Vector3f from = new org.joml.Vector3f(target).add(0f, -0.9f, 0.1f);
-		org.joml.Vector3f pos = new org.joml.Vector3f(from).lerp(target, e);
-		org.joml.Vector3f delta = pos.sub(rest);
-		float[] ar = {STRING_ARM_TURN[0] + gl[3], i * STRING_ARM_TURN[1] + i * gl[4], i * STRING_ARM_TURN[2] + i * gl[5]};
+		int side = player.getMainArm() == Arm.LEFT ? -1 : 1;
+		UryuStringHand.Placement pl = UryuStringHand.placement(side, gs.l(), equip, st.presence);
+		double[] r = pl.rotDeg();
 		m.push();
-		m.translate(-i * 0.56f, -0.52f + eqY, -0.72f);
-		m.translate(delta.x, delta.y, delta.z);
-		m.translate(-i * FIST_X, FIST_Y, FIST_Z);
-		m.multiply(new Quaternionf().rotationXYZ(ar[0] * RAD, ar[1] * RAD, ar[2] * RAD));
-		m.translate(i * FIST_X, -FIST_Y, -FIST_Z);
-		FirstPersonHand.renderVanillaArmAt(mc, player, !left, m, vcp, light);
+		m.translate(pl.baseX(), pl.baseY(), pl.baseZ());
+		m.translate(pl.dx(), pl.dy(), pl.dz());
+		m.translate(-side * UryuStringHand.FIST_X, UryuStringHand.FIST_Y, UryuStringHand.FIST_Z);
+		m.multiply(new Quaternionf().rotationXYZ((float) r[0] * RAD, (float) r[1] * RAD, (float) r[2] * RAD));
+		m.translate(side * UryuStringHand.FIST_X, -UryuStringHand.FIST_Y, -UryuStringHand.FIST_Z);
+		FirstPersonHand.renderVanillaArmAt(MinecraftClient.getInstance(), player, side > 0, m, vcp, light);
 		m.pop();
 	}
 }
