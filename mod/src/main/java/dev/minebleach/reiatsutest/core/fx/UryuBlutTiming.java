@@ -203,6 +203,45 @@ public final class UryuBlutTiming {
 		return sizePx * (scale - 1.0) * 0.5;
 	}
 
+	/**
+	 * A chest piece of armor wraps the torso and the arms with a 1 px dilation: the overlay has to sit outside it or the veins vanish under a
+	 * chestplate. Reach in pixels of the overlay with armor on.
+	 */
+	public static final double ARMOR_REACH_PX = 1.25;
+
+	/** Scale of a cuboid of {@code sizePx} that makes it reach {@code reachPx} beyond the unscaled one. */
+	public static double scaleFor(double sizePx, double reachPx) {
+		return 1.0 + 2.0 * reachPx / sizePx;
+	}
+
+	/** {@link #armScaleX(boolean)} with the armor case: the reach is {@link #ARMOR_REACH_PX}. */
+	public static double armScaleX(boolean slim, boolean armored) {
+		return armored ? scaleFor(slim ? 3.0 : 4.0, ARMOR_REACH_PX) : armScaleX(slim);
+	}
+
+	public static double armScaleZ(boolean armored) {
+		return armored ? scaleFor(4.0, ARMOR_REACH_PX) : armScaleZ();
+	}
+
+	public static double bodyScaleX(boolean armored) {
+		return armored ? scaleFor(8.0, ARMOR_REACH_PX) : bodyScaleX();
+	}
+
+	public static double bodyScaleZ(boolean armored) {
+		return armored ? scaleFor(4.0, ARMOR_REACH_PX) : bodyScaleZ();
+	}
+
+	/** {@link #armPivotShiftX(boolean, boolean)} for any scale on x. */
+	public static double armPivotShiftX(boolean slim, boolean left, double scaleX) {
+		double c = (slim ? 0.5 : 1.0) * (left ? 1.0 : -1.0);
+		return -c * (scaleX - 1.0);
+	}
+
+	/** One exponential smoothing step of the state level (so Focus 3 does not make the overlay jump): {@code rate} is the share of the gap closed per step. */
+	public static double approach(double current, double target, double rate) {
+		return current + (target - current) * Math.max(0.0, Math.min(1.0, rate));
+	}
+
 	// ------------------------------------------------------------------------------------------ the release timeline (storyboard 2.5)
 	/** A sound cue of the release. */
 	public record Cue(double t, String sound, double pitch, double volume) {

@@ -838,9 +838,9 @@ VEIN_HALO_ALPHA = 110
 # (name, columns around the limb, top row, bottom row (the hand end), g at the top row, g at the bottom row, walkers, role)
 VEIN_BELTS = [
     # right arm (u 40, v 16): right 40..43, front 44..46, left 48..50, back 52..53; rows 20..31
-    ("r_arm", [40, 41, 42, 43, 44, 45, 46, 48, 49, 50, 52, 53], 20, 31, 0.45, 0.0, 2, "arm"),
+    ("r_arm", [40, 41, 42, 43, 44, 45, 46, 48, 49, 50, 52, 53], 20, 31, 0.45, 0.0, 3, "arm"),
     # left arm (u 32, v 48): right 32..35, front 36..38, left 40..42, back 44..45; rows 52..63
-    ("l_arm", [32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 44, 45], 52, 63, 0.45, 0.0, 2, "arm"),
+    ("l_arm", [32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 44, 45], 52, 63, 0.45, 0.0, 3, "arm"),
     # torso (u 16, v 16): right side 16..19, front 20..27, left side 28..31, back 32..39; rows 20..31 (row 20 is the collar = the neck, lit last)
     ("torso", list(range(16, 40)), 20, 31, 1.0, 0.50, 3, "torso"),
 ]
@@ -920,7 +920,7 @@ def vein_paint():
     # pass 1: the arms (thick first), pass 2: the torso, pass 3: one extra fine walker on every belt
     for pass_no in range(3):
         for bi, belt in enumerate(VEIN_BELTS):
-            n = belt[6] if (pass_no == 0 and belt[7] == "arm") or (pass_no == 1 and belt[7] == "torso") else (1 if pass_no == 2 else 0)
+            n = belt[6] if (pass_no == 0 and belt[7] == "arm") or (pass_no == 1 and belt[7] == "torso") else (max(1, belt[6] // 2) if pass_no == 2 else 0)
             ncol = len(belt[1])
             for k in range(n):
                 paths = []

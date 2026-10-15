@@ -291,4 +291,43 @@ class UryuBlutTimingTest {
 		}
 		assertEquals(UryuBlutTiming.T_IGNITE, UryuBlutTiming.pentagonClosed(), EPS, "the outline closes when the veins ignite");
 	}
+	@Test
+	void armorMakesTheOverlayReachBeyondTheOneAndAQuarterPixelDilationOfAChestplate() {
+		for (boolean slim : new boolean[] {false, true}) {
+			double w = slim ? 3.0 : 4.0;
+			assertEquals(UryuBlutTiming.ARMOR_REACH_PX, UryuBlutTiming.reach(w, UryuBlutTiming.armScaleX(slim, true)), 1e-9, "arm x reach with armor, slim " + slim);
+			assertEquals(UryuBlutTiming.armScaleX(slim), UryuBlutTiming.armScaleX(slim, false), 0.0, "no armor: the plain scale");
+			assertTrue(UryuBlutTiming.armScaleX(slim, true) > UryuBlutTiming.armScaleX(slim), "armor reaches further");
+		}
+		assertEquals(UryuBlutTiming.ARMOR_REACH_PX, UryuBlutTiming.reach(4.0, UryuBlutTiming.armScaleZ(true)), 1e-9);
+		assertEquals(UryuBlutTiming.ARMOR_REACH_PX, UryuBlutTiming.reach(8.0, UryuBlutTiming.bodyScaleX(true)), 1e-9);
+		assertEquals(UryuBlutTiming.ARMOR_REACH_PX, UryuBlutTiming.reach(4.0, UryuBlutTiming.bodyScaleZ(true)), 1e-9);
+		assertEquals(UryuBlutTiming.bodyScaleX(), UryuBlutTiming.bodyScaleX(false), 0.0);
+		assertEquals(UryuBlutTiming.bodyScaleZ(), UryuBlutTiming.bodyScaleZ(false), 0.0);
+		assertTrue(UryuBlutTiming.ARMOR_REACH_PX > 1.0, "a chestplate is dilated by 1 px");
+		// the pivot shift keeps the arm centre for any scale: right arm centre -1 / -0.5 px, left +1 / +0.5
+		for (boolean slim : new boolean[] {false, true}) {
+			for (boolean left : new boolean[] {false, true}) {
+				double sx = UryuBlutTiming.armScaleX(slim, true);
+				double c = (slim ? 0.5 : 1.0) * (left ? 1.0 : -1.0);
+				assertEquals(c, c * sx + UryuBlutTiming.armPivotShiftX(slim, left, sx), 1e-9, "the scaled centre stays put");
+			}
+		}
+	}
+
+	@Test
+	void theStateLevelApproachesItsTargetWithoutAJump() {
+		double v = 0.5;
+		double last = v;
+		for (int i = 0; i < 40; i++) {
+			v = UryuBlutTiming.approach(v, UryuBlutTiming.stateLevel(3), 0.3);
+			assertTrue(v >= last - 1e-12 && v <= UryuBlutTiming.FOCUS3_LEVEL + 1e-12, "monotone and bounded");
+			assertTrue(v - last <= 0.3 * (UryuBlutTiming.FOCUS3_LEVEL - UryuBlutTiming.STATE_LEVEL) + 1e-12, "the first step is a share of the gap");
+			last = v;
+		}
+		assertEquals(UryuBlutTiming.FOCUS3_LEVEL, v, 1e-3);
+		assertEquals(0.7, UryuBlutTiming.approach(0.5, 0.9, 0.5), 1e-12);
+		assertEquals(0.9, UryuBlutTiming.approach(0.5, 0.9, 5.0), 1e-12, "the rate is clamped");
+		assertEquals(0.5, UryuBlutTiming.approach(0.5, 0.9, -1.0), 1e-12);
+	}
 }

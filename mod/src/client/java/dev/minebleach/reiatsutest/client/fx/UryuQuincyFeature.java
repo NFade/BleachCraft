@@ -30,6 +30,9 @@ import net.minecraft.client.render.entity.feature.FeatureRendererContext;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.SkinTextures;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
@@ -101,6 +104,8 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 		int lastUse;
 		double lastLevel;
 		int focus;
+		/** The state level (0.5, 0.8 at Focus 3), smoothed so that a change of Focus does not make the overlay jump. NaN = not set yet. */
+		double state = Double.NaN;
 		double nextMote;
 	}
 
@@ -262,11 +267,14 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 				q.bankai = false;
 			}
 			q.seen = true;
-			if (!q.shikai && !q.bankai && now - q.endedAt > UryuBlutTiming.FADE_OUT + 0.1) {
+			// a record made by the release event whose attachment has not arrived yet is kept for 2 s (the packets of one tick come in any order)
+			if (!q.shikai && !q.bankai && now - q.endedAt > UryuBlutTiming.FADE_OUT + 0.1 && now - q.eventAt > 2.0) {
 				PLAYERS.remove(id);
 				continue;
 			}
 			q.focus = pl == mc.player ? UryuFx.focus : UryuFx.focusOf(id);
+			double target = UryuBlutTiming.stateLevel(q.focus);
+			q.state = Double.isNaN(q.state) ? target : UryuBlutTiming.approach(q.state, target, 0.3);
 			// a shot: the falling edge of the bow draw
 			boolean drawing = q.shikai && pl.isUsingItem() && pl.getActiveHand() == Hand.MAIN_HAND && UryuCrossItem.isBow(pl.getMainHandStack());
 			if (q.wasDrawing && !drawing && q.lastUse >= 4) {
@@ -320,7 +328,7 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 				}
 			}
 			double t = now - t0;
-			double level = UryuBlutTiming.releaseLevel(t, rm, UryuBlutTiming.stateLevel(q.focus));
+			double level = UryuBlutTiming.releaseLevel(t, rm, Double.isNaN(q.state) ? UryuBlutTiming.stateLevel(q.focus) : q.state);
 			if (!rm) {
 				level = UryuBlutTiming.withFire(level, UryuBlutTiming.fireEnvelope(now - q.fireAt));
 			}
@@ -358,7 +366,7 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 				drawn++;
 				lastLevel = v[0];
 				lastStage = (int) v[1];
-				drawParts(matrices, vcp, model, slim, v[0], (int) v[1], UryuBlutTiming.parts(FxConfig.uryuVeinOverlay));
+				drawParts(matrices, vcp, model, slim, armored(entity), v[0], (int) v[1], UryuBlutTiming.parts(FxConfig.uryuVeinOverlay));
 			}
 			if (q.bankai && !BANKAI_PASSES.isEmpty()) {
 				Ctx c = new Ctx(matrices, vcp, light, entity, model, tickDelta, now, slim, new State(q.shikai, true, now - q.bankaiSince, v[0], (int) v[1]));
@@ -378,7 +386,7 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 	 * Draws the veins on the given parts of the posed model: the solid translucent pass, then the additive pass. The parts are inflated (scale about
 	 * the pivot, pivot shifted so that an arm keeps its place) for the two passes and restored right after.
 	 */
-	private static void drawParts(MatrixStack matrices, VertexConsumerProvider vcp, PlayerEntityModel<AbstractClientPlayerEntity> model, boolean slim, double level, int stage,
+	private static void drawParts(MatrixStack matrices, VertexConsumerProvider vcp, PlayerEntityModel<AbstractClientPlayerEntity> model, boolean slim, boolean armored, double level, int stage,
 			List<UryuBlutTiming.Part> parts) {
 		Identifier tex = STAGE[Math.max(0, Math.min(STAGE.length - 1, stage))];
 		double glow = Math.min(1.0, UryuBlutTiming.glowGain(level) * FxConfig.uryuGlow * Math.max(0.0, FxConfig.emissiveMultiplier));
@@ -396,13 +404,14 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 			saved[i * 3 + 1] = m.zScale;
 			saved[i * 3 + 2] = m.pivotX;
 			if (p == UryuBlutTiming.Part.BODY) {
-				m.xScale = (float) UryuBlutTiming.bodyScaleX();
-				m.zScale = (float) UryuBlutTiming.bodyScaleZ();
+				m.xScale = (float) UryuBlutTiming.bodyScaleX(armored);
+				m.zScale = (float) UryuBlutTiming.bodyScaleZ(armored);
 			} else {
 				boolean left = p == UryuBlutTiming.Part.LEFT_ARM;
-				m.xScale = (float) UryuBlutTiming.armScaleX(slim);
-				m.zScale = (float) UryuBlutTiming.armScaleZ();
-				m.pivotX += (float) UryuBlutTiming.armPivotShiftX(slim, left);
+				double sx = UryuBlutTiming.armScaleX(slim, armored);
+				m.xScale = (float) sx;
+				m.zScale = (float) UryuBlutTiming.armScaleZ(armored);
+				m.pivotX += (float) UryuBlutTiming.armPivotShiftX(slim, left, sx);
 			}
 		}
 		try {
@@ -422,6 +431,12 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 				mp[i].pivotX = saved[i * 3 + 2];
 			}
 		}
+	}
+
+	/** A chest piece of armor is drawn with a 1 px dilation over the torso and the arms: the overlay has to reach beyond it. */
+	private static boolean armored(AbstractClientPlayerEntity pl) {
+		ItemStack chest = pl.getEquippedStack(EquipmentSlot.CHEST);
+		return !chest.isEmpty() && chest.getItem() instanceof ArmorItem a && a.getSlotType() == EquipmentSlot.CHEST;
 	}
 
 	private static ModelPart part(PlayerEntityModel<AbstractClientPlayerEntity> model, UryuBlutTiming.Part p) {
@@ -449,7 +464,7 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 			}
 			boolean slim = player.getSkinTextures().model() == SkinTextures.Model.SLIM;
 			firstPersonDraws++;
-			drawParts(m, vcp, renderer.getModel(), slim, v[0], (int) v[1], List.of(left ? UryuBlutTiming.Part.LEFT_ARM : UryuBlutTiming.Part.RIGHT_ARM));
+			drawParts(m, vcp, renderer.getModel(), slim, false, v[0], (int) v[1], List.of(left ? UryuBlutTiming.Part.LEFT_ARM : UryuBlutTiming.Part.RIGHT_ARM));
 		} catch (RuntimeException ex) {
 			if (!warned) {
 				warned = true;
