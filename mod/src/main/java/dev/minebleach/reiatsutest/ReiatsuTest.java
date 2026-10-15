@@ -36,6 +36,8 @@ public class ReiatsuTest implements ModInitializer {
 		ModNetworking.registerPayloads();
 		ZanpakutoManager.init();
 		dev.minebleach.reiatsutest.server.RageManager.init();
+		dev.minebleach.reiatsutest.core.uryu.BowDraw.setTuning(ModConfig.loadUryuBow()); // R13: uryu.bow / uryu.rage
+		dev.minebleach.reiatsutest.server.ConfigReload.register(() -> dev.minebleach.reiatsutest.core.uryu.BowDraw.setTuning(ModConfig.loadUryuBow()));
 		dev.minebleach.reiatsutest.server.RukiaMomentum.init();
 		dev.minebleach.reiatsutest.server.KidoManager.init();
 		ReiatsuCommand.register();

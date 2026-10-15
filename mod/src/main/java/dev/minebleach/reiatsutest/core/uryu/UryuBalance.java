@@ -39,11 +39,11 @@ public final class UryuBalance {
 	public static final int MAX_ARROWS = 400;
 
 	/** Basic shot of the BASE state (right click), HP. */
-	public static final float BASIC_DAMAGE = 4.0F;
+	public static final float BASIC_DAMAGE = 3.0F; // R13: was 4.0; the live value is BowDraw.tuning().damage()
 	/** Factor of the basic shot while Blut Arterie is on (SHIKAI and BANKAI, +20 percent). */
 	public static final double ARTERIE_SHOT_FACTOR = 1.2;
 	/** Ticks between two basic shots (anti spam only; the draw time is the real pause). */
-	public static final int BASIC_COOLDOWN = 4;
+	public static final int BASIC_COOLDOWN = 14; // R13: was 4 (anti spam); now a real fire rate limit, uryu.bow.cooldownTicks
 	/** Heilig Pfeil: homing arrow (Z), HP, base damage before Focus. */
 	public static final float FOCUS_SHOT_DAMAGE = 7.0F;
 	/** Speed of the Z arrow in blocks per tick (faster than the basic shot, before Focus). */
@@ -53,9 +53,9 @@ public final class UryuBalance {
 
 	// ---------------------------------------------------------------- bow (revision 2: vanilla draw, no slowdown)
 	/** Ticks of drawing for full power (vanilla: 20). */
-	public static final int BOW_FULL_DRAW_TICKS = 20;
+	public static final int BOW_FULL_DRAW_TICKS = 24; // R13: was 20; uryu.bow.fullDrawTicks
 	/** A release under this power fires nothing (vanilla: 0.1). */
-	public static final double BOW_MIN_POWER = 0.1;
+	public static final double BOW_MIN_POWER = 0.5; // R13: was 0.1; uryu.bow.minPower
 	/** Share of the full arrow speed that even a minimal draw keeps (speed factor = this + (1 - this) * power). */
 	public static final double BOW_MIN_SPEED_SHARE = 0.3;
 

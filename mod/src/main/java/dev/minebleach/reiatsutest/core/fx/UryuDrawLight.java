@@ -93,7 +93,7 @@ public final class UryuDrawLight {
 		}
 		// u^2 + 2u - 3p = 0
 		double u = -1.0 + Math.sqrt(1.0 + 3.0 * p);
-		return u * 20.0;
+		return u * BowDraw.tuning().fullDrawTicks(); // R13: the full draw time is a config key
 	}
 
 	/** 0 (cool Q2) to 1 (white Q1): the string brightens as it is pulled. */

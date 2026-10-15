@@ -5,7 +5,18 @@ package dev.minebleach.reiatsutest.core.uryu;
  * {@link UryuBalance#BOW_FULL_DRAW_TICKS} ticks; arrow damage scales with the power, the speed keeps a share even for a short draw.
  */
 public final class BowDraw {
+	private static volatile UryuBowTuning tuning = UryuBowTuning.defaults();
+
 	private BowDraw() {
+	}
+
+	/** The numbers in force (R13: {@code uryu.bow} of the config; the defaults until the first load). */
+	public static UryuBowTuning tuning() {
+		return tuning;
+	}
+
+	public static void setTuning(UryuBowTuning t) {
+		tuning = t == null ? UryuBowTuning.defaults() : t;
 	}
 
 	/** Power 0..1 of a draw held for {@code ticks}: {@code (t*t + 2t) / 3} with {@code t = ticks / 20}, capped at 1 (vanilla). */
@@ -13,7 +24,7 @@ public final class BowDraw {
 		if (ticks <= 0) {
 			return 0.0;
 		}
-		double t = (double) ticks / UryuBalance.BOW_FULL_DRAW_TICKS;
+		double t = (double) ticks / tuning.fullDrawTicks();
 		return Math.min(1.0, (t * t + t * 2.0) / 3.0);
 	}
 
@@ -22,18 +33,29 @@ public final class BowDraw {
 		if (ticks <= 0.0) {
 			return 0.0;
 		}
-		double t = ticks / UryuBalance.BOW_FULL_DRAW_TICKS;
+		double t = ticks / tuning.fullDrawTicks();
 		return Math.min(1.0, (t * t + t * 2.0) / 3.0);
 	}
 
-	/** True when a release at this power fires an arrow (vanilla ignores releases under 0.1). */
+	/** True when a release at this power fires an arrow (R13: under {@code uryu.bow.minPower}, half a draw by default, nothing is shot). */
 	public static boolean fires(double power) {
-		return power >= UryuBalance.BOW_MIN_POWER;
+		return power >= tuning.minPower();
 	}
 
-	/** Factor on the damage of the full draw. */
+	/** Ticks of drawing after which a release fires (the first tick whose power reaches the minimum). */
+	public static int minDrawTicks() {
+		int n = 0;
+		while (!fires(power(n)) && n < 100_000) {
+			n++;
+		}
+		return n;
+	}
+
+	/** Factor on the damage of the full draw: {@code power^curve} (R13: {@code uryu.bow.damageCurve}). */
 	public static double damageFactor(double power) {
-		return Math.max(0.0, Math.min(1.0, power));
+		double p = Math.max(0.0, Math.min(1.0, power));
+		double c = tuning.damageCurve();
+		return c == 1.0 ? p : Math.pow(p, c);
 	}
 
 	/** Factor on the arrow speed of the full draw. */

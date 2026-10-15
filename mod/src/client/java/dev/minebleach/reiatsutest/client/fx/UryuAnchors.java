@@ -17,9 +17,12 @@ import org.joml.Vector3f;
  * (the render frame, interpolated). Shared by {@link UryuBowFx} (forming, draw light) and {@link UryuFocusFx} (the Focus layers).
  */
 final class UryuAnchors {
-	/** +1 right hand (built default), -1 left hand: the option {@code uryu.bowHand} of the poses branch maps here when it is merged. */
+	/**
+	 * +1 right hand, -1 left hand. R13: the bow is held in the LEFT hand of every player since R12 (see {@code UryuBowPose#bowInLeftHand}), so the default is -1; this is only
+	 * the fallback of {@link #hand} while no capture of the drawn bow exists ({@link UryuBowCapture}).
+	 */
 	static double handSign() {
-		return FxTune.d("uryu.bowHandSign", 1.0) < 0 ? -1.0 : 1.0;
+		return FxTune.d("uryu.bowHandSign", -1.0) < 0 ? -1.0 : 1.0;
 	}
 
 	private UryuAnchors() {
@@ -88,6 +91,11 @@ final class UryuAnchors {
 	static Hand hand(LivingEntity e, double p, float td, Cam cam) {
 		boolean first = first(e);
 		boolean drawing = p > 0 || drawing(e);
+		UryuBowCapture.Frame cf = first && FxTune.d("uryu.anchorCapture", 1.0) > 0.5 ? UryuBowCapture.frame(e.getId(), p, cam) : null;
+		if (cf != null) { // R13: the bow as it was really drawn this frame, whatever the pose
+			Vec3d lp = e.getLerpedPos(td);
+			return new Hand(cf.grip(), cf.nock(), cf.aim(), cf.up(), cf.scale(), first, drawing, p, new double[] {lp.x, lp.y, lp.z});
+		}
 		double[] aim = aim(e, td, cam);
 		double[] up = {0, 1, 0};
 		double scale = displayScale(first);
@@ -100,7 +108,8 @@ final class UryuAnchors {
 			nock = UryuBowAnchor.firstNock(cam.pos(), cam.fwd(), grip, aim, p, scale);
 		} else {
 			float yaw = MathHelper.lerpAngleDegrees(td, e.prevBodyYaw, e.bodyYaw);
-			grip = UryuBowAnchor.thirdGrip(feet, yaw, aim, drawing, handSign());
+			double stance = e instanceof net.minecraft.entity.player.PlayerEntity ? dev.minebleach.reiatsutest.core.uryu.BowClipState.stanceWeight(e.limbAnimator.getSpeed(td)) : 0.0;
+			grip = UryuBowAnchor.thirdGrip(feet, yaw, aim, drawing, handSign(), stance);
 			nock = UryuBowAnchor.nock(grip, aim, p, scale);
 		}
 		return new Hand(grip, nock, aim, up, scale, first, drawing, p, feet);

@@ -332,8 +332,8 @@ public final class ObjItemBakedModel implements BakedModel {
 		net.minecraft.client.render.model.json.ModelTransformationMode tm = context.itemTransformationMode();
 		boolean fpv = tm == net.minecraft.client.render.model.json.ModelTransformationMode.FIRST_PERSON_RIGHT_HAND
 				|| tm == net.minecraft.client.render.model.json.ModelTransformationMode.FIRST_PERSON_LEFT_HAND;
-		final float arrowX = fpv ? (float) FxTune.d("uryu.fp.arrowX", 0.14) : 0f;
-		final float arrowUp = fpv ? (float) FxTune.d("uryu.fp.arrowUp", 0.05) : ARROW_REST_UP;
+		final float arrowX = fpv ? (float) FxTune.d("uryu.fp.arrowX", 0.02) : 0f;
+		final float arrowUp = fpv ? (float) FxTune.d("uryu.fp.arrowUp", 0.04) : ARROW_REST_UP;
 		final float arrowTan = fpv ? (float) Math.tan(Math.toRadians(FxTune.d("uryu.fp.arrowYaw", 0.0))) : 0f;
 		context.pushTransform(q -> {
 			Vector3f v = new Vector3f();
@@ -367,6 +367,22 @@ public final class ObjItemBakedModel implements BakedModel {
 		b.string.outputTo(em);
 		outputGlow(b.stringGlow, context, glowK);
 		context.popTransform();
+	}
+
+	/** R13: scales a quad about the blade axis (model space): the cross section of the blade grows by {@code k}, its length and place stay. */
+	private static void crossScale(MutableQuadView q, float[] base, float[] dir, float k) {
+		Vector3f v = new Vector3f();
+		for (int c = 0; c < 4; c++) {
+			q.copyPos(c, v);
+			float rx = v.x - base[0];
+			float ry = v.y - base[1];
+			float rz = v.z - base[2];
+			float t = rx * dir[0] + ry * dir[1] + rz * dir[2];
+			float ax = dir[0] * t;
+			float ay = dir[1] * t;
+			float az = dir[2] * t;
+			q.pos(c, base[0] + ax + (rx - ax) * k, base[1] + ay + (ry - ay) * k, base[2] + az + (rz - az) * k);
+		}
 	}
 
 	/** Component wise product of two ARGB colours (alpha of the first kept). */
@@ -766,8 +782,21 @@ public final class ObjItemBakedModel implements BakedModel {
 		if (held) {
 			// the finished sword. Pink complete: the pink sword (cutout) with its glow. Pink going: the steel blade tinted by the pink that is left, and over it the translucent pink
 			// sword and its glow fading out with the pink, so the pink turns into the normal blade smoothly. No pink: the steel blade.
+			// R13: the sword is a thin flat blade; seen from the third person camera it is a hair line when the blade runs across the view (the swing) and nothing when it
+			// points along it. In the third person the blade is made thicker (petalBlade.tpWidth) and a translucent shell of the pink sword (petalBlade.tpGlow, .tpGlowAlpha)
+			// surrounds it, so the sword is seen from every side; the first person view is unchanged.
+			final boolean tpv = !context.itemTransformationMode().isFirstPerson();
+			final float tpWidth = tpv ? (float) FxTune.d("petalBlade.tpWidth", 2.2) : 1f;
 			if (pinkTex && pink >= 0.999) {
-				context.pushTransform(q -> full || quadS(q, base, dir, len) >= 0);
+				context.pushTransform(q -> {
+					if (!(full || quadS(q, base, dir, len) >= 0)) {
+						return false;
+					}
+					if (tpWidth != 1f) {
+						crossScale(q, base, dir, tpWidth);
+					}
+					return true;
+				});
 				st.pinkSword.outputTo(em);
 				if (st.pinkSwordGlow != null) {
 					st.pinkSwordGlow.outputTo(em);
@@ -781,6 +810,9 @@ public final class ObjItemBakedModel implements BakedModel {
 					}
 					for (int c = 0; c < 4; c++) {
 						q.color(c, mulColor(q.color(c), heldTint));
+					}
+					if (tpWidth != 1f) {
+						crossScale(q, base, dir, tpWidth);
 					}
 					return true;
 				});
@@ -813,6 +845,25 @@ public final class ObjItemBakedModel implements BakedModel {
 						st.pinkSwordGlow.outputTo(em);
 						context.popTransform();
 					}
+				}
+			}
+			if (tpv && st.pinkSwordFade != null) {
+				final float shell = (float) FxTune.d("petalBlade.tpGlow", 3.0);
+				final double shellA = FxTune.d("petalBlade.tpGlowAlpha", 0.32) * Math.max(0.35, pink);
+				if (shell > 1.001f && shellA > 0.01) {
+					final int a8 = (int) (255 * Math.min(1.0, shellA));
+					context.pushTransform(q -> {
+						if (!full && quadS(q, base, dir, len) < 0) {
+							return false;
+						}
+						crossScale(q, base, dir, shell);
+						for (int c = 0; c < 4; c++) {
+							q.color(c, (a8 << 24) | (q.color(c) & 0x00FFFFFF));
+						}
+						return true;
+					});
+					st.pinkSwordFade.outputTo(em);
+					context.popTransform();
 				}
 			}
 			return;

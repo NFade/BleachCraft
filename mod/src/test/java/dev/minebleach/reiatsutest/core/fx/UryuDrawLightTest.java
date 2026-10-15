@@ -13,14 +13,14 @@ class UryuDrawLightTest {
 	@Test
 	void powerIsTheVanillaCurveAndTheInverseRoundTrips() {
 		assertEquals(0.0, UryuDrawLight.power(0), EPS);
-		assertEquals(1.0, UryuDrawLight.power(20), EPS);
-		assertEquals(1.0, UryuDrawLight.power(40), EPS);
+		assertEquals(1.0, UryuDrawLight.power(24), EPS);
+		assertEquals(1.0, UryuDrawLight.power(48), EPS);
 		for (double p : new double[] {0.1, 0.25, 0.5, 0.75, 1.0}) {
 			assertEquals(p, UryuDrawLight.power(UryuDrawLight.ticksForPower(p)), 1e-9, "p " + p);
 		}
-		assertEquals(20.0, UryuDrawLight.ticksForPower(1.0), 1e-9);
-		assertEquals(3.0, UryuDrawLight.ticksForPower(0.1), 0.25, "p 0.1 is the 3 ticks of the table");
-		assertEquals(11.6, UryuDrawLight.ticksForPower(0.5), 0.05, "p 0.5 is after 11.6 ticks, not 8");
+		assertEquals(24.0, UryuDrawLight.ticksForPower(1.0), 1e-9);
+		assertEquals(3.6, UryuDrawLight.ticksForPower(0.1), 0.3, "p 0.1 is about 3.6 ticks of the 24 tick draw");
+		assertEquals(13.94, UryuDrawLight.ticksForPower(0.5), 0.05, "p 0.5 is after 13.9 ticks of the 24 tick draw");
 	}
 
 	@Test

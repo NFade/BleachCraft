@@ -66,6 +66,9 @@ final class Phase7Uryu {
 		if (wants("uryu_star") || wants("uryu_star_rm")) {
 			Phase7Star.steps(); // U-FX 10: Sternenstaub (p7_10_star_*)
 		}
+		if (Phase8R13.wantsAny()) {
+			Phase8R13.steps(); // R13: poses of the bow and of the Byakuya sword in first and third person (p7_r13_*)
+		}
 		if (wants("uryu_shunpo") || wants("uryu_shunpo_rm")) {
 			Phase7Shunpo.steps(); // T6: the Quincy shunpo (p7_11_shunpo_*)
 		}

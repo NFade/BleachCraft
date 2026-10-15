@@ -40,6 +40,9 @@ public final class UryuFpHold {
 		if (!on() || !UryuCrossItem.isBow(stack) || stack != player.getMainHandStack() || !UryuBowMotion.fpOn()) {
 			return false;
 		}
+		if (FpBow.wants(player, net.minecraft.util.Hand.MAIN_HAND, stack)) {
+			return false; // R13: the archer's view (FpBow) places the bow itself; this extra shift and 60 degree turn made the arrow point out to the left
+		}
 		int side = leftHanded ? -1 : 1;
 		double[] s = shift(side);
 		float rx = (float) FxTune.d("uryu.fp.holdRx", -4.0);

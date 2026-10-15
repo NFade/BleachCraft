@@ -55,6 +55,14 @@ public final class UryuTargets {
 		return Targeting.rayPoint(caster, start, dir, range);
 	}
 
+	/**
+	 * R13: {@link #logged(String, Runnable)} with the Rage mark of an Uryu hit: BOW (a basic arrow shot with {@code rawHp}) pays Rage proportional
+	 * to its damage, CAST (an arrow or blast of an ability) pays the fixed reward of the cast once, see {@code uryu.rage} in the config.
+	 */
+	public static void logged(String label, dev.minebleach.reiatsutest.core.rage.RageReward.UryuMark mark, float rawHp, Runnable body) {
+		RageManager.markUryu(mark, rawHp, () -> logged(label, body));
+	}
+
 	/** Labels the {@code [dmg]} lines written by {@code body}. */
 	public static void logged(String label, Runnable body) {
 		DmgLog.begin(label);

@@ -134,12 +134,12 @@ class FocusTest {
 	}
 
 	@Test
-	void basicShotIs4HpAnd20PercentMoreWithArterie() {
-		assertEquals(4.0f, Shots.basic(0, false).damage(), 1e-6);
-		assertEquals(4.8f, Shots.basic(0, true).damage(), 1e-5);
-		assertEquals(8.0f, Shots.basic(3, false).damage(), 1e-5);
-		assertEquals(9.6f, Shots.basic(3, true).damage(), 1e-5);
-		assertEquals(4, UryuBalance.BASIC_COOLDOWN);
+	void basicShotIs3HpAnd20PercentMoreWithArterie() { // R13: 3.0 HP and a 14 tick cooldown (were 4.0 and 4)
+		assertEquals(3.0f, Shots.basic(0, false).damage(), 1e-6);
+		assertEquals(3.6f, Shots.basic(0, true).damage(), 1e-5);
+		assertEquals(6.0f, Shots.basic(3, false).damage(), 1e-5);
+		assertEquals(7.2f, Shots.basic(3, true).damage(), 1e-5);
+		assertEquals(14, UryuBalance.BASIC_COOLDOWN);
 	}
 
 	@Test

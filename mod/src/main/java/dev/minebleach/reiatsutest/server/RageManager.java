@@ -7,6 +7,7 @@ import dev.minebleach.reiatsutest.core.rage.RageConfig;
 import dev.minebleach.reiatsutest.core.rage.RageMeter;
 import dev.minebleach.reiatsutest.core.rage.RageReward;
 import dev.minebleach.reiatsutest.core.rage.RageTuning;
+import dev.minebleach.reiatsutest.core.uryu.BowDraw;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
 import dev.minebleach.reiatsutest.registry.data.RageData;
 import dev.minebleach.reiatsutest.registry.data.RageTuningData;
@@ -76,6 +77,28 @@ public final class RageManager {
 
 	static void endUnrewarded() {
 		noRewardDepth = Math.max(0, noRewardDepth - 1);
+	}
+
+	/** R13: the Uryu mark of the damage call in progress (single server thread); NONE outside {@link #markUryu}. */
+	private static RageReward.UryuMark uryuMark = RageReward.UryuMark.NONE;
+	/** R13: damage the marked basic arrow was shot with (before armor), the basis of its proportional Rage. */
+	private static float uryuRawHp;
+
+	/**
+	 * R13: runs {@code body} (an {@code UryuTargets.hurt} call) with the Rage mark of an Uryu arrow or blast: {@code BOW} pays Rage proportional to
+	 * {@code rawHp}, {@code CAST} pays the fixed reward of the cast (once). Everything else keeps the normal rules.
+	 */
+	public static void markUryu(RageReward.UryuMark mark, float rawHp, Runnable body) {
+		RageReward.UryuMark prevMark = uryuMark;
+		float prevHp = uryuRawHp;
+		uryuMark = mark;
+		uryuRawHp = rawHp;
+		try {
+			body.run();
+		} finally {
+			uryuMark = prevMark;
+			uryuRawHp = prevHp;
+		}
 	}
 
 	/** The rage numbers in force. */
@@ -208,11 +231,14 @@ public final class RageManager {
 		if (attacker instanceof ServerPlayerEntity a && a != victim && !(victim instanceof ArmorStandEntity)) {
 			RageMeter m = meterOf(a.getUuid());
 			boolean mob = !(victim instanceof PlayerEntity);
-			RageReward reward = RageReward.classify(noRewardDepth > 0, isAbilityDamage(source));
+			RageReward reward = RageReward.classify(noRewardDepth > 0, isAbilityDamage(source), uryuMark, BowDraw.tuning().castRewardForAbilityArrows());
 			if (reward == RageReward.NONE) {
 				return; // R11 review fix 2: a frost field pulse pays nothing and leaves the armed cast reward for a real ability hit
 			}
-			if (reward == RageReward.ABILITY) {
+			if (reward == RageReward.ARROW) {
+				int gained = m.onFixedDealt(BowDraw.tuning().arrowRageTenths(uryuRawHp), victim.getId(), mob, now);
+				logGain(a, gained, "arrow", " " + fmt1(uryuRawHp) + " hp shot at " + victim.getName().getString() + (mob ? " (mob)" : ""));
+			} else if (reward == RageReward.ABILITY) {
 				int gained = m.onAbilityHit(mob, now); // R11 T3: one fixed reward per cast, however many targets it hits
 				if (gained > 0) {
 					logGain(a, gained, "ability", " " + fmt1(damageTaken) + " hp to " + victim.getName().getString());
@@ -248,7 +274,13 @@ public final class RageManager {
 		RageMeter m = meterOf(a.getUuid());
 		boolean mob = !(victim instanceof PlayerEntity);
 		int now = a.getServer().getTicks();
-		if (isAbilityDamage(source)) {
+		RageReward kill = RageReward.classify(false, isAbilityDamage(source), uryuMark, BowDraw.tuning().castRewardForAbilityArrows());
+		if (kill == RageReward.ARROW) {
+			int gained = m.onFixedDealt(BowDraw.tuning().arrowRageTenths(uryuRawHp), victim.getId(), mob, now);
+			logGain(a, gained, "arrow-kill", " " + fmt1(uryuRawHp) + " hp shot at " + victim.getName().getString() + (mob ? " (mob)" : ""));
+			return;
+		}
+		if (kill == RageReward.ABILITY) {
 			int gained = m.onAbilityHit(mob, now);
 			if (gained > 0) {
 				logGain(a, gained, "ability-kill", " " + fmt1(landed) + " hp to " + victim.getName().getString());

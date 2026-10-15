@@ -109,6 +109,26 @@ public final class RageMeter {
 		return gain(give, tick);
 	}
 
+	/**
+	 * R13: a dealt hit whose gain the caller already computed (the arrows of the Heilig Bogen: proportional to the arrow's own damage). The mob share
+	 * and the per-target cap still apply. Returns the tenths added.
+	 */
+	public int onFixedDealt(int tenths, int targetId, boolean targetIsMob, int tick) {
+		if (tenths <= 0) {
+			return gain(0, tick); // a hit is still combat
+		}
+		long gain = tenths;
+		if (targetIsMob) {
+			gain = Math.round(gain * (cfg.mobMultiplierPercent() / 100.0));
+		}
+		gain = Math.min(gain, targetCapLeft(targetId, tick));
+		int give = (int) Math.max(0L, Math.min(gain, Integer.MAX_VALUE));
+		if (give > 0) {
+			targetGains.computeIfAbsent(targetId, k -> new ArrayDeque<>()).addLast(new int[] {tick, give});
+		}
+		return gain(give, tick);
+	}
+
 	/** Tenths this target may still pay inside the window ending at {@code tick}. */
 	private long targetCapLeft(int targetId, int tick) {
 		ArrayDeque<int[]> q = targetGains.get(targetId);

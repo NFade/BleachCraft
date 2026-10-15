@@ -8,6 +8,7 @@ import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.core.swarm.V3;
 import dev.minebleach.reiatsutest.core.uryu.ArrowSim;
 import dev.minebleach.reiatsutest.core.uryu.BindEnd;
+import dev.minebleach.reiatsutest.core.rage.RageReward;
 import dev.minebleach.reiatsutest.core.uryu.BowDraw;
 import dev.minebleach.reiatsutest.core.uryu.Focus;
 import dev.minebleach.reiatsutest.core.uryu.LichtRegen;
@@ -385,6 +386,7 @@ public final class UryuManager {
 				RegistryKey<DamageType> type = DamageTypes.ARROW;
 				final float dmg = hp;
 				UryuTargets.logged("uryu.arrow." + e.kind().name().toLowerCase(java.util.Locale.ROOT),
+						e.kind() == ArrowSim.Kind.BASIC ? RageReward.UryuMark.BOW : RageReward.UryuMark.CAST, dmg,
 						() -> UryuTargets.hurt(caster, le, dmg, type, reset));
 			}
 			case MOVED -> {
@@ -429,11 +431,14 @@ public final class UryuManager {
 		}
 		double power = BowDraw.power(drawTicks);
 		if (!BowDraw.fires(power)) {
+			if (drawTicks >= 3) { // R13: a release under the minimum power fires nothing; a soft click tells the archer it was too short
+				p.getServerWorld().playSoundFromEntity(null, p, SoundEvents.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 0.35F, 1.6F);
+			}
 			return false;
 		}
 		Data d = data(p);
 		int now = p.getServer().getTicks();
-		if (now - d.lastShot < UryuBalance.BASIC_COOLDOWN) {
+		if (now - d.lastShot < BowDraw.tuning().cooldownTicks()) {
 			return false;
 		}
 		d.lastShot = now;
@@ -574,7 +579,7 @@ public final class UryuManager {
 		float hp = t.damage();
 		int n = 0;
 		List<LivingEntity> hit = inside(owner, t);
-		UryuTargets.logged("uryu.shikai.sprenger#explode", () -> {
+		UryuTargets.logged("uryu.shikai.sprenger#explode", RageReward.UryuMark.CAST, hp, () -> {
 			for (LivingEntity e : hit) {
 				UryuTargets.hurt(owner, e, hp, DamageTypes.PLAYER_EXPLOSION, true);
 			}
@@ -669,7 +674,7 @@ public final class UryuManager {
 			}
 		}
 		boolean knock = SeeleCombo.knocksBack(index);
-		UryuTargets.logged("uryu.shikai.seele_schneider#" + (index + 1), () -> {
+		UryuTargets.logged("uryu.shikai.seele_schneider#" + (index + 1), RageReward.UryuMark.CAST, UryuBalance.SEELE_DAMAGE, () -> {
 			for (LivingEntity e : hit) {
 				if (UryuTargets.hurt(p, e, UryuBalance.SEELE_DAMAGE, DamageTypes.PLAYER_ATTACK, true) && knock) {
 					UryuTargets.knockback(e, p.getPos(), UryuBalance.SEELE_KNOCKBACK);
@@ -826,7 +831,7 @@ public final class UryuManager {
 		Vec3d end = UryuTargets.rayPoint(p, eye, dir, UryuBalance.STAR_LENGTH); // the giant arrow stops at the first block
 		double length = eye.distanceTo(end);
 		List<LivingEntity> targets = UryuTargets.segment(p, eye, dir, 0.0, length, UryuBalance.STAR_HALF_WIDTH, UryuBalance.STAR_MAX_TARGETS);
-		UryuTargets.logged("uryu.bankai.sternenstaub", () -> {
+		UryuTargets.logged("uryu.bankai.sternenstaub", RageReward.UryuMark.CAST, UryuBalance.STAR_FIRST, () -> {
 			for (int i = 0; i < targets.size(); i++) {
 				UryuTargets.hurt(p, targets.get(i), Sternenstaub.damage(i), DamageTypes.ARROW, true);
 			}

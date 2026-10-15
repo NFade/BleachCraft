@@ -374,8 +374,18 @@ public final class ShikaiDissolve {
 	private static double worldTanHalfFov;
 
 	private static void toWorld(Pose po, double x, double y, double z, Vec3d cam, Quaternionf camRot, double[] out) {
-		po.m.transformPosition((float) x, (float) y, (float) z, TMP);
-		if (!po.fp) {
+		toWorld(po.m, po.fp, x, y, z, cam, camRot, out);
+	}
+
+	/** R13: factor of the first person hand pose for the world fov (see {@link #handFovScale}). */
+	public static double handFovK() {
+		return handFovScale();
+	}
+
+	/** R13: the same map for any captured hand matrix (the bow of Uryu): model point to world, hand fov corrected in first person. */
+	public static void toWorld(Matrix4f m, boolean fp, double x, double y, double z, Vec3d cam, Quaternionf camRot, double[] out) {
+		m.transformPosition((float) x, (float) y, (float) z, TMP);
+		if (!fp) {
 			camRot.transform(TMP);
 		} else {
 			// the hand pass uses a fixed fov of 70, the world the fov of the options: scale the offset across the view so that the world effect sits on the drawn sword (HandFov)

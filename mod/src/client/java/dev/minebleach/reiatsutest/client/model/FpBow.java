@@ -45,6 +45,7 @@ public final class FpBow {
 	private static final BowHandMotion HAND = new BowHandMotion();
 	private static long lastNanos;
 	private static boolean active;
+	private static double peakPull;
 
 	private FpBow() {
 	}
@@ -76,16 +77,25 @@ public final class FpBow {
 		// the same draw progress as the string and the arrow of the model (ObjItemBakedModel#emitBowDraw)
 		HAND.step(dt, using, BowDraw.powerAt(player.getItemUseTime() + td), p.readyIn(), p.readyOut(), p.snap());
 
-		Quaternionf q = new Quaternionf().rotateZ(p.roll() * RAD).rotateX(p.pitch() * RAD).rotateY((180f + p.yaw()) * RAD);
-		Vector3f grip = new Vector3f(p.grip());
+		// R13: the bow rests low (the forearm comes in from the left) and rises and turns to the crosshair as the arrow is drawn
+		float raise = dev.minebleach.reiatsutest.core.combat.FpEase.smooth(HAND.blend());
+		if (raise < 0.02f) {
+			peakPull = 0.0; // the hand is at rest again
+		}
+		peakPull = Math.max(peakPull, HAND.pull());
+		BowFpPose.Placed pl = p.placed(raise, peakPull); // the peak of this draw: the snap of the release drops the pull to 0, the bow must not fall back with it
+		Quaternionf q = new Quaternionf().rotateZ(pl.roll() * RAD).rotateX(pl.pitch() * RAD).rotateY((180f + pl.yaw()) * RAD);
+		Vector3f grip = new Vector3f(pl.grip());
 		Matrix4f bow = new Matrix4f().translate(grip).rotate(q).scale(p.scale()); // model space (centre = grip) to the hand frame
 
+		// R13: hand the pose to the effects (glow, nock light, Focus), model space to the camera frame including the equip lift
+		dev.minebleach.reiatsutest.client.fx.UryuBowCapture.captureFirstPerson(player.getId(), new Matrix4f().translate(0f, -0.6f * equipProgress, 0f).mul(bow));
 		m.push();
 		m.translate(0f, -0.6f * equipProgress, 0f); // the equip lift of vanilla
 		if (ClientOptions.showFirstPersonHand && !player.isInvisible()) {
 			// bow hand: the fist on the grip
 			Vector3f leftFist = bow.transformPosition(new Vector3f()).add(p.leftOff()[0], p.leftOff()[1], p.leftOff()[2]);
-			drawArm(mc, player, true, m, vcp, light, leftFist, p.leftRot(), 1f);
+			drawArm(mc, player, true, m, vcp, light, leftFist, pl.leftRot(), 1f);
 			// draw hand: from the resting empty hand to the nock point of the string, rotated like the bow
 			float e = dev.minebleach.reiatsutest.core.combat.FpEase.smooth(HAND.blend());
 			Vector3f rest = restFist(false);

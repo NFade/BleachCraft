@@ -24,7 +24,7 @@ public final class Shots {
 
 	/** The basic shot of a draw with the given bow power 0..1: damage scales with the power, the speed keeps a share. */
 	public static Params basic(int stacks, boolean arterie, double power) {
-		double base = UryuBalance.BASIC_DAMAGE * (arterie ? UryuBalance.ARTERIE_SHOT_FACTOR : 1.0) * BowDraw.damageFactor(power);
+		double base = BowDraw.tuning().damage() * (arterie ? UryuBalance.ARTERIE_SHOT_FACTOR : 1.0) * BowDraw.damageFactor(power);
 		Params p = build(base, UryuBalance.ARROW_SPEED * BowDraw.speedFactor(power), stacks, UryuBalance.ARROW_LIFE,
 				Homing.Params.degrees(UryuBalance.BASIC_HOMING_DEG, UryuBalance.BASIC_HOMING_RADIUS, UryuBalance.BASIC_HOMING_CONE_DEG));
 		return p;

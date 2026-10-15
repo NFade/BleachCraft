@@ -330,6 +330,9 @@ public final class UryuBowMotion {
 	 */
 	static void renderStringHand(MatrixStack m, VertexConsumerProvider vcp, ClientPlayerEntity player, int light, ItemStack shown, float equip,
 			CastGesture.Sample gs) {
+		if (FpBow.wants(player, Hand.MAIN_HAND, shown)) {
+			return; // R13: the archer's view (FpBow) draws both arms itself; a third arm appeared next to the bow hand during the abilities
+		}
 		boolean candidate = ClientOptions.showFirstPersonHand && fpOn() && !player.isInvisible() && !player.isUsingSpyglass()
 				&& shown == player.getMainHandStack() && UryuCrossItem.isBow(shown);
 		St st = STATES.get(player.getId());

@@ -124,4 +124,23 @@ class BowClipStateTest {
 			assertTrue(s.tick() <= BowClipState.END_TICK);
 		}
 	}
+
+	@Test
+	void drawWeightRisesWithTheDrawHoldsAndFadesAfterTheRelease() {
+		BowClipState st = new BowClipState();
+		assertEquals(0.0, st.drawWeight(), 1e-12);
+		double last = 0.0;
+		for (int i = 0; i < BowClipState.FULL_DRAW_TICK + 3; i++) {
+			st.step(true);
+			assertTrue(st.drawWeight() >= last - 1e-12, "never falls while drawing");
+			last = st.drawWeight();
+		}
+		assertEquals(1.0, st.drawWeight(), 1e-12);
+		st.step(false);
+		assertEquals(1.0, st.drawWeight(), 1e-12, "the arm stays with the string for the release");
+		for (int i = 0; i < 60; i++) {
+			st.step(false);
+		}
+		assertEquals(0.0, st.drawWeight(), 1e-12);
+	}
 }

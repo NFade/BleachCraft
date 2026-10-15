@@ -44,6 +44,19 @@ public final class BowClipState {
 		return tick;
 	}
 
+	/**
+	 * R13: 0..1 how much the string arm is "in the draw" (rises over the draw ticks, holds, goes after the release): scales extra turns of the string arm. Smooth, pure.
+	 */
+	public double drawWeight() {
+		double x;
+		switch (phase) {
+			case DRAW, HOLD -> x = Math.min(1.0, tick / (double) FULL_DRAW_TICK);
+			case RELEASE -> x = tick <= RELEASE_START_TICK + 2 ? 1.0 : Math.max(0.0, 1.0 - (tick - RELEASE_START_TICK - 2) / (double) (END_TICK - RELEASE_START_TICK - 2));
+			default -> x = 0.0;
+		}
+		return x * x * (3.0 - 2.0 * x);
+	}
+
 	/** True while the clip is held at full draw (the player is frozen on the hold pose, no sub tick interpolation). */
 	public boolean holding() {
 		return phase == Phase.HOLD;

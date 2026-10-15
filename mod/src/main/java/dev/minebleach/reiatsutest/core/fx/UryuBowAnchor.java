@@ -41,15 +41,30 @@ public final class UryuBowAnchor {
 
 	/** Third person grip: {@code feet} (x, y, z), body yaw and aim unit vector; {@code drawing} raises the arm along the aim. */
 	public static double[] thirdGrip(double[] feet, double bodyYawDeg, double[] aim, boolean drawing, double handSign) {
+		return thirdGrip(feet, bodyYawDeg, aim, drawing, handSign, 0.0);
+	}
+
+	/** R13: the chest is turned by this angle in the side-on archer stance (the clip turns it 74 degrees): the shoulders then stand along the aim, not across it. */
+	public static final double STANCE_TURN_DEG = 74.0;
+
+	/**
+	 * Same with the archer stance: {@code stance} 0..1 (1 = standing, the chest side-on, see {@code BowClipState#stanceWeight}) moves the bow shoulder from the side of the body
+	 * towards the aim axis: the lateral offset of the shoulder shrinks by cos of the chest turn and the shoulder comes forward by sin of it.
+	 */
+	public static double[] thirdGrip(double[] feet, double bodyYawDeg, double[] aim, boolean drawing, double handSign, double stance) {
 		double[] f = forward(bodyYawDeg);
 		double[] r = right(bodyYawDeg);
 		double s = handSign >= 0 ? 1.0 : -1.0;
 		if (!drawing) {
 			return new double[] {feet[0] + r[0] * SIDE * s + f[0] * FWD, feet[1] + UP, feet[2] + r[2] * SIDE * s + f[2] * FWD};
 		}
-		double sx = feet[0] + r[0] * SHOULDER_SIDE * s;
+		double st = Math.max(0.0, Math.min(1.0, stance));
+		double turn = Math.toRadians(STANCE_TURN_DEG) * st;
+		double side = SHOULDER_SIDE * Math.cos(turn);
+		double fwd = SHOULDER_SIDE * Math.sin(turn);
+		double sx = feet[0] + r[0] * side * s + f[0] * fwd;
 		double sy = feet[1] + SHOULDER_UP;
-		double sz = feet[2] + r[2] * SHOULDER_SIDE * s;
+		double sz = feet[2] + r[2] * side * s + f[2] * fwd;
 		return new double[] {sx + aim[0] * ARM, sy + aim[1] * ARM, sz + aim[2] * ARM};
 	}
 

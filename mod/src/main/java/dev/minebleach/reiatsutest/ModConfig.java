@@ -9,6 +9,7 @@ import dev.minebleach.reiatsutest.core.config.ConfigMigrations;
 import dev.minebleach.reiatsutest.core.kido.KidoConfig;
 import dev.minebleach.reiatsutest.core.movement.DoubleJumpConfig;
 import dev.minebleach.reiatsutest.core.rage.RageConfig;
+import dev.minebleach.reiatsutest.core.uryu.UryuBowTuning;
 import dev.minebleach.reiatsutest.core.state.MechSpec;
 import dev.minebleach.reiatsutest.core.swarm.FlightConfig;
 import dev.minebleach.reiatsutest.core.voice.VoiceConfig;
@@ -115,6 +116,11 @@ public final class ModConfig {
 	/** The {@code "rage"} section (R11 T3: rage gain, parry, ability reward, mob share, target cap, minimum shikai time before bankai). */
 	public static RageConfig loadRage() {
 		return loadSection(RageConfig.SECTION, RageConfig::defaults, RageConfig::fromRoot, (r, root) -> root.add(RageConfig.SECTION, r.toJson()));
+	}
+
+	/** The {@code "uryu"} section (R13: the draw, damage and fire rate of the Heilig Bogen and the Rage its arrows pay). */
+	public static UryuBowTuning loadUryuBow() {
+		return loadSection(UryuBowTuning.SECTION, UryuBowTuning::defaults, UryuBowTuning::fromRoot, (t, root) -> root.add(UryuBowTuning.SECTION, t.toJson()));
 	}
 
 	/** The {@code "rukia.iceWall"} section (R11 T5): geometry, life and strength of the ice wall. Written into the {@code rukia} object next to {@code rukia.passive}. */

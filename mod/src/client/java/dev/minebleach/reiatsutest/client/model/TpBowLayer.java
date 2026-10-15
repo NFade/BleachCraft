@@ -29,6 +29,8 @@ public final class TpBowLayer implements IAnimation {
 	private static final int PRIORITY = 1700;
 	private static final Identifier CLIP = Identifier.of("reiatsu_test", "uryu_bow_draw");
 	private static final int FADE_IN_TICKS = 3;
+	/** R13: degrees the string arm is turned towards the body centre while the bow is drawn (key {@code uryu.tp.drawArmYaw}). */
+	private static final double DRAW_ARM_YAW_DEG = -30.0;
 	/** Default sign of the chest turn of the clip (the first in-game test: the turn went the wrong way, so -1). */
 	private static final double TORSO_YAW_SCALE = -1.0;
 	private static final Vec3f ZERO = new Vec3f(0f, 0f, 0f);
@@ -124,13 +126,27 @@ public final class TpBowLayer implements IAnimation {
 			return v;
 		}
 		// playerAnimator turns the WHOLE model with the body yaw: give the head and arms the turn back so they look and aim forward (see BowStance)
+		// R13: the turn to take back is the turn the model REALLY has: the torso yaw of the whole stack (the clip plus whatever the layers below add to the body). The
+		// old formula used the clip's own torso yaw only, so the arms came out sideways whenever a lower layer had added a yaw to the body (after the first person pose, for one)
 		Vec3f body = layer.get3DTransform("body", TransformType.ROTATION, tickDelta, ZERO);
 		float full = body == null ? 0f : k * body.getY();
+		float turn = full * w;
+		try {
+			Vec3f total = PlayerAnimationAccess.getPlayerAnimLayer(player).get3DTransform("body", TransformType.ROTATION, tickDelta, ZERO);
+			if (total != null && FxTune.d("uryu.compFromStack", 1.0) > 0.5) {
+				turn = total.getY();
+				full = w > 0.001f ? turn / w : 0f;
+			}
+		} catch (RuntimeException ex) {
+			// the clip based value stays
+		}
 		if (type == TransformType.ROTATION) {
-			return new Vec3f(v.getX(), v.getY() + full * w, v.getZ());
+			// R13 (user): the string hand points a little towards the middle of the body, so it looks as if it pulls the string and does not just pass beside it
+			float in = "rightArm".equals(modelName) ? (float) Math.toRadians(FxTune.d("uryu.tp.drawArmYaw", DRAW_ARM_YAW_DEG)) * (float) state.drawWeight() : 0f;
+			return new Vec3f(v.getX(), v.getY() + turn + in, v.getZ());
 		}
 		if (arm && type == TransformType.POSITION) {
-			double[] r = BowStance.rotateXZ(v.getX(), v.getZ(), full);
+			double[] r = BowStance.rotateXZ(v.getX(), v.getZ(), turn);
 			return new Vec3f((float) r[0], v.getY(), (float) r[1]);
 		}
 		return v;

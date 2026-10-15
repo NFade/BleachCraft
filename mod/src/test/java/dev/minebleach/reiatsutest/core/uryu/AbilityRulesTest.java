@@ -144,7 +144,7 @@ class AbilityRulesTest {
 		assertEquals(14, UryuBalance.FOCUS_INTERVAL);
 		assertEquals(10, UryuBalance.FOCUS_INTERVAL_ARTERIE);
 		assertEquals(0.02, UryuBalance.FOCUS_MOVE_EPS);
-		assertEquals(4.0f, UryuBalance.BASIC_DAMAGE);
+		assertEquals(3.0f, UryuBalance.BASIC_DAMAGE); // R13: was 4.0
 		assertEquals(7.0f, UryuBalance.FOCUS_SHOT_DAMAGE);
 	}
 }
