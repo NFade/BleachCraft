@@ -93,8 +93,8 @@ class FpClampTest {
 		FpPose st = TwoHandMotion.stance(FpParams.DEFAULTS, 1f);
 		for (Map.Entry<String, CastGesture> e : CastGestures.defaults().entrySet()) {
 			CastGesture g = e.getValue();
-			if (g.freeHands()) {
-				continue; // the empty hands of the Byakuya bankai have no sword in the hand
+			if (g.freeHands() || UryuGestures.all().containsKey(g.id())) {
+				continue; // the empty hands of the Byakuya bankai have no sword in the hand, the bow of Uryu has no two handed stance (UryuGesturesTest)
 			}
 			float worst = 1f;
 			float worstMargin = 9f;

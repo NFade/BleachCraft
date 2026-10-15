@@ -91,6 +91,7 @@ public final class FpCast {
 
 	public static void init() {
 		TpCastLayer.register();
+		UryuBowMotion.init(); // U-FX 11: the third person layer of the Uryu bow poses
 	}
 
 	// ------------------------------------------------------------------ config
@@ -255,6 +256,7 @@ public final class FpCast {
 
 	/** An {@code effect_event} arrived (called from {@code ClientNet}, main thread): starts the gesture of its ability for the caster. */
 	public static void onEffectEvent(MinecraftClient mc, EffectEventS2C e) {
+		UryuBowMotion.onEffectEvent(e); // U-FX 11: the third person animation of an Uryu ability (the first person rows run below as for everybody)
 		try {
 			if (mc.world == null || !enabled()) {
 				return;
@@ -299,6 +301,7 @@ public final class FpCast {
 
 	/** Clears everything (world change, tests). */
 	public static void clear() {
+		UryuBowMotion.clear();
 		RUNS.clear();
 		TP_CACHE.clear();
 		TP_CACHE_AT.clear();
@@ -373,6 +376,7 @@ public final class FpCast {
 				cast = s;
 			}
 		}
+		cast = UryuBowMotion.mixFirstPerson(p, cast); // U-FX 11: the pull and the release of the bow (an ability gesture that runs wins)
 		// the steering: sustained while the key is held, then plays out
 		CastGesture sg = gesture(CastGestures.STEER);
 		boolean steering = sg != null && ClientState.steering() && p.getMainHandStack().getItem() instanceof ZanpakutoItem;
@@ -439,6 +443,12 @@ public final class FpCast {
 		TP_CACHE.put(entityId, s);
 		TP_CACHE_AT.put(entityId, now);
 		return s;
+	}
+
+	/** Id of the gesture that runs for an entity (it may be in its last frame), or null. */
+	static String runId(int entityId) {
+		Run r = RUNS.get(entityId);
+		return r == null ? null : r.g.id();
 	}
 
 	/** True while a gesture of this entity can change its third person arms. */

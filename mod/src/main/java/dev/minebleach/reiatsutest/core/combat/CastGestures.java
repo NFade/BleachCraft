@@ -52,6 +52,10 @@ public final class CastGestures {
 				return BYAKUYA_SHIKAI;
 			case EffectIds.BYAKUYA_BANKAI_RELEASE:
 				return BYAKUYA_BANKAI;
+			case EffectIds.URYU_SHIKAI_RELEASE:
+				return UryuAnims.RELEASE_SHIKAI; // U-FX 11
+			case EffectIds.URYU_BANKAI_RELEASE:
+				return UryuAnims.RELEASE_BANKAI;
 			case EffectIds.SEAL:
 				return SEAL;
 			default:

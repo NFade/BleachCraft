@@ -26,6 +26,13 @@ public final class ClientOptions {
 	/** Duration of the draw / sheathe animation of the sealed zanpakuto in seconds; 0 = no animation (config key draw_animation_seconds). */
 	public static volatile float drawSeconds = 0.45f;
 
+	/**
+	 * {@code uryu.bowHand} ({@code right} | {@code left}, default right): the hand of Uryu's bow. The bow is the MAIN hand item (vanilla pull), so the left
+	 * hand version is the vanilla option Main Hand: Left, which mirrors every Uryu pose (third and first person); this key only documents the wish and logs
+	 * a hint once when it is {@code left} and the main hand is right (U-FX 11, design/results/uryu_poses.md).
+	 */
+	public static volatile String uryuBowHand = "right";
+
 	/** {@code voice.client.enabled}: start the local voice bridge on joining any server. */
 	public static volatile boolean voiceClientEnabled = true;
 	/** {@code voice.client.port}: loopback port of the bridge (the next {@link #voiceClientPortSearch} ports are tried when busy). */
@@ -77,6 +84,9 @@ public final class ClientOptions {
 				if (o.has("draw_animation_seconds")) {
 					drawSeconds = Math.max(0f, Math.min(3f, o.get("draw_animation_seconds").getAsFloat()));
 				}
+				if (o.has("uryu.bowHand")) {
+					uryuBowHand = "left".equalsIgnoreCase(o.get("uryu.bowHand").getAsString()) ? "left" : "right";
+				}
 				readVoice(o);
 				if (!o.has("voice")) {
 					// older file without the voice section: add it with the defaults, keep everything else as it is
@@ -88,6 +98,7 @@ public final class ClientOptions {
 				o.addProperty("show_first_person_hand", true);
 				o.addProperty("first_person_scale_multiplier", 1.0);
 				o.addProperty("draw_animation_seconds", 0.45);
+				o.addProperty("uryu.bowHand", "right");
 				o.add("voice", voiceDefaults());
 				Files.writeString(file, new GsonBuilder().setPrettyPrinting().create().toJson(o) + System.lineSeparator(), StandardCharsets.UTF_8);
 			}

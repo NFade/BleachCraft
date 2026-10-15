@@ -3,7 +3,7 @@ package dev.minebleach.reiatsutest.core.combat;
 import java.util.Map;
 
 /**
- * Placeholder gestures of the abilities of Gin Ichimaru and Uryu Ishida (branch gin-uryu, registration skeleton), kept apart from
+ * Placeholder gestures of the abilities of Gin Ichimaru (Uryu Ishida has his own, {@link UryuGestures}; branch gin-uryu, registration skeleton), kept apart from
  * {@link CastGestures} like {@link ExtraGestures}. Every ability gets the same plain thrust (the ice spike pose, rescaled to the
  * duration given here) until the real hand gestures exist; replace an entry here or override it from {@code pose_override.json}
  * ({@code fp_cast.<ability id>}). UNVERIFIED in the game.
@@ -23,12 +23,7 @@ final class NewCharacterGestures {
 		thrust(m, "gin.bankai.butou_renjin", 2.6);
 		thrust(m, "gin.bankai.korose", 2.4);
 		thrust(m, "gin.bankai.hakufuku", 1.4);
-		thrust(m, "uryu.shikai.heilig_pfeil", 1.2);
-		thrust(m, "uryu.shikai.sprenger", 2.4);
-		thrust(m, "uryu.shikai.seele_schneider", 0.8);
-		thrust(m, "uryu.bankai.wing_barrage", 0.9);
-		thrust(m, "uryu.bankai.licht_regen", 2.4);
-		thrust(m, "uryu.bankai.sternenstaub", 3.0);
+		UryuGestures.addTo(m); // U-FX 11: the real first person hands of Uryu (pull, release, abilities), the placeholder thrusts are gone
 	}
 
 	/** The right hand is drawn back, thrown forward along the look and held, the left hand points down the line; times scaled to {@code dur}. */
