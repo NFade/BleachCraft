@@ -1,6 +1,7 @@
 {
   "env": {
-    "BASH_MAX_OUTPUT_LENGTH": "12000"
+    "BASH_MAX_OUTPUT_LENGTH": "12000",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
   },
   "permissions": {
     "deny": [
@@ -11,6 +12,19 @@
       "Read(mod/build/tmp/**)",
       "Read(mod/build/libs/**)",
       "Read(refs/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -I .claude/hooks/guard_read.py"
+          }
+        ]
+      }
     ]
   }
 }

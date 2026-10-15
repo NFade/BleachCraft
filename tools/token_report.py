@@ -57,6 +57,7 @@ def parse_ts(t):
 
 def analyze(path):
 	usage, order, tmap, results = {}, [], {}, []
+	model_of = {}
 	cats, imgs = collections.Counter(), collections.Counter()
 	turn, ts_of, tools_of = 0, {}, collections.defaultdict(list)
 	first_user = None
@@ -78,6 +79,7 @@ def analyze(path):
 				new = {"i": u.get("input_tokens", 0) or 0, "o": u.get("output_tokens", 0) or 0,
 				       "cw": u.get("cache_creation_input_tokens", 0) or 0, "cr": u.get("cache_read_input_tokens", 0) or 0}
 				if mid not in usage:
+					model_of[mid] = m.get("model") or "?"
 					usage[mid] = new
 					order.append(mid)
 					turn += 1
@@ -145,7 +147,12 @@ def analyze(path):
 		big.append((cc, tk, tn, g, key[:100]))
 	big.sort(reverse=True)
 	tt = sorted(((wcost(usage[m]), ts_of[m][0], ctxs[i], usage[m]["o"], usage[m]["cw"], tools_of.get(m, [])[:2]) for i, m in enumerate(order)), reverse=True)
-	return {"turns": turn, "usage": tot, "weighted": wcost(tot), "max_ctx": max(ctxs) if ctxs else 0, "cats": dict(cats), "imgs": dict(imgs),
+	by_model = collections.Counter()
+	msgs_model = collections.Counter()
+	for mid in order:
+		by_model[model_of[mid]] += wcost(usage[mid])
+		msgs_model[model_of[mid]] += 1
+	return {"by_model": dict(by_model), "msgs_model": dict(msgs_model), "turns": turn, "usage": tot, "weighted": wcost(tot), "max_ctx": max(ctxs) if ctxs else 0, "cats": dict(cats), "imgs": dict(imgs),
 	        "carry": dict(carry), "big": big[:8], "top_turns": tt[:8], "misses": misses, "first_user": first_user}
 
 
@@ -209,6 +216,11 @@ def main():
 	print("\nTOTAL cost units %s: cache read %.0f%%, cache write %.0f%%, output %.0f%%, input %.0f%%" % (M(W), 100 * 0.1 * tot["cr"] / W, 100 * 1.25 * tot["cw"] / W, 100 * 5 * tot["o"] / W, 100 * tot["i"] / W))
 	subw = sum(s["weighted"] for _, _, subs in rows for s in subs)
 	print("main sessions %.0f%%, subagents %.0f%%" % (100 * (W - subw) / W, 100 * subw / W))
+	bm, mm = collections.Counter(), collections.Counter()
+	for r in allr:
+		bm.update(r["by_model"])
+		mm.update(r["msgs_model"])
+	print("by model (cost units, assistant messages): " + ", ".join("%s %.0f%% (%d)" % (k, 100 * v / W, mm[k]) for k, v in bm.most_common(5)))
 	cats = collections.Counter()
 	for r in allr:
 		for k, v in r["cats"].items():
