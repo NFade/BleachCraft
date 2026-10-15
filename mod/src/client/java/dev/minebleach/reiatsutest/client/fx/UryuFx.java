@@ -18,12 +18,11 @@ import net.minecraft.util.math.Vec3d;
  */
 public final class UryuFx {
 	/**
-	 * Effect id 70 is the Blut Arterie release (U-FX 6), 72 to 77 are Uryu's ability events (the server also sends the data packet for the ones
-	 * that need exact positions), 78 is the cast start of the abilities that are aimed at their release (S-U4). 71 (the bankai release) is
-	 * still drawn by the common release effects; it joins here in U-FX 7.
+	 * Effect id 70 is the Blut Arterie release (U-FX 6), 71 the Quincy: Vollstaendig release (U-FX 7), 72 to 77 are Uryu's ability events (the server
+	 * also sends the data packet for the ones that need exact positions), 78 is the cast start of the abilities that are aimed at their release (S-U4).
 	 */
 	public static boolean handles(int effectId) {
-		return effectId == 70 || effectId >= 72 && effectId <= 78;
+		return effectId >= 70 && effectId <= 78;
 	}
 
 	/** Stacks of Focus of the local player (server sync, drawn by the HUD). */
@@ -93,6 +92,7 @@ public final class UryuFx {
 		switch (e.effectId()) {
 			case 73 -> UryuSprengerFx.onCast(e);
 			case 70 -> UryuAuraFx.releaseShikai(e); // Blut Arterie (U-FX 6)
+			case 71 -> UryuWingFx.release(e); // Quincy: Vollstaendig (U-FX 7)
 			case 74 -> UryuSeeleFx.lunge(w, e);
 			case 75 -> UryuWingFx.barrage(e);
 			case 76 -> UryuRainFx.rainSquare(e);
@@ -165,7 +165,7 @@ public final class UryuFx {
 
 	// ------------------------------------------------------------------ cleanup
 
-	/** The bankai of a player ended (any reason): his wings go with it. */
+	/** The bankai of a player ended (any reason: the cleanup event 44, the seal 10 / 11): his wings break into flakes and the bands fade (2.16). */
 	public static void clearWings(int casterId) {
 		UryuWingFx.clearWings(casterId);
 	}
@@ -186,6 +186,7 @@ public final class UryuFx {
 		UryuBowFx.frame(now);
 		UryuSeeleFx.frame(now);
 		UryuSprengerFx.frame(now);
+		UryuWingFx.frame(now);
 	}
 
 	private static void emitGlow(FxGlowBatch.Emitter e) {

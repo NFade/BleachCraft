@@ -83,4 +83,24 @@ public final class UryuFxStats {
 	public static int rootChains() {
 		return UryuBindFx.lastChains;
 	}
+
+	// ------------------------------------------------------------------ wings (U-FX 7)
+
+	/** Stardust specks and tip stars spawned along the wings; ends of the bankai state handled (wings broken into flakes). */
+	public static int wingSpecks() {
+		return UryuWingFx.specks;
+	}
+
+	public static int wingTipStars() {
+		return UryuWingFx.tipStars;
+	}
+
+	public static int wingEnds() {
+		return UryuWingFx.ends;
+	}
+
+	/** Releases (effect 71) seen. */
+	public static int wingReleases() {
+		return UryuWingFx.releases;
+	}
 }

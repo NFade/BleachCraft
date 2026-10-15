@@ -51,9 +51,9 @@ public final class BankaiEnd {
 	private BankaiEnd() {
 	}
 
-	/** Effect ids of the running timelines that die with the bankai (release 2 and 4, ice wall 24, scatter 32, hakuteiken 33, frost field 42). */
+	/** Effect ids of the running timelines that die with the bankai (release 2, 4 and 71, ice wall 24, scatter 32, hakuteiken 33, frost field 42). */
 	static boolean bankaiEffect(int id) {
-		return id == 2 || id == 4 || id == 24 || id == 32 || id == 33 || id == EffectIds.FROST_FIELD;
+		return id == 2 || id == 4 || id == 24 || id == 32 || id == 33 || id == EffectIds.FROST_FIELD || id == EffectIds.URYU_BANKAI_RELEASE;
 	}
 
 	public static void reset() {

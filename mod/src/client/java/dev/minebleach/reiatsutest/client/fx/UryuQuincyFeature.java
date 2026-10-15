@@ -2,6 +2,7 @@ package dev.minebleach.reiatsutest.client.fx;
 
 import dev.minebleach.reiatsutest.ReiatsuTest;
 import dev.minebleach.reiatsutest.core.fx.UryuBlutTiming;
+import dev.minebleach.reiatsutest.core.fx.UryuVollstTiming;
 import dev.minebleach.reiatsutest.core.state.CharacterId;
 import dev.minebleach.reiatsutest.core.state.ZanpakutoState;
 import dev.minebleach.reiatsutest.registry.ModAttachments;
@@ -99,6 +100,8 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 		double pendingAt = Double.NaN;
 		double endedAt = -1000;
 		double bankaiSince = -1000;
+		/** FX time the BANKAI state ended (the bands fade out for {@link UryuVollstTiming#BANDS_FADE_OUT} s, so the passes are still called). */
+		double bankaiEndedAt = -1000;
 		double fireAt = -1000;
 		boolean wasDrawing;
 		int lastUse;
@@ -110,8 +113,12 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 	}
 
 	/** What another step may read of a player: the state of the Uryu attachment and the vein level. */
-	public record State(boolean shikai, boolean bankai, double bankaiAge, double veinLevel, int veinStage) {
-		public static final State NONE = new State(false, false, 0.0, 0.0, -1);
+	public record State(boolean shikai, boolean bankai, double bankaiAge, double veinLevel, int veinStage, double endedAge) {
+		public static final State NONE = new State(false, false, 0.0, 0.0, -1, -1.0);
+
+		public State(boolean shikai, boolean bankai, double bankaiAge, double veinLevel, int veinStage) {
+			this(shikai, bankai, bankaiAge, veinLevel, veinStage, -1.0);
+		}
 	}
 
 	/** The frame a {@link Pass} draws in. */
@@ -126,6 +133,7 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 
 	private static final Map<Integer, Q> PLAYERS = new HashMap<>();
 	private static final Set<Integer> FORCED = new HashSet<>();
+	private static final Set<Integer> FORCED_BANKAI = new HashSet<>();
 	/** Players that were in the world on the previous tick (a player that appears already in SHIKAI is shown settled, one that changes is a release). */
 	private static final Set<Integer> KNOWN = new HashSet<>();
 	private static final List<Pass> BANKAI_PASSES = new ArrayList<>();
@@ -166,9 +174,19 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 		}
 	}
 
+	/** Harness: treats the player as Uryu in BANKAI whatever its attachment says (the stand-ins of the three player frame test). */
+	public static void forceBankai(int entityId, boolean on) {
+		if (on) {
+			FORCED_BANKAI.add(entityId);
+		} else {
+			FORCED_BANKAI.remove(entityId);
+		}
+	}
+
 	public static void clear() {
 		PLAYERS.clear();
 		FORCED.clear();
+		FORCED_BANKAI.clear();
 		KNOWN.clear();
 	}
 
@@ -196,7 +214,13 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 			return State.NONE;
 		}
 		double[] v = vein(q, FxClock.now);
-		return new State(q.shikai, q.bankai, q.bankai ? FxClock.now - q.bankaiSince : 0.0, v[0], (int) v[1]);
+		return new State(q.shikai, q.bankai, q.bankai ? FxClock.now - q.bankaiSince : 0.0, v[0], (int) v[1], endedAge(q, FxClock.now));
+	}
+
+	/** Seconds since the BANKAI state ended while the passes still fade out (see {@link UryuVollstTiming#BANDS_FADE_OUT}), else -1. */
+	private static double endedAge(Q q, double now) {
+		double age = now - q.bankaiEndedAt;
+		return !q.bankai && age >= 0 && age < UryuVollstTiming.BANDS_FADE_OUT ? age : -1.0;
 	}
 
 	private static boolean isUryu(AbstractClientPlayerEntity pl, ZanpakutoState want) {
@@ -231,8 +255,9 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 			int id = pl.getId();
 			boolean known = !KNOWN.add(id);
 			boolean forced = FORCED.contains(id);
-			boolean shikai = forced || isUryu(pl, ZanpakutoState.SHIKAI);
-			boolean bankai = !forced && isUryu(pl, ZanpakutoState.BANKAI);
+			boolean forcedBankai = FORCED_BANKAI.contains(id);
+			boolean shikai = !forcedBankai && (forced || isUryu(pl, ZanpakutoState.SHIKAI));
+			boolean bankai = forcedBankai || !forced && isUryu(pl, ZanpakutoState.BANKAI);
 			Q q = PLAYERS.get(id);
 			if (q == null) {
 				if (!shikai && !bankai) {
@@ -265,10 +290,13 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 				q.bankaiSince = q.seen ? now : now - 100.0;
 			} else if (!bankai && q.bankai) {
 				q.bankai = false;
+				q.bankaiEndedAt = now;
+				UryuWingFx.bankaiEnded(id); // the wings break (idempotent: the end event 44 and the seal do the same)
 			}
 			q.seen = true;
 			// a record made by the release event whose attachment has not arrived yet is kept for 2 s (the packets of one tick come in any order)
-			if (!q.shikai && !q.bankai && now - q.endedAt > UryuBlutTiming.FADE_OUT + 0.1 && now - q.eventAt > 2.0) {
+			if (!q.shikai && !q.bankai && now - q.endedAt > UryuBlutTiming.FADE_OUT + 0.1 && now - q.eventAt > 2.0
+					&& now - q.bankaiEndedAt > UryuVollstTiming.BANDS_FADE_OUT + 0.1) {
 				PLAYERS.remove(id);
 				continue;
 			}
@@ -368,8 +396,10 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 				lastStage = (int) v[1];
 				drawParts(matrices, vcp, model, slim, armored(entity), v[0], (int) v[1], UryuBlutTiming.parts(FxConfig.uryuVeinOverlay));
 			}
-			if (q.bankai && !BANKAI_PASSES.isEmpty()) {
-				Ctx c = new Ctx(matrices, vcp, light, entity, model, tickDelta, now, slim, new State(q.shikai, true, now - q.bankaiSince, v[0], (int) v[1]));
+			double ended = endedAge(q, now);
+			if ((q.bankai || ended >= 0) && !BANKAI_PASSES.isEmpty()) {
+				Ctx c = new Ctx(matrices, vcp, light, entity, model, tickDelta, now, slim,
+						new State(q.shikai, q.bankai, q.bankai ? now - q.bankaiSince : 0.0, v[0], (int) v[1], ended));
 				for (Pass p : BANKAI_PASSES) {
 					p.draw(c);
 				}
@@ -458,11 +488,14 @@ public final class UryuQuincyFeature extends FeatureRenderer<AbstractClientPlaye
 			return;
 		}
 		try {
+			boolean slim = player.getSkinTextures().model() == SkinTextures.Model.SLIM;
+			if (q.bankai) {
+				UryuWingRenderer.firstPersonBracer(player, renderer.getModel(), slim, left, m, vcp); // the bracer of the bankai state on this arm
+			}
 			double[] v = vein(q, FxClock.now);
 			if (v[1] < 0 || UryuBlutTiming.invisible(v[0])) {
 				return;
 			}
-			boolean slim = player.getSkinTextures().model() == SkinTextures.Model.SLIM;
 			firstPersonDraws++;
 			drawParts(m, vcp, renderer.getModel(), slim, false, v[0], (int) v[1], List.of(left ? UryuBlutTiming.Part.LEFT_ARM : UryuBlutTiming.Part.RIGHT_ARM));
 		} catch (RuntimeException ex) {

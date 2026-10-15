@@ -1,4 +1,6 @@
-# Uryū: handoff (2026-10-14 evening). Read this first tomorrow.
+# Uryū: handoff. Read this first. NEWEST STATE: see design/results/URYU_PROGRESS.md (2026-10-15 evening: stages S0-S5 done = 60 percent, S6a partial WIP, poses merged into branch `uryu-fx-wip`, results notes uryu_ufx2/4/5/6 and uryu_poses exist). Work stage by stage with haiku for notes and sonnet for code (user rule). The text below is the older 2026-10-14 snapshot.
+
+# (older) 2026-10-14 evening snapshot
 
 The agents were stopped on purpose because the usage limit was running out. Nothing was lost: everything is committed or saved in a WIP commit and pushed. NOTHING from the visual effects stage was ever run in game (no harness run yet), and the WIP branch may not compile.
 

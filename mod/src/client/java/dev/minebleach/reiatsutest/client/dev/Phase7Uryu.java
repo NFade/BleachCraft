@@ -51,6 +51,9 @@ final class Phase7Uryu {
 		if (wants("uryu_seele") || wants("uryu_seele_live")) {
 			Phase7Seele.steps(); // U-FX 5: the Seele Schneider combo (p7_05_seele_*)
 		}
+		if (wants("uryu_vollst") || wants("uryu_vollst_rm") || wants("uryu_wings") || wants("uryu_vollst_end") || wants("uryu_vollst_f13")) {
+			Phase7Vollst.steps(); // U-FX 7: the Quincy: Vollstaendig release and the bankai state (p7_07_vollst_*)
+		}
 	}
 
 	/** Like {@code Phase6Harness.shot} with the {@code p7_} prefix. */

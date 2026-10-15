@@ -32,8 +32,11 @@ public final class FxEvents {
 			ShunpoFx.play(client, e);
 			return;
 		}
+		if (id == 10 || id == 11) {
+			UryuFx.clearWings(e.casterId()); // Uryu: the seal and the bankai end take the wings (a no-op for everybody without bankai wings); the common seal look goes on
+		}
 		if (id == dev.minebleach.reiatsutest.core.state.EffectIds.BANKAI_CLEANUP) {
-			UryuFx.clearWings(e.casterId()); // Uryu: the wings of the wing barrage go with his bankai
+			UryuFx.clearWings(e.casterId()); // Uryu: the wings of his bankai break (2.16)
 			BankaiEnd.onEvent(e);
 			return;
 		}
