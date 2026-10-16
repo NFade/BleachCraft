@@ -140,8 +140,16 @@ public final class ZanpakutoManager {
 		IceWall.init(); // R11 T5: the Rukia ice wall (config section rukia.iceWall)
 		TempBlocks.init(); // R11 review fix 6: orphan sweep of ice_wall blocks on chunk load
 		MECH = ModConfig.loadMech();
+		BALANCE = ModConfig.loadBalance();
+		BalanceConfig.setLive(BALANCE.withMech(MECH));
 		ConfigReload.register(() -> {
 			MECH = ModConfig.loadMech();
+			BALANCE = ModConfig.loadBalance(); // R14: /reiatsu reload and /reiatsu dev set balance.* reach the machines of the online players
+			BalanceConfig live = BALANCE.withMech(MECH);
+			BalanceConfig.setLive(live);
+			for (Session s : SESSIONS.values()) {
+				s.sm.setConfig(live);
+			}
 			MELEE_LIMITERS.clear();
 		});
 		ParryBus.register(ZanpakutoManager::onParryReiatsu);
@@ -180,7 +188,7 @@ public final class ZanpakutoManager {
 
 	private static Session createSession(ServerPlayerEntity p) {
 		MinecraftServer srv = p.getServer();
-		BalanceConfig cfg = BalanceConfig.defaults().withMech(MECH);
+		BalanceConfig cfg = BALANCE.withMech(MECH);
 		ReiatsuData stored = p.getAttached(ModAttachments.REIATSU);
 		ReiatsuState initial = stored != null ? stored.toState() : ReiatsuState.full(cfg.maxTenths());
 		Session s = new Session(new StateMachine(srv::getTicks, cfg, initial));
@@ -671,12 +679,15 @@ public final class ZanpakutoManager {
 	/** The balance numbers of a player's machine (the glue classes of r8 read their knobs here), or the defaults without a session. */
 	static BalanceConfig configOf(ServerPlayerEntity p) {
 		Session s = SESSIONS.get(p.getUuid());
-		BalanceConfig c = s == null ? BalanceConfig.defaults() : s.sm.config();
+		BalanceConfig c = s == null ? BALANCE : s.sm.config();
 		return c.mech().equals(MECH) ? c : c.withMech(MECH); // the mech numbers are live: /reiatsu reload changes them for running sessions
 	}
 
 	/** The {@code mech} numbers in force (defaults until the config is read at mod init, then the file; R11 T2). */
 	private static volatile MechSpec MECH = MechSpec.defaults();
+
+	/** R14: the balance numbers without the mech part (code defaults plus the {@code balance} section of the config). */
+	private static volatile BalanceConfig BALANCE = BalanceConfig.defaults();
 
 	static MechSpec mech() {
 		return MECH;

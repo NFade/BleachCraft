@@ -12,7 +12,8 @@ import org.junit.jupiter.api.Test;
 /** R11 T3: the reworked Rage economy (new defaults, anti-farm rules, the config section). Times to shikai and bankai are in {@link RageSimulatorTest}. */
 class RageR11Test {
 	/** The R11 T3 numbers as they were before the gin-uryu rage override: these tests pin that rule set, the live defaults live in RageDefaultsTest. */
-	static final RageConfig R11 = new RageConfig(1000, 0, 250, 40, 2, 25, 160, 20, 5, 0, 10, 120, 400, 800, 20, 20, 25, 80, 400);
+	/** The R11 numbers; R14: the shikai cost is 0 (it was 400). */
+	static final RageConfig R11 = new RageConfig(1000, 0, 250, 40, 2, 25, 160, 20, 5, 0, 10, 120, 0, 800, 20, 20, 25, 80, 400);
 	private final RageConfig cfg = R11;
 
 	private RageMeter meter() {
@@ -34,7 +35,7 @@ class RageR11Test {
 		assertEquals(0, cfg.passiveTenths(), "no passive inflow");
 		assertEquals(80, cfg.targetCapPer10sTenths());
 		assertEquals(400, cfg.bankaiMinShikaiTicks());
-		assertEquals(400, cfg.shikaiCostTenths());
+		assertEquals(0, cfg.shikaiCostTenths(), "R14: shikai takes no Rage");
 		assertEquals(800, cfg.bankaiCostTenths());
 		assertEquals(160, cfg.decayDelayTicks(), "drain unchanged: 0.5 per second after 8 s");
 		assertEquals(5, cfg.decayTenths());
@@ -309,7 +310,7 @@ class RageR11Test {
 		JsonObject o = cfg.toJson();
 		for (String k : new String[] {"damageTenthsPerHp", "maxGainPerHitTenths", "dealtTenthsPerHp", "maxDealtGainPerHitTenths", "mobMultiplierPercent",
 				"targetCapPer10sTenths", "parryGainTenths", "parryGapTicks", "abilityHitTenths", "passiveTenths", "passiveIntervalTicks", "passiveWindowTicks",
-				"decayDelayTicks", "decayIntervalTicks", "decayTenths", "shikaiCostTenths", "bankaiCostTenths", "bankaiMinShikaiTicks"}) {
+				"decayDelayTicks", "decayIntervalTicks", "decayTenths", "bankaiCostTenths", "bankaiMinShikaiTicks"}) {
 			assertTrue(o.has(k), k);
 		}
 		assertFalse(o.has("maxTenths"), "the size of the bar is not configurable");
@@ -333,7 +334,7 @@ class RageR11Test {
 		RageConfig c = RageConfig.fromRoot(root);
 		assertEquals(RageConfig.defaults().dealtTenthsPerHp(), c.dealtTenthsPerHp(), "a string gives the default");
 		assertEquals(0, c.parryGainTenths(), "negative is clamped to 0");
-		assertEquals(1000, c.shikaiCostTenths(), "above the bar is clamped to the bar");
+		assertEquals(0, c.shikaiCostTenths(), "R14: the shikai key of an old file is ignored");
 		assertEquals(800, c.bankaiCostTenths(), "null gives the default");
 		assertEquals(1, c.decayIntervalTicks());
 		assertEquals(1, c.passiveIntervalTicks());

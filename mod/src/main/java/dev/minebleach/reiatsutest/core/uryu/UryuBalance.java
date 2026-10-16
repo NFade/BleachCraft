@@ -74,6 +74,8 @@ public final class UryuBalance {
 	// ---------------------------------------------------------------- shunpo
 	/** Blocks added to the normal shunpo distance for Uryu (the Quincy flavour: Hirenkyaku). */
 	public static final double SHUNPO_BONUS = 2.0;
+	/** R14: ticks added to the shunpo cooldown of Uryu (50 + 20 = 3.5 s): he goes 2 blocks farther, so a chaser must be able to catch up. */
+	public static final int SHUNPO_COOLDOWN_BONUS = 20;
 
 	// ---------------------------------------------------------------- Sprenger (H, SHIKAI)
 	public static final double SPRENGER_RANGE = 20.0;

@@ -101,7 +101,7 @@ class BankaiTest {
 			TransitionResult r = f.cast(a, B);
 			assertTrue(r.ok(), a + " " + r.reason());
 			assertFalse(Fx.has(r.events(), StateEvent.ReiatsuSpent.class));
-			assertTrue(f.sm.reiatsu().value() <= prev + 10, "no reiatsu was spent by " + a);
+			assertTrue(f.sm.reiatsu().value() <= prev + 24, "no reiatsu was spent by " + a); // up to three bankai batches of +8 ran since the last look
 			prev = f.sm.reiatsu().value();
 			f.adv(12); // past the global cooldown (a little regeneration happens meanwhile)
 			assertTrue(f.sm.reiatsu().value() >= prev);

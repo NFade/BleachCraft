@@ -85,12 +85,12 @@ final class PlateHud {
 		drawValueLine(g, font, barX, y0 + 26, barW, ch, st, accent, alpha, tickDelta);
 		drawRage(g, font, barX, y0 + 37, barW, alpha, now);
 		drawMomentum(g, barX, y0 + 37, barW, alpha, now);
-		drawFocus(g, barX, y0 + 37, barW, alpha, now, ch, st);
 		long q3 = System.nanoTime();
 		PROF[0] += q1 - q0;
 		PROF[1] += q2 - q1;
 		PROF[2] += q3 - q2;
 		ms.pop();
+		drawFocus(g, w, h, alpha, now, ch, st);
 	}
 
 	// ------------------------------------------------------------------------------------------ emblem
@@ -136,7 +136,7 @@ final class PlateHud {
 		int ry = y0 - 4;
 		if (st == ZanpakutoState.BANKAI) {
 			double rem = HudModel.bankaiRemaining(tickDelta);
-			double frac = rem / (HudModel.CFG.bankaiCapTicks() / 20.0);
+			double frac = rem / (HudModel.cfg().bankaiCapTicks() / 20.0);
 			double draw = FxMath.oc((now - HudModel.bankaiStart) / 0.5);
 			if (HudModel.bankaiStart < 0 || FxConfig.reduceMotion) {
 				draw = 1;
@@ -341,7 +341,7 @@ final class PlateHud {
 		}
 		// release cost tick (15 percent), gold, only before shikai
 		if (st == ZanpakutoState.SEALED || st == ZanpakutoState.BASE) {
-			int tx = fillLen(HudModel.CFG.shikaiReleaseCost() / max, span);
+			int tx = fillLen(HudModel.cfg().shikaiReleaseCost() / max, span);
 			for (int r = 0; r < 7; r++) {
 				g.fill(fx + shift(r) + tx, fy + r, fx + shift(r) + tx + 1, fy + r + 1, HudGfx.argb(GOLD, 0.95f * alpha));
 			}
@@ -679,20 +679,21 @@ final class PlateHud {
 	private static final float[] PIP_OFF = {0.38f, 0.52f, 0.66f};
 
 	/**
-	 * Uryu's Focus (design/URYU.md section 3): three Reishi diamonds in the row under the reiatsu / Rage bars (the row the Rukia frost
-	 * stacks use, right aligned). Server synced ({@code UryuFx.focus}); only for a drawn Uryu. Filled diamonds pale blue, empty ones
+	 * Uryu's Focus (design/URYU.md section 3): three Reishi diamonds centred under the crosshair (R14; they were in the row under the reiatsu / Rage
+	 * bars of the plate, away from where the archer looks). Server synced ({@code UryuFx.focus}); only for a drawn Uryu. Filled diamonds pale blue, empty ones
 	 * an outline, white and pulsing at 3 stacks (steady with reduceMotion). Without the Rage bar the row moves up under the value line.
 	 * Pure rectangles, so it cannot crash on a missing atlas (the Gin / Uryu placeholder rule).
 	 */
-	private static void drawFocus(HudGfx g, int bx, int by0, int barW, float alpha, double now, CharacterId ch, ZanpakutoState st) {
+	private static void drawFocus(HudGfx g, int w, int h, float alpha, double now, CharacterId ch, ZanpakutoState st) {
 		if (ch != CharacterId.URYU || st == ZanpakutoState.SEALED) {
 			return;
 		}
 		int stacks = Math.max(0, Math.min(3, dev.minebleach.reiatsutest.client.fx.UryuFx.focus));
 		boolean rm = FxConfig.reduceMotion;
-		int y = rageOnScreen ? by0 + (int) Math.round(rageYOff) + RAGE_H + 2 : by0 + 2;
+		// R14: under the crosshair (the cross of the ability pips is at h/2 + 9), not in the plate at the top left corner
 		int step = 8;
-		int x = bx + barW - 3 * step + 3;
+		int y = h / 2 + 14;
+		int x = w / 2 - (2 * step + 5) / 2;
 		boolean atMax = stacks >= 3;
 		float pulse = atMax && !rm ? (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.6 * now)) : atMax ? 0.6f : 0f;
 		for (int i = 0; i < 3; i++) {

@@ -26,7 +26,10 @@ import net.minecraft.text.Text;
  * renderers only read the public fields.
  */
 public final class HudModel {
-	public static final BalanceConfig CFG = BalanceConfig.defaults();
+	/** R14: the balance numbers in force (follows {@code /reiatsu dev set balance.*} in a single player game). */
+	public static BalanceConfig cfg() {
+		return BalanceConfig.live();
+	}
 
 	public enum SlotState { READY, COOLING, POOR, DISABLED, ACTIVE }
 
@@ -275,7 +278,7 @@ public final class HudModel {
 
 		// bankai ready gem (SHIKAI with enough Rage; the reiatsu bar does not matter any more, mech2 task 3)
 		boolean ready = st == ZanpakutoState.SHIKAI
-				&& ClientState.rageTuning().bankaiAffordable(ClientState.rage().value()) && !(endedAt >= 0 && now - endedAt < CFG.bankaiReentryTicks() / 20.0)
+				&& ClientState.rageTuning().bankaiAffordable(ClientState.rage().value()) && !(endedAt >= 0 && now - endedAt < cfg().bankaiReentryTicks() / 20.0)
 				&& shikaiHoldLeft() <= 0.0; // R11 T3: bankai also needs the minimum time in shikai
 		if (ready && !gemReady) {
 			gemSparkAt = now;
@@ -343,7 +346,7 @@ public final class HudModel {
 			sealStart = now;
 			stripOutStart = now;
 			if (now - endedAt > 1.0) {
-				startLock(CFG.sealLockTicks() / 20.0);
+				startLock(cfg().sealLockTicks() / 20.0);
 			}
 		}
 		if (to == ZanpakutoState.BASE && fromReleased && !instant) {
@@ -364,7 +367,7 @@ public final class HudModel {
 
 	/** Seconds left of the bankai (45 s cap), interpolated within the client tick. */
 	public static double bankaiRemaining(float tickDelta) {
-		return Math.max(0, (CFG.bankaiCapTicks() - ClientState.ticksInState() - tickDelta) / 20.0);
+		return Math.max(0, (cfg().bankaiCapTicks() - ClientState.ticksInState() - tickDelta) / 20.0);
 	}
 
 	public static int cooldownRemaining(AbilityId a) {
@@ -402,7 +405,7 @@ public final class HudModel {
 			s.index = i;
 			s.bankaiKey = bankaiKey;
 			s.ability = a;
-			AbilitySpec spec = CFG.spec(a);
+			AbilitySpec spec = cfg().spec(a);
 			s.costTenths = spec.costTenths();
 			int[] o = COOLDOWN_OVERRIDE[a.ordinal()];
 			int rem = live || o != null ? cooldownRemaining(a) : 0;
@@ -441,8 +444,8 @@ public final class HudModel {
 
 	private static int activeTicks(AbilityId a) {
 		return switch (a) {
-			case MODE_ATTACK -> CFG.attackModeTicks();
-			case MODE_BARRIER -> CFG.barrierTicks();
+			case MODE_ATTACK -> cfg().attackModeTicks();
+			case MODE_BARRIER -> cfg().barrierTicks();
 			default -> 0;
 		};
 	}
@@ -575,7 +578,7 @@ public final class HudModel {
 			lastActivity = now;
 		} else if (effectId == 10) {
 			if (lockStart < 0) {
-				startLock(CFG.sealLockTicks() / 20.0);
+				startLock(cfg().sealLockTicks() / 20.0);
 			}
 		} else if (effectId == 11) {
 			endedAt = now; // bankai timer ran out: back to shikai, the HUD shows "Bankai ended" and holds the ready gem
@@ -635,7 +638,7 @@ public final class HudModel {
 
 	/** Seconds left before the shikai seals itself for idleness (120 s without a cast). */
 	public static double idleRemaining() {
-		return CFG.shikaiIdleTicks() / 20.0 - (now - lastActivity);
+		return cfg().shikaiIdleTicks() / 20.0 - (now - lastActivity);
 	}
 
 	public static void pushToast(Text text, float[] tint, ToastKind kind, double life) {
@@ -657,7 +660,7 @@ public final class HudModel {
 
 	/** Answer of the server (or a local refusal) to a request, with the request when it is known. */
 	public static void onResult(ResultCode code, Request req) {
-		AbilitySpec spec = req != null && req.ability() != null ? CFG.spec(req.ability()) : null;
+		AbilitySpec spec = req != null && req.ability() != null ? cfg().spec(req.ability()) : null;
 		Slot slot = req != null && req.ability() != null ? slotFor(req.ability()) : null;
 		switch (code) {
 			case OK -> {
@@ -671,7 +674,7 @@ public final class HudModel {
 				if (spec != null) {
 					needed = spec.costTenths();
 				} else {
-					needed = CFG.shikaiReleaseCost() + 1;
+					needed = cfg().shikaiReleaseCost() + 1;
 				}
 				hatchFrom = Math.min(value, needed);
 				hatchTo = needed;

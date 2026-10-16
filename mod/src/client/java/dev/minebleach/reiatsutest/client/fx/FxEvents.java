@@ -21,6 +21,7 @@ public final class FxEvents {
 		if (client.world == null) {
 			return;
 		}
+		AuraFx.onEffectEvent(id, e.casterId()); // R14: the shikai aura of Rukia and Byakuya shows only after the release or a cast of that player
 		// the visual reiatsu pressure on the screens of the OTHER players near a bankai release (the event goes on to its real effect)
 		if (id == dev.minebleach.reiatsutest.core.state.EffectIds.BYAKUYA_BANKAI_RELEASE || id == dev.minebleach.reiatsutest.core.state.EffectIds.RUKIA_BANKAI_RELEASE) {
 			PressureFx.onBankaiRelease(client, e, id == dev.minebleach.reiatsutest.core.state.EffectIds.BYAKUYA_BANKAI_RELEASE);

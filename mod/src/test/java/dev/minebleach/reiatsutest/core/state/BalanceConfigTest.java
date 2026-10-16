@@ -24,12 +24,12 @@ class BalanceConfigTest {
 		for (ZanpakutoState s : ZanpakutoState.values()) {
 			assertNotNull(c.rate(s), s.name());
 		}
-		// STATE_MACHINE section 3: per batch +10 / +5 / -4
+		// STATE_MACHINE section 3: per batch +10 / +8 (R14: shikai +10 -2, was +5) / bankai +8
 		assertEquals(10, c.rate(ZanpakutoState.SEALED).net());
 		assertEquals(10, c.rate(ZanpakutoState.BASE).net()); // drawn base form regenerates like sealed
-		assertEquals(5, c.rate(ZanpakutoState.SHIKAI).net());
+		assertEquals(8, c.rate(ZanpakutoState.SHIKAI).net());
 		// B4 step 4: bankai costs no reiatsu, has no upkeep drain, and ends by its own timer
-		assertEquals(5, c.rate(ZanpakutoState.BANKAI).net());
+		assertEquals(8, c.rate(ZanpakutoState.BANKAI).net());
 		assertEquals(0, c.rate(ZanpakutoState.BANKAI).drainPerBatch());
 		assertEquals(0, c.bankaiCost());
 		assertEquals(900, c.bankaiCapTicks());

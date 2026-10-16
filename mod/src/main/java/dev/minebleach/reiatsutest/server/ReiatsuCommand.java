@@ -151,6 +151,25 @@ public final class ReiatsuCommand {
 									c.getSource().sendFeedback(() -> Text.literal(on ? "god mode ON: infinite reiatsu and Rage" : "god mode off"), true);
 									return 1;
 								})))
+						// /reiatsu dev set <key> <value>: writes one number of config/reiatsu_test.json and applies it at once (R14); get lists, unset goes back (balance.*)
+						.then(CommandManager.literal("set")
+								.then(CommandManager.argument("key", StringArgumentType.word())
+										.suggests((c, b) -> CommandSource.suggestMatching(DevConfig.snapshot().keySet(), b))
+										.then(CommandManager.argument("value", StringArgumentType.word())
+												.suggests((c, b) -> {
+													var cur = DevConfig.snapshot().get(StringArgumentType.getString(c, "key"));
+													return cur == null ? b.buildFuture() : CommandSource.suggestMatching(List.of(dev.minebleach.reiatsutest.core.config.ConfigKeys.show(cur)), b);
+												})
+												.executes(c -> devSet(c.getSource(), StringArgumentType.getString(c, "key"), StringArgumentType.getString(c, "value"))))))
+						.then(CommandManager.literal("unset")
+								.then(CommandManager.argument("key", StringArgumentType.word())
+										.suggests((c, b) -> CommandSource.suggestMatching(DevConfig.snapshot().keySet().stream().filter(k -> k.startsWith("balance.")).toList(), b))
+										.executes(c -> devUnset(c.getSource(), StringArgumentType.getString(c, "key")))))
+						.then(CommandManager.literal("get")
+								.executes(c -> devGet(c.getSource(), ""))
+								.then(CommandManager.argument("prefix", StringArgumentType.word())
+										.suggests((c, b) -> CommandSource.suggestMatching(DevConfig.snapshot().keySet(), b))
+										.executes(c -> devGet(c.getSource(), StringArgumentType.getString(c, "prefix")))))
 						// /reiatsu dev ragefree on|off: shikai and bankai need and spend no Rage (debug only, default off, creative does not bypass)
 						.then(CommandManager.literal("ragefree")
 								.then(CommandManager.argument("enabled", BoolArgumentType.bool()).executes(c -> {
@@ -161,6 +180,61 @@ public final class ReiatsuCommand {
 									c.getSource().sendFeedback(() -> Text.literal("ragefree " + (on ? "ON: shikai and bankai need no Rage" : "off")), true);
 									return 1;
 								})))));
+	}
+
+	private static int devSet(ServerCommandSource src, String key, String value) {
+		try {
+			String line = DevConfig.set(key, value);
+			src.sendFeedback(() -> Text.literal(line), true);
+			return 1;
+		} catch (IllegalArgumentException e) {
+			src.sendError(Text.literal(e.getMessage()));
+			return 0;
+		}
+	}
+
+	private static int devUnset(ServerCommandSource src, String key) {
+		try {
+			String line = DevConfig.unset(key);
+			src.sendFeedback(() -> Text.literal(line), true);
+			return 1;
+		} catch (IllegalArgumentException e) {
+			src.sendError(Text.literal(e.getMessage()));
+			return 0;
+		}
+	}
+
+	/** Lists the keys that start with {@code prefix} with their values; without a prefix the sections and how many keys each holds. */
+	private static int devGet(ServerCommandSource src, String prefix) {
+		var all = DevConfig.snapshot();
+		if (prefix.isEmpty()) {
+			java.util.Map<String, Integer> counts = new java.util.TreeMap<>();
+			for (String k : all.keySet()) {
+				counts.merge(k.substring(0, k.indexOf('.')), 1, Integer::sum);
+			}
+			src.sendFeedback(() -> Text.literal("sections: " + counts + " - /reiatsu dev get <prefix>, e.g. balance.tsukishiro or uryu.bow"), false);
+			return counts.size();
+		}
+		int shown = 0;
+		int total = 0;
+		for (var e : all.entrySet()) {
+			if (!e.getKey().startsWith(prefix)) {
+				continue;
+			}
+			total++;
+			if (shown < 40) {
+				String line = e.getKey() + " = " + dev.minebleach.reiatsutest.core.config.ConfigKeys.show(e.getValue());
+				src.sendFeedback(() -> Text.literal(line), false);
+				shown++;
+			}
+		}
+		if (total == 0) {
+			src.sendError(Text.literal("no key starts with '" + prefix + "' (try /reiatsu dev get)"));
+		} else if (total > shown) {
+			int more = total - shown;
+			src.sendFeedback(() -> Text.literal("... and " + more + " more, a longer prefix narrows the list"), false);
+		}
+		return total;
 	}
 
 	private static int dummyHit(ServerCommandSource src, java.util.Collection<? extends Entity> targets, float hp) throws CommandSyntaxException {

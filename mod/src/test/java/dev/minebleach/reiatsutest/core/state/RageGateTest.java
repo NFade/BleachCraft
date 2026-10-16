@@ -11,7 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Round 5: shikai and bankai entry need (and pay) Rage; keys and voice share the machine, so one check covers both. Also the
+ * Round 5: bankai entry needs (and pays) Rage, R14: shikai needs and pays none; keys and voice share the machine, so one check covers both. Also the
  * "any moment" rule of kido and the rule that the sword leaving the hand ends nothing.
  */
 class RageGateTest {
@@ -30,35 +30,30 @@ class RageGateTest {
 	}
 
 	@Test
-	void defaultCostsAre40And80OfTheBar() {
-		assertEquals(400, RC.shikaiCostTenths());
+	void defaultCostsAreFreeShikaiAnd80Bankai() {
+		assertEquals(0, RC.shikaiCostTenths(), "R14: shikai takes no Rage");
+		assertEquals(0, RC.releaseCostTenths(false));
 		assertEquals(800, RC.bankaiCostTenths());
 		assertEquals(1000, RC.maxTenths());
 	}
 
 	@Test
-	void shikaiIsRefusedBelowTheThresholdWithNotEnoughRage() {
-		Rig g = new Rig(399);
-		g.fx.toBase(R);
-		TransitionResult r = g.fx.tr(ZanpakutoState.SHIKAI, R);
-		assertFalse(r.ok());
-		assertEquals(RejectReason.NOT_ENOUGH_RAGE, r.reason());
-		assertEquals(ResultCode.DENIED_RAGE, r.code());
-		assertTrue(r.events().isEmpty(), "a refusal changes and costs nothing");
-		assertEquals(ZanpakutoState.BASE, g.fx.sm.state());
-		assertEquals(1000, g.fx.sm.reiatsu().value(), "no reiatsu was spent either");
-	}
-
-	@Test
-	void shikaiAtTheThresholdPaysTheRage() {
-		Rig g = new Rig(400);
+	void shikaiIsAllowedWithAnEmptyRageBar() {
+		Rig g = new Rig(0);
 		g.fx.toBase(R);
 		TransitionResult r = g.fx.tr(ZanpakutoState.SHIKAI, R);
 		assertTrue(r.ok(), String.valueOf(r.reason()));
-		List<StateEvent.RageSpent> paid = Fx.events(r.events(), StateEvent.RageSpent.class);
-		assertEquals(1, paid.size());
-		assertEquals(400, paid.get(0).tenths());
 		assertEquals(ZanpakutoState.SHIKAI, g.fx.sm.state());
+	}
+
+	@Test
+	void shikaiPaysNoRage() {
+		Rig g = new Rig(1000);
+		g.fx.toBase(R);
+		TransitionResult r = g.fx.tr(ZanpakutoState.SHIKAI, R);
+		assertTrue(r.ok(), String.valueOf(r.reason()));
+		assertTrue(Fx.events(r.events(), StateEvent.RageSpent.class).isEmpty(), "R14: nothing is taken from the Rage bar for shikai");
+		assertEquals(0, g.fx.sm.rageNeed(ZanpakutoState.SHIKAI));
 	}
 
 	@Test
@@ -129,11 +124,11 @@ class RageGateTest {
 	}
 
 	@Test
-	void theRageCheckComesBeforeTheReiatsuCheck() {
+	void shikaiChecksTheReiatsuAndNotTheRage() {
 		Rig g = new Rig(0);
 		g.fx.toBase(R);
 		g.fx.sm.devSetReiatsu(0);
-		assertEquals(RejectReason.NOT_ENOUGH_RAGE, g.fx.tr(ZanpakutoState.SHIKAI, R).reason());
+		assertEquals(RejectReason.NOT_ENOUGH_REIATSU, g.fx.tr(ZanpakutoState.SHIKAI, R).reason());
 	}
 
 	@Test
@@ -146,7 +141,8 @@ class RageGateTest {
 		assertTrue(Fx.events(r.events(), StateEvent.RageSpent.class).isEmpty());
 		g.fx.sm.setRageFree(false);
 		assertFalse(g.fx.sm.rageFree(), "default and switch-off: required again");
-		assertEquals(400, g.fx.sm.rageNeed(ZanpakutoState.SHIKAI));
+		assertEquals(0, g.fx.sm.rageNeed(ZanpakutoState.SHIKAI));
+		assertEquals(800, g.fx.sm.rageNeed(ZanpakutoState.BANKAI));
 		assertEquals(0, g.fx.sm.rageNeed(ZanpakutoState.BASE));
 		assertEquals(0, g.fx.sm.rageNeed(ZanpakutoState.SEALED));
 	}
@@ -169,11 +165,12 @@ class RageGateTest {
 	@Test
 	void theRageIsReadLiveAtEveryRequest() {
 		Rig g = new Rig(0);
-		g.fx.toBase(R);
-		assertEquals(RejectReason.NOT_ENOUGH_RAGE, g.fx.tr(ZanpakutoState.SHIKAI, R).reason());
-		g.rage[0] = 500;
+		g.fx.toShikai(R);
+		g.fx.adv(RC.bankaiMinShikaiTicks());
+		assertEquals(RejectReason.NOT_ENOUGH_RAGE, g.fx.tr(ZanpakutoState.BANKAI, R).reason());
+		g.rage[0] = 800;
 		g.fx.adv(3);
-		assertTrue(g.fx.tr(ZanpakutoState.SHIKAI, R).ok());
+		assertTrue(g.fx.tr(ZanpakutoState.BANKAI, R).ok());
 	}
 
 	// ------------------------------------------------------------------ kido and the sword leaving the hand

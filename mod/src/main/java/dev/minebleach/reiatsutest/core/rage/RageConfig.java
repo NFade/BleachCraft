@@ -19,7 +19,7 @@ import dev.minebleach.reiatsutest.core.config.Cfg;
  * @param passiveTenths         passive inflow per step while "in combat" (R11: 0 = off)
  * @param passiveIntervalTicks  ticks between two passive steps
  * @param passiveWindowTicks    how long after the last combat event the passive inflow lasts
- * @param shikaiCostTenths      Rage needed AND spent to enter shikai (rage.shikaiCost, 400 = 40.0 of 100)
+ * @param shikaiCostTenths      R14: NOT USED, shikai needs and spends no Rage ({@link #releaseCostTenths} says 0, the file key is ignored, the default is 0); the field stays so the old 14 and 19 argument callers compile
  * @param bankaiCostTenths      Rage needed AND spent to enter bankai (rage.bankaiCost, 800 = 80.0 of 100)
  * @param parryGapTicks         R11 T3: a parry pays at most once per this many ticks
  * @param abilityHitTenths      R11 T3: fixed gain of the first landed ability/kido hit of ONE cast (not per target)
@@ -78,18 +78,18 @@ public record RageConfig(int maxTenths, int damageTenthsPerHp, int maxGainPerHit
 	 * Defaults (R11 T3, UNVERIFIED by play): bar 100.0; damage TAKEN gives nothing; damage DEALT gives 0.2 point per hp capped at 2.5 per
 	 * hit (mobs count 25 percent, at most 8.0 per target per 10 s); a parry gives 4.0, at most once per second; the first landed hit of
 	 * an ability or kido cast gives 2.0 (per cast, not per target); no passive inflow; drain of 0.5 per second after 8 s out of combat.
-	 * Shikai costs 40, bankai 80 (the bar is paid, not only checked), and bankai needs 20 s spent in shikai.
+	 * Shikai costs no Rage (R14), bankai 80 (the bar is paid, not only checked), and bankai needs 20 s spent in shikai.
 	 * gin-uryu override (user request 2026-10-14): a sword or projectile hit gives a flat 3.0 (rate 1000 per hp capped at 30 per hit, so any
 	 * real hit pays the cap), mobs count fully and there is no per-target cap (10000 = never reached); a parry gives 5.0; the bar drains
 	 * only after 30 s (600 ticks) out of combat.
 	 */
 	public static RageConfig defaults() {
-		return new RageConfig(MAX_TENTHS, 0, 250, 50, 1000, 30, 600, 20, 5, 0, 10, 120, 400, 800, 20, 20, 100, 10_000, 400);
+		return new RageConfig(MAX_TENTHS, 0, 250, 50, 1000, 30, 600, 20, 5, 0, 10, 120, 0, 800, 20, 20, 100, 10_000, 400);
 	}
 
 	/** The cost of entering a state in tenths: shikai and bankai are priced, everything else is free. */
 	public int releaseCostTenths(boolean bankai) {
-		return bankai ? bankaiCostTenths : shikaiCostTenths;
+		return bankai ? bankaiCostTenths : 0;
 	}
 
 	/** The {@code "rage"} section of the root config (missing keys = defaults, bad values = defaults, numbers clamped, never throws). */
@@ -109,7 +109,7 @@ public record RageConfig(int maxTenths, int damageTenthsPerHp, int maxGainPerHit
 				Cfg.integer(o, "passiveTenths", d.passiveTenths, 0, max),
 				Cfg.integer(o, "passiveIntervalTicks", d.passiveIntervalTicks, 1, 72_000),
 				Cfg.integer(o, "passiveWindowTicks", d.passiveWindowTicks, 0, 72_000),
-				Cfg.integer(o, "shikaiCostTenths", d.shikaiCostTenths, 0, max),
+				0, // shikai costs no Rage since R14 (an old "shikaiCostTenths" key in the file is ignored)
 				Cfg.integer(o, "bankaiCostTenths", d.bankaiCostTenths, 0, max),
 				Cfg.integer(o, "parryGapTicks", d.parryGapTicks, 0, 1200),
 				Cfg.integer(o, "abilityHitTenths", d.abilityHitTenths, 0, max),
@@ -136,7 +136,6 @@ public record RageConfig(int maxTenths, int damageTenthsPerHp, int maxGainPerHit
 		o.addProperty("decayDelayTicks", decayDelayTicks);
 		o.addProperty("decayIntervalTicks", decayIntervalTicks);
 		o.addProperty("decayTenths", decayTenths);
-		o.addProperty("shikaiCostTenths", shikaiCostTenths);
 		o.addProperty("bankaiCostTenths", bankaiCostTenths);
 		o.addProperty("bankaiMinShikaiTicks", bankaiMinShikaiTicks);
 		return o;

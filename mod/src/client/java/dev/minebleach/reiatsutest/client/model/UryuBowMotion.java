@@ -62,6 +62,9 @@ public final class UryuBowMotion {
 		float lookPitchDeg;
 		float presence;
 		long presenceNanos;
+		/** R14: right handers (bow in the LEFT hand, drawn by {@link TpBowLayer}): the mirrored pose that is used for the ability gestures only, and its fade 0..1. */
+		UryuTpPose.Frame abilityFrame;
+		double abilityEnv;
 	}
 
 	private static final Map<Integer, St> STATES = new HashMap<>();
@@ -76,11 +79,13 @@ public final class UryuBowMotion {
 	/** Registers the third person layer (called from {@link FpCast#init}). */
 	public static void init() {
 		UryuTpLayer.register();
+		UryuCrossHold.register(); // R14: the arm of the sealed cross is lifted so the pendant can be seen
 	}
 
 	/** World change. */
 	public static void clear() {
 		STATES.clear();
+		UryuCrossHold.clear();
 	}
 
 	// ------------------------------------------------------------------ config and data
@@ -165,6 +170,7 @@ public final class UryuBowMotion {
 		if (st.frame != null && nanos - st.nanos < 400_000L) {
 			return st;
 		}
+		double dtSeconds = st.nanos == 0L ? 0.0 : Math.min(0.1, (nanos - st.nanos) / 1.0e9);
 		st.nanos = nanos;
 		double now = nanos / 1.0e9;
 		boolean holding = enabled() && holdingBow(p);
@@ -174,6 +180,8 @@ public final class UryuBowMotion {
 		UryuBowFlow f = st.flow;
 		if (!f.active()) {
 			st.frame = null;
+			st.abilityFrame = null;
+			st.abilityEnv = 0.0;
 			return st;
 		}
 		boolean mirror = p.getMainArm() == Arm.LEFT;
@@ -199,6 +207,19 @@ public final class UryuBowMotion {
 		boolean rm = FxConfig.reduceMotion || FxConfig.photosensitiveSafe;
 		st.frame = new UryuTpPose.Frame(cur, prev, f.xfade(now), f.weight(), mirror, Math.toRadians(st.lookPitchDeg), now,
 				UryuPoseMath.breathScale(rm, num("breath", 1f)), !rm);
+		// R14: a right hander holds the bow in the LEFT hand (the mirror image of the pose) and draws it with the clip of TpBowLayer; the authored ability
+		// gestures were never used for him, the common cast layer moved the wrong arm instead. The mirrored pose is given to the layer for the length of an
+		// ability gesture only (it fades in and out with the gesture), the idle hold and the draw stay with the clip
+		if (UryuBowPose.bowInLeftHand(p) && num("abilityRight", 1f) > 0.5f) {
+			double target = f.phase() == UryuBowFlow.Phase.ABILITY ? 1.0 : 0.0;
+			double step = dtSeconds / 0.15;
+			st.abilityEnv = st.abilityEnv < target ? Math.min(target, st.abilityEnv + step) : Math.max(target, st.abilityEnv - step);
+			st.abilityFrame = st.abilityEnv <= 0.001 ? null : new UryuTpPose.Frame(cur, prev, f.xfade(now), f.weight() * st.abilityEnv, true,
+					Math.toRadians(st.lookPitchDeg), now, UryuPoseMath.breathScale(rm, num("breath", 1f)), !rm);
+		} else {
+			st.abilityFrame = null;
+			st.abilityEnv = 0.0;
+		}
 		return st;
 	}
 
@@ -206,10 +227,14 @@ public final class UryuBowMotion {
 
 	/** The pose of this frame of a player, or null when it has none (not holding the drawn bow, switched off). */
 	static UryuTpPose.Frame tpFrame(AbstractClientPlayerEntity p) {
-		if (!tpOn() || UryuBowPose.bowInLeftHand(p)) { // R12: right handed players hold the bow in the left hand and use the draw clip (TpBowLayer)
+		if (!tpOn()) {
 			return null;
 		}
 		float td = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);
+		if (UryuBowPose.bowInLeftHand(p)) {
+			// R12: right handed players hold the bow in the left hand and use the draw clip (TpBowLayer); R14: the ability gestures come from here, mirrored
+			return update(p, td).abilityFrame;
+		}
 		return update(p, td).frame;
 	}
 

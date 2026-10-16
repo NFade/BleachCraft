@@ -301,7 +301,7 @@ public final class SpellbookScreen extends Screen {
 	}
 
 	private static Object[] argsOf(BookPage p, boolean muted) {
-		BalanceConfig balance = BalanceConfig.defaults();
+		BalanceConfig balance = BalanceConfig.live();
 		KidoConfig kido = KidoConfig.defaults();
 		Object[] out = new Object[p.args().size()];
 		for (int i = 0; i < out.length; i++) {

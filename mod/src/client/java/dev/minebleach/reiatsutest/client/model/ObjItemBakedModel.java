@@ -30,6 +30,7 @@ import net.minecraft.client.texture.Sprite;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
+import org.joml.Matrix3f;
 import org.joml.Vector3f;
 import org.jetbrains.annotations.Nullable;
 
@@ -196,7 +197,7 @@ public final class ObjItemBakedModel implements BakedModel {
 				}
 				emitDynamic(sm, context);
 			}
-			default -> emitHandDefault(sm, state, context, bowK); // hand modes, and NONE (R1.3: fall back to the hand mesh)
+			default -> emitHandDefault(sm, state, context, bowK, mode.isFirstPerson()); // hand modes, and NONE (R1.3: fall back to the hand mesh)
 		}
 		if (STATS) {
 			EMIT_NANOS.addAndGet(System.nanoTime() - t0);
@@ -208,27 +209,44 @@ public final class ObjItemBakedModel implements BakedModel {
 	 * The hand mesh of a state with the per state scale and turn of the manifest (the Uryu pendant is only 12 cm and flat); {@code glowK} is
 	 * the multiplier of the emissive pass ({@link UryuBowGlow}, 1 for every item but the Uryu bow and pendant).
 	 */
-	private void emitHandDefault(ObjItemUnbakedModel.StateMeshes sm, ReleaseState state, RenderContext context, double glowK) {
+	private void emitHandDefault(ObjItemUnbakedModel.StateMeshes sm, ReleaseState state, RenderContext context, double glowK, boolean firstPerson) {
 		Float hs = manifest.handScale.get(state.asString());
 		Float hy = manifest.handYaw.get(state.asString());
-		boolean tweaked = (hs != null && hs != 1f) || (hy != null && hy != 0f);
+		// R14: the pendant of the sealed Uryu cross hangs on a chain; its hold in the hand is tuned live (uryu.cross.{fp|tp}Item*: turn about the grip in degrees, size factor,
+		// shift in blocks), because the display transform alone cannot say which way "down" is for the first and the third person arm
+		final boolean cross = state == ReleaseState.SEALED && manifest.handYaw.containsKey("sealed") && hy != null;
+		final String vk = cross ? (firstPerson ? "uryu.cross.fpItem" : "uryu.cross.tpItem") : null;
+		boolean tweaked = (hs != null && hs != 1f) || (hy != null && hy != 0f) || cross;
 		if (tweaked) {
 			// the mesh of this state is bigger or smaller than the display transform expects, or turned wrong (the Uryu pendant):
 			// scale and turn about the grip (the same transform for the normals)
-			final float k = hs == null ? 1f : hs;
-			final double yaw = Math.toRadians(hy == null ? 0f : hy);
-			final float cs = (float) Math.cos(yaw);
-			final float sn = (float) Math.sin(yaw);
+			final float k = (hs == null ? 1f : hs) * (cross ? (float) FxTune.d(vk + "Scale", 1.0) : 1f);
+			final double yaw = Math.toRadians((hy == null ? 0f : hy) + (cross ? FxTune.d(vk + "Yaw", 0.0) : 0.0));
+			final Matrix3f rot = new Matrix3f().rotateY((float) yaw);
+			final float dx;
+			final float dy;
+			final float dz;
+			if (cross) {
+				rot.rotateX((float) Math.toRadians(FxTune.d(vk + "Pitch", firstPerson ? -60.0 : 0.0))).rotateZ((float) Math.toRadians(FxTune.d(vk + "Roll", 0.0)));
+				dx = (float) FxTune.d(vk + "Dx", 0.0);
+				dy = (float) FxTune.d(vk + "Dy", 0.0);
+				dz = (float) FxTune.d(vk + "Dz", firstPerson ? 0.14 : 0.0);
+			} else {
+				dx = 0f;
+				dy = 0f;
+				dz = 0f;
+			}
 			context.pushTransform(q -> {
 				Vector3f v = new Vector3f();
 				for (int c = 0; c < 4; c++) {
 					q.copyPos(c, v);
-					float x = (v.x - 0.5f) * k;
-					float z = (v.z - 0.5f) * k;
-					q.pos(c, 0.5f + x * cs + z * sn, 0.5f + (v.y - 0.5f) * k, 0.5f - x * sn + z * cs);
+					v.set((v.x - 0.5f) * k, (v.y - 0.5f) * k, (v.z - 0.5f) * k);
+					rot.transform(v);
+					q.pos(c, 0.5f + v.x + dx, 0.5f + v.y + dy, 0.5f + v.z + dz);
 					if (q.hasNormal(c)) {
 						q.copyNormal(c, v);
-						q.normal(c, v.x * cs + v.z * sn, v.y, -v.x * sn + v.z * cs);
+						rot.transform(v);
+						q.normal(c, v.x, v.y, v.z);
 					}
 				}
 				return true;
@@ -283,7 +301,9 @@ public final class ObjItemBakedModel implements BakedModel {
 	 */
 	private void emitBowForming(double t, LivingEntity holder, RenderContext context) {
 		if (UryuBowForm.pendantShown(t)) {
-			emitHandDefault(states.byState[ReleaseState.SEALED.ordinal()], ReleaseState.SEALED, context, UryuBowForm.pendantBoost(t));
+			emitHandDefault(states.byState[ReleaseState.SEALED.ordinal()], ReleaseState.SEALED, context, UryuBowForm.pendantBoost(t),
+				DrawTracker.renderEntity() == net.minecraft.client.MinecraftClient.getInstance().player
+					&& net.minecraft.client.MinecraftClient.getInstance().options.getPerspective().isFirstPerson());
 			return;
 		}
 		ObjItemUnbakedModel.BowMeshes b = states.bow;

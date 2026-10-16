@@ -11,12 +11,13 @@ class ShunpoUryuTest {
 	private static final ShunpoSpec SP = BalanceConfig.defaults().shunpo();
 
 	@Test
-	void uryuGetsTwoMoreBlocksAndNothingElseChanges() {
+	void uryuGetsTwoMoreBlocksAndALongerCooldownAndNothingElseChanges() {
 		ShunpoSpec u = SP.forCharacter(CharacterId.URYU);
 		assertEquals(SP.distance() + 2.0, u.distance(), 1e-9);
 		assertEquals(UryuBalance.SHUNPO_BONUS, 2.0, 0.0);
 		assertEquals(SP.costTenths(), u.costTenths());
-		assertEquals(SP.cooldownTicks(), u.cooldownTicks());
+		assertEquals(UryuBalance.SHUNPO_COOLDOWN_BONUS, 20, "R14: 1.0 s longer, so a chaser can catch up");
+		assertEquals(SP.cooldownTicks() + UryuBalance.SHUNPO_COOLDOWN_BONUS, u.cooldownTicks());
 		assertEquals(SP.minDistance(), u.minDistance(), 1e-9);
 		assertEquals(SP.step(), u.step(), 1e-9);
 		assertEquals(SP.maxDrop(), u.maxDrop());

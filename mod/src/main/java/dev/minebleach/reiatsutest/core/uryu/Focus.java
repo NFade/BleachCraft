@@ -68,6 +68,11 @@ public final class Focus {
 		return false;
 	}
 
+	/** True while a shunpo grace runs (the caller then keeps its speed samples out of the window). */
+	public boolean inGrace() {
+		return graceLeft > 0;
+	}
+
 	/** The next {@link UryuBalance#FOCUS_GRACE_TICKS} ticks are skipped (shunpo): the stacks stay and nothing is built. */
 	public void grace() {
 		grace(UryuBalance.FOCUS_GRACE_TICKS);

@@ -104,6 +104,22 @@ public record BalanceConfig(
 		return mech.barrierPushIntervalTicks();
 	}
 
+	private static volatile BalanceConfig live;
+
+	/**
+	 * R14: the numbers in force on this JVM: the defaults with the {@code balance} section of the config laid over them
+	 * ({@link BalanceOverrides}). The server sets it at start and on every reload; the HUD of a single player game reads it so the costs and
+	 * cooldowns it shows follow {@code /reiatsu dev set balance.*}. Without a server (a dedicated server's client) it is the code defaults.
+	 */
+	public static BalanceConfig live() {
+		BalanceConfig l = live;
+		return l != null ? l : defaults();
+	}
+
+	public static void setLive(BalanceConfig c) {
+		live = c;
+	}
+
 	/** A copy with other r8 numbers (tests). */
 	public BalanceConfig withMech(MechSpec newMech) {
 		return new BalanceConfig(maxTenths, regenBatchTicks, rates, shikaiReleaseCost, bankaiCost, bankaiCapTicks, shikaiIdleTicks,
@@ -155,8 +171,8 @@ public record BalanceConfig(
 		EnumMap<ZanpakutoState, Rate> rates = new EnumMap<>(ZanpakutoState.class);
 		rates.put(ZanpakutoState.SEALED, new Rate(10, 0)); // +4.0 / s
 		rates.put(ZanpakutoState.BASE, new Rate(10, 0)); // drawn base form: same regeneration as sealed, no upkeep
-		rates.put(ZanpakutoState.SHIKAI, new Rate(8, 3)); // +3.2 gross, -1.2 upkeep
-		rates.put(ZanpakutoState.BANKAI, new Rate(5, 0)); // no upkeep drain (the timer ends bankai); +2.0 / s, the same net as shikai, so shikai abilities can be afforded
+		rates.put(ZanpakutoState.SHIKAI, new Rate(10, 2)); // R14: +4.0 gross, -0.8 upkeep = +3.2 net (was 8/3: +2.0 net; the bar ran dry in 18 s of casting)
+		rates.put(ZanpakutoState.BANKAI, new Rate(8, 0)); // no upkeep drain (the timer ends bankai); R14: +3.2 / s, the same net as shikai, so shikai abilities can be afforded (was 5: +2.0)
 
 		EnumMap<AbilityId, AbilitySpec> a = new EnumMap<>(AbilityId.class);
 		// ---- Rukia shikai (areas x1.75, wave and hitscan reach x1.7)

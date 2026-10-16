@@ -35,8 +35,27 @@ public final class UryuFpHold {
 		return new double[] {side * FxTune.d("uryu.fp.holdX", -0.12), FxTune.d("uryu.fp.holdY", 0.07), FxTune.d("uryu.fp.holdZ", 0.0)};
 	}
 
+	/**
+	 * R14: the hand of the SEALED cross is raised from the bottom right corner into the picture and turned a little inward, so the pendant that hangs on its
+	 * chain from the fist is seen (it was behind the lower edge). Tunables {@code uryu.cross.fpX/fpY/fpZ} (blocks, hand frame), {@code uryu.cross.fpRx/fpRy/fpRz} (degrees).
+	 */
+	private static boolean pushCross(boolean leftHanded, MatrixStack m) {
+		int side = leftHanded ? -1 : 1;
+		m.push();
+		m.translate(side * FxTune.d("uryu.cross.fpX", -0.12), FxTune.d("uryu.cross.fpY", 0.45), FxTune.d("uryu.cross.fpZ", 0.0));
+		m.translate(side * FIST_X, FIST_Y, FIST_Z);
+		m.multiply(new Quaternionf().rotationXYZ((float) FxTune.d("uryu.cross.fpRx", 0.0) * RAD, side * (float) FxTune.d("uryu.cross.fpRy", 15.0) * RAD,
+				side * (float) FxTune.d("uryu.cross.fpRz", 0.0) * RAD));
+		m.translate(-side * FIST_X, -FIST_Y, -FIST_Z);
+		return true;
+	}
+
 	/** Pushes the hold onto the matrix stack at the head of the held item render (the caller pops when true is returned). */
 	public static boolean push(ClientPlayerEntity player, ItemStack stack, boolean leftHanded, MatrixStack m) {
+		if (on() && stack.getItem() instanceof UryuCrossItem && !UryuCrossItem.isBow(stack) && stack == player.getMainHandStack()
+				&& FxTune.d("uryu.cross.fp", 1.0) > 0.5) {
+			return pushCross(leftHanded, m);
+		}
 		if (!on() || !UryuCrossItem.isBow(stack) || stack != player.getMainHandStack() || !UryuBowMotion.fpOn()) {
 			return false;
 		}

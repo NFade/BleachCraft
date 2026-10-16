@@ -5,6 +5,7 @@ import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.core.util.Vec3f;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess;
 import dev.minebleach.reiatsutest.core.combat.CastGesture;
+import dev.minebleach.reiatsutest.registry.UryuCrossItem;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.util.Arm;
 
@@ -49,6 +50,11 @@ public final class TpCastLayer implements IAnimation {
 			return value0;
 		}
 		boolean isMain = right == (player.getMainArm() == Arm.RIGHT);
+		if (UryuCrossItem.isBow(player.getMainHandStack())) {
+			// R14: Uryu's bow is in the LEFT hand of every player (UryuBowPose.bowInLeftHand), and the rows of his abilities are written for the bow arm ({@code TR}):
+			// the left arm takes them, the right one (the string hand) takes the other row. Before, a right hander moved the arm that holds nothing
+			isMain = !right;
+		}
 		float[] a = isMain ? s.tr() : s.tl();
 		if (a[0] == 0f && a[1] == 0f && a[2] == 0f) {
 			return value0;

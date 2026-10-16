@@ -66,6 +66,9 @@ final class Phase7Uryu {
 		if (wants("uryu_star") || wants("uryu_star_rm")) {
 			Phase7Star.steps(); // U-FX 10: Sternenstaub (p7_10_star_*)
 		}
+		if (Phase9R14.wantsAny()) {
+			Phase9R14.steps(); // R14: cross in the hand, Uryu casts, Focus under the crosshair, shikai aura gate, Rukia freeze (p7_r14_*)
+		}
 		if (Phase8R13.wantsAny()) {
 			Phase8R13.steps(); // R13: poses of the bow and of the Byakuya sword in first and third person (p7_r13_*)
 		}

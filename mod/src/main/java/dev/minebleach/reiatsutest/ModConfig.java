@@ -113,6 +113,63 @@ public final class ModConfig {
 		return loadSection(MechSpec.SECTION, MechSpec::defaults, MechSpec::fromRoot, (m, root) -> root.add(MechSpec.SECTION, m.toJson()));
 	}
 
+	/** R14: the parsed config file as an object (empty when it is missing or unreadable); never written. */
+	public static synchronized JsonObject readRoot() {
+		Path file = file();
+		if (!Files.isRegularFile(file)) {
+			return new JsonObject();
+		}
+		try {
+			var el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
+			return el.isJsonObject() ? el.getAsJsonObject() : new JsonObject();
+		} catch (IOException | JsonParseException e) {
+			return new JsonObject();
+		}
+	}
+
+	/**
+	 * R14: one read-modify-write of the config file ({@code /reiatsu dev set}): the file is parsed, {@code change} edits the object, the result is written
+	 * atomically. A file that does not parse is refused (never overwritten), so a hand edit with a typo is not lost.
+	 */
+	public static synchronized void edit(java.util.function.Consumer<JsonObject> change) throws IOException {
+		Path file = file();
+		JsonObject root = new JsonObject();
+		if (Files.isRegularFile(file)) {
+			try {
+				var el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
+				if (!el.isJsonObject()) {
+					throw new IOException(file.getFileName() + " is not a JSON object");
+				}
+				root = el.getAsJsonObject();
+			} catch (JsonParseException e) {
+				throw new IOException(file.getFileName() + " does not parse (" + e.getMessage() + "), fix it by hand first");
+			}
+		}
+		change.accept(root);
+		Files.createDirectories(file.getParent());
+		ConfigFileIo.writeJson(file, root);
+	}
+
+	/**
+	 * R14: the balance numbers in force: the code defaults of {@link dev.minebleach.reiatsutest.core.state.BalanceConfig} with the sparse {@code balance}
+	 * section of the file laid over them. Nothing is written (the section holds only what {@code /reiatsu dev set balance.*} changed); an unreadable
+	 * file gives the defaults.
+	 */
+	public static synchronized dev.minebleach.reiatsutest.core.state.BalanceConfig loadBalance() {
+		dev.minebleach.reiatsutest.core.state.BalanceConfig base = dev.minebleach.reiatsutest.core.state.BalanceConfig.defaults();
+		Path file = file();
+		if (!Files.isRegularFile(file)) {
+			return base;
+		}
+		try {
+			var el = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8));
+			return el.isJsonObject() ? dev.minebleach.reiatsutest.core.state.BalanceOverrides.apply(base, el.getAsJsonObject()) : base;
+		} catch (IOException | RuntimeException e) {
+			ReiatsuTest.LOGGER.warn("[config] could not read the balance section of {} ({}), using the defaults", file, e.toString());
+			return base;
+		}
+	}
+
 	/** The {@code "rage"} section (R11 T3: rage gain, parry, ability reward, mob share, target cap, minimum shikai time before bankai). */
 	public static RageConfig loadRage() {
 		return loadSection(RageConfig.SECTION, RageConfig::defaults, RageConfig::fromRoot, (r, root) -> root.add(RageConfig.SECTION, r.toJson()));

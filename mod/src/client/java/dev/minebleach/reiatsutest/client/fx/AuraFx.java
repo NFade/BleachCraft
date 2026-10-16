@@ -41,6 +41,8 @@ public final class AuraFx {
 		boolean hasLast;
 		/** FX clock value at which the Rukia bankai aura of this player began (the sigil fades in from it), or -1. */
 		double rukiaBankaiSince = -1;
+		/** R14: FX clock second until which the shikai aura of Rukia and Byakuya shows (set by the release event and by each cast of the player). */
+		double pulseUntil = -1;
 		final ArrayDeque<Integer> live = new ArrayDeque<>();
 		final ArrayDeque<FxParticles.FxParticle> wisps = new ArrayDeque<>();
 	}
@@ -110,6 +112,31 @@ public final class AuraFx {
 	public static int liveFor(int entityId) {
 		PlayerAura p = PLAYERS.get(entityId);
 		return p == null ? 0 : p.live.size();
+	}
+
+	/**
+	 * R14: an effect event of a player. The release into shikai ({@code 1} Rukia, {@code 3} Byakuya) and each ability cast ({@code 20 to 35}) open a window
+	 * ({@code aura.releasePulse} 4 s, {@code aura.castPulse} 3 s) in which the wisps ("steam") of the shikai aura of that player are drawn; outside it they
+	 * stay off (snowflakes, glints, motes, glow and ring are not gated). The aura of a bankai is not gated. Only the events of the player himself arrive here with his id, so the aura
+	 * answers what the player pressed and does not run all the time.
+	 */
+	public static void onEffectEvent(int effectId, int casterId) {
+		if (casterId < 0) {
+			return;
+		}
+		boolean release = effectId == 1 || effectId == 3;
+		if (!release && !(effectId >= 20 && effectId <= 35)) {
+			return;
+		}
+		PlayerAura a = PLAYERS.computeIfAbsent(casterId, k -> new PlayerAura());
+		a.entityId = casterId;
+		a.pulseUntil = Math.max(a.pulseUntil, FxClock.now + tune(release ? "releasePulse" : "castPulse", release ? 4.0 : 3.0));
+	}
+
+	/** True while the aura of a shikai of Rukia or Byakuya is switched off because nothing was pressed lately. */
+	private static boolean quiet(PlayerAura a) {
+		return a.state == ZanpakutoState.SHIKAI && (a.character == CharacterId.RUKIA || a.character == CharacterId.BYAKUYA) && FxClock.now > a.pulseUntil
+				&& tune("shikaiOnlyOnCast", 1.0) > 0.5;
 	}
 
 	/** The seal: every particle of that player fades out within 8 ticks instead of drifting on for seconds. */
@@ -264,6 +291,9 @@ public final class AuraFx {
 		int n = count(wispRate * FxMath.lerp(tune("nightRate", 0.8), 1.0, day));
 		if (pl == MinecraftClient.getInstance().player && MinecraftClient.getInstance().options.getPerspective().isFirstPerson()) {
 			n = (int) (n * tune("firstPersonWisp", 0.0)); // the wisps rise right in front of the lens in first person
+		}
+		if (quiet(a)) {
+			n = 0; // R14: the "steam" (the wisps) of a shikai of Rukia or Byakuya only after the release or a cast; snowflakes, glints, motes and glow stay as they were
 		}
 		for (int i = 0; i < n && a.live.size() < cap && clientTotal + made < 400; i++) {
 			double ang = RNG.nextDouble() * Math.PI * 2;

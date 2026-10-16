@@ -62,6 +62,16 @@ public final class UryuBowPose {
 
 	/** Pushes the correction (caller pops when true is returned). {@code leftHanded} = the item is drawn on the left arm (mirrored display). */
 	public static boolean push(LivingEntity entity, ItemStack stack, boolean leftHanded, MatrixStack matrices) {
+		if (stack.getItem() instanceof UryuCrossItem && !isBowStack(stack)) {
+			// R14: the sealed cross: the arm is lifted by UryuCrossHold, the pendant is turned back so the chain hangs down
+			Quaternionf q = entity.getMainHandStack() == stack ? UryuCrossHold.itemCorrection(entity, leftHanded) : null;
+			if (q == null) {
+				return false;
+			}
+			matrices.push();
+			matrices.multiply(q);
+			return true;
+		}
 		if (!bowInLeftHand(entity)) {
 			// U-FX 11: while the pose layer drives the arm (idle, draw, release, the ability poses) the bow is kept upright in the moving hand, mirrored for a left hander
 			if (entity instanceof AbstractClientPlayerEntity player && UryuCrossItem.isBow(stack) && entity.getMainHandStack() == stack) {
@@ -73,6 +83,15 @@ public final class UryuBowPose {
 				}
 			}
 			return false; // left handed players: the plain display
+		}
+		if (leftHanded && entity instanceof AbstractClientPlayerEntity player && isBowStack(stack) && entity.getMainHandStack() == stack) {
+			// R14: an ability gesture of the right hander (the mirrored pose layer drives the bow arm): the bow is kept upright in the moving hand
+			Quaternionf q = UryuBowMotion.bowCorrection(player, true);
+			if (q != null) {
+				matrices.push();
+				matrices.multiply(q);
+				return true;
+			}
 		}
 		if (!leftHanded || !drawing(entity, stack)) {
 			return false; // right hand: the plain display, as before R12

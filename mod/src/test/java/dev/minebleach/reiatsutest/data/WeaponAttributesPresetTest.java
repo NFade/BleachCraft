@@ -73,18 +73,28 @@ class WeaponAttributesPresetTest {
 	}
 
 	/**
-	 * tp_fix: the presets inherit pose and attacks of the katana preset untouched. The katana stance is switched off while the sword
+	 * tp_fix: the presets inherit the pose of the katana preset untouched. The katana stance is switched off while the sword
 	 * is sheathed by {@code mixin/BcPoseMixin} (rule {@code BcAttackGate.poseSuppressed}), not by an empty {@code pose} here (an empty
 	 * pose would remove the stance for good, also for a drawn sword).
+	 *
+	 * <p>R14: the attacks keep the animations, damage and sounds of the katana (Better Combat merges the lists by index) but all four swings hit in
+	 * the HORIZONTAL_PLANE with a wide angle. The katana's two vertical swings use VERTICAL_PLANE, a slab only a third of the reach wide (about one
+	 * block at the sword's reach): a target beside the line of the cut was not hit, the damage seemed to go along a narrow ray.
 	 */
 	@Test
-	void presetsDoNotOverrideThePoseOrTheAttacks() throws IOException {
+	void presetsKeepThePoseAndWidenTheSwingHitbox() throws IOException {
 		for (String id : swordIds()) {
 			JsonObject o = JsonParser.parseString(Files.readString(DIR.resolve(id + ".json"), StandardCharsets.UTF_8)).getAsJsonObject();
-			if (o.has("attributes")) {
-				JsonObject attrs = o.getAsJsonObject("attributes");
-				assertFalse(attrs.has("pose"), id + ": pose stays inherited (it is gated by BcPoseMixin)");
-				assertFalse(attrs.has("attacks"), id + ": attacks stay inherited from the katana preset");
+			assertTrue(o.has("attributes"), id + ": the widened attacks are missing");
+			JsonObject attrs = o.getAsJsonObject("attributes");
+			assertFalse(attrs.has("pose"), id + ": pose stays inherited (it is gated by BcPoseMixin)");
+			var attacks = attrs.getAsJsonArray("attacks");
+			assertEquals(4, attacks.size(), id + ": the katana has four swings, the list is merged by index");
+			for (var a : attacks) {
+				JsonObject at = a.getAsJsonObject();
+				assertEquals("HORIZONTAL_PLANE", at.get("hitbox").getAsString(), id + ": every swing hits the whole arc");
+				assertTrue(at.get("angle").getAsDouble() >= 140.0, id + ": the arc is wider than the katana's 120 degrees");
+				assertFalse(at.has("animation") || at.has("damage_multiplier"), id + ": animation and damage stay inherited");
 			}
 		}
 	}

@@ -41,7 +41,7 @@ final class ShunpoSideHud {
 		if (!visible) {
 			return;
 		}
-		ShunpoSpec spec = HudModel.CFG.shunpo();
+		ShunpoSpec spec = HudModel.cfg().shunpo();
 		if (spec == null) {
 			return;
 		}

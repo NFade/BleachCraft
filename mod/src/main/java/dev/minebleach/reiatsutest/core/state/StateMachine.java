@@ -36,7 +36,7 @@ public final class StateMachine {
 	public static final int SERVER_SEQ = -1;
 
 	private final Clock clock;
-	private final BalanceConfig cfg;
+	private BalanceConfig cfg;
 	private final RateLimiter limiter;
 	private final EnumMap<AbilityId, Long> cooldownEnd = new EnumMap<>(AbilityId.class);
 	private final EnumMap<KidoId, Long> kidoCooldownEnd = new EnumMap<>(KidoId.class);
@@ -83,6 +83,16 @@ public final class StateMachine {
 		this.stateSince = clock.nowTick();
 	}
 
+	/**
+	 * R14: swaps the balance numbers of a running machine ({@code /reiatsu dev set balance.*}, {@code /reiatsu reload}). Cooldowns and the bar
+	 * keep their values; only the numbers read from now on change. The bar size and the rate limit are not live.
+	 */
+	public void setConfig(BalanceConfig newCfg) {
+		if (newCfg != null && newCfg.maxTenths() == cfg.maxTenths()) {
+			this.cfg = newCfg;
+		}
+	}
+
 	// ------------------------------------------------------------------ rage seam
 
 	/**
@@ -126,7 +136,7 @@ public final class StateMachine {
 			return 0;
 		}
 		return switch (target) {
-			case SHIKAI -> rageCfg.shikaiCostTenths();
+			case SHIKAI -> 0; // R14: shikai needs and spends no Rage
 			case BANKAI -> rageCfg.bankaiCostTenths();
 			default -> 0;
 		};

@@ -24,17 +24,17 @@ class ReiatsuTest {
 		shikai.sm.devSetState(ZanpakutoState.SHIKAI, R);
 		shikai.sm.devSetReiatsu(500);
 		shikai.adv(5);
-		assertEquals(505, shikai.sm.reiatsu().value());
+		assertEquals(508, shikai.sm.reiatsu().value(), "R14: shikai +10 regeneration, -2 upkeep per batch");
 
 		Fx bankai = new Fx();
 		bankai.sm.devSetState(ZanpakutoState.BANKAI, R);
 		bankai.sm.devSetReiatsu(500);
 		bankai.adv(5);
-		assertEquals(505, bankai.sm.reiatsu().value(), "B4 step 4: bankai has no upkeep drain, +5 per batch like shikai");
+		assertEquals(508, bankai.sm.reiatsu().value(), "B4 step 4: bankai has no upkeep drain; R14: +8 per batch, the same net as shikai");
 	}
 
 	@Test
-	void R2_sealedFillsIn25SecondsAndShikaiRefillsFifteenIn150Ticks() {
+	void R2_sealedFillsIn25SecondsAndShikaiRefillsFifteenIn95Ticks() {
 		Fx f = new Fx(0);
 		f.adv(495);
 		assertEquals(990, f.sm.reiatsu().value());
@@ -43,8 +43,8 @@ class ReiatsuTest {
 
 		Fx s = new Fx().toShikai(R); // 850 + 11 ticks of regen
 		s.sm.devSetReiatsu(850);
-		s.adv(145);
-		assertEquals(995, s.sm.reiatsu().value());
+		s.adv(90); // R14: net +8 per batch of 5 ticks, 18 batches
+		assertEquals(994, s.sm.reiatsu().value());
 		s.adv(5);
 		assertTrue(s.sm.reiatsu().isFull());
 	}

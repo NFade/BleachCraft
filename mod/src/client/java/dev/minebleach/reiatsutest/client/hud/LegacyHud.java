@@ -22,7 +22,9 @@ import net.minecraft.text.Text;
 public final class LegacyHud {
 	private static final int BAR_W = 182;
 	private static final int BAR_H = 7;
-	private static final BalanceConfig CFG = BalanceConfig.defaults();
+	private static BalanceConfig cfg() {
+		return BalanceConfig.live();
+	}
 	private static long flashUntil;
 	private static long shakeUntil;
 
@@ -68,7 +70,7 @@ public final class LegacyHud {
 		int fill = (int) Math.round((double) BAR_W * value / max);
 		ctx.fill(x, y, x + fill, y + BAR_H, fillColor);
 		// the 15.0 release threshold tick
-		int tickX = x + (int) Math.round(BAR_W * (double) CFG.shikaiReleaseCost() / max);
+		int tickX = x + (int) Math.round(BAR_W * (double) cfg().shikaiReleaseCost() / max);
 		ctx.fill(tickX, y, tickX + 1, y + BAR_H, 0x99FFFFFF);
 
 		// label: state and value
@@ -78,7 +80,7 @@ public final class LegacyHud {
 				.append(stateText);
 		ctx.drawText(font, label, x, y - 10, 0xFFFFFFFF, true);
 		if (state == ZanpakutoState.BANKAI) {
-			int left = Math.max(0, (CFG.bankaiCapTicks() - (int) ClientState.ticksInState()) / 20);
+			int left = Math.max(0, (cfg().bankaiCapTicks() - (int) ClientState.ticksInState()) / 20);
 			Text t = Text.translatable("hud.reiatsu_test.bankai_time", Integer.toString(left));
 			ctx.drawText(font, t, x + BAR_W - font.getWidth(t), y - 10, 0xFFFFCC66, true);
 		}
@@ -103,7 +105,7 @@ public final class LegacyHud {
 		for (int slot = 0; slot < 3; slot++) {
 			AbilityId a = AbilityId.forSlot(character, state, slot);
 			int bx = bx0 + slot * (boxW + gap) + shake;
-			boolean usable = a != null && CFG.spec(a).enabled();
+			boolean usable = a != null && cfg().spec(a).enabled();
 			ctx.fill(bx, by, bx + boxW, by + boxH, usable ? 0xCC10101A : 0x66000000);
 			ctx.drawBorder(bx, by, boxW, boxH, usable ? fillColor : 0xFF555555);
 			Text key = (state == ZanpakutoState.BANKAI ? ReiatsuKeys.BANKAI_SLOTS : ReiatsuKeys.SLOTS)[slot].getBoundKeyLocalizedText();
@@ -116,10 +118,10 @@ public final class LegacyHud {
 			String shown = font.trimToWidth(name.getString(), boxW - 6);
 			ctx.drawText(font, shown, bx + 3, by + 13, 0xFFEEEEEE, false);
 			int remaining = ClientState.cooldownRemaining(a);
-			int cost = CFG.spec(a).costTenths();
+			int cost = cfg().spec(a).costTenths();
 			boolean poor = r != null && r.value() - cost < 1;
 			if (remaining > 0) {
-				int total2 = CFG.spec(a).cooldownTicks();
+				int total2 = cfg().spec(a).cooldownTicks();
 				int dark = (int) Math.round((boxH - 2) * Math.min(1.0, (double) remaining / total2));
 				ctx.fill(bx + 1, by + boxH - 1 - dark, bx + boxW - 1, by + boxH - 1, 0xAA000000);
 				String secs = String.format(java.util.Locale.ROOT, "%.1f", remaining / 20.0);

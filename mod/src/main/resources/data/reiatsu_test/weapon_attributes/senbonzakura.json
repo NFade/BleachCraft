@@ -1,3 +1,11 @@
 {
-  "parent": "bettercombat:katana"
+  "parent": "bettercombat:katana",
+  "attributes": {
+    "attacks": [
+      { "hitbox": "HORIZONTAL_PLANE", "angle": 150 },
+      { "hitbox": "HORIZONTAL_PLANE", "angle": 150 },
+      { "hitbox": "HORIZONTAL_PLANE", "angle": 150 },
+      { "hitbox": "HORIZONTAL_PLANE", "angle": 150 }
+    ]
+  }
 }

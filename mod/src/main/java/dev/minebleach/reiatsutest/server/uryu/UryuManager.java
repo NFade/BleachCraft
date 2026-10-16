@@ -11,6 +11,7 @@ import dev.minebleach.reiatsutest.core.uryu.BindEnd;
 import dev.minebleach.reiatsutest.core.rage.RageReward;
 import dev.minebleach.reiatsutest.core.uryu.BowDraw;
 import dev.minebleach.reiatsutest.core.uryu.Focus;
+import dev.minebleach.reiatsutest.core.uryu.SpeedWindow;
 import dev.minebleach.reiatsutest.core.uryu.LichtRegen;
 import dev.minebleach.reiatsutest.core.uryu.SeeleCombo;
 import dev.minebleach.reiatsutest.core.uryu.WingBarrage;
@@ -62,6 +63,8 @@ import net.minecraft.world.World;
 public final class UryuManager {
 	private static final class Data {
 		final Focus focus = new Focus();
+		/** R14: mean of the last ticks' speed, so a late or doubled movement packet does not read as a run (Focus on shift). */
+		final SpeedWindow speeds = new SpeedWindow();
 		Vec3d lastPos;
 		int lastShot = Integer.MIN_VALUE / 2;
 		int shown;
@@ -290,6 +293,15 @@ public final class UryuManager {
 		// horizontal speed only: a step up or a fall is judged by the ground flag, not by the speed
 		double speed = d.lastPos == null ? 1.0 : Math.hypot(pos.x - d.lastPos.x, pos.z - d.lastPos.z);
 		d.lastPos = pos;
+		// R14: the bow cannot be drawn on the run (the client stops the sprint too; this is for a client that does not)
+		if (p.isSprinting() && p.isUsingItem() && dev.minebleach.reiatsutest.registry.UryuCrossItem.isBow(p.getActiveItem())) {
+			p.setSprinting(false);
+		}
+		if (d.focus.inGrace()) {
+			d.speeds.clear(); // the jump of a shunpo is not a walk
+		} else {
+			speed = d.speeds.push(speed);
+		}
 		d.focus.tick(p.isOnGround(), p.isSprinting(), p.isSneaking(), speed, arterie(m));
 		show(p, d);
 	}

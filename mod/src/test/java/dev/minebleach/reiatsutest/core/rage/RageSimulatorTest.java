@@ -124,8 +124,8 @@ class RageSimulatorTest {
 	@Test
 	void theReferenceDuelMeetsTheGoalsOfThePlan() {
 		Result r = simulate(RageR11Test.R11, REFERENCE);
-		assertTrue(r.shikaiSec() >= 35.0 && r.shikaiSec() <= 60.0, "shikai at " + r.shikaiSec() + " s, goal 35..60 s");
-		assertTrue(r.shikaiToBankaiSec() >= 80.0 && r.shikaiToBankaiSec() <= 140.0, "shikai to bankai " + r.shikaiToBankaiSec() + " s, goal 80..140 s");
+		assertTrue(r.shikaiSec() >= 0 && r.shikaiSec() < 1.0, "R14: shikai is free, it opens at once, not at " + r.shikaiSec() + " s");
+		assertTrue(r.shikaiToBankaiSec() >= 60.0 && r.shikaiToBankaiSec() <= 140.0, "shikai to bankai " + r.shikaiToBankaiSec() + " s, goal 60..140 s (80 Rage, no payment for shikai)");
 	}
 
 	@Test
@@ -138,7 +138,7 @@ class RageSimulatorTest {
 	@Test
 	void takingDamageNeverHelps() {
 		Profile onlyTaken = new Profile("only taken", 0, 0, 0.0F, 0, 10, 100, 8.0F, 0, false, 0);
-		assertEquals(-1.0, simulate(RageR11Test.R11, onlyTaken).shikaiSec(), "no rage from damage taken: shikai never opens");
+		assertEquals(-1.0, simulate(RageR11Test.R11, onlyTaken).bankaiSec(), "no rage from damage taken: bankai never opens");
 	}
 
 	@Test
@@ -146,18 +146,18 @@ class RageSimulatorTest {
 		Result parry = simulate(RageR11Test.R11, PROFILES.get(5));
 		Result dummy = simulate(RageR11Test.R11, PROFILES.get(6));
 		Result ref = simulate(RageR11Test.R11, REFERENCE);
-		// a parry pays at most once per 20 ticks (4 points): 40 points need ten paying parries, at least 9 s, however often the parries come
-		assertTrue(parry.shikaiSec() >= 9.0, "parry spam: shikai in " + parry.shikaiSec() + " s");
-		// one target pays at most 8 points per 10 s: 40 points need five windows, i.e. about 40 s however fast it is hit (the first window starts full)
-		assertTrue(dummy.shikaiSec() >= 39.0, "one target: shikai in " + dummy.shikaiSec() + " s");
-		assertTrue(ref.shikaiSec() > 0);
+		// a parry pays at most once per 20 ticks (4 points): 80 points need twenty paying parries, at least 19 s, however often the parries come
+		assertTrue(parry.bankaiSec() >= 19.0, "parry spam: bankai in " + parry.bankaiSec() + " s");
+		// one target pays at most 8 points per 10 s: 80 points need ten windows, i.e. about 80 s however fast it is hit (the first window starts full)
+		assertTrue(dummy.bankaiSec() >= 79.0, "one target: bankai in " + dummy.bankaiSec() + " s");
+		assertTrue(ref.bankaiSec() > 0);
 	}
 
 	@Test
 	void mobFarmingIsFarSlowerThanFightingPlayers() {
 		Result mob = simulate(RageR11Test.R11, PROFILES.get(7));
 		Result duel = simulate(RageR11Test.R11, PROFILES.get(2));
-		assertTrue(mob.shikaiSec() > 2.5 * duel.shikaiSec(), "mobs " + mob.shikaiSec() + " s vs players " + duel.shikaiSec() + " s");
+		assertTrue(mob.bankaiSec() > 2.5 * duel.bankaiSec(), "mobs " + mob.bankaiSec() + " s vs players " + duel.bankaiSec() + " s");
 	}
 
 	@Test
