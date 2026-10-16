@@ -47,7 +47,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
  * Every gain is an INFO line {@code [rage] +X from <reason> ...} in the server log. The bar drains out of combat, resets on death
  * and logout, and is synced to its owner as the {@link ModAttachments#RAGE} attachment (only when the value changed).
  *
- * <p>Round 5: shikai and bankai entry need and pay Rage ({@link RageConfig#shikaiCostTenths()}, {@link RageConfig#bankaiCostTenths()}).
+ * <p>Round 5: shikai and bankai entry need Rage ({@link RageConfig#shikaiCostTenths()}, {@link RageConfig#bankaiCostTenths()}); R15: only bankai pays it, shikai just needs the bar to hold the 40.
  * The state machine reads {@link #valueOf} at the request and emits a RageSpent event that {@link ZanpakutoManager} turns into
  * {@link #spend}; keys and voice share that one path ({@code ZanpakutoManager.performTransition}).
  */

@@ -28,7 +28,7 @@ class RageTuningTest {
 	@Test
 	void aChangedServerConfigReachesTheTuning() {
 		RageTuning t = from("{\"rage\": {\"shikaiCostTenths\": 100, \"bankaiCostTenths\": 500, \"bankaiMinShikaiTicks\": 0}}");
-		assertEquals(0, t.releaseCostTenths(false), "R14: shikai is free, the old key in the file is ignored");
+		assertEquals(100, t.releaseCostTenths(false));
 		assertEquals(500, t.releaseCostTenths(true));
 		assertEquals(0, t.bankaiMinShikaiTicks());
 		assertFalse(t.bankaiAffordable(499));

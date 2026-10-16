@@ -130,13 +130,13 @@ public final class StateMachine {
 		return infiniteReiatsu;
 	}
 
-	/** Rage a request to {@code target} needs and pays in tenths (0 = none: not shikai/bankai, requirement off or ragefree). */
+	/** Rage a request to {@code target} needs on the bar in tenths (0 = none: not shikai/bankai, requirement off or ragefree). Shikai only needs it, bankai also pays it. */
 	public int rageNeed(ZanpakutoState target) {
 		if (rageCfg == null || rageSource == null || rageFree) {
 			return 0;
 		}
 		return switch (target) {
-			case SHIKAI -> 0; // R14: shikai needs and spends no Rage
+			case SHIKAI -> rageCfg.shikaiCostTenths(); // R15: checked at the request, never spent
 			case BANKAI -> rageCfg.bankaiCostTenths();
 			default -> 0;
 		};
@@ -211,10 +211,7 @@ public final class StateMachine {
 				ev.add(new StateEvent.MirrorComponent(state));
 			}
 			case SHIKAI -> {
-				spend(cfg.shikaiReleaseCost(), ev);
-				if (rageNeed > 0) {
-					ev.add(new StateEvent.RageSpent(rageNeed));
-				}
+				spend(cfg.shikaiReleaseCost(), ev); // R15: the 40 Rage were only checked above, no RageSpent for shikai
 				state = ZanpakutoState.SHIKAI;
 				stateSince = now;
 				mode = ShikaiMode.IDLE;

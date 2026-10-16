@@ -220,17 +220,17 @@ public final class ObjItemBakedModel implements BakedModel {
 		if (tweaked) {
 			// the mesh of this state is bigger or smaller than the display transform expects, or turned wrong (the Uryu pendant):
 			// scale and turn about the grip (the same transform for the normals)
-			final float k = (hs == null ? 1f : hs) * (cross ? (float) FxTune.d(vk + "Scale", 1.0) : 1f);
-			final double yaw = Math.toRadians((hy == null ? 0f : hy) + (cross ? FxTune.d(vk + "Yaw", 0.0) : 0.0));
+			final float k = (hs == null ? 1f : hs) * (cross ? (float) FxTune.d(vk + "Scale", firstPerson ? 0.6 : 1.0) : 1f); // R15: the first person pendant is 0.6 of the R14 size
+			final double yaw = Math.toRadians((hy == null ? 0f : hy) + (cross ? FxTune.d(vk + "Yaw", firstPerson ? -40.0 : 0.0) : 0.0)); // R15: -40 turns the pentacle face to the camera
 			final Matrix3f rot = new Matrix3f().rotateY((float) yaw);
 			final float dx;
 			final float dy;
 			final float dz;
 			if (cross) {
-				rot.rotateX((float) Math.toRadians(FxTune.d(vk + "Pitch", firstPerson ? -60.0 : 0.0))).rotateZ((float) Math.toRadians(FxTune.d(vk + "Roll", 0.0)));
-				dx = (float) FxTune.d(vk + "Dx", 0.0);
-				dy = (float) FxTune.d(vk + "Dy", 0.0);
-				dz = (float) FxTune.d(vk + "Dz", firstPerson ? 0.14 : 0.0);
+				rot.rotateX((float) Math.toRadians(FxTune.d(vk + "Pitch", 0.0))).rotateZ((float) Math.toRadians(FxTune.d(vk + "Roll", 0.0)));
+				dx = (float) FxTune.d(vk + "Dx", firstPerson ? -0.07 : 0.0);
+				dy = (float) FxTune.d(vk + "Dy", firstPerson ? 0.08 : 0.0);
+				dz = (float) FxTune.d(vk + "Dz", firstPerson ? 0.1 : 0.0);
 			} else {
 				dx = 0f;
 				dy = 0f;

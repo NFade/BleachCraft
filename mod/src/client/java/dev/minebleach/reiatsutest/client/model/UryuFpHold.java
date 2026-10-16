@@ -42,9 +42,9 @@ public final class UryuFpHold {
 	private static boolean pushCross(boolean leftHanded, MatrixStack m) {
 		int side = leftHanded ? -1 : 1;
 		m.push();
-		m.translate(side * FxTune.d("uryu.cross.fpX", -0.12), FxTune.d("uryu.cross.fpY", 0.45), FxTune.d("uryu.cross.fpZ", 0.0));
+		m.translate(side * FxTune.d("uryu.cross.fpX", 0.0), FxTune.d("uryu.cross.fpY", 0.45), FxTune.d("uryu.cross.fpZ", 0.0));
 		m.translate(side * FIST_X, FIST_Y, FIST_Z);
-		m.multiply(new Quaternionf().rotationXYZ((float) FxTune.d("uryu.cross.fpRx", 0.0) * RAD, side * (float) FxTune.d("uryu.cross.fpRy", 15.0) * RAD,
+		m.multiply(new Quaternionf().rotationXYZ((float) FxTune.d("uryu.cross.fpRx", 0.0) * RAD, side * (float) FxTune.d("uryu.cross.fpRy", 30.0) * RAD,
 				side * (float) FxTune.d("uryu.cross.fpRz", 0.0) * RAD));
 		m.translate(-side * FIST_X, -FIST_Y, -FIST_Z);
 		return true;

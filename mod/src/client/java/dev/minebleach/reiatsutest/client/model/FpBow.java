@@ -75,7 +75,15 @@ public final class FpBow {
 		boolean using = player.isUsingItem() && player.getActiveHand() == Hand.MAIN_HAND;
 		float td = mc.getRenderTickCounter().getTickDelta(false);
 		// the same draw progress as the string and the arrow of the model (ObjItemBakedModel#emitBowDraw)
-		HAND.step(dt, using, BowDraw.powerAt(player.getItemUseTime() + td), p.readyIn(), p.readyOut(), p.snap());
+		double drawPull = BowDraw.powerAt(player.getItemUseTime() + td);
+		if (!using) {
+			double ab = UryuBowMotion.fpAbilityPull(mc.player); // R15: an ability gesture draws the bow for a moment and releases it at the effect event
+			if (ab >= 0.0) {
+				using = true;
+				drawPull = ab;
+			}
+		}
+		HAND.step(dt, using, drawPull, p.readyIn(), p.readyOut(), p.snap());
 
 		// R13: the bow rests low (the forearm comes in from the left) and rises and turns to the crosshair as the arrow is drawn
 		float raise = dev.minebleach.reiatsutest.core.combat.FpEase.smooth(HAND.blend());

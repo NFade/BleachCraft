@@ -35,7 +35,13 @@ class RageSimulatorTest {
 
 	static final int LIMIT_TICKS = 20 * 60 * 30; // 30 minutes
 
+	/** R15 rule: shikai opens when the bar holds the shikai cost but does not pay it; only bankai pays. */
 	static Result simulate(RageConfig cfg, Profile p) {
+		return simulate(cfg, p, false);
+	}
+
+	/** {@code shikaiPays} = true is the pre-R15 rule (and the 'OLD' column of the table): the release into shikai also spends the cost. */
+	static Result simulate(RageConfig cfg, Profile p, boolean shikaiPays) {
 		RageMeter m = new RageMeter(cfg);
 		int shikaiAt = -1;
 		int bankaiAt = -1;
@@ -66,7 +72,9 @@ class RageSimulatorTest {
 			}
 			m.tick(t);
 			if (shikaiAt < 0 && m.canSpend(cfg.shikaiCostTenths())) {
-				m.spend(cfg.shikaiCostTenths());
+				if (shikaiPays) {
+					m.spend(cfg.shikaiCostTenths());
+				}
 				shikaiAt = t;
 			} else if (shikaiAt >= 0 && t - shikaiAt >= cfg.bankaiMinShikaiTicks() && m.canSpend(cfg.bankaiCostTenths())) {
 				m.spend(cfg.bankaiCostTenths());
@@ -104,7 +112,7 @@ class RageSimulatorTest {
 				"shikai OLD", "bankai OLD", "shikai->bankai"));
 		for (Profile p : PROFILES) {
 			Result a = simulate(now, p);
-			Result b = simulate(old, p);
+			Result b = simulate(old, p, true);
 			sb.append(String.format(java.util.Locale.ROOT, "%-52s | %-15s %-15s %-15s | %-15s %-15s %-15s%n", p.name(), fmt(a.shikaiSec()), fmt(a.bankaiSec()),
 					fmt(a.shikaiToBankaiSec()), fmt(b.shikaiSec()), fmt(b.bankaiSec()), fmt(b.shikaiToBankaiSec())));
 		}
@@ -124,8 +132,10 @@ class RageSimulatorTest {
 	@Test
 	void theReferenceDuelMeetsTheGoalsOfThePlan() {
 		Result r = simulate(RageR11Test.R11, REFERENCE);
-		assertTrue(r.shikaiSec() >= 0 && r.shikaiSec() < 1.0, "R14: shikai is free, it opens at once, not at " + r.shikaiSec() + " s");
-		assertTrue(r.shikaiToBankaiSec() >= 60.0 && r.shikaiToBankaiSec() <= 140.0, "shikai to bankai " + r.shikaiToBankaiSec() + " s, goal 60..140 s (80 Rage, no payment for shikai)");
+		assertTrue(r.shikaiSec() >= 35.0 && r.shikaiSec() <= 60.0, "shikai at " + r.shikaiSec() + " s, goal 35..60 s");
+		// R15: shikai is only checked (40), so the bar keeps its Rage and bankai (80) comes about 43 s after shikai instead of 86 s
+		assertTrue(r.shikaiToBankaiSec() >= 30.0 && r.shikaiToBankaiSec() <= 100.0, "shikai to bankai " + r.shikaiToBankaiSec() + " s, goal 30..100 s");
+		assertTrue(r.bankaiSec() >= 70.0 && r.bankaiSec() <= 110.0, "bankai at " + r.bankaiSec() + " s of the duel, goal 70..110 s");
 	}
 
 	@Test
@@ -138,7 +148,7 @@ class RageSimulatorTest {
 	@Test
 	void takingDamageNeverHelps() {
 		Profile onlyTaken = new Profile("only taken", 0, 0, 0.0F, 0, 10, 100, 8.0F, 0, false, 0);
-		assertEquals(-1.0, simulate(RageR11Test.R11, onlyTaken).bankaiSec(), "no rage from damage taken: bankai never opens");
+		assertEquals(-1.0, simulate(RageR11Test.R11, onlyTaken).shikaiSec(), "no rage from damage taken: shikai never opens");
 	}
 
 	@Test
@@ -146,18 +156,18 @@ class RageSimulatorTest {
 		Result parry = simulate(RageR11Test.R11, PROFILES.get(5));
 		Result dummy = simulate(RageR11Test.R11, PROFILES.get(6));
 		Result ref = simulate(RageR11Test.R11, REFERENCE);
-		// a parry pays at most once per 20 ticks (4 points): 80 points need twenty paying parries, at least 19 s, however often the parries come
-		assertTrue(parry.bankaiSec() >= 19.0, "parry spam: bankai in " + parry.bankaiSec() + " s");
-		// one target pays at most 8 points per 10 s: 80 points need ten windows, i.e. about 80 s however fast it is hit (the first window starts full)
-		assertTrue(dummy.bankaiSec() >= 79.0, "one target: bankai in " + dummy.bankaiSec() + " s");
-		assertTrue(ref.bankaiSec() > 0);
+		// a parry pays at most once per 20 ticks (4 points): 40 points need ten paying parries, at least 9 s, however often the parries come
+		assertTrue(parry.shikaiSec() >= 9.0, "parry spam: shikai in " + parry.shikaiSec() + " s");
+		// one target pays at most 8 points per 10 s: 40 points need five windows, i.e. about 40 s however fast it is hit (the first window starts full)
+		assertTrue(dummy.shikaiSec() >= 39.0, "one target: shikai in " + dummy.shikaiSec() + " s");
+		assertTrue(ref.shikaiSec() > 0);
 	}
 
 	@Test
 	void mobFarmingIsFarSlowerThanFightingPlayers() {
 		Result mob = simulate(RageR11Test.R11, PROFILES.get(7));
 		Result duel = simulate(RageR11Test.R11, PROFILES.get(2));
-		assertTrue(mob.bankaiSec() > 2.5 * duel.bankaiSec(), "mobs " + mob.bankaiSec() + " s vs players " + duel.bankaiSec() + " s");
+		assertTrue(mob.shikaiSec() > 2.5 * duel.shikaiSec(), "mobs " + mob.shikaiSec() + " s vs players " + duel.shikaiSec() + " s");
 	}
 
 	@Test

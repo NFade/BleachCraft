@@ -2,13 +2,13 @@ package dev.minebleach.reiatsutest.core.rage;
 
 /**
  * R11 review fix 4: the three numbers of the Rage section that the HUD needs and that the server config can change
- * ({@code rage.bankaiCostTenths}, {@code rage.bankaiMinShikaiTicks}). The server sends them to the owner with the Rage bar
+ * ({@code rage.shikaiCostTenths}, {@code rage.bankaiCostTenths}, {@code rage.bankaiMinShikaiTicks}). The server sends them to the owner with the Rage bar
  * ({@code ModAttachments.RAGE_TUNING}); until the first sync arrives the client uses {@link #defaults()}. The HUD questions ("is the bankai gem ready",
  * "how long until bankai", "how much does the release cost") are answered here so they can be tested. Pure Java.
  */
 public record RageTuning(int shikaiCostTenths, int bankaiCostTenths, int bankaiMinShikaiTicks) {
 	public RageTuning {
-		shikaiCostTenths = Math.max(0, shikaiCostTenths); // R14: not used, releaseCostTenths(false) is 0 (the field stays for the packet format)
+		shikaiCostTenths = Math.max(0, shikaiCostTenths);
 		bankaiCostTenths = Math.max(0, bankaiCostTenths);
 		bankaiMinShikaiTicks = Math.max(0, bankaiMinShikaiTicks);
 	}
@@ -22,9 +22,9 @@ public record RageTuning(int shikaiCostTenths, int bankaiCostTenths, int bankaiM
 		return new RageTuning(c.shikaiCostTenths(), c.bankaiCostTenths(), c.bankaiMinShikaiTicks());
 	}
 
-	/** Rage needed (and spent) for the release into shikai or bankai, in tenths. */
+	/** Rage needed for the release into shikai (not spent) or bankai (spent), in tenths. */
 	public int releaseCostTenths(boolean bankai) {
-		return bankai ? bankaiCostTenths : 0; // R14: shikai is free
+		return bankai ? bankaiCostTenths : shikaiCostTenths;
 	}
 
 	/**

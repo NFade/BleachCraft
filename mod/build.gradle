@@ -122,7 +122,7 @@ loom {
 			vmArg "-Dreiatsu.phase6=true"
 			vmArg "-Dreiatsu.phase7=true"
 			vmArg "-Dreiatsu.devMonitor=${project.findProperty('dev_monitor') ?: ''}"
-			programArgs "--width", "1280", "--height", "720"
+			programArgs "--width", "1280", "--height", "720", "--username", "ProbeP7" // R15: a fixed name, so the default skin (arm width and colour) is the same in every run
 			vmArg "-Dreiatsu.fx.hold=${project.findProperty('hold') ?: 'uryu_atlas'}"
 			if (project.hasProperty("freezeAt")) {
 				vmArg "-Dreiatsu.fx.freezeAt=${project.property('freezeAt')}"

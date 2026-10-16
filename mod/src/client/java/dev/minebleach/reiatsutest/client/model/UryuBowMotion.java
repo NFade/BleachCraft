@@ -323,6 +323,33 @@ public final class UryuBowMotion {
 		return UryuAnims.DRAW.equals(anim) ? g.sample(t, t) : g.sampleReal(t);
 	}
 
+	/** Ticks a pseudo draw lasts at least (the effect event of some abilities comes 0 to 3 ticks into the animation, too short to read as a draw). */
+	private static final double AB_MIN_DRAW_TICKS = 5.0;
+
+	/**
+	 * R15: the first person archer view ({@link FpBow}) has no gesture of its own for the abilities. While an ability animation runs before its effect event
+	 * (Heilig Pfeil, Sprenger, Seele Schneider, Wing Barrage, Licht Regen, Sternenstaub; not the releases of shikai and bankai) this gives the draw progress
+	 * 0..1 of a pseudo draw: the bow is raised, the right hand goes to the string. At the event it returns -1, which is the release (the hand snaps forward).
+	 * Returns -1 when no ability draws now.
+	 */
+	static double fpAbilityPull(ClientPlayerEntity p) {
+		if (!fpOn() || num("abilityFp", 1f) < 0.5f) {
+			return -1.0;
+		}
+		St st = update(p, MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false));
+		UryuBowFlow f = st.flow;
+		if (f.phase() != UryuBowFlow.Phase.ABILITY || st.frame == null) {
+			return -1.0;
+		}
+		UryuAnims.Meta m = UryuAnims.meta(f.anim());
+		if (m == null || m.gesture() == null || m.gesture().endsWith(".release")) {
+			return -1.0;
+		}
+		double t = f.tick(st.nanos / 1.0e9);
+		double draw = Math.max(AB_MIN_DRAW_TICKS, m.eventTick());
+		return t >= draw ? -1.0 : Math.max(0.0, t / draw);
+	}
+
 	/**
 	 * The sample of the local hands of this frame: the pull and the release of the bow of the local player, or {@code cast} (the gesture of an ability that runs
 	 * in {@link FpCast}) when that is a gesture of its own. Called from {@link FpCast#update}.

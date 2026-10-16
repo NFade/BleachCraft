@@ -33,7 +33,7 @@ class RageMeterTest {
 		assertEquals(5, cfg.decayTenths());
 		assertEquals(400, cfg.shikaiCostTenths());
 		assertEquals(800, cfg.bankaiCostTenths());
-		assertEquals(0, cfg.releaseCostTenths(false), "R14: shikai is free whatever the field says");
+		assertEquals(400, cfg.releaseCostTenths(false));
 		assertEquals(800, cfg.releaseCostTenths(true));
 	}
 
