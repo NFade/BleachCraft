@@ -102,6 +102,9 @@ public final class ItemManifest {
 	public final Map<String, Float> handScale = new LinkedHashMap<>();
 	/** R15: factor on the cross section (x and z about the blade axis) of the hand and hip meshes seen from outside (third person); the length stays. 1 = as modelled. {@code "tp_cross": 0.65} */
 	public float tpCross = 1f;
+	/** R15: the same for the two directions apart: {@code tp_cross} may be {@code [x, z]}: x = the thickness seen from the FRONT of the player (edge on), z = the width seen from the SIDE. */
+	public float tpCrossX = 1f;
+	public float tpCrossZ = 1f;
 	/** Optional per state turn (degrees about model Y, about the grip) of the HAND mesh, e.g. the flat Uryu pendant faces the camera: {@code "hand_yaw": {"sealed": 90}}. */
 	public final Map<String, Float> handYaw = new LinkedHashMap<>();
 	public final Map<String, ObjectDef> objects = new LinkedHashMap<>();
@@ -121,7 +124,12 @@ public final class ItemManifest {
 			}
 		}
 		if (root.has("tp_cross")) {
-			m.tpCross = Math.max(0.2f, Math.min(1.5f, root.get("tp_cross").getAsFloat()));
+			JsonElement tc = root.get("tp_cross");
+			float x = tc.isJsonArray() ? tc.getAsJsonArray().get(0).getAsFloat() : tc.getAsFloat();
+			float z = tc.isJsonArray() ? tc.getAsJsonArray().get(1).getAsFloat() : x;
+			m.tpCrossX = Math.max(0.2f, Math.min(1.5f, x));
+			m.tpCrossZ = Math.max(0.2f, Math.min(1.5f, z));
+			m.tpCross = m.tpCrossZ;
 		}
 		if (root.has("hand_scale")) {
 			for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("hand_scale").entrySet()) {

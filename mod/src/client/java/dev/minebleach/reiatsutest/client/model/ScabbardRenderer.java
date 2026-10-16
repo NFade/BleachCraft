@@ -81,14 +81,15 @@ public final class ScabbardRenderer {
 
 	/** R15: {@link #drawMesh} for the scabbard and the sword seen from outside, with the cross section of the item ({@code tp_cross} of its manifest) applied about the blade axis. */
 	private static void drawMeshTp(ObjItemBakedModel om, Mesh mesh, MatrixStack m, VertexConsumer vc, int light) {
-		float c = om.manifest().tpCross;
-		if (Math.abs(c - 1f) < 1.0E-3f) {
+		float cx = om.manifest().tpCrossX;
+		float cz = om.manifest().tpCrossZ;
+		if (Math.abs(cx - 1f) < 1.0E-3f && Math.abs(cz - 1f) < 1.0E-3f) {
 			drawMesh(mesh, m.peek(), vc, light);
 			return;
 		}
 		m.push();
 		m.translate(0.5f, 0f, 0.5f);
-		m.scale(c, 1f, c);
+		m.scale(cx, 1f, cz);
 		m.translate(-0.5f, 0f, -0.5f);
 		drawMesh(mesh, m.peek(), vc, light);
 		m.pop();
