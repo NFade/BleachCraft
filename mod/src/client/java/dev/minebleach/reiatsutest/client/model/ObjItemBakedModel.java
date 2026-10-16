@@ -378,8 +378,8 @@ public final class ObjItemBakedModel implements BakedModel {
 			Vector3f v = new Vector3f();
 			for (int c = 0; c < 4; c++) {
 				q.copyPos(c, v);
-				if (Math.abs(v.y - 0.5f) < 1.0E-4f) { // the middle of the string follows the nock
-					q.pos(c, v.x, v.y, v.z - back);
+				if (Math.abs(v.y - 0.5f) < 1.0E-4f) { // the middle of the string follows the nock (R15: also to the side and up where the arrow lies, so the tail sits ON the string)
+					q.pos(c, v.x + arrowX, v.y + arrowUp, v.z - back);
 				}
 			}
 			return true;

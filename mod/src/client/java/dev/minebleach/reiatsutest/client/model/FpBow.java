@@ -113,6 +113,13 @@ public final class FpBow {
 			Vector3f nock = bow.transformPosition(new Vector3f(0f, 0f, BowDraw.nockZ(HAND.pull()) - 0.5f))
 					.add(p.rightOff()[0], p.rightOff()[1], p.rightOff()[2]);
 			Vector3f rightFist = new Vector3f(rest).lerp(nock, e);
+			// R15 round 3: the draw hand travels with the string, and towards full draw it goes behind the cheek: down and back out of the picture (almost invisible at full draw)
+			float hide = (float) Math.max(0.0, Math.min(1.0, (HAND.pull() - 0.55) / 0.40));
+			hide = hide * hide * (3f - 2f * hide);
+			if (hide > 0f) {
+				rightFist.add((float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideX", 0.10) * hide, (float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideY", -0.40) * hide,
+						(float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideZ", 0.45) * hide);
+			}
 			// R15: Heilig Pfeil, Sprenger and Seele Schneider move the right arm like the third person gesture (the fist follows the arm angles)
 			double[] ar = UryuBowMotion.fpRightArm(player instanceof net.minecraft.client.network.ClientPlayerEntity cp ? cp : mc.player);
 			float k = Math.min(1f, dt / 0.08f);

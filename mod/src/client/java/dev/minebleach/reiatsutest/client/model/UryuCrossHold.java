@@ -102,9 +102,17 @@ public final class UryuCrossHold implements IAnimation {
 		if (w < 0.002f) {
 			return null;
 		}
-		float extra = (armPitchRad() - (float) Math.toRadians(-18.0)) * w;
+		// R15 round 3: the whole arm turn is undone, not only the pitch: the arm is lifted AND turned out (roll) and in (yaw), the chain must still hang straight down.
+		// Frame of the arm: the item is drawn with R_arm * C, we want R_idle, so C = R_arm^-1 * R_idle ({@code uryu.cross.itemTurn} scales it, 1 = fully upright)
+		float idle = (float) Math.toRadians(-18.0);
+		float side = leftHanded ? -1f : 1f;
+		float pitch = idle + (armPitchRad() - idle) * w;
+		float yaw = (float) FxTune.d("uryu.cross.armYaw", -5.0) * RAD * side * w;
+		float roll = (float) FxTune.d("uryu.cross.armRoll", 22.0) * RAD * side * w;
+		Quaternionf arm = new Quaternionf().rotationZYX(roll, yaw, pitch);
+		Quaternionf c = arm.conjugate(new Quaternionf()).mul(new Quaternionf().rotationX(idle));
 		float k = (float) FxTune.d("uryu.cross.itemTurn", 1.0);
-		return new Quaternionf().rotationX(-extra * k);
+		return new Quaternionf().slerp(c, k);
 	}
 
 	@Override
