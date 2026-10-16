@@ -302,7 +302,9 @@ public final class UryuManager {
 		} else {
 			speed = d.speeds.push(speed);
 		}
-		d.focus.tick(p.isOnGround(), p.isSprinting(), p.isSneaking(), speed, arterie(m));
+		if (d.focus.tick(p.isOnGround(), p.isSprinting(), p.isSneaking(), speed, arterie(m)) && d.focus.stacks() == 0) {
+			ReiatsuTest.LOGGER.info("[uryu] {} lost Focus: {} (sneaking {})", p.getName().getString(), d.focus.lastResetReason(), p.isSneaking());
+		}
 		show(p, d);
 	}
 

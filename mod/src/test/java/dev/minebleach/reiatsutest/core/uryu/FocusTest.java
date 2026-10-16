@@ -70,7 +70,9 @@ class FocusTest {
 	void jumpOrFallResets() {
 		Focus f = new Focus();
 		still(f, 28, false);
-		f.tick(false, false, 0.0, false);
+		for (int i = 0; i < UryuBalance.FOCUS_AIR_TICKS; i++) {
+			f.tick(false, false, 0.0, false);
+		}
 		assertEquals(0, f.stacks());
 	}
 

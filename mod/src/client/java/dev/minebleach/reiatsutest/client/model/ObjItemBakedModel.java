@@ -228,8 +228,8 @@ public final class ObjItemBakedModel implements BakedModel {
 			final float dz;
 			if (cross) {
 				rot.rotateX((float) Math.toRadians(FxTune.d(vk + "Pitch", 0.0))).rotateZ((float) Math.toRadians(FxTune.d(vk + "Roll", 0.0)));
-				dx = (float) FxTune.d(vk + "Dx", firstPerson ? -0.07 : 0.0);
-				dy = (float) FxTune.d(vk + "Dy", firstPerson ? 0.08 : 0.0);
+				dx = (float) FxTune.d(vk + "Dx", firstPerson ? -0.11 : 0.0);
+				dy = (float) FxTune.d(vk + "Dy", firstPerson ? 0.02 : 0.0);
 				dz = (float) FxTune.d(vk + "Dz", firstPerson ? 0.1 : 0.0);
 			} else {
 				dx = 0f;

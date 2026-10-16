@@ -6,7 +6,7 @@ package dev.minebleach.reiatsutest.core.uryu;
  * and the Focus was lost while the player walked on shift. The mean over {@link #SIZE} ticks removes that jitter and keeps the real speed.
  */
 public final class SpeedWindow {
-	public static final int SIZE = 4;
+	public static final int SIZE = 6;
 
 	private final double[] ring = new double[SIZE];
 	private int count;

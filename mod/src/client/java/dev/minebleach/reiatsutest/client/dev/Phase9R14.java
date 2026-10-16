@@ -163,14 +163,14 @@ final class Phase9R14 {
 	/** Dev: variants of the sealed cross hold (FxTune keys uryu.cross.*), first person and third person. */
 	private static void crossVariants() {
 		String[][] fp = {
-				{"a", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDz=0.1", "uryu.cross.fpItemYaw=-25"},
-				{"b", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDz=0.1", "uryu.cross.fpItemYaw=-40"},
-				{"c", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDz=0.1", "uryu.cross.fpItemYaw=-55"},
-				{"d", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDz=0.1", "uryu.cross.fpItemYaw=-70"},
-				{"e", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDx=-0.09", "uryu.cross.fpItemDz=0.1", "uryu.cross.fpItemYaw=-40"},
-				{"f", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDz=0.13", "uryu.cross.fpItemYaw=-40"},
-				{"g", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.5", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDz=0.1", "uryu.cross.fpItemYaw=-40"},
-				{"h", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemDy=0.04", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDz=0.1", "uryu.cross.fpItemYaw=-40"}};
+				{"a", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDy=0.08", "uryu.cross.fpItemDz=0.1"},
+				{"b", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDy=0.0", "uryu.cross.fpItemDz=0.1"},
+				{"c", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDy=-0.05", "uryu.cross.fpItemDz=0.1"},
+				{"d", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.07", "uryu.cross.fpItemDy=-0.08", "uryu.cross.fpItemDz=0.1"},
+				{"e", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.1", "uryu.cross.fpItemDy=0.0", "uryu.cross.fpItemDz=0.1"},
+				{"f", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.1", "uryu.cross.fpItemDy=-0.05", "uryu.cross.fpItemDz=0.1"},
+				{"g", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.1", "uryu.cross.fpItemDy=-0.05", "uryu.cross.fpItemDz=0.14"},
+				{"h", "uryu.cross.fpX=0.0", "uryu.cross.fpRy=30", "uryu.cross.fpItemPitch=0", "uryu.cross.fpItemScale=0.6", "uryu.cross.fpItemYaw=-40", "uryu.cross.fpItemDx=-0.1", "uryu.cross.fpItemDy=-0.05", "uryu.cross.fpItemDz=0.06"}};
 		for (String[] v : fp) {
 			final String n = "crossvar_" + v[0];
 			scene(n, "fp", "sealed", "uryu", "uryu_cross");

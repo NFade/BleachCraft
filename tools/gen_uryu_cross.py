@@ -93,7 +93,7 @@ def ring(cy, r_out, r_in, x0, x1, segs, t_front, t_side):
 
 
 # ------------------------------------------------------------------ chain: from the grip down, links alternate between the YZ and the XY plane
-LINKS = 6
+LINKS = 4  # R15: a short chain (was 6), so it ends in the fist
 STEP = 0.0125
 for i in range(LINKS):
     y = -0.010 - i * STEP

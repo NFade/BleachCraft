@@ -690,9 +690,9 @@ final class PlateHud {
 		}
 		int stacks = Math.max(0, Math.min(3, dev.minebleach.reiatsutest.client.fx.UryuFx.focus));
 		boolean rm = FxConfig.reduceMotion;
-		// R14: under the crosshair (the cross of the ability pips is at h/2 + 9), not in the plate at the top left corner
+		// R14: under the crosshair (the cross of the ability pips is at h/2 + 9, R15: Focus above them), not in the plate at the top left corner
 		int step = 8;
-		int y = h / 2 + 14;
+		int y = h / 2 + 8; // R15: above the cooldown pips of the abilities (those are at h/2 + 17 for Uryu)
 		int x = w / 2 - (2 * step + 5) / 2;
 		boolean atMax = stacks >= 3;
 		float pulse = atMax && !rm ? (float) (0.5 + 0.5 * Math.sin(2 * Math.PI * 1.6 * now)) : atMax ? 0.6f : 0f;

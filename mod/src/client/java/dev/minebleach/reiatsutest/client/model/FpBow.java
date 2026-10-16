@@ -46,6 +46,9 @@ public final class FpBow {
 	private static long lastNanos;
 	private static boolean active;
 	private static double peakPull;
+	/** R15: the eased share and offset of the right fist that follows the third person gesture of a shikai ability. */
+	private static float gestureW;
+	private static final Vector3f GESTURE = new Vector3f();
 
 	private FpBow() {
 	}
@@ -110,6 +113,22 @@ public final class FpBow {
 			Vector3f nock = bow.transformPosition(new Vector3f(0f, 0f, BowDraw.nockZ(HAND.pull()) - 0.5f))
 					.add(p.rightOff()[0], p.rightOff()[1], p.rightOff()[2]);
 			Vector3f rightFist = new Vector3f(rest).lerp(nock, e);
+			// R15: Heilig Pfeil, Sprenger and Seele Schneider move the right arm like the third person gesture (the fist follows the arm angles)
+			double[] ar = UryuBowMotion.fpRightArm(player instanceof net.minecraft.client.network.ClientPlayerEntity cp ? cp : mc.player);
+			float k = Math.min(1f, dt / 0.08f);
+			gestureW += ((ar == null ? 0f : 1f) - gestureW) * k;
+			if (ar != null) {
+				Vector3f goal = armTip(ar).sub(armTip(dev.minebleach.reiatsutest.core.combat.UryuPoseMath.IDLE_ARM));
+				float gain = (float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.armGain", 0.7);
+				// the fist must not come close to the camera (it would fill the screen): the depth move is damped and capped
+				goal.set(goal.x * gain, goal.y * gain, Math.max(-0.6f, Math.min(0.05f, goal.z * gain * 0.5f)));
+				GESTURE.lerp(goal, Math.max(k, 0.3f));
+			} else {
+				GESTURE.mul(1f - k);
+			}
+			if (gestureW > 0.002f) {
+				rightFist.lerp(new Vector3f(rest).add(GESTURE), gestureW);
+			}
 			drawArm(mc, player, false, m, vcp, light, rightFist, p.rightRot(), e);
 		}
 		// the bow: complete model placement, the display transform of the right hand (applied by the item renderer) divided out
@@ -135,6 +154,13 @@ public final class FpBow {
 		}
 		m.pop();
 		m.pop();
+	}
+
+	/** R15: where the fist of a vanilla right arm (0.75 blocks long) is for the model part angles {@code pyr}, in the hand frame (x right, y up, forward -z). */
+	private static Vector3f armTip(double[] pyr) {
+		Vector3f v = new Vector3f(0f, 0.75f, 0f);
+		new Quaternionf().rotationZYX((float) pyr[2], (float) pyr[1], (float) pyr[0]).transform(v);
+		return new Vector3f(-v.x, -v.y, v.z);
 	}
 
 	/** Place of the fist of a vanilla empty hand in the (equip lifted) hand frame: where the draw hand rests. */

@@ -17,8 +17,10 @@ public final class UryuBalance {
 	public static final int FOCUS_INTERVAL_ARTERIE = 10;
 	/** Blocks per tick the player may move and still count as standing still (design: speed &lt; 0.02). */
 	public static final double FOCUS_MOVE_EPS = 0.02;
-	/** Horizontal blocks per tick below which a SNEAKING walk still keeps Focus (normal sneak speed is about 0.065). */
-	public static final double FOCUS_SNEAK_SPEED = 0.09;
+	/** Horizontal blocks per tick below which a SNEAKING walk still keeps Focus (normal sneak speed is about 0.065; R15: 0.115, walking is 0.22). */
+	public static final double FOCUS_SNEAK_SPEED = 0.115;
+	/** R15: consecutive ticks off the ground that Focus tolerates (a step down, a bumpy path); a real jump or fall lasts longer and resets it. */
+	public static final int FOCUS_AIR_TICKS = 4;
 	/** Ticks after a shunpo in which Focus is neither built nor reset (the teleport is not walking). */
 	public static final int FOCUS_GRACE_TICKS = 3;
 	/** Damage and speed factor by stack count 0..3 (+25, +60, +100 percent). */

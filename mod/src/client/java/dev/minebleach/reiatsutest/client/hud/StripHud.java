@@ -104,8 +104,9 @@ final class StripHud {
 			drawSlot(g, font, s, pos[0] + xo, pos[1] + yo, accent, a);
 		}
 		if (FxConfig.crosshairPips && liveStrip && HudModel.plateWanted) {
-			int px = w / 2 - 6;
-			int py = h / 2 + 9;
+			// R15: centred for any number of slots (Uryu's bankai has six), and below the Focus diamonds of Uryu (they sit right under the crosshair)
+			int px = w / 2 - ((n - 1) * 5 + 2) / 2;
+			int py = h / 2 + 9 + (HudModel.stripChar == dev.minebleach.reiatsutest.core.state.CharacterId.URYU ? 8 : 0);
 			for (int i = 0; i < n; i++) {
 				HudModel.Slot s = HudModel.SLOTS[i];
 				if (s.state == HudModel.SlotState.DISABLED) {

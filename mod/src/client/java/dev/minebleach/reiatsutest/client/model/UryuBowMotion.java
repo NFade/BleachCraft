@@ -351,6 +351,27 @@ public final class UryuBowMotion {
 	}
 
 	/**
+	 * R15: the right arm of the three shikai abilities (Heilig Pfeil, Sprenger, Seele Schneider) from the third person gesture, for the first person view:
+	 * pitch, yaw, roll in radians (vanilla model part convention), the same numbers {@link TpBowLayer} puts on the right arm of a right hander. Null when no
+	 * such gesture runs now. {@link FpBow} turns it into the place of the right fist.
+	 */
+	static double[] fpRightArm(ClientPlayerEntity p) {
+		if (!fpOn() || num("abilityFp", 1f) < 0.5f) {
+			return null;
+		}
+		St st = update(p, MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false));
+		UryuTpPose.Frame f = st.abilityFrame;
+		if (f == null || f.cur() == null) {
+			return null;
+		}
+		String a = f.cur().meta().anim();
+		if (!"release_z".equals(a) && !"sprenger".equals(a) && !"seele".equals(a)) {
+			return null;
+		}
+		return UryuTpPose.rotation(f, "rightArm", UryuPoseMath.IDLE_ARM.clone());
+	}
+
+	/**
 	 * The sample of the local hands of this frame: the pull and the release of the bow of the local player, or {@code cast} (the gesture of an ability that runs
 	 * in {@link FpCast}) when that is a gesture of its own. Called from {@link FpCast#update}.
 	 */

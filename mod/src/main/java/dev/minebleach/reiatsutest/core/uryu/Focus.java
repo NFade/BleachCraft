@@ -12,6 +12,8 @@ public final class Focus {
 	private int stacks;
 	private int charge;
 	private int graceLeft;
+	private int airborne;
+	private String lastResetReason = "";
 
 	public int stacks() {
 		return stacks;
@@ -20,6 +22,11 @@ public final class Focus {
 	/** Ticks accumulated towards the next stack. */
 	public int charge() {
 		return charge;
+	}
+
+	/** R15: why the last {@link #tick} reset the stacks (for the server log): speed, sprint, air, or empty. */
+	public String lastResetReason() {
+		return lastResetReason;
 	}
 
 	public boolean full() {
@@ -51,7 +58,13 @@ public final class Focus {
 			graceLeft--;
 			return false; // a shunpo just happened: neither counted nor reset
 		}
-		if (!grounded || sprinting || !(speed < speedLimit(sneaking))) {
+		airborne = grounded ? 0 : airborne + 1;
+		if (!grounded && airborne < UryuBalance.FOCUS_AIR_TICKS) {
+			return false; // R15: a step down or a bump of the path is not a jump; nothing is built for that tick
+		}
+		String why = !grounded ? "air" : sprinting && !sneaking ? "sprint" : !(speed < speedLimit(sneaking)) ? "speed " + speed : null;
+		if (why != null) {
+			lastResetReason = why;
 			return reset();
 		}
 		if (stacks >= UryuBalance.FOCUS_MAX) {
@@ -89,6 +102,7 @@ public final class Focus {
 		stacks = 0;
 		charge = 0;
 		graceLeft = 0;
+		airborne = 0;
 		return had;
 	}
 

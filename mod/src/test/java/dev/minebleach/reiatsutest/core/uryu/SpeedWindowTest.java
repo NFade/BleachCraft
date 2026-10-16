@@ -14,8 +14,9 @@ class SpeedWindowTest {
 		SpeedWindow w = new SpeedWindow();
 		assertEquals(0.4, w.push(0.4), 1e-9);
 		assertEquals(0.2, w.push(0.0), 1e-9);
-		w.push(0.0);
-		w.push(0.0);
+		for (int i = 0; i < SpeedWindow.SIZE - 2; i++) {
+			w.push(0.0);
+		}
 		assertEquals(0.0, w.push(0.0), 1e-9, "the first sample fell out of the window");
 	}
 

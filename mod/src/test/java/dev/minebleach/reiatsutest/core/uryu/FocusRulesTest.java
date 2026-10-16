@@ -41,8 +41,26 @@ class FocusRulesTest {
 			f.tick(true, false, true, 0.0, false);
 		}
 		assertEquals(2, f.stacks());
-		f.tick(true, true, true, 0.0, false);
-		assertEquals(0, f.stacks(), "sprint always resets");
+		f.tick(true, true, false, 0.0, false);
+		assertEquals(0, f.stacks(), "sprint resets");
+	}
+
+	@Test
+	void aStaleSprintFlagWhileSneakingDoesNotReset() {
+		Focus f = new Focus();
+		for (int i = 0; i < 14; i++) {
+			f.tick(true, true, true, SNEAK_WALK, false); // R15: sneaking and sprinting at once is a lagging flag, the speed decides
+		}
+		assertEquals(1, f.stacks());
+	}
+
+	@Test
+	void aBumpOfTheGroundFlagWhileSneakWalkingDoesNotReset() {
+		Focus f = new Focus();
+		for (int i = 0; i < 28; i++) {
+			f.tick(i % 5 != 4, false, true, SNEAK_WALK, false); // every fifth tick the path reports 'not on ground'
+		}
+		assertTrue(f.stacks() >= 1, "stacks " + f.stacks());
 	}
 
 	@Test
@@ -71,7 +89,9 @@ class FocusRulesTest {
 		for (int i = 0; i < 14; i++) {
 			f.tick(true, false, true, 0.0, false);
 		}
-		f.tick(false, false, true, 0.0, false);
+		for (int i = 0; i < UryuBalance.FOCUS_AIR_TICKS; i++) {
+			f.tick(false, false, true, 0.0, false);
+		}
 		assertEquals(0, f.stacks());
 	}
 
