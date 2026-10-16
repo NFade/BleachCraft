@@ -76,11 +76,18 @@ final class Phase9R14 {
 		if (wants("r15_sword")) {
 			// R15: the swords of Byakuya and Rukia in the hand, third person from behind and the front, shikai and bankai
 			for (String[] c : new String[][] {{"byakuya", "senbonzakura"}, {"rukia", "sode_no_shirayuki"}}) {
-				for (String st : new String[] {"shikai", "bankai"}) {
+				for (String st : new String[] {"base", "shikai", "bankai"}) {
 					for (String view : new String[] {"back", "front"}) {
 						final String n = "sword_" + c[0] + "_" + st + "_" + view;
 						scene(n, view, st, c[0], c[1]);
 						step(n + " shot", 4, () -> shot(n));
+						if (view.equals("back")) {
+							// a strike (Better Combat raises the blade): two frames of the swing
+							step(n + " swing", 1, () -> mc.options.attackKey.setPressed(true));
+							step(n + " swing release", 2, () -> mc.options.attackKey.setPressed(false));
+							step(n + " swing a", 3, () -> shot(n + "_sw1"));
+							step(n + " swing b", 4, () -> shot(n + "_sw2"));
+						}
 					}
 				}
 			}

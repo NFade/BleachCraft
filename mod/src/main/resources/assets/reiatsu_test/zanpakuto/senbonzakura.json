@@ -2,6 +2,7 @@
   "model": "byakuya_sealed",
   "display_model": "reiatsu_test:item/senbonzakura_display",
   "emissive_tint": "FFF9C8F6",
+  "tp_cross": 0.7,
   "first_person_arm": { "vanilla": true, "anchor_px": [0, 0, 0] },
   "draw": {"saya": "byakuya_sealed_saya", "blade": "byakuya_sealed_drawn", "hold": [0, 0, 0.33], "regrip": 0.3, "overshoot": 1.12,
     "stow": {"rot": [0, 0, 104], "move": [-0.4, 0.24, 0], "slide_end": 0.55, "pull": 0.55, "retract": 0.15, "arm_roll_stow": 80, "arm_roll_held": 0},

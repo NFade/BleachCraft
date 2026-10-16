@@ -79,6 +79,21 @@ public final class ScabbardRenderer {
 		});
 	}
 
+	/** R15: {@link #drawMesh} for the scabbard and the sword seen from outside, with the cross section of the item ({@code tp_cross} of its manifest) applied about the blade axis. */
+	private static void drawMeshTp(ObjItemBakedModel om, Mesh mesh, MatrixStack m, VertexConsumer vc, int light) {
+		float c = om.manifest().tpCross;
+		if (Math.abs(c - 1f) < 1.0E-3f) {
+			drawMesh(mesh, m.peek(), vc, light);
+			return;
+		}
+		m.push();
+		m.translate(0.5f, 0f, 0.5f);
+		m.scale(c, 1f, c);
+		m.translate(-0.5f, 0f, -0.5f);
+		drawMesh(mesh, m.peek(), vc, light);
+		m.pop();
+	}
+
 	// ------------------------------------------------------------------ first person
 
 	/** Called at the end of {@code HeldItemRenderer#renderItem(F,...)}: matrices are in the camera frame (sway applied). */
@@ -187,12 +202,12 @@ public final class ScabbardRenderer {
 		model.body.rotate(m);
 		m.push();
 		applyFrame(m, r.saya());
-		drawMesh(om.sayaMesh(), m.peek(), vc, light);
+		drawMeshTp(om, om.sayaMesh(), m, vc, light);
 		m.pop();
 		if (p < 1f) {
 			m.push();
 			applyFrame(m, r.sword());
-			drawMesh(om.swordMesh(), m.peek(), vc, light);
+			drawMeshTp(om, om.swordMesh(), m, vc, light);
 			m.pop();
 		}
 		m.pop();
@@ -227,13 +242,13 @@ public final class ScabbardRenderer {
 		m.multiply(basis(new float[] {side * hip.dir()[0], hip.dir()[1], hip.dir()[2]})); // the sideways tilt mirrors with the hip
 		m.scale(hip.scale(), hip.scale(), hip.scale());
 		m.translate(-0.5f, -0.5f, -0.5f);
-		drawMesh(om.sayaMesh(), m.peek(), vc, light);
+		drawMeshTp(om, om.sayaMesh(), m, vc, light);
 		DrawRig.Rigid arc = rig.arc(rig.clearAngle() * Math.min(1f, p / rig.slideEnd));
 		if (p < rig.slideEnd) {
 			m.push();
 			m.translate(arc.t()[0], arc.t()[1], arc.t()[2]);
 			m.multiply(new Quaternionf(arc.q()[0], arc.q()[1], arc.q()[2], arc.q()[3]));
-			drawMesh(om.swordMesh(), m.peek(), vc, light);
+			drawMeshTp(om, om.swordMesh(), m, vc, light);
 			m.pop();
 		}
 		Matrix4f hipFrame = null;
@@ -251,7 +266,7 @@ public final class ScabbardRenderer {
 			Matrix4f handFrame = handFrameOf(m, e, om, model);
 			float u = DrawRig.smooth((p - rig.slideEnd) / (1f - rig.slideEnd));
 			blendFrames(m, base, hipFrame, handFrame, u);
-			drawMesh(om.swordMesh(), m.peek(), vc, light);
+			drawMeshTp(om, om.swordMesh(), m, vc, light);
 			m.pop();
 		}
 	}

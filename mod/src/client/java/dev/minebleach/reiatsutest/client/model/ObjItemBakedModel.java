@@ -216,7 +216,8 @@ public final class ObjItemBakedModel implements BakedModel {
 		// shift in blocks), because the display transform alone cannot say which way "down" is for the first and the third person arm
 		final boolean cross = state == ReleaseState.SEALED && manifest.handYaw.containsKey("sealed") && hy != null;
 		final String vk = cross ? (firstPerson ? "uryu.cross.fpItem" : "uryu.cross.tpItem") : null;
-		boolean tweaked = (hs != null && hs != 1f) || (hy != null && hy != 0f) || cross;
+		final float tpCross = firstPerson ? 1f : manifest.tpCross; // R15: the sword seen from outside is slimmer (manifest tp_cross)
+		boolean tweaked = (hs != null && hs != 1f) || (hy != null && hy != 0f) || cross || Math.abs(tpCross - 1f) > 1.0E-3f;
 		if (tweaked) {
 			// the mesh of this state is bigger or smaller than the display transform expects, or turned wrong (the Uryu pendant):
 			// scale and turn about the grip (the same transform for the normals)
@@ -240,7 +241,7 @@ public final class ObjItemBakedModel implements BakedModel {
 				Vector3f v = new Vector3f();
 				for (int c = 0; c < 4; c++) {
 					q.copyPos(c, v);
-					v.set((v.x - 0.5f) * k, (v.y - 0.5f) * k, (v.z - 0.5f) * k);
+					v.set((v.x - 0.5f) * k * tpCross, (v.y - 0.5f) * k, (v.z - 0.5f) * k * tpCross);
 					rot.transform(v);
 					q.pos(c, 0.5f + v.x + dx, 0.5f + v.y + dy, 0.5f + v.z + dz);
 					if (q.hasNormal(c)) {
