@@ -31,8 +31,8 @@ public final class BladeRowLayout {
 	public static final int DEFAULT_PER_SIDE = 10;
 	/** Uniform scale of the blades (bankai.bladeScale): 1.0 = the mesh as it is, 5.5 blocks tall (3 heights of Byakuya, measured on the anime). */
 	public static final double DEFAULT_BLADE_SCALE = 1.0;
-	/** Width of the blades across the lane relative to the mesh (bankai.bladeWidth): the frame ep52 has a length : width ratio of about 10, the mesh 13.7, and the user asked for broader blades seen along the lane. Thickness and length stay. */
-	public static final double DEFAULT_WIDTH_FACTOR = 1.35;
+	/** Width of the blades across the lane relative to the mesh (bankai.bladeWidth). R15: 1.0 (the mesh as modelled); R12 had 1.35, the user found the blades too wide seen from the side. Thickness and length stay. */
+	public static final double DEFAULT_WIDTH_FACTOR = 1.0;
 	/** Distance from the axis to the blade bases (rows.halfWidth): lane wide open around the caster. */
 	public static final double DEFAULT_HALF_WIDTH = 7.0;
 	/** Distance between neighbours along the row (rows.spacing): with the 0.1477 thick slab the gap is 0.85 blocks. */

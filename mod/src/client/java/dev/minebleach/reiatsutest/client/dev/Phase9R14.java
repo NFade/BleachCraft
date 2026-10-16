@@ -33,7 +33,7 @@ final class Phase9R14 {
 	}
 
 	static boolean wantsAny() {
-		return wants("r14_dev") || wants("r14_cross") || wants("r14_crossvar") || wants("r15_sword") || wants("r15_destroy") || wants("r14_cast") || wants("r14_castfp") || wants("r14_focus") || wants("r14_steam") || wants("r14_frost");
+		return wants("r14_dev") || wants("r14_cross") || wants("r14_crossvar") || wants("r15_sword") || wants("r15_destroy") || wants("r15_slash") || wants("r14_cast") || wants("r14_castfp") || wants("r14_focus") || wants("r14_steam") || wants("r14_frost");
 	}
 
 	static void steps() {
@@ -54,6 +54,40 @@ final class Phase9R14 {
 			for (String view : new String[] {"back", "front"}) {
 				abilitySet(view);
 			}
+		}
+		if (wants("r15_slash")) {
+			// R15: Better Combat hit boxes: husks (no AI, no gravity) around the player; one swing with the old boxes, one with the roomy ones, at pitch 0 and looking up.
+			// "HIT <round> <name>" / "FULL" lines in the server log (HIT = lost health)
+			String[][] spots = {{"front", "0 0 2.2"}, {"left35", "1.3 0 1.8"}, {"right65", "-2.0 0 1.0"}, {"above", "0 2.6 2.2"}, {"aboveleft", "1.3 2.6 1.8"}, {"behind", "0 0 -2.2"}};
+			for (int round = 0; round < 4; round++) {
+				final boolean roomy = round % 2 == 1;
+				final int pitch = round < 2 ? 0 : -35;
+				final String tag = (roomy ? "roomy" : "old") + "_p" + (-pitch);
+				scene("slash_" + tag, "back", "base", "byakuya", "senbonzakura");
+				step("slash " + tag + " spawn", 6, () -> {
+					FxTune.override("bc.hitbox", roomy ? 1.0 : 0.0);
+					cmd("scoreboard objectives add slashhp dummy", "kill @e[type=minecraft:husk]", "tp @s 0.5 -60 0.5 0 " + pitch);
+					for (String[] s : spots) {
+						String[] o = s[1].split(" ");
+						cmd("summon minecraft:husk ~" + o[0] + " ~" + o[1] + " ~" + o[2]
+								+ " {NoAI:1b,NoGravity:1b,Silent:1b,PersistenceRequired:1b,CustomName:'\"" + s[0] + "\"',Health:20.0f}");
+					}
+				});
+				step("slash " + tag + " swing", 1, () -> mc.options.attackKey.setPressed(true));
+				step("slash " + tag + " release", 2, () -> mc.options.attackKey.setPressed(false));
+				step("slash " + tag + " wait", 14, () -> {
+					for (String[] s : spots) {
+						cmd("execute as @e[type=minecraft:husk,name=" + s[0] + "] store result score @s slashhp run data get entity @s Health 1.0",
+								"execute as @e[type=minecraft:husk,name=" + s[0] + "] unless score @s slashhp matches 20.. run say HIT " + tag + " " + s[0],
+								"execute as @e[type=minecraft:husk,name=" + s[0] + "] if score @s slashhp matches 20.. run say FULL " + tag + " " + s[0]);
+					}
+				});
+				step("slash " + tag + " shot", 2, () -> shot("slash_" + tag));
+			}
+			step("slash cleanup", 2, () -> {
+				FxTune.unset("bc.hitbox");
+				cmd("kill @e[type=minecraft:husk]");
+			});
 		}
 		if (wants("r15_destroy")) {
 			// R15: Uryu's bankai abilities break blocks: Sternenstaub into a stone wall, Licht Regen on a dirt patch (p7_r14_destroy_*)

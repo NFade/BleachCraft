@@ -82,9 +82,9 @@ class BladeRowFitTest {
 	}
 
 	@Test
-	void defaultIsSevenBladesPerSideAndBroaderBlades() {
+	void defaultIsSevenBladesPerSideAndTheMeshWidth() {
 		assertEquals(7, BladeRowPresets.DEFAULT.perSide());
-		assertEquals(1.35, BladeRowLayout.DEFAULT_WIDTH_FACTOR, 0);
+		assertEquals(1.0, BladeRowLayout.DEFAULT_WIDTH_FACTOR, 0, "R15: the blades are as wide as the mesh (was 1.35)");
 		// the broadened slab still leaves a gap to its neighbour along the row (thickness is not stretched)
 		assertTrue(BladeRowLayout.gap(BladeRowPresets.DEFAULT.pitch(), 1.0) > 1.0);
 	}

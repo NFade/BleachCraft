@@ -12,6 +12,7 @@
     "BossBarHudAccessor",
     "PostEffectProcessorAccessor",
     "BcFirstPersonModeMixin",
+    "BcHitBoxMixin",
     "PlayerEntityModelMixin",
     "ClientPlayerEntityMixin",
     "HeldItemRendererBowMixin"
