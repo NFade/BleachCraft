@@ -117,14 +117,14 @@ public final class AuraFx {
 	/**
 	 * R14: an effect event of a player. The release into shikai ({@code 1} Rukia, {@code 3} Byakuya) and each ability cast ({@code 20 to 35}) open a window
 	 * ({@code aura.releasePulse} 4 s, {@code aura.castPulse} 3 s) in which the wisps ("steam") of the shikai aura of that player are drawn; outside it they
-	 * stay off (snowflakes, glints, motes, glow and ring are not gated). The aura of a bankai is not gated. Only the events of the player himself arrive here with his id, so the aura
+	 * stay off (snowflakes, glints, motes, glow and ring are not gated). R15: the bankai of Rukia and Byakuya is gated the same way (the bankai releases 2 and 4 open the window too). Only the events of the player himself arrive here with his id, so the aura
 	 * answers what the player pressed and does not run all the time.
 	 */
 	public static void onEffectEvent(int effectId, int casterId) {
 		if (casterId < 0) {
 			return;
 		}
-		boolean release = effectId == 1 || effectId == 3;
+		boolean release = effectId == 1 || effectId == 2 || effectId == 3 || effectId == 4; // R15: the bankai releases too
 		if (!release && !(effectId >= 20 && effectId <= 35)) {
 			return;
 		}
@@ -133,9 +133,9 @@ public final class AuraFx {
 		a.pulseUntil = Math.max(a.pulseUntil, FxClock.now + tune(release ? "releasePulse" : "castPulse", release ? 4.0 : 3.0));
 	}
 
-	/** True while the aura of a shikai of Rukia or Byakuya is switched off because nothing was pressed lately. */
+	/** True while the aura of a shikai or bankai of Rukia or Byakuya is switched off because nothing was pressed lately. */
 	private static boolean quiet(PlayerAura a) {
-		return a.state == ZanpakutoState.SHIKAI && (a.character == CharacterId.RUKIA || a.character == CharacterId.BYAKUYA) && FxClock.now > a.pulseUntil
+		return (a.state == ZanpakutoState.SHIKAI || a.state == ZanpakutoState.BANKAI) && (a.character == CharacterId.RUKIA || a.character == CharacterId.BYAKUYA) && FxClock.now > a.pulseUntil
 				&& tune("shikaiOnlyOnCast", 1.0) > 0.5;
 	}
 

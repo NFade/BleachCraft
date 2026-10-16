@@ -28,7 +28,9 @@ final class Phase7FpBow {
 	static void steps() {
 		scene("12_fpbow_idle", "base");
 		shot("12_fpbow_idle", 0.0, false);
+		shot("12_fpbow_p25", 0.25, false);
 		shot("12_fpbow_p50", 0.5, false);
+		shot("12_fpbow_p75", 0.75, false);
 		shot("12_fpbow_p100", 1.0, false);
 		variants();
 		scene("12_fpbow_bankai_idle", "bankai");

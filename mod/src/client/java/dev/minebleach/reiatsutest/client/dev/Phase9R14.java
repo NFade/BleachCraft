@@ -33,7 +33,7 @@ final class Phase9R14 {
 	}
 
 	static boolean wantsAny() {
-		return wants("r14_dev") || wants("r14_cross") || wants("r14_crossvar") || wants("r14_cast") || wants("r14_castfp") || wants("r14_focus") || wants("r14_steam") || wants("r14_frost");
+		return wants("r14_dev") || wants("r14_cross") || wants("r14_crossvar") || wants("r15_sword") || wants("r15_destroy") || wants("r14_cast") || wants("r14_castfp") || wants("r14_focus") || wants("r14_steam") || wants("r14_frost");
 	}
 
 	static void steps() {
@@ -53,6 +53,36 @@ final class Phase9R14 {
 		if (wants("r14_cast")) {
 			for (String view : new String[] {"back", "front"}) {
 				abilitySet(view);
+			}
+		}
+		if (wants("r15_destroy")) {
+			// R15: Uryu's bankai abilities break blocks: Sternenstaub into a stone wall, Licht Regen on a dirt patch (p7_r14_destroy_*)
+			final KeyBinding star = ReiatsuKeys.BANKAI_SLOTS[2];
+			final KeyBinding rain = ReiatsuKeys.BANKAI_SLOTS[1];
+			scene("destroy_star", "back", "bankai", "uryu", "uryu_cross");
+			step("destroy star wall", 2, () -> cmd("fill -3 -60 8 3 -57 10 minecraft:stone", "fill -3 -60 8 3 -57 10 minecraft:stone"));
+			step("destroy star focus", 50, () -> { });
+			step("destroy star before", 2, () -> shot("destroy_star_0"));
+			step("destroy star cast", 3, () -> Phase6Harness.press(star));
+			step("destroy star +20", 20, () -> shot("destroy_star_1"));
+			step("destroy star +60", 40, () -> shot("destroy_star_2"));
+			scene("destroy_rain", "back", "bankai", "uryu", "uryu_cross");
+			step("destroy rain patch", 2, () -> cmd("fill -4 -60 6 4 -58 12 minecraft:grass_block", "fill -4 -57 6 4 -57 12 minecraft:air"));
+			step("destroy rain before", 2, () -> shot("destroy_rain_0"));
+			step("destroy rain cast", 3, () -> Phase6Harness.press(rain));
+			step("destroy rain +30", 30, () -> shot("destroy_rain_1"));
+			step("destroy rain +90", 60, () -> shot("destroy_rain_2"));
+		}
+		if (wants("r15_sword")) {
+			// R15: the swords of Byakuya and Rukia in the hand, third person from behind and the front, shikai and bankai
+			for (String[] c : new String[][] {{"byakuya", "senbonzakura"}, {"rukia", "sode_no_shirayuki"}}) {
+				for (String st : new String[] {"shikai", "bankai"}) {
+					for (String view : new String[] {"back", "front"}) {
+						final String n = "sword_" + c[0] + "_" + st + "_" + view;
+						scene(n, view, st, c[0], c[1]);
+						step(n + " shot", 4, () -> shot(n));
+					}
+				}
 			}
 		}
 		if (wants("r14_castfp")) {

@@ -117,8 +117,8 @@ public final class FpBow {
 			float hide = (float) Math.max(0.0, Math.min(1.0, (HAND.pull() - 0.55) / 0.40));
 			hide = hide * hide * (3f - 2f * hide);
 			if (hide > 0f) {
-				rightFist.add((float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideX", 0.10) * hide, (float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideY", -0.40) * hide,
-						(float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideZ", 0.45) * hide);
+				rightFist.add((float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideX", 0.12) * hide, (float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideY", -0.30) * hide,
+						(float) dev.minebleach.reiatsutest.client.fx.FxTune.d("uryu.fp.hideZ", 0.30) * hide);
 			}
 			// R15: Heilig Pfeil, Sprenger and Seele Schneider move the right arm like the third person gesture (the fist follows the arm angles)
 			double[] ar = UryuBowMotion.fpRightArm(player instanceof net.minecraft.client.network.ClientPlayerEntity cp ? cp : mc.player);

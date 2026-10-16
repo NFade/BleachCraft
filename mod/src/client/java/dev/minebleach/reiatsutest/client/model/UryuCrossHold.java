@@ -110,7 +110,9 @@ public final class UryuCrossHold implements IAnimation {
 		float yaw = (float) FxTune.d("uryu.cross.armYaw", -5.0) * RAD * side * w;
 		float roll = (float) FxTune.d("uryu.cross.armRoll", 22.0) * RAD * side * w;
 		Quaternionf arm = new Quaternionf().rotationZYX(roll, yaw, pitch);
-		Quaternionf c = arm.conjugate(new Quaternionf()).mul(new Quaternionf().rotationX(idle));
+		// R15 round 4: a few degrees more about the shoulder axis, the bottom of the pendant towards the body (positive X = backwards), so the chain hangs exactly vertical
+		float tilt = (float) FxTune.d("uryu.cross.tpTilt", 8.0) * RAD;
+		Quaternionf c = arm.conjugate(new Quaternionf()).mul(new Quaternionf().rotationX(tilt)).mul(new Quaternionf().rotationX(idle));
 		float k = (float) FxTune.d("uryu.cross.itemTurn", 1.0);
 		return new Quaternionf().slerp(c, k);
 	}

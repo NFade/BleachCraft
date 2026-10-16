@@ -93,7 +93,7 @@ def ring(cy, r_out, r_in, x0, x1, segs, t_front, t_side):
 
 
 # ------------------------------------------------------------------ chain: from the grip down, links alternate between the YZ and the XY plane
-LINKS = 6  # R15 round 3: back to 6 (round 2 made it 4): the top links hide under the fist in first person, the pendant hangs lower
+LINKS = 8  # R15 round 4: 8 links (6 before): the top ones hide under the fist in first person, the pendant hangs lower
 STEP = 0.0125
 for i in range(LINKS):
     y = -0.010 - i * STEP

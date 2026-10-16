@@ -409,6 +409,12 @@ public final class UryuManager {
 				}
 			}
 			case BLOCKED -> {
+				if (e.kind() == ArrowSim.Kind.WING) {
+					ServerPlayerEntity caster = srv.getPlayerManager().getPlayer(e.owner());
+					if (caster != null && !caster.isDead()) {
+						dev.minebleach.reiatsutest.server.AbilityTerrain.uryuWings(caster, vec(e.to())); // R15: the wing arrows scratch soft blocks
+					}
+				}
 				if (e.kind() != ArrowSim.Kind.RAIN) { // 6 rain arrows land every tick: no spark and chime packet for each
 					UryuNet.sendImpact(w, e.to(), UryuArrowsS2C.IMPACT_BLOCK, e.kind().ordinal(), now);
 				}
@@ -785,6 +791,7 @@ public final class UryuManager {
 		int now = p.getServer().getTicks();
 		long seed = ((long) p.getId() << 32) ^ (now * 0x9E3779B97F4A7C15L) ^ w.getRandom().nextLong();
 		RAINS.put(p.getUuid(), new Rain(p.getUuid(), w.getRegistryKey(), now, new LichtRegen(p.getId(), seed, v3(ground))));
+		dev.minebleach.reiatsutest.server.AbilityTerrain.uryuRain(p, ground); // R15: the soft blocks of the square crumble while the rain falls (the job breaks them over a few ticks)
 		w.playSound(null, ground.x, ground.y + 2.0, ground.z, SoundEvents.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.PLAYERS, 1.6F, 0.7F);
 		ReiatsuTest.LOGGER.info("[uryu] {} licht regen at ({}, {}, {}) square {}x{} for {} ticks", p.getName().getString(),
 				String.format(java.util.Locale.ROOT, "%.1f", ground.x), String.format(java.util.Locale.ROOT, "%.1f", ground.y),
@@ -850,6 +857,7 @@ public final class UryuManager {
 				UryuTargets.hurt(p, targets.get(i), Sternenstaub.damage(i), DamageTypes.ARROW, true);
 			}
 		});
+		dev.minebleach.reiatsutest.server.AbilityTerrain.uryuStar(p, end, dir); // R15: the giant arrow bores a tunnel past the block it stops at and leaves a crater
 		Vec3d from = eye.add(0, -0.2, 0);
 		UryuNet.sendEffect(p.getServerWorld(), eye.x, eye.y, eye.z, UryuArrowsS2C.LINE, p.getServer().getTicks(),
 				new float[] {(float) from.x, (float) from.y, (float) from.z, (float) end.x, (float) end.y, (float) end.z, (float) UryuBalance.STAR_HALF_WIDTH});

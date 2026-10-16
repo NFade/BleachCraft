@@ -223,4 +223,23 @@ class TerrainRulesTest {
 		assertEquals(CFG, Config.fromRoot(new JsonObject()));
 		assertEquals(CFG, Config.fromRoot(null));
 	}
+
+	@Test
+	void uryuBankaiSitesAreOnWithSoftAndMediumProfiles() {
+		assertTrue(CFG.uryuWings().enabled());
+		assertEquals(Profile.S, CFG.uryuWings().profile(), "wing arrows only scratch soft blocks");
+		assertEquals(Profile.S, CFG.uryuRain().profile());
+		assertEquals(Profile.M, CFG.uryuStar().profile(), "the giant arrow breaks up to hardness 2 (wood, stone, dirt), not obsidian");
+		assertTrue(CFG.uryuStar().radius() > 0 && CFG.uryuStar().radius2() > CFG.uryuStar().radius(), "a tunnel and a wider crater");
+		JsonObject o = CFG.toJson();
+		assertTrue(o.has("uryuWings") && o.has("uryuRain") && o.has("uryuStar"));
+		assertEquals(CFG, Config.fromRoot(wrap(o)), "the Uryu sites survive the file");
+		assertEquals(Verdict.TOO_HARD, TerrainRules.verdict(CFG, CFG.uryuStar().profile(), new Facts(false, false, 50.0, false, false, false)), "obsidian is too hard");
+	}
+
+	private static JsonObject wrap(JsonObject section) {
+		JsonObject root = new JsonObject();
+		root.add(Config.SECTION, section);
+		return root;
+	}
 }

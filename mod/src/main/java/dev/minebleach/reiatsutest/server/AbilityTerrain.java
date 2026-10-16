@@ -143,6 +143,33 @@ public final class AbilityTerrain {
 		return start(p, "kido.shakkaho", s, null, center, TerrainRules.sphere(center.x, center.y, center.z, s.radius()));
 	}
 
+	/** R15, Uryu bankai, Wing Barrage: a wing arrow stopped by a block at {@code center} scratches the soft blocks around it. Public: called from the Uryu manager. */
+	public static int uryuWings(ServerPlayerEntity p, Vec3d center) {
+		Site s = config.uryuWings();
+		return start(p, "uryu.bankai.wings", s, null, center, TerrainRules.sphere(center.x, center.y, center.z, s.radius()));
+	}
+
+	/** R15, Uryu bankai, Licht Regen: the soft blocks of the square crumble where the rain falls ({@code center} = the aimed ground point). */
+	public static int uryuRain(ServerPlayerEntity p, Vec3d center) {
+		Site s = config.uryuRain();
+		return start(p, "uryu.bankai.licht_regen", s, null, center, TerrainRules.sphere(center.x, center.y, center.z, s.radius()));
+	}
+
+	/**
+	 * R15, Uryu bankai, Sternenstaub: the giant arrow stops at the first block ({@code end}); it bores {@link #STAR_BORE} blocks on along {@code dir} (tunnel of
+	 * {@code uryuStar.tunnelRadius}) and leaves a crater of {@code craterRadius} at the stop. Returns the cells reserved.
+	 */
+	public static int uryuStar(ServerPlayerEntity p, Vec3d end, Vec3d dir) {
+		Site s = config.uryuStar();
+		Vec3d a = end.subtract(dir.multiply(0.3));
+		Vec3d b = end.add(dir.multiply(STAR_BORE));
+		int n = start(p, "uryu.bankai.sternenstaub#tunnel", s, null, a, TerrainRules.tunnel(a.x, a.y, a.z, b.x, b.y, b.z, s.radius()));
+		return n + start(p, "uryu.bankai.sternenstaub#crater", s, null, end, TerrainRules.sphere(end.x, end.y, end.z, s.radius2()));
+	}
+
+	/** Blocks the Sternenstaub bores on past the block it stops at. */
+	public static final double STAR_BORE = 6.0;
+
 	// ------------------------------------------------------------------ planning
 
 	private static int start(ServerPlayerEntity p, String label, Site site, CastContext ctx, Vec3d source, List<Cell> candidates) {

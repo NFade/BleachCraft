@@ -78,8 +78,15 @@ public final class TerrainRules {
 	 * </pre>
 	 */
 	public record Config(boolean enabled, boolean ignoreMobGriefing, boolean drops, int blocksPerTick, int effectEveryBlocks, double hardnessS,
-			double hardnessM, double hardnessL, Site modeAttack, Site scatter, Site hakuteiken, Site shakkaho) {
+			double hardnessM, double hardnessL, Site modeAttack, Site scatter, Site hakuteiken, Site shakkaho, Site uryuWings, Site uryuRain, Site uryuStar) {
 		public static final String SECTION = "terrain";
+
+		/** The shape before R15 (no Uryu sites): the three Uryu sites take their defaults. */
+		public Config(boolean enabled, boolean ignoreMobGriefing, boolean drops, int blocksPerTick, int effectEveryBlocks, double hardnessS,
+				double hardnessM, double hardnessL, Site modeAttack, Site scatter, Site hakuteiken, Site shakkaho) {
+			this(enabled, ignoreMobGriefing, drops, blocksPerTick, effectEveryBlocks, hardnessS, hardnessM, hardnessL, modeAttack, scatter, hakuteiken, shakkaho,
+					defaults().uryuWings, defaults().uryuRain, defaults().uryuStar);
+		}
 
 		public Config {
 			blocksPerTick = Math.max(1, Math.min(2000, blocksPerTick));
@@ -94,7 +101,12 @@ public final class TerrainRules {
 					new Site(true, Profile.S, 3.0, 0.0, 60),
 					new Site(true, Profile.M, 5.0, 0.0, 400),
 					new Site(true, Profile.L, 1.5, 5.0, 700), // radius = tunnel, radius2 = crater at the end
-					new Site(false, Profile.S, 2.5, 0.0, 40));
+					new Site(false, Profile.S, 2.5, 0.0, 40),
+					// R15, Uryu's bankai (the second phase) only: a wing arrow that hits a block scratches soft blocks; Licht Regen crumbles soft blocks in its square;
+					// Sternenstaub bores a tunnel (radius) past the block it stops at and leaves a crater (radius2) there; medium profile: wood, stone, dirt, glass, no obsidian
+					new Site(true, Profile.S, 1.3, 0.0, 10),
+					new Site(true, Profile.S, 3.5, 0.0, 140),
+					new Site(true, Profile.M, 1.0, 3.0, 450));
 		}
 
 		/** Hardness limit of a profile (the strongest block it may break); NONE breaks nothing. */
@@ -123,7 +135,10 @@ public final class TerrainRules {
 					site(Cfg.obj(o, "modeAttack"), d.modeAttack, "radius", null),
 					site(Cfg.obj(o, "scatter"), d.scatter, "craterRadius", null),
 					site(Cfg.obj(o, "hakuteiken"), d.hakuteiken, "tunnelRadius", "craterRadius"),
-					site(Cfg.obj(o, "shakkaho"), d.shakkaho, "radius", null));
+					site(Cfg.obj(o, "shakkaho"), d.shakkaho, "radius", null),
+					site(Cfg.obj(o, "uryuWings"), d.uryuWings, "radius", null),
+					site(Cfg.obj(o, "uryuRain"), d.uryuRain, "radius", null),
+					site(Cfg.obj(o, "uryuStar"), d.uryuStar, "tunnelRadius", "craterRadius"));
 		}
 
 		private static Site site(JsonObject o, Site d, String radiusKey, String radius2Key) {
@@ -150,6 +165,9 @@ public final class TerrainRules {
 			o.add("scatter", siteJson(scatter, "craterRadius", null));
 			o.add("hakuteiken", siteJson(hakuteiken, "tunnelRadius", "craterRadius"));
 			o.add("shakkaho", siteJson(shakkaho, "radius", null));
+			o.add("uryuWings", siteJson(uryuWings, "radius", null));
+			o.add("uryuRain", siteJson(uryuRain, "radius", null));
+			o.add("uryuStar", siteJson(uryuStar, "tunnelRadius", "craterRadius"));
 			return o;
 		}
 

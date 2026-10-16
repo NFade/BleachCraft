@@ -72,7 +72,7 @@ public record BowFpPose(boolean enabled, float[] grip, float scale, float yaw, f
 	public static final float[] LEFT_OFF = {0f, -0.14f, -0.10f}; // R13 (user): the bow fist lower along the bow, so it does not cover the arrow and the pattern
 	public static final float[] LEFT_ROT = {0f, 0f, -62f}; // R13: the bow forearm comes in from the lower LEFT corner and points to the right (Z turn about the fist, negative = clockwise) // R13: the bow forearm comes from the lower left
 	/** Draw hand fist from the nock: a little behind the arrow, so the nocked arrow is drawn in front of the fingers. */
-	public static final float[] RIGHT_OFF = {0.45f, -0.62f, 0.0f}; // R13: was 0.03, 0, -0.10: the draw fist stays right of the bow fist
+	public static final float[] RIGHT_OFF = {0.03f, -0.05f, 0.05f}; // R15 round 4: the draw hand is ON the nock and travels with the string (was 0.45, -0.62, 0: far at the lower right, never in the picture) // R13: was 0.03, 0, -0.10: the draw fist stays right of the bow fist
 	/** The draw forearm fans out to the lower right (Z turn about the fist). */
 	public static final float[] RIGHT_ROT = {0f, 0f, 20f};
 	/** Seconds for the draw hand to travel from the resting (vanilla empty hand) place to the string, and back after the shot. */
